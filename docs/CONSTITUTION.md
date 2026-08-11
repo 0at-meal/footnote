@@ -8,9 +8,9 @@ with a rule here, the rule wins — stop and ask, do not improvise around it.
 
 ## 1. Coding Standards
 
-1. Every module in `extraction/`, `formula_engine/`, `excel_export/`, and
-   `audit_report/` must be fully typed. Run `mypy --strict` on these before
-   any commit touching them.
+1. Every module in `extraction/`, `ingestion/`, `formula_engine/`,
+   `excel_export/`, and `audit_report/` must be fully typed. Run
+   `mypy --strict` on these before any commit touching them.
 2. `classification/` (the LLM boundary) may be typed more loosely, but its
    public interface must never expose a numeric return field.
 3. No `dict`/`Any` payloads crossing a pipeline-stage boundary. Use a
@@ -72,6 +72,11 @@ with a rule here, the rule wins — stop and ask, do not improvise around it.
 7. Frontend `lib/pdf/` may only talk to `components/review/`. It must
    not reach into backend modules directly; all data crosses via the
    FastAPI API layer.
+8. `ingestion/` is the upload-receipt and server-side validation stage
+   (Feature 1, Steps 2–3). Only `main.py` may import from it. `ingestion/`
+   must not import from `extraction/`, `classification/`, `formula_engine/`,
+   `excel_export/`, or `audit_report/`. Modules in `ingestion/` are subject
+   to the same `mypy --strict` requirement as §1.1.
 
 ## 4. Tech Stack
 
