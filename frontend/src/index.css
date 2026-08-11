@@ -8,6 +8,15 @@
   --accent-bg: rgba(170, 59, 255, 0.1);
   --accent-border: rgba(170, 59, 255, 0.5);
   --social-bg: rgba(244, 243, 236, 0.5);
+  /* Error / rejection states */
+  --error: #c0392b;
+  --error-bg: rgba(192, 57, 43, 0.08);
+  --error-border: rgba(192, 57, 43, 0.3);
+  /* Table */
+  --table-head-bg: #fafafa;
+  --row-hover-bg: rgba(0, 0, 0, 0.02);
+  /* Form controls */
+  --select-bg: #fff;
   --shadow:
     rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
@@ -43,6 +52,15 @@
     --social-bg: rgba(47, 48, 58, 0.5);
     --shadow:
       rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+    /* Error / rejection states — dark */
+    --error: #f87171;
+    --error-bg: rgba(248, 113, 113, 0.1);
+    --error-border: rgba(248, 113, 113, 0.3);
+    /* Table — dark */
+    --table-head-bg: #1a1b22;
+    --row-hover-bg: rgba(255, 255, 255, 0.03);
+    /* Form controls — dark */
+    --select-bg: #1f2028;
   }
 
   #social .button-icon {

@@ -1,121 +1,106 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
+import UploadZone from './components/UploadZone'
+import JobList from './components/JobList'
+import SubmitBar from './components/SubmitBar'
+import type { StagedFile, TargetMetric } from './types/job'
+import { DEFAULT_METRIC } from './types/job'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [stagedFiles, setStagedFiles] = useState<StagedFile[]>([])
+
+  function handleFilesAdded(files: File[]) {
+    const newFiles: StagedFile[] = files.map((file) => ({
+      id: crypto.randomUUID(),
+      file,
+      filename: file.name,
+      file_size_bytes: file.size,
+      target_metric: DEFAULT_METRIC,
+    }))
+    setStagedFiles((prev) => [...prev, ...newFiles])
+  }
+
+  function handleMetricChange(id: string, metric: TargetMetric) {
+    setStagedFiles((prev) =>
+      prev.map((sf) =>
+        sf.id === id ? { ...sf, target_metric: metric } : sf,
+      ),
+    )
+  }
+
+  function handleRemove(id: string) {
+    setStagedFiles((prev) => prev.filter((sf) => sf.id !== id))
+  }
+
+  function handleSubmit() {
+    // API wiring is Feature 1, Step 3.
+    // At Step 1 this is intentionally a no-op stub.
+    console.log(
+      '[Feature 1 Step 1] Submit triggered — API wiring pending (Step 3)',
+      stagedFiles.map((sf) => ({
+        filename: sf.filename,
+        file_size_bytes: sf.file_size_bytes,
+        target_metric: sf.target_metric,
+      })),
+    )
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <div className="app-layout">
+      <header className="app-header">
+        <div className="app-header__logo">
+          <svg
+            width="28"
+            height="28"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
+          </svg>
+          <span className="app-header__wordmark">footnote</span>
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
+        <p className="app-header__tagline">
+          Financial statement extraction &amp; model generation
+        </p>
+      </header>
+
+      <main className="app-main">
+        <section className="app-section" aria-labelledby="upload-heading">
+          <h2 id="upload-heading" className="section-title">
+            Upload Filings
+          </h2>
+          <p className="section-desc">
+            Select one or more PDF 10-K filings to begin extraction.
           </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+          <UploadZone onFilesAdded={handleFilesAdded} />
+        </section>
 
-      <div className="ticks"></div>
+        <section className="app-section" aria-labelledby="queue-heading">
+          <h2 id="queue-heading" className="section-title">
+            Upload Queue
+            {stagedFiles.length > 0 && (
+              <span className="section-title__badge">{stagedFiles.length}</span>
+            )}
+          </h2>
+          <JobList
+            stagedFiles={stagedFiles}
+            onMetricChange={handleMetricChange}
+            onRemove={handleRemove}
+          />
+          <SubmitBar stagedFiles={stagedFiles} onSubmit={handleSubmit} />
+        </section>
+      </main>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      <footer className="app-footer">
+        <p>Footnote — MVP · Single-user · Local extraction</p>
+      </footer>
+    </div>
   )
 }
 
