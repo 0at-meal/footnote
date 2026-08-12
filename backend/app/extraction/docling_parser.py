@@ -14,7 +14,9 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from docling.document_converter import DocumentConverter
+from docling.datamodel.base_models import InputFormat
+from docling.datamodel.pipeline_options import PdfPipelineOptions
+from docling.document_converter import DocumentConverter, PdfFormatOption
 
 from app.extraction.models import DoclingBbox, DoclingItem
 
@@ -23,7 +25,6 @@ logger = logging.getLogger(__name__)
 
 class DoclingParseError(Exception):
     """Raised when an unrecoverable structural parse error occurs during extraction."""
-
 
 
 def parse_pdf(pdf_path: Path, source_file: str) -> list[DoclingItem]:
@@ -45,7 +46,13 @@ def parse_pdf(pdf_path: Path, source_file: str) -> list[DoclingItem]:
         raise FileNotFoundError(f"PDF file not found at path: {pdf_path}")
 
     try:
-        converter = DocumentConverter()
+        pipeline_options = PdfPipelineOptions()
+        pipeline_options.do_ocr = False
+        converter = DocumentConverter(
+            format_options={
+                InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)
+            }
+        )
         result = converter.convert(str(pdf_path))
         doc = result.document
     except Exception as err:
