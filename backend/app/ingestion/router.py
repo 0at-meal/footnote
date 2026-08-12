@@ -15,6 +15,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
 from app.ingestion.models import (
+    ALLOWED_TARGET_METRICS,
     GetJobsResponse,
     JobRecord,
     SubmitResponse,
@@ -118,6 +119,16 @@ async def submit_jobs(
                 f"(got {len(files)} files and {len(target_metrics)} metrics)"
             ),
         )
+
+    for metric in target_metrics:
+        if metric not in ALLOWED_TARGET_METRICS:
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    f"Invalid target metric '{metric}'. "
+                    f"Allowed metrics: {', '.join(ALLOWED_TARGET_METRICS)}"
+                ),
+            )
 
     created_jobs: list[JobRecord] = []
     rejections = []

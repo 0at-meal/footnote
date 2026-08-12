@@ -2,6 +2,14 @@ from enum import Enum
 
 from pydantic import BaseModel
 
+ALLOWED_TARGET_METRICS: tuple[str, ...] = (
+    "Adjusted EBITDA",
+    "EBITDA",
+    "Net Income",
+    "Free Cash Flow",
+)
+
+
 
 class FileValidationResult(BaseModel):
     """Result of server-side validation for a single uploaded file."""

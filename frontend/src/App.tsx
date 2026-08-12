@@ -28,6 +28,27 @@ function App() {
       })
   }, [])
 
+  // ── Auto-polling for active jobs status (spec AC-7, AC-8) ───────────────
+  useEffect(() => {
+    const hasActiveJobs = persistedJobs.some(
+      (j) => j.status === 'queued' || j.status === 'extracting',
+    )
+    if (!hasActiveJobs) return
+
+    const intervalId = setInterval(() => {
+      fetch(`${API_BASE}/upload/jobs`)
+        .then((res) => res.json())
+        .then((data: { jobs: JobRecord[] }) => {
+          setPersistedJobs(data.jobs)
+        })
+        .catch(() => {
+          // Non-fatal background refresh error
+        })
+    }, 3000)
+
+    return () => clearInterval(intervalId)
+  }, [persistedJobs])
+
   // ── Staged file handlers ─────────────────────────────────────────────────
 
   function handleFilesAdded(files: File[]) {

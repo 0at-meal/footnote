@@ -212,3 +212,16 @@ def test_target_metric_reflects_per_file_selection(client: TestClient) -> None:
     metrics = {j["filename"]: j["target_metric"] for j in jobs}
     assert metrics["a.pdf"] == "EBITDA"
     assert metrics["b.pdf"] == "Net Income"
+
+
+def test_invalid_target_metric_returns_422(client: TestClient) -> None:
+    """Test 11: Invalid target_metric returns HTTP 422 Unprocessable Entity."""
+    pdf = make_minimal_pdf()
+    response = client.post(
+        "/upload/jobs",
+        files=[pdf_file("a.pdf", pdf)],
+        data={"target_metrics": "Invalid Metric Name"},
+    )
+    assert response.status_code == 422
+    assert "Invalid target metric" in response.json()["detail"]
+
