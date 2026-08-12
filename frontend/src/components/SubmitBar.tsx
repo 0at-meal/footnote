@@ -3,11 +3,13 @@ import type { StagedFile } from '../types/job'
 
 interface Props {
   stagedFiles: StagedFile[]
-  /** Step 3 will wire the actual API call; this is a stub at Step 1. */
+  /** Step 3: wired to the real API call in App.tsx. */
   onSubmit: () => void
+  /** True while the POST /upload/jobs request is in flight. */
+  isSubmitting: boolean
 }
 
-function SubmitBar({ stagedFiles, onSubmit }: Props) {
+function SubmitBar({ stagedFiles, onSubmit, isSubmitting }: Props) {
   const [showEmptyError, setShowEmptyError] = useState(false)
 
   const count = stagedFiles.length
@@ -20,6 +22,11 @@ function SubmitBar({ stagedFiles, onSubmit }: Props) {
     }
     setShowEmptyError(false)
     onSubmit()
+  }
+
+  // Clear the empty-state error as soon as a file is staged.
+  if (hasFiles && showEmptyError) {
+    setShowEmptyError(false)
   }
 
   return (
@@ -38,10 +45,14 @@ function SubmitBar({ stagedFiles, onSubmit }: Props) {
         type="button"
         className="submit-bar__btn"
         onClick={handleClick}
+        disabled={isSubmitting}
+        aria-busy={isSubmitting}
       >
-        {hasFiles
-          ? `Submit ${count} file${count > 1 ? 's' : ''} for extraction`
-          : 'Submit for extraction'}
+        {isSubmitting
+          ? 'Submitting…'
+          : hasFiles
+            ? `Submit ${count} file${count > 1 ? 's' : ''} for extraction`
+            : 'Submit for extraction'}
       </button>
     </div>
   )

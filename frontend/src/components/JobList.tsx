@@ -1,8 +1,9 @@
-import type { StagedFile, TargetMetric } from '../types/job'
+import type { StagedFile, TargetMetric, JobRecord, JobStatus } from '../types/job'
 import { TARGET_METRICS } from '../types/job'
 
 interface Props {
   stagedFiles: StagedFile[]
+  persistedJobs: JobRecord[]
   onMetricChange: (id: string, metric: TargetMetric) => void
   onRemove: (id: string) => void
 }
@@ -14,8 +15,45 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-function JobList({ stagedFiles, onMetricChange, onRemove }: Props) {
-  if (stagedFiles.length === 0) {
+const STATUS_LABELS: Record<JobStatus, string> = {
+  queued: 'Queued',
+  extracting: 'Extracting',
+  done: 'Done',
+  failed: 'Failed',
+}
+
+function StatusBadge({ status }: { status: JobStatus }) {
+  return (
+    <span className={`status-badge status-badge--${status}`} aria-label={`Status: ${STATUS_LABELS[status]}`}>
+      {STATUS_LABELS[status]}
+    </span>
+  )
+}
+
+function PdfIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className="job-table__pdf-icon"
+    >
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <path d="M14 2v6h6" />
+    </svg>
+  )
+}
+
+function JobList({ stagedFiles, persistedJobs, onMetricChange, onRemove }: Props) {
+  const isEmpty = stagedFiles.length === 0 && persistedJobs.length === 0
+
+  if (isEmpty) {
     return (
       <div className="job-list job-list--empty">
         <svg
@@ -39,36 +77,24 @@ function JobList({ stagedFiles, onMetricChange, onRemove }: Props) {
 
   return (
     <div className="job-list">
-      <table className="job-table" aria-label="Staged files">
+      <table className="job-table" aria-label="Upload queue">
         <thead>
           <tr>
             <th scope="col">File</th>
             <th scope="col">Size</th>
             <th scope="col">Target Metric</th>
+            <th scope="col">Status</th>
             <th scope="col">
               <span className="sr-only">Remove</span>
             </th>
           </tr>
         </thead>
         <tbody>
+          {/* ── Staged (pending, not yet submitted) ── */}
           {stagedFiles.map((sf) => (
-            <tr key={sf.id} className="job-table__row">
+            <tr key={sf.id} className="job-table__row job-table__row--staged">
               <td className="job-table__filename">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                  className="job-table__pdf-icon"
-                >
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <path d="M14 2v6h6" />
-                </svg>
+                <PdfIcon />
                 <span title={sf.filename}>{sf.filename}</span>
               </td>
               <td className="job-table__size">{formatBytes(sf.file_size_bytes)}</td>
@@ -85,6 +111,9 @@ function JobList({ stagedFiles, onMetricChange, onRemove }: Props) {
                     </option>
                   ))}
                 </select>
+              </td>
+              <td className="job-table__status">
+                <span className="status-badge status-badge--pending">Pending</span>
               </td>
               <td className="job-table__remove">
                 <button
@@ -106,6 +135,27 @@ function JobList({ stagedFiles, onMetricChange, onRemove }: Props) {
                     <path d="M18 6 6 18M6 6l12 12" />
                   </svg>
                 </button>
+              </td>
+            </tr>
+          ))}
+
+          {/* ── Persisted (backend-confirmed, locked) ── */}
+          {persistedJobs.map((job) => (
+            <tr key={job.job_id} className="job-table__row job-table__row--persisted">
+              <td className="job-table__filename">
+                <PdfIcon />
+                <span title={job.filename}>{job.filename}</span>
+              </td>
+              <td className="job-table__size">{formatBytes(job.file_size_bytes)}</td>
+              <td className="job-table__metric">
+                {/* Metric is locked after submission — spec AC-6 */}
+                <span className="job-table__metric-locked">{job.target_metric}</span>
+              </td>
+              <td className="job-table__status">
+                <StatusBadge status={job.status} />
+              </td>
+              <td className="job-table__remove">
+                {/* No remove button for persisted jobs — submission is final */}
               </td>
             </tr>
           ))}

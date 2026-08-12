@@ -1,13 +1,34 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import UploadZone from './components/UploadZone'
 import JobList from './components/JobList'
 import SubmitBar from './components/SubmitBar'
-import type { StagedFile, TargetMetric } from './types/job'
+import type { StagedFile, TargetMetric, JobRecord } from './types/job'
 import { DEFAULT_METRIC } from './types/job'
 import './App.css'
 
+/** Base URL for the FastAPI backend. Change for production deployment. */
+const API_BASE = 'http://localhost:8000'
+
 function App() {
   const [stagedFiles, setStagedFiles] = useState<StagedFile[]>([])
+  const [persistedJobs, setPersistedJobs] = useState<JobRecord[]>([])
+  const [submissionErrors, setSubmissionErrors] = useState<string[]>([])
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // ── On mount: restore persisted jobs from backend (spec AC-7) ───────────
+  useEffect(() => {
+    fetch(`${API_BASE}/upload/jobs`)
+      .then((res) => res.json())
+      .then((data: { jobs: JobRecord[] }) => {
+        setPersistedJobs(data.jobs)
+      })
+      .catch(() => {
+        // Backend unreachable on load — non-fatal; user can still stage files.
+        // Errors during submit are surfaced separately.
+      })
+  }, [])
+
+  // ── Staged file handlers ─────────────────────────────────────────────────
 
   function handleFilesAdded(files: File[]) {
     const newFiles: StagedFile[] = files.map((file) => ({
@@ -32,18 +53,71 @@ function App() {
     setStagedFiles((prev) => prev.filter((sf) => sf.id !== id))
   }
 
-  function handleSubmit() {
-    // API wiring is Feature 1, Step 3.
-    // At Step 1 this is intentionally a no-op stub.
-    console.log(
-      '[Feature 1 Step 1] Submit triggered — API wiring pending (Step 3)',
-      stagedFiles.map((sf) => ({
-        filename: sf.filename,
-        file_size_bytes: sf.file_size_bytes,
-        target_metric: sf.target_metric,
-      })),
-    )
+  // ── Submit handler ───────────────────────────────────────────────────────
+
+  async function handleSubmit() {
+    if (stagedFiles.length === 0) return
+
+    setIsSubmitting(true)
+    setSubmissionErrors([])
+
+    try {
+      const form = new FormData()
+      for (const sf of stagedFiles) {
+        form.append('files', sf.file, sf.filename)
+        form.append('target_metrics', sf.target_metric)
+      }
+
+      const res = await fetch(`${API_BASE}/upload/jobs`, {
+        method: 'POST',
+        body: form,
+      })
+
+      if (!res.ok) {
+        const detail = await res.text()
+        setSubmissionErrors([`Server error ${res.status}: ${detail}`])
+        return
+      }
+
+      const data: { created_jobs: JobRecord[]; rejections: { filename: string; error_message: string | null }[] } =
+        await res.json()
+
+      // Append successfully created jobs to the persisted list.
+      if (data.created_jobs.length > 0) {
+        setPersistedJobs((prev) => [...prev, ...data.created_jobs])
+      }
+
+      // Remove successfully submitted files from the staged queue.
+      const submittedFilenames = new Set(data.created_jobs.map((j) => j.filename))
+      // A file is considered submitted if it produced a job record.
+      // Remove staged files that were accepted (by matching filename in order
+      // against created_jobs — safe because same filename → distinct job_ids).
+      const acceptedSet = new Set(data.created_jobs.map((j) => j.filename))
+      setStagedFiles((prev) => {
+        const remaining = [...prev]
+        for (const accepted of acceptedSet) {
+          const idx = remaining.findIndex((sf) => sf.filename === accepted)
+          if (idx !== -1) remaining.splice(idx, 1)
+        }
+        return remaining
+      })
+      void submittedFilenames // suppress unused-var lint
+
+      // Collect per-file rejection messages for the dismissible banner.
+      if (data.rejections.length > 0) {
+        const errors = data.rejections.map(
+          (r) => `${r.filename}: ${r.error_message ?? 'rejected'}`,
+        )
+        setSubmissionErrors(errors)
+      }
+    } catch {
+      setSubmissionErrors(['Network error — could not reach the server. Is the backend running?'])
+    } finally {
+      setIsSubmitting(false)
+    }
   }
+
+  // ── Render ───────────────────────────────────────────────────────────────
 
   return (
     <div className="app-layout">
@@ -84,16 +158,54 @@ function App() {
         <section className="app-section" aria-labelledby="queue-heading">
           <h2 id="queue-heading" className="section-title">
             Upload Queue
-            {stagedFiles.length > 0 && (
-              <span className="section-title__badge">{stagedFiles.length}</span>
+            {(stagedFiles.length + persistedJobs.length) > 0 && (
+              <span className="section-title__badge">
+                {stagedFiles.length + persistedJobs.length}
+              </span>
             )}
           </h2>
+
+          {/* Dismissible rejection banner (spec option b) */}
+          {submissionErrors.length > 0 && (
+            <div
+              className="submission-errors"
+              role="alert"
+              aria-live="assertive"
+            >
+              <div className="submission-errors__header">
+                <strong>
+                  {submissionErrors.length === 1
+                    ? '1 file was rejected'
+                    : `${submissionErrors.length} files were rejected`}
+                </strong>
+                <button
+                  type="button"
+                  className="submission-errors__dismiss"
+                  onClick={() => setSubmissionErrors([])}
+                  aria-label="Dismiss rejection errors"
+                >
+                  ✕
+                </button>
+              </div>
+              <ul className="submission-errors__list">
+                {submissionErrors.map((msg, i) => (
+                  <li key={i}>{msg}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <JobList
             stagedFiles={stagedFiles}
+            persistedJobs={persistedJobs}
             onMetricChange={handleMetricChange}
             onRemove={handleRemove}
           />
-          <SubmitBar stagedFiles={stagedFiles} onSubmit={handleSubmit} />
+          <SubmitBar
+            stagedFiles={stagedFiles}
+            onSubmit={() => void handleSubmit()}
+            isSubmitting={isSubmitting}
+          />
         </section>
       </main>
 

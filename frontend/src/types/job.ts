@@ -36,3 +36,28 @@ export type RejectedFile = {
   filename: string
   reason: string
 }
+
+/**
+ * Lifecycle states for a persisted job (mirrors backend JobStatus enum).
+ * Values are frozen per CONSTITUTION §2.3 — do not rename.
+ */
+export type JobStatus = 'queued' | 'extracting' | 'done' | 'failed'
+
+/**
+ * A backend-persisted job record returned by POST /upload/jobs and GET /upload/jobs.
+ * Field names are frozen per CONSTITUTION §2.3.
+ */
+export type JobRecord = {
+  /** UUIDv4 assigned by the server — the authoritative job identifier. */
+  job_id: string
+  /** Original filename as uploaded (UTF-8, stored as-is — EC-8). */
+  filename: string
+  /** Exact byte count of the accepted file. */
+  file_size_bytes: number
+  /** Current job lifecycle state. */
+  status: JobStatus
+  /** Target metric selected before submission (locked after queuing — spec AC-6). */
+  target_metric: string
+  /** ISO 8601 UTC timestamp of job creation. */
+  submitted_at: string
+}

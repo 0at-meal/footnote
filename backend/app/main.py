@@ -12,6 +12,7 @@ API docs:
 from typing import Any
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
 from app.ingestion.router import router as ingestion_router
@@ -23,6 +24,15 @@ app = FastAPI(
         "Financial statement extraction & model generation — MVP. "
         "Single-user, single-session, local extraction (CONSTITUTION §6.10)."
     ),
+)
+
+# Allow the Vite dev server to call the backend without browser CORS errors.
+# MVP is single-user/local (CONSTITUTION §6.10); this is not a security boundary.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(ingestion_router, prefix="/upload", tags=["upload"])
@@ -41,9 +51,8 @@ def custom_openapi() -> dict[str, Any]:
     # renders file input pickers instead of text input fields.
     for schema in openapi_schema.get("components", {}).get("schemas", {}).values():
         for prop in schema.get("properties", {}).values():
-            if prop.get("type") == "array" and "items" in prop:
-                if prop["items"].get("contentMediaType") == "application/octet-stream":
-                    prop["items"]["format"] = "binary"
+            if prop.get("type") == "array" and "items" in prop and prop["items"].get("contentMediaType") == "application/octet-stream":
+                prop["items"]["format"] = "binary"
     app.openapi_schema = openapi_schema
     return app.openapi_schema
 

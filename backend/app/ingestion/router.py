@@ -1,19 +1,44 @@
 """
-FastAPI router for the ingestion upload endpoint.
+FastAPI router for ingestion upload endpoints.
 
-At this step (Feature 1, Step 2) the endpoint validates files and
-returns per-file results only. Job record creation is Feature 1, Step 3.
+Endpoints:
+    POST /upload/validate  ← Step 2 (unchanged): validate only, no persistence.
+    POST /upload/jobs      ← Step 3: validate → persist → return JobRecords.
+    GET  /upload/jobs      ← Step 3: return all persisted JobRecords.
+
+The JobRepository is injected via FastAPI's Depends() mechanism so tests can
+substitute a tmp_path-backed repository without touching the real data/ dir.
 """
 
 from typing import Annotated
 
-from fastapi import APIRouter, File, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
-from app.ingestion.models import ValidationResponse
+from app.ingestion.models import (
+    GetJobsResponse,
+    JobRecord,
+    SubmitResponse,
+    ValidationResponse,
+)
+from app.ingestion.repository import JobRepository
 from app.ingestion.validation import validate_pdf_bytes
 
 router = APIRouter()
 
+
+# ── Dependency ────────────────────────────────────────────────────────────────
+
+def get_repository() -> JobRepository:
+    """
+    Provide the default JobRepository instance.
+
+    Tests override this via app.dependency_overrides[get_repository] to
+    point at a tmp_path-backed repository without touching data/.
+    """
+    return JobRepository()
+
+
+# ── POST /upload/validate (Step 2 — unchanged) ────────────────────────────────
 
 @router.post(
     "/validate",
@@ -47,3 +72,88 @@ async def validate_uploads(
         result = validate_pdf_bytes(filename, content)
         results.append(result)
     return ValidationResponse(results=results)
+
+
+# ── POST /upload/jobs (Step 3) ────────────────────────────────────────────────
+
+@router.post(
+    "/jobs",
+    response_model=SubmitResponse,
+    summary="Submit PDF files for processing",
+    description=(
+        "Validates each file, persists accepted files to disk, and creates a "
+        "JobRecord for each accepted file. Rejected files are returned in the "
+        "'rejections' list. The response is always HTTP 200 when the request "
+        "itself is well-formed; per-file rejection is in the body, not HTTP status."
+    ),
+)
+async def submit_jobs(
+    files: Annotated[
+        list[UploadFile],
+        File(description="One or more PDF files to submit"),
+    ],
+    target_metrics: Annotated[
+        list[str],
+        Form(description="Target metric per file, parallel-indexed to files[]"),
+    ],
+    repo: Annotated[JobRepository, Depends(get_repository)],
+) -> SubmitResponse:
+    """
+    Submit one or more PDF files for processing.
+
+    The request must include an equal number of 'files' and 'target_metrics'
+    fields (422 if they differ). Each file is validated independently:
+    accepted files are persisted and a JobRecord is created; rejected files
+    are returned in 'rejections' without affecting the other files (EC-7).
+
+    File bytes are written atomically before the record is appended to
+    jobs.json. Any write failure propagates as a 500 — no partial job
+    record is silently left behind (spec AC-9, CONSTITUTION §1.9).
+    """
+    if len(files) != len(target_metrics):
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"'files' and 'target_metrics' must have the same length "
+                f"(got {len(files)} files and {len(target_metrics)} metrics)"
+            ),
+        )
+
+    created_jobs: list[JobRecord] = []
+    rejections = []
+
+    for upload, metric in zip(files, target_metrics):
+        content: bytes = await upload.read()
+        filename: str = upload.filename or "<unknown>"
+        result = validate_pdf_bytes(filename, content)
+
+        if not result.accepted:
+            rejections.append(result)
+        else:
+            job = repo.save_job(
+                filename=filename,
+                content=content,
+                target_metric=metric,
+            )
+            created_jobs.append(job)
+
+    return SubmitResponse(created_jobs=created_jobs, rejections=rejections)
+
+
+# ── GET /upload/jobs (Step 3) ─────────────────────────────────────────────────
+
+@router.get(
+    "/jobs",
+    response_model=GetJobsResponse,
+    summary="List all persisted job records",
+    description=(
+        "Returns all JobRecords persisted to data/jobs.json. "
+        "Returns an empty list if no jobs have been submitted yet. "
+        "Used by the frontend on page load to restore state (spec AC-7)."
+    ),
+)
+def list_jobs(
+    repo: Annotated[JobRepository, Depends(get_repository)],
+) -> GetJobsResponse:
+    """Return all persisted JobRecords (spec AC-7: survive page refresh)."""
+    return GetJobsResponse(jobs=repo.list_jobs())
