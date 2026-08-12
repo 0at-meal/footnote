@@ -25,6 +25,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from app.extraction.models import DoclingItem
 from app.ingestion.models import JobRecord, JobStatus
 
 # Default data directory: backend/data/ (one level above the app/ package root).
@@ -38,13 +39,15 @@ class JobRepository:
     def __init__(self, data_dir: Path = _DEFAULT_DATA_DIR) -> None:
         self._data_dir = data_dir
         self._uploads_dir = data_dir / "uploads"
+        self._results_dir = data_dir / "results"
         self._jobs_file = data_dir / "jobs.json"
 
     # ── Internal helpers ──────────────────────────────────────────────────────
 
     def _ensure_dirs(self) -> None:
-        """Create data/uploads/ if it does not already exist."""
+        """Create data/uploads/ and data/results/ if they do not already exist."""
         self._uploads_dir.mkdir(parents=True, exist_ok=True)
+        self._results_dir.mkdir(parents=True, exist_ok=True)
 
     def _read_records(self) -> list[JobRecord]:
         """
@@ -138,6 +141,36 @@ class JobRepository:
         """
         return self._read_records()
 
+    def get_job(self, job_id: str) -> JobRecord | None:
+        """Return a single JobRecord by job_id, or None if not found."""
+        records = self._read_records()
+        for rec in records:
+            if rec.job_id == job_id:
+                return rec
+        return None
+
+    def get_pdf_path(self, job_id: str) -> Path:
+        """Return the absolute path to the stored PDF for a job_id."""
+        return self._uploads_dir / f"{job_id}.pdf"
+
+    def save_docling_items(self, job_id: str, items: list[DoclingItem]) -> Path:
+        """
+        Persist raw DoclingItem objects for job_id to data/results/<job_id>_docling.json.
+
+        Returns the Path to the written file.
+        """
+        self._ensure_dirs()
+        dest_path = self._results_dir / f"{job_id}_docling.json"
+        tmp_path = self._results_dir / f"{job_id}_docling.json.tmp"
+
+        payload = [item.model_dump() for item in items]
+        tmp_path.write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        os.replace(tmp_path, dest_path)
+        return dest_path
+
     def update_job_status(
         self,
         job_id: str,
@@ -171,4 +204,5 @@ class JobRepository:
             self._write_records(records)
 
         return updated_record
+
 

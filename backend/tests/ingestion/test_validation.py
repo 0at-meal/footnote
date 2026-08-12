@@ -12,11 +12,7 @@ no test ever allocates 100 MB of memory.
 from unittest.mock import patch
 
 import pymupdf
-import pytest
-
 from app.ingestion.validation import (
-    MAX_FILE_SIZE_BYTES,
-    PDF_MAGIC,
     validate_pdf_bytes,
 )
 

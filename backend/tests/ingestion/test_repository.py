@@ -21,11 +21,8 @@ import uuid
 from pathlib import Path
 
 import pymupdf
-import pytest
-
 from app.ingestion.models import JobStatus
 from app.ingestion.repository import JobRepository
-
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 

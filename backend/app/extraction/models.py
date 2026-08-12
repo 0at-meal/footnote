@@ -1,0 +1,50 @@
+"""
+Data models for the layout-aware extraction pipeline (Feature 2).
+
+Scope (Step 1):
+    DoclingBbox  ← Docling-native bounding box coordinates (points).
+    DoclingItem  ← Intermediate representation of a parsed table cell/value.
+
+Note:
+    ExtractedRecord (the frozen 5-field schema per spec.md) will be introduced in Step 3.
+"""
+
+from pydantic import BaseModel
+
+
+class DoclingBbox(BaseModel):
+    """
+    Docling-native bounding box coordinates (in PDF points, page-relative).
+
+    Coordinates are relative to the top-left or bottom-left depending on Docling's
+    coordinate space prior to PyMuPDF 0-1000 normalization (Feature 2 Step 2).
+    """
+
+    x0: float
+    y0: float
+    x1: float
+    y1: float
+
+
+class DoclingItem(BaseModel):
+    """
+    Raw output of the Docling structural parse for a single value / table cell.
+
+    This is an intermediate representation produced by Step 1 before coordinate
+    normalization (Step 2) and record assembly (Step 3).
+    """
+
+    value: str
+    """Literal text string of the cell contents (unmodified, EC-5 parentheses preserved)."""
+
+    label: str
+    """Hierarchical structural label path (e.g. 'Operating Expenses / Stock-based compensation')."""
+
+    page: int
+    """1-indexed page number where the item appears in the source PDF."""
+
+    bbox: DoclingBbox
+    """Docling-native bounding box prior to PyMuPDF normalization."""
+
+    source_file: str
+    """Original filename string as uploaded (UTF-8, stored as-is — EC-8 contract)."""

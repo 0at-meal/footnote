@@ -29,9 +29,9 @@ from app.ingestion.models import (
     SubmitResponse,
     ValidationResponse,
 )
-from app.ingestion.pipeline import process_queued_job
 from app.ingestion.repository import JobRepository
 from app.ingestion.validation import validate_pdf_bytes
+from app.job_runner import process_queued_job
 
 router = APIRouter()
 

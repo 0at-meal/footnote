@@ -13,15 +13,14 @@ test_repository.py, not here.
 
 import io
 from pathlib import Path
+from unittest.mock import patch
 
 import pymupdf
 import pytest
-from fastapi.testclient import TestClient
-
-from app.ingestion.router import get_repository
 from app.ingestion.repository import JobRepository
+from app.ingestion.router import get_repository
 from app.main import app
-
+from fastapi.testclient import TestClient
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -49,7 +48,8 @@ def client(tmp_path: Path) -> TestClient:  # type: ignore[misc]
     """TestClient with the repository wired to a fresh tmp_path directory."""
     repo = JobRepository(data_dir=tmp_path)
     app.dependency_overrides[get_repository] = lambda: repo
-    yield TestClient(app)  # type: ignore[misc]
+    with patch("app.ingestion.router.process_queued_job"):
+        yield TestClient(app)  # type: ignore[misc]
     app.dependency_overrides.clear()
 
 
