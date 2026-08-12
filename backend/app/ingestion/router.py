@@ -12,7 +12,15 @@ substitute a tmp_path-backed repository without touching the real data/ dir.
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    UploadFile,
+)
 
 from app.ingestion.models import (
     ALLOWED_TARGET_METRICS,
@@ -21,6 +29,7 @@ from app.ingestion.models import (
     SubmitResponse,
     ValidationResponse,
 )
+from app.ingestion.pipeline import process_queued_job
 from app.ingestion.repository import JobRepository
 from app.ingestion.validation import validate_pdf_bytes
 
@@ -98,6 +107,7 @@ async def submit_jobs(
         Form(description="Target metric per file, parallel-indexed to files[]"),
     ],
     repo: Annotated[JobRepository, Depends(get_repository)],
+    background_tasks: BackgroundTasks,
 ) -> SubmitResponse:
     """
     Submit one or more PDF files for processing.
@@ -147,6 +157,7 @@ async def submit_jobs(
                 target_metric=metric,
             )
             created_jobs.append(job)
+            background_tasks.add_task(process_queued_job, job.job_id, repo)
 
     return SubmitResponse(created_jobs=created_jobs, rejections=rejections)
 

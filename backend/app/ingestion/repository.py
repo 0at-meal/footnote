@@ -137,3 +137,33 @@ class JobRepository:
         Returns an empty list if no jobs have been submitted yet.
         """
         return self._read_records()
+
+    def update_job_status(
+        self,
+        job_id: str,
+        status: JobStatus,
+    ) -> JobRecord | None:
+        """
+        Atomically update the status of a specific JobRecord in jobs.json.
+
+        Args:
+            job_id: The UUID of the job to update.
+            status: The new JobStatus to set.
+
+        Returns:
+            The updated JobRecord if found, or None if no job with job_id exists.
+        """
+        records = self._read_records()
+        updated_record: JobRecord | None = None
+
+        for idx, rec in enumerate(records):
+            if rec.job_id == job_id:
+                updated_record = rec.model_copy(update={"status": status})
+                records[idx] = updated_record
+                break
+
+        if updated_record is not None:
+            self._write_records(records)
+
+        return updated_record
+

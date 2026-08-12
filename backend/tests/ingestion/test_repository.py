@@ -168,3 +168,28 @@ def test_submitted_at_is_valid_iso8601_utc(tmp_path: Path) -> None:
     assert iso_utc_pattern.match(record.submitted_at), (
         f"submitted_at '{record.submitted_at}' does not match ISO 8601 UTC format"
     )
+
+
+# ── Test 10: update_job_status updates and persists status ───────────────────
+
+
+def test_update_job_status_updates_record_and_persists(tmp_path: Path) -> None:
+    repo = make_repo(tmp_path)
+    record = repo.save_job("test.pdf", make_minimal_pdf(), "Adjusted EBITDA")
+    assert record.status == JobStatus.queued
+
+    updated = repo.update_job_status(record.job_id, JobStatus.extracting)
+    assert updated is not None
+    assert updated.status == JobStatus.extracting
+
+    # Verify persisted in jobs.json
+    jobs = repo.list_jobs()
+    assert len(jobs) == 1
+    assert jobs[0].status == JobStatus.extracting
+
+
+def test_update_job_status_returns_none_for_missing_job_id(tmp_path: Path) -> None:
+    repo = make_repo(tmp_path)
+    res = repo.update_job_status("nonexistent-id", JobStatus.done)
+    assert res is None
+
