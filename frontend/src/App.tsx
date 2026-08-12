@@ -108,21 +108,18 @@ function App() {
         setPersistedJobs((prev) => [...prev, ...data.created_jobs])
       }
 
-      // Remove successfully submitted files from the staged queue.
-      const submittedFilenames = new Set(data.created_jobs.map((j) => j.filename))
-      // A file is considered submitted if it produced a job record.
-      // Remove staged files that were accepted (by matching filename in order
-      // against created_jobs — safe because same filename → distinct job_ids).
-      const acceptedSet = new Set(data.created_jobs.map((j) => j.filename))
+      // Remove each accepted job's staged file one-for-one.
+      // Must iterate the full array (not a Set) so that duplicate filenames
+      // (EC-1: same name submitted twice) each consume exactly one staged entry.
+      const acceptedFilenames = data.created_jobs.map((j) => j.filename)
       setStagedFiles((prev) => {
         const remaining = [...prev]
-        for (const accepted of acceptedSet) {
-          const idx = remaining.findIndex((sf) => sf.filename === accepted)
+        for (const filename of acceptedFilenames) {
+          const idx = remaining.findIndex((sf) => sf.filename === filename)
           if (idx !== -1) remaining.splice(idx, 1)
         }
         return remaining
       })
-      void submittedFilenames // suppress unused-var lint
 
       // Collect per-file rejection messages for the dismissible banner.
       if (data.rejections.length > 0) {

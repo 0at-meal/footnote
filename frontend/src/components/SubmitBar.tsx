@@ -24,11 +24,6 @@ function SubmitBar({ stagedFiles, onSubmit, isSubmitting }: Props) {
     onSubmit()
   }
 
-  // Clear the empty-state error as soon as a file is staged.
-  if (hasFiles && showEmptyError) {
-    setShowEmptyError(false)
-  }
-
   return (
     <div className="submit-bar">
       {showEmptyError && !hasFiles && (

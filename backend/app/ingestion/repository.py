@@ -144,7 +144,12 @@ class JobRepository:
         status: JobStatus,
     ) -> JobRecord | None:
         """
-        Atomically update the status of a specific JobRecord in jobs.json.
+        Update the status of a specific JobRecord and persist the change to jobs.json.
+
+        This is a read-modify-write operation (read all → patch → write all).
+        It is intentionally not atomic at the filesystem level — no file lock,
+        no temp-then-rename — which is acceptable for the MVP single-user,
+        single-session constraint (CONSTITUTION §6.10, module docstring).
 
         Args:
             job_id: The UUID of the job to update.
