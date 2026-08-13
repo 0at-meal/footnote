@@ -9,6 +9,8 @@ Note:
     ExtractedRecord (the frozen 5-field schema per spec.md) will be introduced in Step 3.
 """
 
+from enum import Enum
+
 from pydantic import BaseModel
 
 
@@ -97,3 +99,29 @@ class ExtractedRecord(BaseModel):
 
     source_file: str
     """Original filename string as uploaded (UTF-8, unmodified)."""
+
+
+class ConfidenceBand(str, Enum):
+    """
+    Confidence routing band assigned to an extracted record based on structural score.
+    """
+
+    auto_accepted = "auto_accepted"
+    """Score >= 0.95: Auto-accept without mandatory human review."""
+
+    needs_review = "needs_review"
+    """0.65 <= Score < 0.95: Queued for human review in Feature 5 UI."""
+
+    manual_required = "manual_required"
+    """Score < 0.65: Low confidence, mandatory manual entry / review required."""
+
+
+class ScoredRecord(BaseModel):
+    """
+    An ExtractedRecord with structural confidence score, routing band, and diagnostic flags attached.
+    """
+
+    record: ExtractedRecord
+    confidence_score: float
+    confidence_band: ConfidenceBand
+    flags: list[str]

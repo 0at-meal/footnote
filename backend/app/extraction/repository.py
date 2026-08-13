@@ -20,7 +20,12 @@ import json
 import os
 from pathlib import Path
 
-from app.extraction.models import DoclingItem, ExtractedRecord, NormalizedItem
+from app.extraction.models import (
+    DoclingItem,
+    ExtractedRecord,
+    NormalizedItem,
+    ScoredRecord,
+)
 
 # Default data directory: backend/data/ (one level above the app/ package root).
 # Tests override this by constructing ExtractionRepository(data_dir=tmp_path).
@@ -109,6 +114,32 @@ class ExtractionRepository:
         self._ensure_dirs()
         dest_path = self._results_dir / f"{job_id}_records.json"
         tmp_path = self._results_dir / f"{job_id}_records.json.tmp"
+
+        payload = [record.model_dump() for record in records]
+        tmp_path.write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        os.replace(tmp_path, dest_path)
+        return dest_path
+
+    def save_scored_records(self, job_id: str, records: list[ScoredRecord]) -> Path:
+        """
+        Persist ScoredRecord objects for job_id to data/results/<job_id>_scored.json.
+
+        Writes are atomic: content is written to a .tmp sibling and renamed
+        into place via os.replace (CONSTITUTION §1.9 — no partial writes).
+
+        Args:
+            job_id: UUID of the job whose scored records are being stored.
+            records: List of ScoredRecord objects produced by confidence scorer.
+
+        Returns:
+            The Path to the written JSON file.
+        """
+        self._ensure_dirs()
+        dest_path = self._results_dir / f"{job_id}_scored.json"
+        tmp_path = self._results_dir / f"{job_id}_scored.json.tmp"
 
         payload = [record.model_dump() for record in records]
         tmp_path.write_text(

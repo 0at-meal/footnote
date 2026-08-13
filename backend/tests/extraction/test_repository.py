@@ -13,11 +13,13 @@ Tests verify:
 from pathlib import Path
 
 from app.extraction.models import (
+    ConfidenceBand,
     DoclingBbox,
     DoclingItem,
     ExtractedRecord,
     NormalizedBbox,
     NormalizedItem,
+    ScoredRecord,
 )
 from app.extraction.repository import ExtractionRepository
 
@@ -53,6 +55,15 @@ def _make_extracted_record(
         page=1,
         bbox={"x0": 100.0, "y0": 200.0, "x1": 300.0, "y1": 400.0},
         source_file="test.pdf",
+    )
+
+
+def _make_scored_record(value: str = "100", label: str = "Net Sales") -> ScoredRecord:
+    return ScoredRecord(
+        record=_make_extracted_record(value=value, label=label),
+        confidence_score=0.98,
+        confidence_band=ConfidenceBand.auto_accepted,
+        flags=[],
     )
 
 
@@ -146,3 +157,26 @@ def test_save_extracted_records_json_content_is_correct(tmp_path: Path) -> None:
     assert "EBITDA" in text
     assert "999" in text
     assert '"x0": 100.0' in text
+
+
+# ── save_scored_records ───────────────────────────────────────────────────────
+
+
+def test_save_scored_records_returns_correct_path(tmp_path: Path) -> None:
+    repo = ExtractionRepository(data_dir=tmp_path)
+    job_id = "job-scored-test"
+    dest_path = repo.save_scored_records(job_id, [_make_scored_record()])
+    assert dest_path == tmp_path / "results" / f"{job_id}_scored.json"
+    assert dest_path.exists()
+
+
+def test_save_scored_records_json_content_is_correct(tmp_path: Path) -> None:
+    repo = ExtractionRepository(data_dir=tmp_path)
+    scored = _make_scored_record(value="777", label="Gross Profit")
+    dest_path = repo.save_scored_records("job-scored-content", [scored])
+
+    text = dest_path.read_text(encoding="utf-8")
+    assert "Gross Profit" in text
+    assert "777" in text
+    assert '"confidence_band": "auto_accepted"' in text
+    assert '"confidence_score": 0.98' in text
