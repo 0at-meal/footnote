@@ -125,3 +125,17 @@ class ScoredRecord(BaseModel):
     confidence_score: float
     confidence_band: ConfidenceBand
     flags: list[str]
+
+
+class ExtractionSummary(BaseModel):
+    """
+    Aggregate summary statistics and flagging breakdown for a completed extraction job.
+    """
+
+    total_items: int
+    auto_accepted_count: int
+    needs_review_count: int
+    manual_required_count: int
+    flagged_count: int
+    flagged_percentage: float
+    passed_threshold: bool

@@ -17,6 +17,7 @@ from app.extraction.models import (
     DoclingBbox,
     DoclingItem,
     ExtractedRecord,
+    ExtractionSummary,
     NormalizedBbox,
     NormalizedItem,
     ScoredRecord,
@@ -64,6 +65,18 @@ def _make_scored_record(value: str = "100", label: str = "Net Sales") -> ScoredR
         confidence_score=0.98,
         confidence_band=ConfidenceBand.auto_accepted,
         flags=[],
+    )
+
+
+def _make_extraction_summary() -> ExtractionSummary:
+    return ExtractionSummary(
+        total_items=10,
+        auto_accepted_count=9,
+        needs_review_count=1,
+        manual_required_count=0,
+        flagged_count=1,
+        flagged_percentage=10.0,
+        passed_threshold=True,
     )
 
 
@@ -180,3 +193,25 @@ def test_save_scored_records_json_content_is_correct(tmp_path: Path) -> None:
     assert "777" in text
     assert '"confidence_band": "auto_accepted"' in text
     assert '"confidence_score": 0.98' in text
+
+
+# ── save_extraction_summary ───────────────────────────────────────────────────
+
+
+def test_save_extraction_summary_returns_correct_path(tmp_path: Path) -> None:
+    repo = ExtractionRepository(data_dir=tmp_path)
+    job_id = "job-summary-test"
+    dest_path = repo.save_extraction_summary(job_id, _make_extraction_summary())
+    assert dest_path == tmp_path / "results" / f"{job_id}_summary.json"
+    assert dest_path.exists()
+
+
+def test_save_extraction_summary_json_content_is_correct(tmp_path: Path) -> None:
+    repo = ExtractionRepository(data_dir=tmp_path)
+    summary = _make_extraction_summary()
+    dest_path = repo.save_extraction_summary("job-summary-content", summary)
+
+    text = dest_path.read_text(encoding="utf-8")
+    assert '"total_items": 10' in text
+    assert '"flagged_percentage": 10.0' in text
+    assert '"passed_threshold": true' in text

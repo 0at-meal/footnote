@@ -23,6 +23,7 @@ from pathlib import Path
 from app.extraction.models import (
     DoclingItem,
     ExtractedRecord,
+    ExtractionSummary,
     NormalizedItem,
     ScoredRecord,
 )
@@ -142,6 +143,32 @@ class ExtractionRepository:
         tmp_path = self._results_dir / f"{job_id}_scored.json.tmp"
 
         payload = [record.model_dump() for record in records]
+        tmp_path.write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        os.replace(tmp_path, dest_path)
+        return dest_path
+
+    def save_extraction_summary(self, job_id: str, summary: ExtractionSummary) -> Path:
+        """
+        Persist ExtractionSummary object for job_id to data/results/<job_id>_summary.json.
+
+        Writes are atomic: content is written to a .tmp sibling and renamed
+        into place via os.replace (CONSTITUTION §1.9 — no partial writes).
+
+        Args:
+            job_id: UUID of the job whose summary is being stored.
+            summary: ExtractionSummary instance produced by flagger.
+
+        Returns:
+            The Path to the written JSON file.
+        """
+        self._ensure_dirs()
+        dest_path = self._results_dir / f"{job_id}_summary.json"
+        tmp_path = self._results_dir / f"{job_id}_summary.json.tmp"
+
+        payload = summary.model_dump()
         tmp_path.write_text(
             json.dumps(payload, indent=2, ensure_ascii=False),
             encoding="utf-8",
