@@ -14,7 +14,12 @@ Isolation (CONSTITUTION §3.8, §3.2):
 
 import re
 
-from app.extraction.models import ConfidenceBand, ExtractedRecord, ScoredRecord
+from app.extraction.models import (
+    ConfidenceBand,
+    ExtractedRecord,
+    NormalizedItem,
+    ScoredRecord,
+)
 
 # Footnote reference markers: e.g. (1), (a), [1], *, †, ‡
 _FOOTNOTE_MARKER_REGEX = re.compile(r"(\(\d+\)|\([a-zA-Z]\)|\[\d+\]|[\*\†\‡])")
@@ -80,16 +85,30 @@ def compute_confidence_score(record: ExtractedRecord) -> tuple[float, list[str]]
     return clamped_score, flags
 
 
-def score_record(record: ExtractedRecord) -> ScoredRecord:
+def score_record(
+    record: ExtractedRecord,
+    normalized_item: NormalizedItem | None = None,
+) -> ScoredRecord:
     """
     Score a single ExtractedRecord and return a ScoredRecord.
 
     Args:
         record: The ExtractedRecord instance.
+        normalized_item: Optional corresponding NormalizedItem to check error status.
 
     Returns:
         A ScoredRecord with confidence_score, confidence_band, and flags.
     """
+    if normalized_item is not None and normalized_item.is_error:
+        return ScoredRecord(
+            record=record,
+            confidence_score=0.0,
+            confidence_band=ConfidenceBand.manual_required,
+            flags=["extraction_error"],
+            status="extraction_error",
+            error_detail=normalized_item.error_detail or "Extraction error",
+        )
+
     score, flags = compute_confidence_score(record)
     band = assign_confidence_band(score)
     return ScoredRecord(
@@ -97,17 +116,25 @@ def score_record(record: ExtractedRecord) -> ScoredRecord:
         confidence_score=score,
         confidence_band=band,
         flags=flags,
+        status="ok",
+        error_detail=None,
     )
 
 
-def score_records(records: list[ExtractedRecord]) -> list[ScoredRecord]:
+def score_records(
+    records: list[ExtractedRecord],
+    normalized_items: list[NormalizedItem] | None = None,
+) -> list[ScoredRecord]:
     """
     Score a list of ExtractedRecord objects, preserving input ordering (NFR1).
 
     Args:
         records: List of ExtractedRecord objects.
+        normalized_items: Optional parallel list of NormalizedItem objects.
 
     Returns:
         List of ScoredRecord objects in identical order.
     """
+    if normalized_items is not None and len(normalized_items) == len(records):
+        return [score_record(rec, norm) for rec, norm in zip(records, normalized_items)]
     return [score_record(rec) for rec in records]

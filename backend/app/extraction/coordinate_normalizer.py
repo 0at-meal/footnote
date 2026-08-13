@@ -117,21 +117,39 @@ def normalize_coordinates(
         normalized_items: list[NormalizedItem] = []
 
         for item in items:
-            # Page number in DoclingItem is 1-indexed
-            if item.page < 1 or item.page > total_pages:
-                raise CoordinateNormalizationError(
-                    f"Item page {item.page} is out of bounds for PDF with {total_pages} pages"
+            try:
+                # Page number in DoclingItem is 1-indexed
+                if item.page < 1 or item.page > total_pages:
+                    raise CoordinateNormalizationError(
+                        f"Item page {item.page} is out of bounds for PDF with {total_pages} pages"
+                    )
+
+                if item.page not in page_dims:
+                    # PyMuPDF uses 0-indexed page access
+                    page = doc.load_page(item.page - 1)
+                    rect = page.rect
+                    page_dims[item.page] = (float(rect.width), float(rect.height))
+
+                p_width, p_height = page_dims[item.page]
+                norm_item = normalize_item_bbox(item, p_width, p_height)
+                normalized_items.append(norm_item)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning(
+                    "Coordinate normalization failed for item '%s' on page %d: %s",
+                    item.value,
+                    item.page,
+                    exc,
                 )
-
-            if item.page not in page_dims:
-                # PyMuPDF uses 0-indexed page access
-                page = doc.load_page(item.page - 1)
-                rect = page.rect
-                page_dims[item.page] = (float(rect.width), float(rect.height))
-
-            p_width, p_height = page_dims[item.page]
-            norm_item = normalize_item_bbox(item, p_width, p_height)
-            normalized_items.append(norm_item)
+                err_item = NormalizedItem(
+                    value=item.value,
+                    label=item.label,
+                    page=item.page,
+                    bbox=NormalizedBbox(x0=0.0, y0=0.0, x1=0.0, y1=0.0),
+                    source_file=item.source_file,
+                    is_error=True,
+                    error_detail=str(exc),
+                )
+                normalized_items.append(err_item)
 
         return normalized_items
     finally:

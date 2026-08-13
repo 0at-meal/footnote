@@ -10,6 +10,7 @@ Note:
 """
 
 from enum import Enum
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -75,6 +76,8 @@ class NormalizedItem(BaseModel):
     page: int
     bbox: NormalizedBbox
     source_file: str
+    is_error: bool = False
+    error_detail: str | None = None
 
 
 class ExtractedRecord(BaseModel):
@@ -125,6 +128,8 @@ class ScoredRecord(BaseModel):
     confidence_score: float
     confidence_band: ConfidenceBand
     flags: list[str]
+    status: Literal["ok", "extraction_error"] = "ok"
+    error_detail: str | None = None
 
 
 class ExtractionSummary(BaseModel):
@@ -136,6 +141,7 @@ class ExtractionSummary(BaseModel):
     auto_accepted_count: int
     needs_review_count: int
     manual_required_count: int
+    extraction_error_count: int = 0
     flagged_count: int
     flagged_percentage: float
     passed_threshold: bool

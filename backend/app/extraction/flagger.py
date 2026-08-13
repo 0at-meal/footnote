@@ -53,6 +53,7 @@ def create_extraction_summary(records: list[ScoredRecord]) -> ExtractionSummary:
     manual_required_count = sum(
         1 for r in records if r.confidence_band == ConfidenceBand.manual_required
     )
+    extraction_error_count = sum(1 for r in records if r.status == "extraction_error")
     flagged_count = needs_review_count + manual_required_count
 
     if total_items > 0:
@@ -67,6 +68,7 @@ def create_extraction_summary(records: list[ScoredRecord]) -> ExtractionSummary:
         auto_accepted_count=auto_accepted_count,
         needs_review_count=needs_review_count,
         manual_required_count=manual_required_count,
+        extraction_error_count=extraction_error_count,
         flagged_count=flagged_count,
         flagged_percentage=flagged_percentage,
         passed_threshold=passed_threshold,

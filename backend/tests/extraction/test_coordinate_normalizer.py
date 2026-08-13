@@ -131,5 +131,8 @@ def test_normalize_coordinates_page_out_of_bounds(tmp_path: Path) -> None:
             source_file="test.pdf",
         )
     ]
-    with pytest.raises(CoordinateNormalizationError, match="out of bounds"):
-        normalize_coordinates(pdf_path, items)
+    normalized = normalize_coordinates(pdf_path, items)
+    assert len(normalized) == 1
+    assert normalized[0].is_error is True
+    assert normalized[0].error_detail is not None
+    assert "out of bounds" in normalized[0].error_detail
