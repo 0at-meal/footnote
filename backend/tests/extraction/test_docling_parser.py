@@ -23,14 +23,15 @@ def _make_mock_cell(
     page_no: int = 1,
     bbox_tuple: tuple[float, float, float, float] = (10.0, 20.0, 30.0, 40.0),
 ) -> SimpleNamespace:
+    bbox_obj = SimpleNamespace(
+        l=bbox_tuple[0],
+        t=bbox_tuple[1],
+        r=bbox_tuple[2],
+        b=bbox_tuple[3],
+    )
     prov = SimpleNamespace(
         page_no=page_no,
-        bbox=SimpleNamespace(
-            l=bbox_tuple[0],
-            t=bbox_tuple[1],
-            r=bbox_tuple[2],
-            b=bbox_tuple[3],
-        ),
+        bbox=bbox_obj,
     )
     return SimpleNamespace(
         text=text,
@@ -39,16 +40,18 @@ def _make_mock_cell(
         column_header=is_col_header,
         row_header=is_row_header,
         row_section_header=False,
+        bbox=bbox_obj,
         prov=[prov],
     )
 
 
-def _make_mock_table(cells: list[SimpleNamespace]) -> SimpleNamespace:
+def _make_mock_table(cells: list[SimpleNamespace], page_no: int = 1) -> SimpleNamespace:
     table_data = SimpleNamespace(
         grid=[[1]],
         table_cells=cells,
     )
-    return SimpleNamespace(data=table_data)
+    table_prov = SimpleNamespace(page_no=page_no)
+    return SimpleNamespace(data=table_data, prov=[table_prov])
 
 
 # ── Parser Tests ──────────────────────────────────────────────────────────────

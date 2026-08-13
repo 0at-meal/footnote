@@ -151,30 +151,30 @@ def parse_pdf(pdf_path: Path, source_file: str) -> list[DoclingItem]:
 
                     label = " / ".join(label_parts) if label_parts else cell_text
 
-                    # Extract page number and bbox from provenance
-                    prov_list = getattr(cell, "prov", [])
-                    page_no = 1
-                    bbox_obj = DoclingBbox(x0=0.0, y0=0.0, x1=0.0, y1=0.0)
+                    # Extract page number and bbox from provenance and cell attributes
+                    cell_prov = getattr(cell, "prov", [])
+                    table_prov = getattr(table, "prov", [])
 
-                    if prov_list:
-                        prov = prov_list[0]
-                        page_no = getattr(prov, "page_no", 1)
-                        raw_bbox = getattr(prov, "bbox", None)
-                        if raw_bbox is not None:
-                            # Extract l, t, r, b or x0, y0, x1, y1
-                            x0 = float(
-                                getattr(raw_bbox, "l", getattr(raw_bbox, "x0", 0.0))
-                            )
-                            y0 = float(
-                                getattr(raw_bbox, "t", getattr(raw_bbox, "y0", 0.0))
-                            )
-                            x1 = float(
-                                getattr(raw_bbox, "r", getattr(raw_bbox, "x1", 0.0))
-                            )
-                            y1 = float(
-                                getattr(raw_bbox, "b", getattr(raw_bbox, "y1", 0.0))
-                            )
-                            bbox_obj = DoclingBbox(x0=x0, y0=y0, x1=x1, y1=y1)
+                    page_no = 1
+                    if cell_prov:
+                        page_no = int(getattr(cell_prov[0], "page_no", 1))
+                    elif table_prov:
+                        page_no = int(getattr(table_prov[0], "page_no", 1))
+
+                    raw_bbox = getattr(cell, "bbox", None)
+                    if raw_bbox is None and cell_prov:
+                        raw_bbox = getattr(cell_prov[0], "bbox", None)
+                    if raw_bbox is None and table_prov:
+                        raw_bbox = getattr(table_prov[0], "bbox", None)
+
+                    bbox_obj = DoclingBbox(x0=0.0, y0=0.0, x1=0.0, y1=0.0)
+                    if raw_bbox is not None:
+                        # Extract l, t, r, b or x0, y0, x1, y1
+                        x0 = float(getattr(raw_bbox, "l", getattr(raw_bbox, "x0", 0.0)))
+                        y0 = float(getattr(raw_bbox, "t", getattr(raw_bbox, "y0", 0.0)))
+                        x1 = float(getattr(raw_bbox, "r", getattr(raw_bbox, "x1", 0.0)))
+                        y1 = float(getattr(raw_bbox, "b", getattr(raw_bbox, "y1", 0.0)))
+                        bbox_obj = DoclingBbox(x0=x0, y0=y0, x1=x1, y1=y1)
 
                     item = DoclingItem(
                         value=cell_text,
