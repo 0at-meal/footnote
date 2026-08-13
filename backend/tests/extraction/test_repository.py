@@ -12,8 +12,12 @@ Tests verify:
 
 from pathlib import Path
 
-import pytest
-from app.extraction.models import DoclingBbox, DoclingItem
+from app.extraction.models import (
+    DoclingBbox,
+    DoclingItem,
+    NormalizedBbox,
+    NormalizedItem,
+)
 from app.extraction.repository import ExtractionRepository
 
 
@@ -27,7 +31,20 @@ def _make_item(value: str = "100", label: str = "Net Sales") -> DoclingItem:
     )
 
 
+def _make_normalized_item(
+    value: str = "100", label: str = "Net Sales"
+) -> NormalizedItem:
+    return NormalizedItem(
+        value=value,
+        label=label,
+        page=1,
+        bbox=NormalizedBbox(x0=100.0, y0=200.0, x1=300.0, y1=400.0),
+        source_file="test.pdf",
+    )
+
+
 # ── save_docling_items ────────────────────────────────────────────────────────
+
 
 def test_save_docling_items_creates_results_dir(tmp_path: Path) -> None:
     repo = ExtractionRepository(data_dir=tmp_path)
@@ -71,3 +88,26 @@ def test_save_docling_items_no_tmp_file_left_on_disk(tmp_path: Path) -> None:
     repo.save_docling_items("job-tmp", [_make_item()])
     tmp_files = list((tmp_path / "results").glob("*.tmp"))
     assert tmp_files == [], f"Unexpected .tmp files left on disk: {tmp_files}"
+
+
+# ── save_normalized_items ─────────────────────────────────────────────────────
+
+
+def test_save_normalized_items_returns_correct_path(tmp_path: Path) -> None:
+    repo = ExtractionRepository(data_dir=tmp_path)
+    job_id = "job-norm-test"
+    dest_path = repo.save_normalized_items(job_id, [_make_normalized_item()])
+    assert dest_path == tmp_path / "results" / f"{job_id}_normalized.json"
+    assert dest_path.exists()
+
+
+def test_save_normalized_items_json_content_is_correct(tmp_path: Path) -> None:
+    repo = ExtractionRepository(data_dir=tmp_path)
+    item = _make_normalized_item(value="800", label="Operating Margin")
+    dest_path = repo.save_normalized_items("job-norm-content", [item])
+
+    text = dest_path.read_text(encoding="utf-8")
+    assert "Operating Margin" in text
+    assert "800" in text
+    assert "100.0" in text
+    assert "400.0" in text

@@ -48,3 +48,28 @@ class DoclingItem(BaseModel):
 
     source_file: str
     """Original filename string as uploaded (UTF-8, stored as-is — EC-8 contract)."""
+
+
+class NormalizedBbox(BaseModel):
+    """
+    W3C Web Annotation-style bounding box, normalized to 0-1000 coordinate space.
+
+    Coordinates are clamped to [0.0, 1000.0] and rounded to 2 decimal places.
+    """
+
+    x0: float
+    y0: float
+    x1: float
+    y1: float
+
+
+class NormalizedItem(BaseModel):
+    """
+    Intermediate representation of an extracted item after PyMuPDF coordinate normalization (Step 2).
+    """
+
+    value: str
+    label: str
+    page: int
+    bbox: NormalizedBbox
+    source_file: str

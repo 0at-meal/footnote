@@ -20,7 +20,7 @@ import json
 import os
 from pathlib import Path
 
-from app.extraction.models import DoclingItem
+from app.extraction.models import DoclingItem, NormalizedItem
 
 # Default data directory: backend/data/ (one level above the app/ package root).
 # Tests override this by constructing ExtractionRepository(data_dir=tmp_path).
@@ -55,6 +55,32 @@ class ExtractionRepository:
         self._ensure_dirs()
         dest_path = self._results_dir / f"{job_id}_docling.json"
         tmp_path = self._results_dir / f"{job_id}_docling.json.tmp"
+
+        payload = [item.model_dump() for item in items]
+        tmp_path.write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        os.replace(tmp_path, dest_path)
+        return dest_path
+
+    def save_normalized_items(self, job_id: str, items: list[NormalizedItem]) -> Path:
+        """
+        Persist NormalizedItem objects for job_id to data/results/<job_id>_normalized.json.
+
+        Writes are atomic: content is written to a .tmp sibling and renamed
+        into place via os.replace (CONSTITUTION §1.9 — no partial writes).
+
+        Args:
+            job_id: UUID of the job whose normalized items are being stored.
+            items:  List of NormalizedItem objects produced by coordinate_normalizer.
+
+        Returns:
+            The Path to the written JSON file.
+        """
+        self._ensure_dirs()
+        dest_path = self._results_dir / f"{job_id}_normalized.json"
+        tmp_path = self._results_dir / f"{job_id}_normalized.json.tmp"
 
         payload = [item.model_dump() for item in items]
         tmp_path.write_text(

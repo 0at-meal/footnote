@@ -65,7 +65,9 @@ def parse_pdf(pdf_path: Path, source_file: str) -> list[DoclingItem]:
         doc = result.document
     except Exception as err:
         logger.error("Docling failed to convert PDF %s: %s", pdf_path, err)
-        raise DoclingParseError(f"Docling conversion failed for {source_file}: {err}") from err
+        raise DoclingParseError(
+            f"Docling conversion failed for {source_file}: {err}"
+        ) from err
 
     items: list[DoclingItem] = []
 
@@ -91,7 +93,9 @@ def parse_pdf(pdf_path: Path, source_file: str) -> list[DoclingItem]:
                         continue
 
                     is_col_header = getattr(cell, "column_header", False)
-                    is_row_header = getattr(cell, "row_header", False) or getattr(cell, "row_section_header", False)
+                    is_row_header = getattr(cell, "row_header", False) or getattr(
+                        cell, "row_section_header", False
+                    )
 
                     col_idx = getattr(cell, "start_col_offset_idx", 0)
                     row_idx = getattr(cell, "start_row_offset_idx", 0)
@@ -100,7 +104,7 @@ def parse_pdf(pdf_path: Path, source_file: str) -> list[DoclingItem]:
                         col_headers.setdefault(col_idx, []).append(cell_text)
                     if is_row_header:
                         row_headers.setdefault(row_idx, []).append(cell_text)
-                except Exception as header_err:  # noqa: BLE001 — malformed cell skipped; does not abort header scan
+                except Exception as header_err:  # noqa: BLE001
                     logger.warning(
                         "Skipping malformed cell during header scan in table %d of %s: %s",
                         table_idx,
@@ -108,7 +112,6 @@ def parse_pdf(pdf_path: Path, source_file: str) -> list[DoclingItem]:
                         header_err,
                     )
                     continue
-
 
             # Process data cells
             for cell in table_cells:
@@ -135,11 +138,15 @@ def parse_pdf(pdf_path: Path, source_file: str) -> list[DoclingItem]:
                     label_parts: list[str] = []
 
                     # Add row section/headers for this row
-                    if row_idx in row_headers and not getattr(cell, "row_header", False):
+                    if row_idx in row_headers and not getattr(
+                        cell, "row_header", False
+                    ):
                         label_parts.extend(row_headers[row_idx])
 
                     # Add column headers for this column
-                    if col_idx in col_headers and not getattr(cell, "column_header", False):
+                    if col_idx in col_headers and not getattr(
+                        cell, "column_header", False
+                    ):
                         label_parts.extend(col_headers[col_idx])
 
                     label = " / ".join(label_parts) if label_parts else cell_text
@@ -155,10 +162,18 @@ def parse_pdf(pdf_path: Path, source_file: str) -> list[DoclingItem]:
                         raw_bbox = getattr(prov, "bbox", None)
                         if raw_bbox is not None:
                             # Extract l, t, r, b or x0, y0, x1, y1
-                            x0 = float(getattr(raw_bbox, "l", getattr(raw_bbox, "x0", 0.0)))
-                            y0 = float(getattr(raw_bbox, "t", getattr(raw_bbox, "y0", 0.0)))
-                            x1 = float(getattr(raw_bbox, "r", getattr(raw_bbox, "x1", 0.0)))
-                            y1 = float(getattr(raw_bbox, "b", getattr(raw_bbox, "y1", 0.0)))
+                            x0 = float(
+                                getattr(raw_bbox, "l", getattr(raw_bbox, "x0", 0.0))
+                            )
+                            y0 = float(
+                                getattr(raw_bbox, "t", getattr(raw_bbox, "y0", 0.0))
+                            )
+                            x1 = float(
+                                getattr(raw_bbox, "r", getattr(raw_bbox, "x1", 0.0))
+                            )
+                            y1 = float(
+                                getattr(raw_bbox, "b", getattr(raw_bbox, "y1", 0.0))
+                            )
                             bbox_obj = DoclingBbox(x0=x0, y0=y0, x1=x1, y1=y1)
 
                     item = DoclingItem(
@@ -170,7 +185,7 @@ def parse_pdf(pdf_path: Path, source_file: str) -> list[DoclingItem]:
                     )
                     items.append(item)
 
-                except Exception as cell_err:  # noqa: BLE001 — Docling cell attrs raise any exception type; broad catch is intentional
+                except Exception as cell_err:  # noqa: BLE001
                     # A single bad cell is logged and skipped — it must not abort
                     # the entire job (spec AC-6, AC-7: single-item failure ≠ job failure).
                     logger.warning(
@@ -183,7 +198,9 @@ def parse_pdf(pdf_path: Path, source_file: str) -> list[DoclingItem]:
 
     except Exception as err:
         logger.error("Failed parsing table structures in %s: %s", source_file, err)
-        raise DoclingParseError(f"Table structure extraction failed for {source_file}: {err}") from err
+        raise DoclingParseError(
+            f"Table structure extraction failed for {source_file}: {err}"
+        ) from err
 
     # Deterministic sorting by page, then bbox y0, x0 (NFR1)
     items.sort(key=lambda item: (item.page, item.bbox.y0, item.bbox.x0))

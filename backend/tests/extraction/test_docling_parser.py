@@ -9,10 +9,10 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
-from app.extraction.docling_parser import DoclingParseError, parse_pdf
-from app.extraction.models import DoclingBbox, DoclingItem
+from app.extraction.docling_parser import parse_pdf
 
 # ── Helper Mocks ─────────────────────────────────────────────────────────────
+
 
 def _make_mock_cell(
     text: str,
@@ -53,6 +53,7 @@ def _make_mock_table(cells: list[SimpleNamespace]) -> SimpleNamespace:
 
 # ── Parser Tests ──────────────────────────────────────────────────────────────
 
+
 def test_file_not_found_raises(tmp_path: Path) -> None:
     non_existent = tmp_path / "missing.pdf"
     with pytest.raises(FileNotFoundError, match="PDF file not found"):
@@ -79,13 +80,17 @@ def test_single_table_produces_items(tmp_path: Path) -> None:
 
     col_header = _make_mock_cell("Header 2023", row=0, col=1, is_col_header=True)
     row_header = _make_mock_cell("Revenue", row=1, col=0, is_row_header=True)
-    data_cell = _make_mock_cell("$1,000", row=1, col=1, page_no=1, bbox_tuple=(50, 100, 80, 120))
+    data_cell = _make_mock_cell(
+        "$1,000", row=1, col=1, page_no=1, bbox_tuple=(50, 100, 80, 120)
+    )
 
     table = _make_mock_table([col_header, row_header, data_cell])
     mock_doc = SimpleNamespace(tables=[table])
 
     with patch("app.extraction.docling_parser.DocumentConverter") as MockConverter:
-        MockConverter.return_value.convert.return_value = SimpleNamespace(document=mock_doc)
+        MockConverter.return_value.convert.return_value = SimpleNamespace(
+            document=mock_doc
+        )
         items = parse_pdf(pdf_file, "sample.pdf")
 
     assert len(items) == 1
@@ -111,7 +116,9 @@ def test_multi_level_header_path(tmp_path: Path) -> None:
     mock_doc = SimpleNamespace(tables=[table])
 
     with patch("app.extraction.docling_parser.DocumentConverter") as MockConverter:
-        MockConverter.return_value.convert.return_value = SimpleNamespace(document=mock_doc)
+        MockConverter.return_value.convert.return_value = SimpleNamespace(
+            document=mock_doc
+        )
         items = parse_pdf(pdf_file, "multi.pdf")
 
     assert len(items) == 1
@@ -126,7 +133,9 @@ def test_page_number_is_1_indexed(tmp_path: Path) -> None:
     table = _make_mock_table([cell])
 
     with patch("app.extraction.docling_parser.DocumentConverter") as MockConverter:
-        MockConverter.return_value.convert.return_value = SimpleNamespace(document=SimpleNamespace(tables=[table]))
+        MockConverter.return_value.convert.return_value = SimpleNamespace(
+            document=SimpleNamespace(tables=[table])
+        )
         items = parse_pdf(pdf_file, "p2.pdf")
 
     assert items[0].page == 3
@@ -137,13 +146,19 @@ def test_output_order_is_deterministic(tmp_path: Path) -> None:
     pdf_file.write_bytes(b"%PDF-1.4 dummy")
 
     c1 = _make_mock_cell("Page2", row=0, col=0, page_no=2, bbox_tuple=(10, 10, 20, 20))
-    c2 = _make_mock_cell("Page1_Lower", row=1, col=0, page_no=1, bbox_tuple=(10, 50, 20, 60))
-    c3 = _make_mock_cell("Page1_Upper", row=0, col=0, page_no=1, bbox_tuple=(10, 10, 20, 20))
+    c2 = _make_mock_cell(
+        "Page1_Lower", row=1, col=0, page_no=1, bbox_tuple=(10, 50, 20, 60)
+    )
+    c3 = _make_mock_cell(
+        "Page1_Upper", row=0, col=0, page_no=1, bbox_tuple=(10, 10, 20, 20)
+    )
 
     table = _make_mock_table([c1, c2, c3])
 
     with patch("app.extraction.docling_parser.DocumentConverter") as MockConverter:
-        MockConverter.return_value.convert.return_value = SimpleNamespace(document=SimpleNamespace(tables=[table]))
+        MockConverter.return_value.convert.return_value = SimpleNamespace(
+            document=SimpleNamespace(tables=[table])
+        )
         items1 = parse_pdf(pdf_file, "order.pdf")
         items2 = parse_pdf(pdf_file, "order.pdf")
 
@@ -161,12 +176,18 @@ def test_per_cell_error_is_skipped_not_job_aborting(tmp_path: Path) -> None:
 
     # A bad cell whose .text property raises
     bad_cell = MagicMock()
-    type(bad_cell).text = property(lambda self: (_ for _ in ()).throw(RuntimeError("Bad text")))
+    type(bad_cell).text = property(
+        lambda self: (_ for _ in ()).throw(RuntimeError("Bad text"))
+    )
 
-    table = SimpleNamespace(data=SimpleNamespace(grid=[[1]], table_cells=[bad_cell, good_cell]))
+    table = SimpleNamespace(
+        data=SimpleNamespace(grid=[[1]], table_cells=[bad_cell, good_cell])
+    )
 
     with patch("app.extraction.docling_parser.DocumentConverter") as MockConverter:
-        MockConverter.return_value.convert.return_value = SimpleNamespace(document=SimpleNamespace(tables=[table]))
+        MockConverter.return_value.convert.return_value = SimpleNamespace(
+            document=SimpleNamespace(tables=[table])
+        )
         # Must NOT raise — the bad cell is skipped, the good cell is returned
         items = parse_pdf(pdf_file, "bad_cell.pdf")
 
@@ -185,7 +206,9 @@ def test_source_file_preserved_verbatim(tmp_path: Path) -> None:
     unicode_filename = "filing_年度_2023.pdf"
 
     with patch("app.extraction.docling_parser.DocumentConverter") as MockConverter:
-        MockConverter.return_value.convert.return_value = SimpleNamespace(document=SimpleNamespace(tables=[table]))
+        MockConverter.return_value.convert.return_value = SimpleNamespace(
+            document=SimpleNamespace(tables=[table])
+        )
         items = parse_pdf(pdf_file, unicode_filename)
 
     assert items[0].source_file == unicode_filename
