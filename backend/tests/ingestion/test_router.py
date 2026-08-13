@@ -39,6 +39,17 @@ def file_upload(
 # ── Single-file cases ─────────────────────────────────────────────────────────
 
 
+def test_root_endpoint_returns_ok() -> None:
+    res = client.get("/")
+    assert res.status_code == 200
+    assert res.json()["status"] == "ok"
+
+
+def test_favicon_endpoint_returns_204() -> None:
+    res = client.get("/favicon.ico")
+    assert res.status_code == 204
+
+
 def test_single_valid_pdf_returns_accepted() -> None:
     response = client.post(
         "/upload/validate",

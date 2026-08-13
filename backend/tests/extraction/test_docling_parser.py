@@ -11,7 +11,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 from app.extraction.docling_parser import DoclingParseError, parse_pdf
 from app.extraction.models import DoclingBbox, DoclingItem
-from app.ingestion.repository import JobRepository
 
 # ── Helper Mocks ─────────────────────────────────────────────────────────────
 
@@ -152,19 +151,28 @@ def test_output_order_is_deterministic(tmp_path: Path) -> None:
     assert items1 == items2
 
 
-def test_per_cell_error_raises_not_swallowed(tmp_path: Path) -> None:
+def test_per_cell_error_is_skipped_not_job_aborting(tmp_path: Path) -> None:
+    """A single malformed cell must be skipped, not abort the parse (spec AC-6, AC-7)."""
     pdf_file = tmp_path / "bad_cell.pdf"
     pdf_file.write_bytes(b"%PDF-1.4 dummy")
 
+    # A good cell that should survive
+    good_cell = _make_mock_cell("200", row=0, col=1)
+
+    # A bad cell whose .text property raises
     bad_cell = MagicMock()
     type(bad_cell).text = property(lambda self: (_ for _ in ()).throw(RuntimeError("Bad text")))
 
-    table = SimpleNamespace(data=SimpleNamespace(grid=[[1]], table_cells=[bad_cell]))
+    table = SimpleNamespace(data=SimpleNamespace(grid=[[1]], table_cells=[bad_cell, good_cell]))
 
     with patch("app.extraction.docling_parser.DocumentConverter") as MockConverter:
         MockConverter.return_value.convert.return_value = SimpleNamespace(document=SimpleNamespace(tables=[table]))
-        with pytest.raises(DoclingParseError, match="Table structure extraction failed"):
-            parse_pdf(pdf_file, "bad_cell.pdf")
+        # Must NOT raise — the bad cell is skipped, the good cell is returned
+        items = parse_pdf(pdf_file, "bad_cell.pdf")
+
+    # The good cell was extracted; the bad cell was silently skipped
+    assert len(items) == 1
+    assert items[0].value == "200"
 
 
 def test_source_file_preserved_verbatim(tmp_path: Path) -> None:
@@ -181,45 +189,3 @@ def test_source_file_preserved_verbatim(tmp_path: Path) -> None:
         items = parse_pdf(pdf_file, unicode_filename)
 
     assert items[0].source_file == unicode_filename
-
-
-# ── Repository Extension Tests ───────────────────────────────────────────────
-
-def test_repository_get_pdf_path(tmp_path: Path) -> None:
-    repo = JobRepository(data_dir=tmp_path)
-    job_id = "test-uuid-123"
-    expected_path = tmp_path / "uploads" / f"{job_id}.pdf"
-    assert repo.get_pdf_path(job_id) == expected_path
-
-
-def test_repository_get_job(tmp_path: Path) -> None:
-    repo = JobRepository(data_dir=tmp_path)
-    job = repo.save_job("report.pdf", b"%PDF-1.4", "Adjusted EBITDA")
-
-    found = repo.get_job(job.job_id)
-    assert found is not None
-    assert found.filename == "report.pdf"
-
-    not_found = repo.get_job("non-existent-uuid")
-    assert not_found is None
-
-
-def test_repository_save_docling_items(tmp_path: Path) -> None:
-    repo = JobRepository(data_dir=tmp_path)
-    job_id = "job-docling-test"
-    item = DoclingItem(
-        value="500",
-        label="Net Sales",
-        page=1,
-        bbox=DoclingBbox(x0=1, y0=2, x1=3, y1=4),
-        source_file="sales.pdf",
-    )
-
-    dest_path = repo.save_docling_items(job_id, [item])
-    assert dest_path.exists()
-    assert dest_path.name == f"{job_id}_docling.json"
-
-    # Verify contents
-    text = dest_path.read_text(encoding="utf-8")
-    assert "Net Sales" in text
-    assert "500" in text

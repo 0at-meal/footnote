@@ -105,6 +105,13 @@ def test_list_jobs_returns_empty_list_before_any_saves(tmp_path: Path) -> None:
     assert repo.list_jobs() == []
 
 
+def test_list_jobs_handles_utf8_bom_file(tmp_path: Path) -> None:
+    repo = make_repo(tmp_path)
+    jobs_file = tmp_path / "jobs.json"
+    jobs_file.write_bytes(b"\xef\xbb\xbf[]")
+    assert repo.list_jobs() == []
+
+
 # ── Test 6: list_jobs returns all previously saved records ────────────────────
 
 
@@ -190,3 +197,26 @@ def test_update_job_status_returns_none_for_missing_job_id(tmp_path: Path) -> No
     res = repo.update_job_status("nonexistent-id", JobStatus.done)
     assert res is None
 
+
+# ── Extension: get_pdf_path, get_job ─────────────────────────────────────────
+
+def test_get_pdf_path_returns_uploads_subpath(tmp_path: Path) -> None:
+    repo = JobRepository(data_dir=tmp_path)
+    job_id = "test-uuid-123"
+    expected = tmp_path / "uploads" / f"{job_id}.pdf"
+    assert repo.get_pdf_path(job_id) == expected
+
+
+def test_get_job_returns_record_by_id(tmp_path: Path) -> None:
+    repo = JobRepository(data_dir=tmp_path)
+    job = repo.save_job("report.pdf", b"%PDF-1.4", "Adjusted EBITDA")
+
+    found = repo.get_job(job.job_id)
+    assert found is not None
+    assert found.filename == "report.pdf"
+    assert found.job_id == job.job_id
+
+
+def test_get_job_returns_none_for_missing_id(tmp_path: Path) -> None:
+    repo = JobRepository(data_dir=tmp_path)
+    assert repo.get_job("non-existent-uuid") is None

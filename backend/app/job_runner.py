@@ -3,13 +3,14 @@ Background job processing orchestrator across pipeline stages.
 
 Located at app/job_runner.py to satisfy CONSTITUTION §3.8 isolation rules:
     ingestion/ must NOT import from extraction/.
-    job_runner lives at the app root level and coordinates ingestion repository
-    and extraction pipeline operations.
+    job_runner lives at the app root level and coordinates both the ingestion
+    repository and the extraction pipeline.
 """
 
 import logging
 
 from app.extraction.docling_parser import parse_pdf
+from app.extraction.repository import ExtractionRepository
 from app.ingestion.models import JobStatus
 from app.ingestion.repository import JobRepository
 
@@ -36,13 +37,15 @@ def process_queued_job(job_id: str, repo: JobRepository) -> None:
     # 1. Update status to 'extracting'
     repo.update_job_status(job_id, JobStatus.extracting)
 
+    extraction_repo = ExtractionRepository(data_dir=repo.data_dir)
+
     try:
         # 2. Extract layout structures via Docling
         pdf_path = repo.get_pdf_path(job_id)
         docling_items = parse_pdf(pdf_path, job.filename)
 
         # 3. Persist intermediate Docling items
-        repo.save_docling_items(job_id, docling_items)
+        extraction_repo.save_docling_items(job_id, docling_items)
 
         # 4. Update status to 'done'
         repo.update_job_status(job_id, JobStatus.done)

@@ -11,7 +11,7 @@ API docs:
 
 from typing import Any
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
@@ -36,6 +36,18 @@ app.add_middleware(
 )
 
 app.include_router(ingestion_router, prefix="/upload", tags=["upload"])
+
+
+@app.get("/")
+def root() -> dict[str, str]:
+    """Root status endpoint to verify API availability."""
+    return {"status": "ok", "app": "Footnote API", "docs": "/docs"}
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon() -> Response:
+    """Return empty 204 response for browser favicon requests."""
+    return Response(status_code=204)
 
 
 def custom_openapi() -> dict[str, Any]:

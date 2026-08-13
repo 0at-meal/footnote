@@ -11,8 +11,13 @@ Isolation (CONSTITUTION §3.8, §3.2):
 """
 
 import logging
+import os
 from pathlib import Path
 from typing import Any
+
+# Disable PyTorch Inductor compilation to prevent missing MSVC cl.exe compiler errors on Windows
+os.environ["TORCH_COMPILE_DISABLE"] = "1"
+os.environ["TORCHINDUCTOR_DISABLE"] = "1"
 
 from docling.datamodel.base_models import InputFormat
 from docling.datamodel.pipeline_options import PdfPipelineOptions
@@ -48,6 +53,9 @@ def parse_pdf(pdf_path: Path, source_file: str) -> list[DoclingItem]:
     try:
         pipeline_options = PdfPipelineOptions()
         pipeline_options.do_ocr = False
+        pipeline_options.generate_page_images = False
+        pipeline_options.generate_picture_images = False
+        pipeline_options.generate_table_images = False
         converter = DocumentConverter(
             format_options={
                 InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)
@@ -67,7 +75,6 @@ def parse_pdf(pdf_path: Path, source_file: str) -> list[DoclingItem]:
             if table_data is None:
                 continue
 
-            grid: list[list[Any]] = getattr(table_data, "grid", [])
             table_cells: list[Any] = getattr(table_data, "table_cells", [])
 
             if not table_cells:
@@ -78,79 +85,101 @@ def parse_pdf(pdf_path: Path, source_file: str) -> list[DoclingItem]:
             row_headers: dict[int, list[str]] = {}
 
             for cell in table_cells:
-                cell_text = (cell.text or "").strip()
-                if not cell_text:
+                try:
+                    cell_text = (cell.text or "").strip()
+                    if not cell_text:
+                        continue
+
+                    is_col_header = getattr(cell, "column_header", False)
+                    is_row_header = getattr(cell, "row_header", False) or getattr(cell, "row_section_header", False)
+
+                    col_idx = getattr(cell, "start_col_offset_idx", 0)
+                    row_idx = getattr(cell, "start_row_offset_idx", 0)
+
+                    if is_col_header:
+                        col_headers.setdefault(col_idx, []).append(cell_text)
+                    if is_row_header:
+                        row_headers.setdefault(row_idx, []).append(cell_text)
+                except Exception as header_err:  # noqa: BLE001 — malformed cell skipped; does not abort header scan
+                    logger.warning(
+                        "Skipping malformed cell during header scan in table %d of %s: %s",
+                        table_idx,
+                        source_file,
+                        header_err,
+                    )
                     continue
 
-                is_col_header = getattr(cell, "column_header", False)
-                is_row_header = getattr(cell, "row_header", False) or getattr(cell, "row_section_header", False)
-
-                col_idx = getattr(cell, "start_col_offset_idx", 0)
-                row_idx = getattr(cell, "start_row_offset_idx", 0)
-
-                if is_col_header:
-                    col_headers.setdefault(col_idx, []).append(cell_text)
-                if is_row_header:
-                    row_headers.setdefault(row_idx, []).append(cell_text)
 
             # Process data cells
             for cell in table_cells:
-                cell_text = (cell.text or "").strip()
-                if not cell_text:
+                try:
+                    cell_text = (cell.text or "").strip()
+                    if not cell_text:
+                        continue
+
+                    is_header = (
+                        getattr(cell, "column_header", False)
+                        or getattr(cell, "row_header", False)
+                        or getattr(cell, "row_section_header", False)
+                    )
+
+                    # Header cells contribute to structural labels for data cells;
+                    # they are not emitted as separate data values.
+                    if is_header:
+                        continue
+
+                    row_idx = getattr(cell, "start_row_offset_idx", 0)
+                    col_idx = getattr(cell, "start_col_offset_idx", 0)
+
+                    # Assemble structural label path
+                    label_parts: list[str] = []
+
+                    # Add row section/headers for this row
+                    if row_idx in row_headers and not getattr(cell, "row_header", False):
+                        label_parts.extend(row_headers[row_idx])
+
+                    # Add column headers for this column
+                    if col_idx in col_headers and not getattr(cell, "column_header", False):
+                        label_parts.extend(col_headers[col_idx])
+
+                    label = " / ".join(label_parts) if label_parts else cell_text
+
+                    # Extract page number and bbox from provenance
+                    prov_list = getattr(cell, "prov", [])
+                    page_no = 1
+                    bbox_obj = DoclingBbox(x0=0.0, y0=0.0, x1=0.0, y1=0.0)
+
+                    if prov_list:
+                        prov = prov_list[0]
+                        page_no = getattr(prov, "page_no", 1)
+                        raw_bbox = getattr(prov, "bbox", None)
+                        if raw_bbox is not None:
+                            # Extract l, t, r, b or x0, y0, x1, y1
+                            x0 = float(getattr(raw_bbox, "l", getattr(raw_bbox, "x0", 0.0)))
+                            y0 = float(getattr(raw_bbox, "t", getattr(raw_bbox, "y0", 0.0)))
+                            x1 = float(getattr(raw_bbox, "r", getattr(raw_bbox, "x1", 0.0)))
+                            y1 = float(getattr(raw_bbox, "b", getattr(raw_bbox, "y1", 0.0)))
+                            bbox_obj = DoclingBbox(x0=x0, y0=y0, x1=x1, y1=y1)
+
+                    item = DoclingItem(
+                        value=cell_text,
+                        label=label,
+                        page=page_no,
+                        bbox=bbox_obj,
+                        source_file=source_file,
+                    )
+                    items.append(item)
+
+                except Exception as cell_err:  # noqa: BLE001 — Docling cell attrs raise any exception type; broad catch is intentional
+                    # A single bad cell is logged and skipped — it must not abort
+                    # the entire job (spec AC-6, AC-7: single-item failure ≠ job failure).
+                    logger.warning(
+                        "Skipping malformed cell in table %d of %s: %s",
+                        table_idx,
+                        source_file,
+                        cell_err,
+                    )
                     continue
-
-                is_header = (
-                    getattr(cell, "column_header", False)
-                    or getattr(cell, "row_header", False)
-                    or getattr(cell, "row_section_header", False)
-                )
-
-                # Header cells contribute to structural labels for data cells;
-                # they are not emitted as separate data values.
-                if is_header:
-                    continue
-
-                row_idx = getattr(cell, "start_row_offset_idx", 0)
-                col_idx = getattr(cell, "start_col_offset_idx", 0)
-
-                # Assemble structural label path
-                label_parts: list[str] = []
-
-                # Add row section/headers for this row
-                if row_idx in row_headers and not getattr(cell, "row_header", False):
-                    label_parts.extend(row_headers[row_idx])
-
-                # Add column headers for this column
-                if col_idx in col_headers and not getattr(cell, "column_header", False):
-                    label_parts.extend(col_headers[col_idx])
-
-                label = " / ".join(label_parts) if label_parts else cell_text
-
-                # Extract page number and bbox from provenance
-                prov_list = getattr(cell, "prov", [])
-                page_no = 1
-                bbox_obj = DoclingBbox(x0=0.0, y0=0.0, x1=0.0, y1=0.0)
-
-                if prov_list:
-                    prov = prov_list[0]
-                    page_no = getattr(prov, "page_no", 1)
-                    raw_bbox = getattr(prov, "bbox", None)
-                    if raw_bbox is not None:
-                        # Extract l, t, r, b or x0, y0, x1, y1
-                        x0 = float(getattr(raw_bbox, "l", getattr(raw_bbox, "x0", 0.0)))
-                        y0 = float(getattr(raw_bbox, "t", getattr(raw_bbox, "y0", 0.0)))
-                        x1 = float(getattr(raw_bbox, "r", getattr(raw_bbox, "x1", 0.0)))
-                        y1 = float(getattr(raw_bbox, "b", getattr(raw_bbox, "y1", 0.0)))
-                        bbox_obj = DoclingBbox(x0=x0, y0=y0, x1=x1, y1=y1)
-
-                item = DoclingItem(
-                    value=cell_text,
-                    label=label,
-                    page=page_no,
-                    bbox=bbox_obj,
-                    source_file=source_file,
-                )
-                items.append(item)
 
     except Exception as err:
         logger.error("Failed parsing table structures in %s: %s", source_file, err)
