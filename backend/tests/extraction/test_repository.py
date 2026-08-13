@@ -15,6 +15,7 @@ from pathlib import Path
 from app.extraction.models import (
     DoclingBbox,
     DoclingItem,
+    ExtractedRecord,
     NormalizedBbox,
     NormalizedItem,
 )
@@ -39,6 +40,18 @@ def _make_normalized_item(
         label=label,
         page=1,
         bbox=NormalizedBbox(x0=100.0, y0=200.0, x1=300.0, y1=400.0),
+        source_file="test.pdf",
+    )
+
+
+def _make_extracted_record(
+    value: str = "100", label: str = "Net Sales"
+) -> ExtractedRecord:
+    return ExtractedRecord(
+        value=value,
+        label=label,
+        page=1,
+        bbox={"x0": 100.0, "y0": 200.0, "x1": 300.0, "y1": 400.0},
         source_file="test.pdf",
     )
 
@@ -111,3 +124,25 @@ def test_save_normalized_items_json_content_is_correct(tmp_path: Path) -> None:
     assert "800" in text
     assert "100.0" in text
     assert "400.0" in text
+
+
+# ── save_extracted_records ───────────────────────────────────────────────────
+
+
+def test_save_extracted_records_returns_correct_path(tmp_path: Path) -> None:
+    repo = ExtractionRepository(data_dir=tmp_path)
+    job_id = "job-rec-test"
+    dest_path = repo.save_extracted_records(job_id, [_make_extracted_record()])
+    assert dest_path == tmp_path / "results" / f"{job_id}_records.json"
+    assert dest_path.exists()
+
+
+def test_save_extracted_records_json_content_is_correct(tmp_path: Path) -> None:
+    repo = ExtractionRepository(data_dir=tmp_path)
+    record = _make_extracted_record(value="999", label="EBITDA")
+    dest_path = repo.save_extracted_records("job-rec-content", [record])
+
+    text = dest_path.read_text(encoding="utf-8")
+    assert "EBITDA" in text
+    assert "999" in text
+    assert '"x0": 100.0' in text

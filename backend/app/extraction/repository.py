@@ -20,7 +20,7 @@ import json
 import os
 from pathlib import Path
 
-from app.extraction.models import DoclingItem, NormalizedItem
+from app.extraction.models import DoclingItem, ExtractedRecord, NormalizedItem
 
 # Default data directory: backend/data/ (one level above the app/ package root).
 # Tests override this by constructing ExtractionRepository(data_dir=tmp_path).
@@ -83,6 +83,34 @@ class ExtractionRepository:
         tmp_path = self._results_dir / f"{job_id}_normalized.json.tmp"
 
         payload = [item.model_dump() for item in items]
+        tmp_path.write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        os.replace(tmp_path, dest_path)
+        return dest_path
+
+    def save_extracted_records(
+        self, job_id: str, records: list[ExtractedRecord]
+    ) -> Path:
+        """
+        Persist ExtractedRecord objects for job_id to data/results/<job_id>_records.json.
+
+        Writes are atomic: content is written to a .tmp sibling and renamed
+        into place via os.replace (CONSTITUTION §1.9 — no partial writes).
+
+        Args:
+            job_id: UUID of the job whose extracted records are being stored.
+            records: List of ExtractedRecord objects produced by assembler.
+
+        Returns:
+            The Path to the written JSON file.
+        """
+        self._ensure_dirs()
+        dest_path = self._results_dir / f"{job_id}_records.json"
+        tmp_path = self._results_dir / f"{job_id}_records.json.tmp"
+
+        payload = [record.model_dump() for record in records]
         tmp_path.write_text(
             json.dumps(payload, indent=2, ensure_ascii=False),
             encoding="utf-8",

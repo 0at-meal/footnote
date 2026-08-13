@@ -73,3 +73,27 @@ class NormalizedItem(BaseModel):
     page: int
     bbox: NormalizedBbox
     source_file: str
+
+
+class ExtractedRecord(BaseModel):
+    """
+    Canonical 5-field frozen schema for an extracted line item (spec.md FR2, AC-3).
+
+    Field names (value, label, page, bbox, source_file) are frozen for the project lifetime
+    (CONSTITUTION §2.3, NFR7).
+    """
+
+    value: str
+    """Raw text string as extracted from the document (unmodified)."""
+
+    label: str
+    """Raw structural label path from document structure."""
+
+    page: int
+    """1-indexed page number in the source PDF."""
+
+    bbox: dict[str, float]
+    """W3C Web Annotation-style bounding box in 0-1000 space: {x0, y0, x1, y1}."""
+
+    source_file: str
+    """Original filename string as uploaded (UTF-8, unmodified)."""
