@@ -52,6 +52,12 @@ class DoclingItem(BaseModel):
     source_file: str
     """Original filename string as uploaded (UTF-8, stored as-is — EC-8 contract)."""
 
+    is_error: bool = False
+    """Flag indicating whether an error occurred during Docling cell-level parsing."""
+
+    error_detail: str | None = None
+    """Description of the parse error if is_error is True."""
+
 
 class NormalizedBbox(BaseModel):
     """
@@ -142,6 +148,7 @@ class ExtractionSummary(BaseModel):
     needs_review_count: int
     manual_required_count: int
     extraction_error_count: int = 0
+    image_only_page_count: int = 0
     flagged_count: int
     flagged_percentage: float
     passed_threshold: bool

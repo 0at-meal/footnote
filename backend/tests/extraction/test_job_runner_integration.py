@@ -94,6 +94,9 @@ def test_process_queued_job_runs_full_pipeline(
         ) as mock_assemble,
         patch("app.job_runner.score_records", return_value=sample_scored) as mock_score,
         patch(
+            "app.job_runner.count_image_only_pages", return_value=0
+        ) as mock_count_pages,
+        patch(
             "app.job_runner.create_extraction_summary", return_value=sample_summary
         ) as mock_summary,
     ):
@@ -103,6 +106,7 @@ def test_process_queued_job_runs_full_pipeline(
     mock_norm.assert_called_once()
     mock_assemble.assert_called_once()
     mock_score.assert_called_once()
+    mock_count_pages.assert_called_once()
     mock_summary.assert_called_once()
 
     updated_job = mock_job_repo.get_job(job_id)

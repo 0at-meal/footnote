@@ -5,6 +5,7 @@ Unit tests for per-item extraction error handling & exception surfacing (Spec AC
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+from app.extraction.assembler import assemble_records
 from app.extraction.confidence import score_records
 from app.extraction.coordinate_normalizer import normalize_coordinates
 from app.extraction.flagger import create_extraction_summary, filter_flagged_records
@@ -139,3 +140,54 @@ def test_flagger_counts_extraction_errors_in_summary() -> None:
     assert summary.manual_required_count == 1
     assert summary.extraction_error_count == 1
     assert summary.flagged_count == 1
+
+
+def test_docling_cell_error_propagates_through_pipeline(tmp_path: Path) -> None:
+    """A DoclingItem with is_error=True propagates through normalizer, assembler, confidence, and summary."""
+    pdf_file = tmp_path / "test.pdf"
+    pdf_file.write_bytes(b"%PDF-1.4 dummy")
+
+    good_item = DoclingItem(
+        value="100",
+        label="Operating / Revenue",
+        page=1,
+        bbox=DoclingBbox(x0=10.0, y0=20.0, x1=30.0, y1=40.0),
+        source_file="test.pdf",
+    )
+    docling_err_item = DoclingItem(
+        value="",
+        label="Error / Unparsed Cell",
+        page=1,
+        bbox=DoclingBbox(x0=0.0, y0=0.0, x1=0.0, y1=0.0),
+        source_file="test.pdf",
+        is_error=True,
+        error_detail="Docling cell parse failed",
+    )
+
+    mock_doc = MagicMock()
+    mock_page = MagicMock()
+    mock_page.rect = MagicMock(width=100.0, height=200.0)
+    mock_doc.load_page.return_value = mock_page
+    mock_doc.__len__.return_value = 1
+
+    with patch("pymupdf.open", return_value=mock_doc):
+        normalized = normalize_coordinates(pdf_file, [good_item, docling_err_item])
+
+    assert len(normalized) == 2
+    assert normalized[1].is_error is True
+    assert normalized[1].error_detail == "Docling cell parse failed"
+
+    extracted_records = assemble_records(normalized)
+    scored_records = score_records(extracted_records, normalized)
+    summary = create_extraction_summary(scored_records)
+
+    assert len(scored_records) == 2
+    assert scored_records[0].status == "ok"
+    assert scored_records[1].status == "extraction_error"
+    assert scored_records[1].confidence_score == 0.0
+    assert scored_records[1].confidence_band == ConfidenceBand.manual_required
+    assert scored_records[1].error_detail == "Docling cell parse failed"
+
+    assert summary.total_items == 2
+    assert summary.extraction_error_count == 1
+    assert summary.manual_required_count == 1

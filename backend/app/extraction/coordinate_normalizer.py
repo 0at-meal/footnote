@@ -117,6 +117,20 @@ def normalize_coordinates(
         normalized_items: list[NormalizedItem] = []
 
         for item in items:
+            if item.is_error:
+                normalized_items.append(
+                    NormalizedItem(
+                        value=item.value,
+                        label=item.label,
+                        page=item.page,
+                        bbox=NormalizedBbox(x0=0.0, y0=0.0, x1=0.0, y1=0.0),
+                        source_file=item.source_file,
+                        is_error=True,
+                        error_detail=item.error_detail or "Docling cell parse error",
+                    )
+                )
+                continue
+
             try:
                 # Page number in DoclingItem is 1-indexed
                 if item.page < 1 or item.page > total_pages:
@@ -152,5 +166,42 @@ def normalize_coordinates(
                 normalized_items.append(err_item)
 
         return normalized_items
+    finally:
+        doc.close()
+
+
+def count_image_only_pages(pdf_path: Path) -> int:
+    """
+    Count the number of scanned/image-only pages with no selectable text (Spec EC-7).
+
+    Args:
+        pdf_path: Path to the PDF file on disk.
+
+    Returns:
+        Integer count of pages containing no selectable text.
+
+    Raises:
+        FileNotFoundError: If pdf_path does not exist.
+        CoordinateNormalizationError: If PyMuPDF fails to open the document.
+    """
+    if not pdf_path.exists():
+        raise FileNotFoundError(f"PDF file not found at path: {pdf_path}")
+
+    try:
+        doc = pymupdf.open(str(pdf_path))
+    except Exception as err:
+        logger.error("Failed to open PDF %s with PyMuPDF: %s", pdf_path, err)
+        raise CoordinateNormalizationError(
+            f"PyMuPDF failed to open {pdf_path}: {err}"
+        ) from err
+
+    try:
+        count = 0
+        for page_idx in range(len(doc)):
+            page = doc.load_page(page_idx)
+            text = page.get_text()
+            if not text.strip():
+                count += 1
+        return count
     finally:
         doc.close()

@@ -170,7 +170,7 @@ def test_output_order_is_deterministic(tmp_path: Path) -> None:
 
 
 def test_per_cell_error_is_skipped_not_job_aborting(tmp_path: Path) -> None:
-    """A single malformed cell must be skipped, not abort the parse (spec AC-6, AC-7)."""
+    """A single malformed cell must produce an error item without aborting the parse (spec AC-6, AC-7)."""
     pdf_file = tmp_path / "bad_cell.pdf"
     pdf_file.write_bytes(b"%PDF-1.4 dummy")
 
@@ -191,12 +191,21 @@ def test_per_cell_error_is_skipped_not_job_aborting(tmp_path: Path) -> None:
         MockConverter.return_value.convert.return_value = SimpleNamespace(
             document=SimpleNamespace(tables=[table])
         )
-        # Must NOT raise — the bad cell is skipped, the good cell is returned
+        # Must NOT raise — the bad cell produces an error DoclingItem, good cell is also returned
         items = parse_pdf(pdf_file, "bad_cell.pdf")
 
-    # The good cell was extracted; the bad cell was silently skipped
-    assert len(items) == 1
-    assert items[0].value == "200"
+    # Both items should be present: the good cell and the error item
+    assert len(items) == 2
+    good_items = [i for i in items if not i.is_error]
+    error_items = [i for i in items if i.is_error]
+
+    assert len(good_items) == 1
+    assert good_items[0].value == "200"
+
+    assert len(error_items) == 1
+    assert error_items[0].is_error is True
+    assert error_items[0].error_detail is not None
+    assert "Bad text" in error_items[0].error_detail
 
 
 def test_source_file_preserved_verbatim(tmp_path: Path) -> None:

@@ -8,6 +8,7 @@ import pymupdf
 import pytest
 from app.extraction.coordinate_normalizer import (
     CoordinateNormalizationError,
+    count_image_only_pages,
     normalize_coordinates,
     normalize_item_bbox,
 )
@@ -136,3 +137,24 @@ def test_normalize_coordinates_page_out_of_bounds(tmp_path: Path) -> None:
     assert normalized[0].is_error is True
     assert normalized[0].error_detail is not None
     assert "out of bounds" in normalized[0].error_detail
+
+
+def test_count_image_only_pages(tmp_path: Path) -> None:
+    pdf_path = tmp_path / "mixed.pdf"
+    doc = pymupdf.open()
+    # Page 1 has text
+    p1 = doc.new_page(width=600, height=800)
+    p1.insert_text((50, 50), "Hello world")
+    # Page 2 is empty/image-only (no selectable text)
+    doc.new_page(width=600, height=800)
+    doc.save(str(pdf_path))
+    doc.close()
+
+    image_pages = count_image_only_pages(pdf_path)
+    assert image_pages == 1
+
+
+def test_count_image_only_pages_missing_file(tmp_path: Path) -> None:
+    missing = tmp_path / "nonexistent.pdf"
+    with pytest.raises(FileNotFoundError, match="PDF file not found"):
+        count_image_only_pages(missing)

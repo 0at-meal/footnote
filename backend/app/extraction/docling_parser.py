@@ -5,6 +5,13 @@ Scope:
     Runs Docling's layout parser on a local PDF file and extracts raw table cells
     with hierarchical header labels, 1-indexed page numbers, and Docling bounding boxes.
 
+Footnote Handling (Spec EC-3):
+    Cells containing footnote reference markers (e.g. (1), *, [a]) are extracted
+    with their verbatim text/markers and flagged for human review via the confidence
+    engine (confidence.py). Extraction of out-of-table footnote paragraphs and inter-record
+    linking is deferred to downstream graph layers (Phase 3/4) to strictly maintain
+    the frozen 5-field ExtractedRecord schema (CONSTITUTION §2.3, Spec AC-3).
+
 Isolation (CONSTITUTION §3.8, §3.2):
     This module must NEVER import from classification/, formula_engine/, excel_export/,
     or audit_report/.
@@ -186,15 +193,40 @@ def parse_pdf(pdf_path: Path, source_file: str) -> list[DoclingItem]:
                     items.append(item)
 
                 except Exception as cell_err:  # noqa: BLE001
-                    # A single bad cell is logged and skipped — it must not abort
-                    # the entire job (spec AC-6, AC-7: single-item failure ≠ job failure).
+                    # A single bad cell is captured as an error item (spec §6, AC-6, AC-7).
                     logger.warning(
-                        "Skipping malformed cell in table %d of %s: %s",
+                        "Error parsing cell in table %d of %s: %s",
                         table_idx,
                         source_file,
                         cell_err,
                     )
-                    continue
+                    cell_val = ""
+                    try:
+                        cell_val = str(getattr(cell, "text", "") or "")
+                    except Exception:  # noqa: BLE001
+                        cell_val = ""
+
+                    page_no = 1
+                    try:
+                        cell_prov = getattr(cell, "prov", [])
+                        table_prov = getattr(table, "prov", [])
+                        if cell_prov:
+                            page_no = int(getattr(cell_prov[0], "page_no", 1))
+                        elif table_prov:
+                            page_no = int(getattr(table_prov[0], "page_no", 1))
+                    except Exception:  # noqa: BLE001
+                        page_no = 1
+
+                    err_item = DoclingItem(
+                        value=cell_val,
+                        label="Error / Unparsed Cell",
+                        page=page_no,
+                        bbox=DoclingBbox(x0=0.0, y0=0.0, x1=0.0, y1=0.0),
+                        source_file=source_file,
+                        is_error=True,
+                        error_detail=str(cell_err),
+                    )
+                    items.append(err_item)
 
     except Exception as err:
         logger.error("Failed parsing table structures in %s: %s", source_file, err)

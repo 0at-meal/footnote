@@ -11,7 +11,10 @@ import logging
 
 from app.extraction.assembler import assemble_records
 from app.extraction.confidence import score_records
-from app.extraction.coordinate_normalizer import normalize_coordinates
+from app.extraction.coordinate_normalizer import (
+    count_image_only_pages,
+    normalize_coordinates,
+)
 from app.extraction.docling_parser import parse_pdf
 from app.extraction.flagger import create_extraction_summary
 from app.extraction.repository import ExtractionRepository
@@ -67,7 +70,10 @@ def process_queued_job(job_id: str, repo: JobRepository) -> None:
         extraction_repo.save_scored_records(job_id, scored_records)
 
         # Stage 5: Extraction summary & threshold evaluation
-        summary = create_extraction_summary(scored_records)
+        image_only_page_count = count_image_only_pages(pdf_path)
+        summary = create_extraction_summary(
+            scored_records, image_only_page_count=image_only_page_count
+        )
         extraction_repo.save_extraction_summary(job_id, summary)
 
         # Final status update to 'done'

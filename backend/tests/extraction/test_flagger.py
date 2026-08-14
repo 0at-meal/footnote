@@ -79,3 +79,11 @@ def test_create_extraction_summary_empty_list() -> None:
     assert summary.flagged_count == 0
     assert summary.flagged_percentage == 0.0
     assert summary.passed_threshold is True
+    assert summary.image_only_page_count == 0
+
+
+def test_create_extraction_summary_with_image_only_pages() -> None:
+    records = [_make_scored(ConfidenceBand.auto_accepted) for _ in range(5)]
+    summary = create_extraction_summary(records, image_only_page_count=3)
+    assert summary.total_items == 5
+    assert summary.image_only_page_count == 3

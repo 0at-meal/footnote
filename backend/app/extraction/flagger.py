@@ -29,7 +29,10 @@ def filter_flagged_records(records: list[ScoredRecord]) -> list[ScoredRecord]:
     return [r for r in records if r.confidence_band != ConfidenceBand.auto_accepted]
 
 
-def create_extraction_summary(records: list[ScoredRecord]) -> ExtractionSummary:
+def create_extraction_summary(
+    records: list[ScoredRecord],
+    image_only_page_count: int = 0,
+) -> ExtractionSummary:
     """
     Compute aggregate summary statistics and threshold evaluation for an extraction job.
 
@@ -39,6 +42,7 @@ def create_extraction_summary(records: list[ScoredRecord]) -> ExtractionSummary:
 
     Args:
         records: List of all ScoredRecord objects produced for a job.
+        image_only_page_count: Count of scanned/image-only pages without selectable text (Spec EC-7).
 
     Returns:
         An ExtractionSummary Pydantic model instance.
@@ -69,6 +73,7 @@ def create_extraction_summary(records: list[ScoredRecord]) -> ExtractionSummary:
         needs_review_count=needs_review_count,
         manual_required_count=manual_required_count,
         extraction_error_count=extraction_error_count,
+        image_only_page_count=image_only_page_count,
         flagged_count=flagged_count,
         flagged_percentage=flagged_percentage,
         passed_threshold=passed_threshold,
