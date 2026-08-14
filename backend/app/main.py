@@ -15,6 +15,7 @@ from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
+from app.classification.router import router as classification_router
 from app.ingestion.router import router as ingestion_router
 
 app = FastAPI(
@@ -36,6 +37,7 @@ app.add_middleware(
 )
 
 app.include_router(ingestion_router, prefix="/upload", tags=["upload"])
+app.include_router(classification_router, prefix="/classification", tags=["classification"])
 
 
 @app.get("/")
@@ -70,4 +72,3 @@ def custom_openapi() -> dict[str, Any]:
 
 
 app.openapi = custom_openapi  # type: ignore[method-assign]
-

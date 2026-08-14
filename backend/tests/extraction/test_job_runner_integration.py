@@ -1,11 +1,12 @@
 """
-Integration unit tests for full extraction pipeline orchestration in app/job_runner.py.
+Integration unit tests for full extraction and classification pipeline orchestration in app/job_runner.py.
 """
 
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
+from app.classification.models import ClassifierRawResponse
 from app.extraction.models import (
     ConfidenceBand,
     DoclingBbox,
@@ -35,7 +36,7 @@ def mock_job_repo(tmp_path: Path) -> JobRepository:
 def test_process_queued_job_runs_full_pipeline(
     tmp_path: Path, mock_job_repo: JobRepository
 ) -> None:
-    """process_queued_job runs all 5 stages and updates status to done."""
+    """process_queued_job runs all extraction and classification stages and updates status to done."""
     job_id = mock_job_repo.list_jobs()[0].job_id
 
     sample_docling = [
@@ -84,6 +85,12 @@ def test_process_queued_job_runs_full_pipeline(
         passed_threshold=True,
     )
 
+    mock_classifier = MagicMock()
+    mock_classifier.classify.return_value = ClassifierRawResponse(
+        label="Stock-Based Compensation",
+        confidence=0.98,
+    )
+
     with (
         patch("app.job_runner.parse_pdf", return_value=sample_docling) as mock_parse,
         patch(
@@ -100,7 +107,11 @@ def test_process_queued_job_runs_full_pipeline(
             "app.job_runner.create_extraction_summary", return_value=sample_summary
         ) as mock_summary,
     ):
-        process_queued_job(job_id, mock_job_repo)
+        process_queued_job(
+            job_id,
+            mock_job_repo,
+            classifier_client=mock_classifier,
+        )
 
     mock_parse.assert_called_once()
     mock_norm.assert_called_once()
@@ -108,6 +119,7 @@ def test_process_queued_job_runs_full_pipeline(
     mock_score.assert_called_once()
     mock_count_pages.assert_called_once()
     mock_summary.assert_called_once()
+    mock_classifier.classify.assert_called_once()
 
     updated_job = mock_job_repo.get_job(job_id)
     assert updated_job is not None
@@ -119,6 +131,8 @@ def test_process_queued_job_runs_full_pipeline(
     assert (results_dir / f"{job_id}_records.json").exists()
     assert (results_dir / f"{job_id}_scored.json").exists()
     assert (results_dir / f"{job_id}_summary.json").exists()
+    assert (results_dir / f"{job_id}_classified.json").exists()
+    assert (results_dir / f"{job_id}_decision_log.jsonl").exists()
 
 
 def test_process_queued_job_failure_updates_status_to_failed(

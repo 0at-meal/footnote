@@ -5,6 +5,7 @@ Enforces CONSTITUTION §1.2, §1.3, §6.2, §6.5:
 - Outbound payload contains ONLY label and structural context (no value, bbox, or raw file content).
 - Return schema structurally contains ONLY textual label and confidence score (no numeric or computed fields).
 - ClassifiedRecord preserves the underlying ExtractedRecord byte-identically (AC-6, NFR7).
+- DecisionLogEntry provides exportable, machine-readable proof of numeric-free AI classification (AC-2, AC-7).
 """
 
 from enum import Enum
@@ -128,3 +129,40 @@ class ClassifiedRecord(BaseModel):
         default=False,
         description="True if normalized_label is confirmed and matched against active taxonomy",
     )
+
+
+class DecisionLogEntry(BaseModel):
+    """
+    Single append-only decision log entry for a classifier call (spec.md §6, AC-2, AC-7).
+    """
+
+    job_id: str = Field(..., description="UUID of the job")
+    record_index: int = Field(..., description="Index of the extraction record in the job")
+    timestamp: str = Field(..., description="ISO 8601 UTC timestamp of the classifier call")
+    input_payload: ClassifierInputPayload = Field(..., description="Sanitized input sent to classifier")
+    raw_response: ClassifierRawResponse | None = Field(
+        default=None,
+        description="Classifier response (label and confidence only, strictly numeric-free)",
+    )
+    taxonomy_status: TaxonomyStatus = Field(
+        ...,
+        description="Outcome of taxonomy matching (matched or pending_taxonomy_confirmation)",
+    )
+    resulting_state: str = Field(
+        ...,
+        description="Resulting state: 'confirmed', 'pending_confirmation', or 'classification_error'",
+    )
+    error_detail: str | None = Field(
+        default=None,
+        description="Error details if classification or logging failed",
+    )
+
+
+class DecisionLogResponse(BaseModel):
+    """
+    API response model for GET /classification/{job_id}/decision-log (AC-7).
+    """
+
+    job_id: str = Field(..., description="Job UUID")
+    total_calls: int = Field(..., description="Total number of classifier calls logged")
+    entries: list[DecisionLogEntry] = Field(..., description="List of decision log entries")

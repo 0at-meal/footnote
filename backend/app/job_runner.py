@@ -2,13 +2,22 @@
 Background job processing orchestrator across pipeline stages.
 
 Located at app/job_runner.py to satisfy CONSTITUTION §3.8 isolation rules:
-    ingestion/ must NOT import from extraction/.
-    job_runner lives at the app root level and coordinates both the ingestion
-    repository and the extraction pipeline.
+    ingestion/ must NOT import from extraction/ or classification/.
+    job_runner lives at the app root level and coordinates ingestion, extraction,
+    and classification pipeline stages.
 """
 
 import logging
 
+from app.classification.client import GroqClassifierClient
+from app.classification.decision_log import (
+    DecisionLogRepository,
+    build_log_entries,
+)
+from app.classification.dispatcher import dispatch_records_to_classifier
+from app.classification.normalizer import normalize_records
+from app.classification.repository import ClassificationRepository
+from app.classification.taxonomy import TaxonomyRepository
 from app.extraction.assembler import assemble_records
 from app.extraction.confidence import score_records
 from app.extraction.coordinate_normalizer import (
@@ -24,9 +33,13 @@ from app.ingestion.repository import JobRepository
 logger = logging.getLogger(__name__)
 
 
-def process_queued_job(job_id: str, repo: JobRepository) -> None:
+def process_queued_job(
+    job_id: str,
+    repo: JobRepository,
+    classifier_client: GroqClassifierClient | None = None,
+) -> None:
     """
-    Background worker task to process an enqueued PDF job through full extraction.
+    Background worker task to process an enqueued PDF job through full extraction and classification.
 
     Pipeline execution sequence:
     1. Transition job status from 'queued' to 'extracting'.
@@ -35,8 +48,9 @@ def process_queued_job(job_id: str, repo: JobRepository) -> None:
     4. Stage 3 (Assembler): Assemble 5-field schema records -> save_extracted_records.
     5. Stage 4 (Confidence): Compute structural confidence scores -> save_scored_records.
     6. Stage 5 (Summary): Evaluate 15% threshold & statistics -> save_extraction_summary.
-    7. On success: Transition status to 'done'.
-    8. On unrecoverable crash: Transition status to 'failed' and re-raise (CONSTITUTION §1.9).
+    7. Stage 6 (Classification): Dispatch eligible records -> Normalize -> save_classified_records & decision_log.
+    8. On success: Transition status to 'done'.
+    9. On unrecoverable crash: Transition status to 'failed' and re-raise (CONSTITUTION §1.9).
     """
     logger.info("Starting background processing for job %s", job_id)
 
@@ -49,6 +63,9 @@ def process_queued_job(job_id: str, repo: JobRepository) -> None:
     repo.update_job_status(job_id, JobStatus.extracting)
 
     extraction_repo = ExtractionRepository(data_dir=repo.data_dir)
+    classification_repo = ClassificationRepository(data_dir=repo.data_dir)
+    taxonomy_repo = TaxonomyRepository(data_dir=repo.data_dir)
+    decision_log_repo = DecisionLogRepository(data_dir=repo.data_dir)
 
     try:
         pdf_path = repo.get_pdf_path(job_id)
@@ -76,14 +93,26 @@ def process_queued_job(job_id: str, repo: JobRepository) -> None:
         )
         extraction_repo.save_extraction_summary(job_id, summary)
 
+        # Stage 6: Classification & Taxonomy Normalization (Feature 3)
+        client = classifier_client or GroqClassifierClient()
+        active_taxonomy = taxonomy_repo.load_taxonomy()
+
+        batch_result = dispatch_records_to_classifier(scored_records, client)
+        classified_records = normalize_records(scored_records, batch_result, active_taxonomy)
+        classification_repo.save_classified_records(job_id, classified_records)
+
+        # Append-only machine-readable decision log (spec.md §6, AC-2, AC-7)
+        log_entries = build_log_entries(job_id, batch_result, active_taxonomy)
+        decision_log_repo.log_batch_calls(job_id, log_entries)
+
         # Final status update to 'done'
         repo.update_job_status(job_id, JobStatus.done)
         logger.info(
-            "Completed extraction pipeline for job %s: %d records assembled (%d auto-accepted, %d flagged)",
+            "Completed pipeline for job %s: %d records assembled, %d classified (%d confirmed), decision log recorded",
             job_id,
             summary.total_items,
-            summary.auto_accepted_count,
-            summary.flagged_count,
+            len(classified_records),
+            sum(1 for r in classified_records if r.is_confirmed),
         )
     except Exception as err:
         logger.error("Error processing job %s: %s", job_id, err)
