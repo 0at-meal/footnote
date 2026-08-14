@@ -1,0 +1,70 @@
+"""
+Data models for the classification & normalization pipeline (Feature 3).
+
+Enforces CONSTITUTION §1.2, §1.3, §6.2, §6.5:
+- Outbound payload contains ONLY label and structural context (no value, bbox, or raw file content).
+- Return schema structurally contains ONLY textual label and confidence score (no numeric or computed fields).
+"""
+
+from pydantic import BaseModel, Field
+
+
+class ClassifierInputPayload(BaseModel):
+    """
+    Sanitized input payload dispatched to the Groq classifier.
+
+    Contains exclusively the structural label and optional context.
+    Strictly excludes the extracted numeric value, page, bbox, and filename (CONSTITUTION §6.5).
+    """
+
+    label: str = Field(..., min_length=1, description="Raw structural label from extraction")
+    structural_context: str | None = Field(
+        default=None,
+        description="Surrounding structural context (e.g. adjacent headers)",
+    )
+
+
+class ClassifierRawResponse(BaseModel):
+    """
+    Response schema produced by the Groq classifier.
+
+    Structurally cannot carry a numeric return field (CONSTITUTION §1.2, §6.2).
+    """
+
+    label: str = Field(..., min_length=1, description="Taxonomy classification candidate label")
+    confidence: float = Field(
+        ...,
+        ge=0.0,
+        le=1.0,
+        description="Classifier confidence score in the range [0.0, 1.0]",
+    )
+
+
+class ClassificationItemResult(BaseModel):
+    """
+    Per-item result of classifier dispatch.
+    """
+
+    record_index: int = Field(..., description="Index of the record in the original batch")
+    payload: ClassifierInputPayload = Field(..., description="Sanitized input sent to classifier")
+    raw_response: ClassifierRawResponse | None = Field(
+        default=None,
+        description="Parsed classifier response if successful",
+    )
+    is_error: bool = Field(default=False, description="True if a classification error occurred")
+    error_detail: str | None = Field(
+        default=None,
+        description="Error message or reason for classification failure",
+    )
+
+
+class ClassificationBatchResult(BaseModel):
+    """
+    Aggregate result of a batch classification dispatch.
+    """
+
+    results: list[ClassificationItemResult]
+    total_dispatched: int
+    success_count: int
+    error_count: int
+    skipped_count: int
