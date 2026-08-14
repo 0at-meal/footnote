@@ -6,6 +6,8 @@ Enforces CONSTITUTION §1.2, §1.3, §6.2, §6.5:
 - Return schema structurally contains ONLY textual label and confidence score (no numeric or computed fields).
 """
 
+from enum import Enum
+
 from pydantic import BaseModel, Field
 
 
@@ -68,3 +70,32 @@ class ClassificationBatchResult(BaseModel):
     success_count: int
     error_count: int
     skipped_count: int
+
+
+class TaxonomyStatus(str, Enum):
+    """
+    Taxonomy verification status for a classified label (spec.md §3, §4).
+    """
+
+    matched = "matched"
+    """Candidate label matches an active seed taxonomy entry by exact string match."""
+
+    pending_taxonomy_confirmation = "pending_taxonomy_confirmation"
+    """Candidate label does not match taxonomy; queued for explicit human review."""
+
+
+class TaxonomyCheckResult(BaseModel):
+    """
+    Result of evaluating a candidate label against the active taxonomy.
+    """
+
+    candidate_label: str = Field(..., description="Candidate label returned by classifier")
+    status: TaxonomyStatus = Field(..., description="Match status (matched or pending_taxonomy_confirmation)")
+    matched_entry: str | None = Field(
+        default=None,
+        description="Exact matched taxonomy entry if matched, otherwise None",
+    )
+    is_matched: bool = Field(
+        default=False,
+        description="Convenience boolean indicating whether exact match was found",
+    )

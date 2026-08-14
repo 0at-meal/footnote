@@ -12,14 +12,26 @@ from app.classification.models import (
     ClassificationItemResult,
     ClassifierInputPayload,
     ClassifierRawResponse,
+    TaxonomyCheckResult,
+    TaxonomyStatus,
+)
+from app.classification.taxonomy import (
+    SEED_TAXONOMY,
+    TaxonomyRepository,
+    check_label_against_taxonomy,
 )
 
 __all__ = [
+    "SEED_TAXONOMY",
     "ClassificationBatchResult",
     "ClassificationItemResult",
     "ClassifierInputPayload",
     "ClassifierRawResponse",
     "GroqClassifierClient",
+    "TaxonomyCheckResult",
+    "TaxonomyRepository",
+    "TaxonomyStatus",
+    "check_label_against_taxonomy",
     "dispatch_records_to_classifier",
     "is_record_eligible_for_classification",
 ]
