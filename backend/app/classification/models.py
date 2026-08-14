@@ -4,11 +4,14 @@ Data models for the classification & normalization pipeline (Feature 3).
 Enforces CONSTITUTION §1.2, §1.3, §6.2, §6.5:
 - Outbound payload contains ONLY label and structural context (no value, bbox, or raw file content).
 - Return schema structurally contains ONLY textual label and confidence score (no numeric or computed fields).
+- ClassifiedRecord preserves the underlying ExtractedRecord byte-identically (AC-6, NFR7).
 """
 
 from enum import Enum
 
 from pydantic import BaseModel, Field
+
+from app.extraction.models import ScoredRecord
 
 
 class ClassifierInputPayload(BaseModel):
@@ -98,4 +101,30 @@ class TaxonomyCheckResult(BaseModel):
     is_matched: bool = Field(
         default=False,
         description="Convenience boolean indicating whether exact match was found",
+    )
+
+
+class ClassifiedRecord(BaseModel):
+    """
+    An extraction record with classification and taxonomy normalization metadata attached (Feature 3).
+
+    Strictly preserves the underlying ExtractedRecord and ScoredRecord fields (AC-6, NFR7).
+    """
+
+    record: ScoredRecord = Field(..., description="Underlying scored extraction record")
+    normalized_label: str | None = Field(
+        default=None,
+        description="Confirmed standardized taxonomy label if matched/confirmed; None if pending (AC-6)",
+    )
+    taxonomy_status: TaxonomyStatus = Field(
+        default=TaxonomyStatus.pending_taxonomy_confirmation,
+        description="Taxonomy verification status",
+    )
+    classifier_confidence: float | None = Field(
+        default=None,
+        description="Confidence score returned by Groq classifier",
+    )
+    is_confirmed: bool = Field(
+        default=False,
+        description="True if normalized_label is confirmed and matched against active taxonomy",
     )

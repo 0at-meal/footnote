@@ -10,11 +10,14 @@ from app.classification.dispatcher import (
 from app.classification.models import (
     ClassificationBatchResult,
     ClassificationItemResult,
+    ClassifiedRecord,
     ClassifierInputPayload,
     ClassifierRawResponse,
     TaxonomyCheckResult,
     TaxonomyStatus,
 )
+from app.classification.normalizer import normalize_records
+from app.classification.repository import ClassificationRepository
 from app.classification.taxonomy import (
     SEED_TAXONOMY,
     TaxonomyRepository,
@@ -25,6 +28,8 @@ __all__ = [
     "SEED_TAXONOMY",
     "ClassificationBatchResult",
     "ClassificationItemResult",
+    "ClassificationRepository",
+    "ClassifiedRecord",
     "ClassifierInputPayload",
     "ClassifierRawResponse",
     "GroqClassifierClient",
@@ -34,4 +39,5 @@ __all__ = [
     "check_label_against_taxonomy",
     "dispatch_records_to_classifier",
     "is_record_eligible_for_classification",
+    "normalize_records",
 ]
