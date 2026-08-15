@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import UploadZone from './components/UploadZone'
 import JobList from './components/JobList'
 import SubmitBar from './components/SubmitBar'
+import ReviewPage from './components/review/ReviewPage'
 import type { StagedFile, TargetMetric, JobRecord } from './types/job'
 import { DEFAULT_METRIC } from './types/job'
 import './App.css'
@@ -14,6 +15,7 @@ function App() {
   const [persistedJobs, setPersistedJobs] = useState<JobRecord[]>([])
   const [submissionErrors, setSubmissionErrors] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [activeReviewJobId, setActiveReviewJobId] = useState<string | null>(null)
 
   // ── On mount: restore persisted jobs from backend (spec AC-7) ───────────
   useEffect(() => {
@@ -137,6 +139,16 @@ function App() {
 
   // ── Render ───────────────────────────────────────────────────────────────
 
+  if (activeReviewJobId) {
+    return (
+      <ReviewPage
+        jobId={activeReviewJobId}
+        apiBase={API_BASE}
+        onBack={() => setActiveReviewJobId(null)}
+      />
+    )
+  }
+
   return (
     <div className="app-layout">
       <header className="app-header">
@@ -218,6 +230,7 @@ function App() {
             persistedJobs={persistedJobs}
             onMetricChange={handleMetricChange}
             onRemove={handleRemove}
+            onReview={(jobId) => setActiveReviewJobId(jobId)}
           />
           <SubmitBar
             stagedFiles={stagedFiles}

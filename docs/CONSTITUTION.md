@@ -8,7 +8,7 @@ with a rule here, the rule wins — stop and ask, do not improvise around it.
 
 ## 1. Coding Standards
 
-1. Every module in `extraction/`, `ingestion/`, `formula_engine/`,
+1. Every module in `extraction/`, `ingestion/`, `review/`, `formula_engine/`,
    `excel_export/`, and `audit_report/` must be fully typed. Run
    `mypy --strict` on these before any commit touching them.
 2. `classification/` (the LLM boundary) may be typed more loosely, but its
@@ -77,6 +77,11 @@ with a rule here, the rule wins — stop and ask, do not improvise around it.
    must not import from `extraction/`, `classification/`, `formula_engine/`,
    `excel_export/`, or `audit_report/`. Modules in `ingestion/` are subject
    to the same `mypy --strict` requirement as §1.1.
+9. `review/` is the review-state and PDF streaming stage (Feature 5).
+   `review/` may read from `ingestion/` (job lookup), `extraction/`, and
+   `classification/` (persisted records), but must not import from
+   `formula_engine/`, `excel_export/`, or `audit_report/`. Modules in
+   `review/` are subject to the same `mypy --strict` requirement as §1.1.
 
 ## 4. Tech Stack
 

@@ -6,6 +6,7 @@ interface Props {
   persistedJobs: JobRecord[]
   onMetricChange: (id: string, metric: TargetMetric) => void
   onRemove: (id: string) => void
+  onReview?: (jobId: string) => void
 }
 
 function formatBytes(bytes: number): string {
@@ -50,7 +51,7 @@ function PdfIcon() {
   )
 }
 
-function JobList({ stagedFiles, persistedJobs, onMetricChange, onRemove }: Props) {
+function JobList({ stagedFiles, persistedJobs, onMetricChange, onRemove, onReview }: Props) {
   const isEmpty = stagedFiles.length === 0 && persistedJobs.length === 0
 
   if (isEmpty) {
@@ -85,7 +86,7 @@ function JobList({ stagedFiles, persistedJobs, onMetricChange, onRemove }: Props
             <th scope="col">Target Metric</th>
             <th scope="col">Status</th>
             <th scope="col">
-              <span className="sr-only">Remove</span>
+              <span className="sr-only">Actions</span>
             </th>
           </tr>
         </thead>
@@ -155,7 +156,16 @@ function JobList({ stagedFiles, persistedJobs, onMetricChange, onRemove }: Props
                 <StatusBadge status={job.status} />
               </td>
               <td className="job-table__remove">
-                {/* No remove button for persisted jobs — submission is final */}
+                {job.status === 'done' && onReview && (
+                  <button
+                    type="button"
+                    className="job-table__review-btn"
+                    onClick={() => onReview(job.job_id)}
+                    aria-label={`Review ${job.filename}`}
+                  >
+                    Review
+                  </button>
+                )}
               </td>
             </tr>
           ))}
