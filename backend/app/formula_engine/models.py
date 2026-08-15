@@ -1,11 +1,13 @@
 """
-Data models for the formula engine input stage (Feature 4 Step 1).
+Data models for the formula engine (Feature 4).
 
 Enforces CONSTITUTION §1.1, §1.3, §1.4, §2.3:
 - Fully typed Pydantic models for pipeline stage boundary.
 - Pure in-memory representations (no I/O, no random, no clock).
 - Preserves frozen schema field names (value, label, page, bbox, source_file).
 """
+
+from enum import Enum
 
 from pydantic import BaseModel, Field
 
@@ -116,4 +118,89 @@ class FormulaInputBatch(BaseModel):
     error_message: str | None = Field(
         default=None,
         description="Top-level error message if batch cannot proceed to tree generation (e.g. EC-5)",
+    )
+
+
+class FormulaNodeType(str, Enum):
+    """
+    Classification of nodes within the formula expression tree.
+    """
+
+    leaf = "leaf"
+    """Leaf node binding directly to a single extracted source item with full provenance."""
+
+    aggregate = "aggregate"
+    """Intermediate node aggregating multiple occurrences of the same normalized label (EC-1)."""
+
+    calculated_root = "calculated_root"
+    """Root target metric formula node (e.g. Adjusted EBITDA)."""
+
+
+class FormulaNode(BaseModel):
+    """
+    Node within the hierarchical formula tree expression graph.
+    """
+
+    node_id: str = Field(
+        ...,
+        description="Deterministic unique identifier for this tree node",
+    )
+    label: str = Field(
+        ...,
+        description="Display label or metric name",
+    )
+    node_type: FormulaNodeType = Field(
+        ...,
+        description="Type of formula node (leaf, aggregate, or calculated_root)",
+    )
+    operator: str = Field(
+        default="+",
+        description="Arithmetic operator with respect to parent (+, -, or root)",
+    )
+    formula_expression: str | None = Field(
+        default=None,
+        description="Symbolic or Excel formula representation for calculated nodes",
+    )
+    source_node: FormulaInputNode | None = Field(
+        default=None,
+        description="Reference to originating confirmed input node (leaf nodes only)",
+    )
+    children: list["FormulaNode"] = Field(
+        default_factory=list,
+        description="Child operand nodes contributing to this formula node",
+    )
+
+
+class FormulaTree(BaseModel):
+    """
+    Complete in-memory formula tree for a target metric (FR5, FR6).
+    """
+
+    target_metric: str = Field(
+        ...,
+        description="Target metric name (e.g. Adjusted EBITDA)",
+    )
+    root: FormulaNode | None = Field(
+        default=None,
+        description="Root formula node representing the reconciled target metric",
+    )
+    nodes_by_id: dict[str, FormulaNode] = Field(
+        default_factory=dict,
+        description="Lookup mapping of all nodes by node_id",
+    )
+    leaves: list[FormulaNode] = Field(
+        default_factory=list,
+        description="Flattened list of all leaf nodes in deterministic order",
+    )
+    total_leaves: int = Field(
+        default=0,
+        description="Count of active leaf nodes in the tree",
+    )
+    is_valid: bool = Field(
+        default=True,
+        description="True if formula tree is structurally valid and ready for export",
+    )
+    error_message: str | None = Field(
+        default=None,
+        description="Error description if tree construction failed (e.g. EC-4, EC-5)",
     )
