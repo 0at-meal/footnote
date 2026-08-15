@@ -16,6 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
 from app.classification.router import router as classification_router
+from app.excel_export.router import router as excel_export_router
 from app.ingestion.router import router as ingestion_router
 
 app = FastAPI(
@@ -38,6 +39,7 @@ app.add_middleware(
 
 app.include_router(ingestion_router, prefix="/upload", tags=["upload"])
 app.include_router(classification_router, prefix="/classification", tags=["classification"])
+app.include_router(excel_export_router)
 
 
 @app.get("/")

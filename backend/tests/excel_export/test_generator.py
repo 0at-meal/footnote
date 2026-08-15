@@ -171,7 +171,7 @@ def test_generate_workbook_duplicate_label_aggregation(tmp_path: Path) -> None:
         val_formula = str(ws_recon.cell(row=row, column=3).value or "")
         if label == "Total Stock-Based Compensation":
             aggregate_found = True
-            assert val_formula.startswith("=SUM(")
+            assert "SUM(" in val_formula
     assert aggregate_found is True
 
 
@@ -208,3 +208,49 @@ def test_generate_workbook_invalid_tree(tmp_path: Path) -> None:
     assert result.is_success is False
     assert result.error_detail == "Unsupported metric"
     assert not Path(result.file_path).exists()
+
+
+def test_generate_workbook_exactly_one_comment_and_hyperlink_per_cell(tmp_path: Path) -> None:
+    """Verifies that 100% of generated data/formula cells carry exactly 1 comment and 1 hyperlink (AC-6)."""
+    nodes = [
+        _make_input_node(0, "Operating Income", value="1,000.00", page=12),
+        _make_input_node(1, "Depreciation & Amortization", value="200.00", page=14),
+        _make_input_node(2, "Stock-Based Compensation", value="50.00", page=25),
+        _make_input_node(3, "Stock-Based Compensation", value="30.00", page=45),
+    ]
+    batch = FormulaInputBatch(
+        nodes=nodes,
+        total_records_received=4,
+        confirmed_count=4,
+        excluded_count=0,
+    )
+    tree = build_formula_tree(batch, target_metric="Adjusted EBITDA")
+
+    result = generate_workbook(tree, job_id="job_ac6_test", output_dir=tmp_path)
+    assert result.is_success is True
+
+    # Provenance record collection matching cell count
+    assert len(result.provenance_records) == result.total_cells_generated
+    assert len(result.cell_references) == result.total_cells_generated
+
+    wb = openpyxl.load_workbook(result.file_path, data_only=False)
+
+    # 1. Check Source_Inputs value column (Col F / 6)
+    ws_inputs = wb["Source_Inputs"]
+    for row in range(2, 6):  # 4 data rows
+        cell = ws_inputs.cell(row=row, column=6)
+        assert cell.comment is not None, f"Source_Inputs!F{row} missing comment"
+        assert "[Footnote Provenance]" in cell.comment.text
+        assert cell.hyperlink is not None, f"Source_Inputs!F{row} missing hyperlink"
+        assert "http://localhost:8000/models/job_ac6_test/provenance/Source_Inputs/F" in cell.hyperlink.target
+
+    # 2. Check Reconciliation value column (Col C / 3)
+    ws_recon = wb["Reconciliation"]
+    for row in range(4, ws_recon.max_row + 1):
+        cell = ws_recon.cell(row=row, column=3)
+        assert cell.comment is not None, f"Reconciliation!C{row} missing comment"
+        assert "[Footnote Provenance" in cell.comment.text
+        # Formulas use =HYPERLINK(...) wrapper
+        val_str = str(cell.value or "")
+        assert val_str.startswith("=HYPERLINK("), f"Reconciliation!C{row} formula must contain HYPERLINK, got {val_str}"
+

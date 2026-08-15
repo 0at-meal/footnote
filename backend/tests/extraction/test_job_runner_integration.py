@@ -28,7 +28,7 @@ def mock_job_repo(tmp_path: Path) -> JobRepository:
     repo.save_job(
         filename="filing.pdf",
         content=b"%PDF-1.4 dummy",
-        target_metric="Operating Expenses",
+        target_metric="Adjusted EBITDA",
     )
     return repo
 
@@ -133,6 +133,10 @@ def test_process_queued_job_runs_full_pipeline(
     assert (results_dir / f"{job_id}_summary.json").exists()
     assert (results_dir / f"{job_id}_classified.json").exists()
     assert (results_dir / f"{job_id}_decision_log.jsonl").exists()
+
+    models_dir = tmp_path / "models"
+    assert (models_dir / f"{job_id}_model.xlsx").exists()
+    assert (models_dir / f"{job_id}_provenance.json").exists()
 
 
 def test_process_queued_job_failure_updates_status_to_failed(

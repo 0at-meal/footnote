@@ -1,11 +1,13 @@
 """
-Excel workbook generator using xlsxwriter (Feature 4 Step 3).
+Excel workbook generator using xlsxwriter with exact provenance tagging (Feature 4 Step 4).
 
 Enforces:
 - CONSTITUTION §1.1, §1.3, §1.5, §2.5, §3.3, §4.2, §6.4
 - AC-1: Deterministic byte structure
 - AC-2: Zero numeric literals in derived cells
 - AC-3: Valid recalculable Excel formulas without broken references
+- AC-5: Every non-hardcoded cell resolves to exactly one source record
+- AC-6: Exactly one comment and exactly one hyperlink per generated cell
 - AC-7 / EC-6: Space-free sheet names
 - EC-2 / EC-3: Value parsing and warnings
 - EC-7: Atomic serialization and cleanup on error
@@ -19,7 +21,16 @@ from typing import Any
 
 import xlsxwriter
 
-from app.excel_export.models import CellReference, WorkbookGenerationResult
+from app.excel_export.models import (
+    CellReference,
+    W3CAnnotationRecord,
+    WorkbookGenerationResult,
+)
+from app.excel_export.provenance import (
+    build_w3c_annotation_for_node,
+    format_cell_comment,
+    format_cell_hyperlink_url,
+)
 from app.formula_engine.models import FormulaNodeType, FormulaTree
 
 logger = logging.getLogger(__name__)
@@ -78,9 +89,10 @@ def generate_workbook(
     tree: FormulaTree,
     job_id: str,
     output_dir: Path | None = None,
+    base_url: str = "http://localhost:8000",
 ) -> WorkbookGenerationResult:
     """
-    Serializes a FormulaTree into a fresh .xlsx workbook file using xlsxwriter.
+    Serializes a FormulaTree into a fresh .xlsx workbook with exact provenance tagging.
 
     Layout:
     - Sheet 'Source_Inputs': Tabular listing of extracted confirmed items with raw values.
@@ -102,6 +114,7 @@ def generate_workbook(
         )
 
     cell_refs: list[CellReference] = []
+    provenance_records: list[W3CAnnotationRecord] = []
     warnings: list[str] = []
     sheet_names = ["Source_Inputs", "Reconciliation"]
 
@@ -213,16 +226,40 @@ def generate_workbook(
             val_col = 5
             val_coord = _to_cell_coord(row_idx, val_col)
 
+            # Build canonical W3C Web Annotation record (plan §6.1 item 7)
+            anno = build_w3c_annotation_for_node(job_id, "Source_Inputs", val_coord, leaf)
+            provenance_records.append(anno)
+
+            # Format 1 comment and 1 hyperlink URL (AC-6, AC-7)
+            comment_text = format_cell_comment(anno)
+            hyperlink_url = format_cell_hyperlink_url(job_id, "Source_Inputs", val_coord, base_url=base_url)
+
+            # Write comment (AC-6)
+            ws_inputs.write_comment(
+                row_idx,
+                val_col,
+                comment_text,
+                {"visible": False, "width": 240, "height": 110},
+            )
+
             is_hardcode = source_node.is_hardcode if source_node else False
             val_format = fmt_hardcode_num if is_hardcode else fmt_source_num
 
-            if is_num and parsed_num is not None:
-                ws_inputs.write_number(row_idx, val_col, parsed_num, val_format)
-            else:
-                ws_inputs.write_string(row_idx, val_col, raw_val, fmt_text)
+            display_str = f"{parsed_num:,.2f}" if (is_num and parsed_num is not None) else raw_val
+            if not is_num:
                 warnings.append(
                     f"Row {row_idx + 1} item '{leaf.label}' raw value '{raw_val}' is not a valid number (EC-2)"
                 )
+
+            # Write hyperlink with formatted display value (AC-6, AC-7)
+            ws_inputs.write_url(
+                row_idx,
+                val_col,
+                hyperlink_url,
+                cell_format=val_format,
+                string=display_str,
+                tip=f"Source: {source_file} (p. {page})",
+            )
 
             source_cell_map[leaf.node_id] = row_idx
 
@@ -237,6 +274,7 @@ def generate_workbook(
                     is_formula=False,
                     is_hardcode=is_hardcode,
                     source_node_id=source_node.node_id if source_node else None,
+                    annotation_id=anno.id,
                 )
             )
 
@@ -263,7 +301,14 @@ def generate_workbook(
             if child.node_type == FormulaNodeType.leaf:
                 input_row = source_cell_map[child.node_id]
                 source_input_coord = f"Source_Inputs!F{input_row + 1}"
-                formula_str = f"={source_input_coord}"
+                val_coord = _to_cell_coord(curr_row, 2)
+
+                # Canonical W3C annotation for reconciliation cell (AC-5, plan §6.1 item 7)
+                anno = build_w3c_annotation_for_node(job_id, "Reconciliation", val_coord, child)
+                provenance_records.append(anno)
+
+                comment_text = format_cell_comment(anno)
+                hyperlink_url = format_cell_hyperlink_url(job_id, "Reconciliation", val_coord, base_url=base_url)
 
                 src_ref = (
                     f"{child.source_node.source_file} (p. {child.source_node.page})"
@@ -271,11 +316,18 @@ def generate_workbook(
                     else "Extracted"
                 )
 
+                formula_str = f'=HYPERLINK("{hyperlink_url}", {source_input_coord})'
+
                 ws_recon.write(curr_row, 0, child.label, fmt_text)
                 ws_recon.write(curr_row, 1, src_ref, fmt_text)
                 ws_recon.write_formula(curr_row, 2, formula_str, fmt_sheet_link)
+                ws_recon.write_comment(
+                    curr_row,
+                    2,
+                    comment_text,
+                    {"visible": False, "width": 240, "height": 110},
+                )
 
-                val_coord = _to_cell_coord(curr_row, 2)
                 component_value_cells.append(val_coord)
 
                 cell_refs.append(
@@ -289,6 +341,7 @@ def generate_workbook(
                         is_formula=True,
                         is_hardcode=False,
                         source_node_id=child.source_node.node_id if child.source_node else None,
+                        annotation_id=anno.id,
                     )
                 )
                 curr_row += 1
@@ -299,7 +352,13 @@ def generate_workbook(
                 for sub_leaf in child.children:
                     sub_input_row = source_cell_map[sub_leaf.node_id]
                     sub_source_input_coord = f"Source_Inputs!F{sub_input_row + 1}"
-                    sub_formula_str = f"={sub_source_input_coord}"
+                    sub_val_coord = _to_cell_coord(curr_row, 2)
+
+                    sub_anno = build_w3c_annotation_for_node(job_id, "Reconciliation", sub_val_coord, sub_leaf)
+                    provenance_records.append(sub_anno)
+
+                    sub_comment = format_cell_comment(sub_anno)
+                    sub_url = format_cell_hyperlink_url(job_id, "Reconciliation", sub_val_coord, base_url=base_url)
 
                     sub_src_ref = (
                         f"{sub_leaf.source_node.source_file} (p. {sub_leaf.source_node.page})"
@@ -307,11 +366,18 @@ def generate_workbook(
                         else "Extracted"
                     )
 
+                    sub_formula_str = f'=HYPERLINK("{sub_url}", {sub_source_input_coord})'
+
                     ws_recon.write(curr_row, 0, f"  - {sub_leaf.label}", fmt_text)
                     ws_recon.write(curr_row, 1, sub_src_ref, fmt_text)
                     ws_recon.write_formula(curr_row, 2, sub_formula_str, fmt_sheet_link)
+                    ws_recon.write_comment(
+                        curr_row,
+                        2,
+                        sub_comment,
+                        {"visible": False, "width": 240, "height": 110},
+                    )
 
-                    sub_val_coord = _to_cell_coord(curr_row, 2)
                     sub_coords.append(sub_val_coord)
 
                     cell_refs.append(
@@ -325,17 +391,31 @@ def generate_workbook(
                             is_formula=True,
                             is_hardcode=False,
                             source_node_id=sub_leaf.source_node.node_id if sub_leaf.source_node else None,
+                            annotation_id=sub_anno.id,
                         )
                     )
                     curr_row += 1
 
                 # Aggregate summary row
-                agg_formula = f"=SUM({', '.join(sub_coords)})"
+                agg_val_coord = _to_cell_coord(curr_row, 2)
+                agg_anno = build_w3c_annotation_for_node(job_id, "Reconciliation", agg_val_coord, child)
+                provenance_records.append(agg_anno)
+
+                agg_comment = format_cell_comment(agg_anno)
+                agg_url = format_cell_hyperlink_url(job_id, "Reconciliation", agg_val_coord, base_url=base_url)
+
+                agg_formula = f'=HYPERLINK("{agg_url}", SUM({", ".join(sub_coords)}))'
+
                 ws_recon.write(curr_row, 0, child.label, fmt_text)
                 ws_recon.write(curr_row, 1, "Aggregated", fmt_text)
                 ws_recon.write_formula(curr_row, 2, agg_formula, fmt_formula_num)
+                ws_recon.write_comment(
+                    curr_row,
+                    2,
+                    agg_comment,
+                    {"visible": False, "width": 240, "height": 110},
+                )
 
-                agg_val_coord = _to_cell_coord(curr_row, 2)
                 component_value_cells.append(agg_val_coord)
 
                 cell_refs.append(
@@ -349,17 +429,31 @@ def generate_workbook(
                         is_formula=True,
                         is_hardcode=False,
                         source_node_id=None,
+                        annotation_id=agg_anno.id,
                     )
                 )
                 curr_row += 1
 
         # Final Target Metric Root Row
-        total_formula = f"=SUM({', '.join(component_value_cells)})"
+        root_val_coord = _to_cell_coord(curr_row, 2)
+        root_anno = build_w3c_annotation_for_node(job_id, "Reconciliation", root_val_coord, tree.root)
+        provenance_records.append(root_anno)
+
+        root_comment = format_cell_comment(root_anno)
+        root_url = format_cell_hyperlink_url(job_id, "Reconciliation", root_val_coord, base_url=base_url)
+
+        total_formula = f'=HYPERLINK("{root_url}", SUM({", ".join(component_value_cells)}))'
+
         ws_recon.write(curr_row, 0, tree.target_metric, fmt_total_label)
         ws_recon.write(curr_row, 1, "Total", fmt_total_label)
         ws_recon.write_formula(curr_row, 2, total_formula, fmt_total)
+        ws_recon.write_comment(
+            curr_row,
+            2,
+            root_comment,
+            {"visible": False, "width": 240, "height": 110},
+        )
 
-        root_val_coord = _to_cell_coord(curr_row, 2)
         cell_refs.append(
             CellReference(
                 sheet_name="Reconciliation",
@@ -371,6 +465,7 @@ def generate_workbook(
                 is_formula=True,
                 is_hardcode=False,
                 source_node_id=None,
+                annotation_id=root_anno.id,
             )
         )
 
@@ -392,6 +487,7 @@ def generate_workbook(
             formula_cells_count=formula_count,
             source_cells_count=source_count,
             cell_references=cell_refs,
+            provenance_records=provenance_records,
             warnings=warnings,
             is_success=True,
             error_detail=None,
@@ -416,6 +512,7 @@ def generate_workbook(
             formula_cells_count=0,
             source_cells_count=0,
             cell_references=[],
+            provenance_records=[],
             warnings=warnings,
             is_success=False,
             error_detail=str(err),
