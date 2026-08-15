@@ -220,3 +220,42 @@ def flag_review_item(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
 
     return item
+
+
+@router.post(
+    "/{job_id}/items/{item_id}/unlock",
+    response_model=ReviewItem,
+    summary="Unlock a confirmed/locked item",
+    responses={
+        200: {"description": "Item unlocked and modifiable."},
+        400: {"description": "Item is not currently locked."},
+        404: {"description": "Job or item not found."},
+    },
+)
+def unlock_review_item(
+    job_id: str,
+    item_id: str,
+) -> ReviewItem:
+    """
+    Explicitly unlock a locked item (spec AC-6).
+    """
+    job = _job_repo.get_job(job_id)
+    if job is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Job not found",
+        )
+
+    item, err = _review_repo.unlock_item(
+        job_id=job_id,
+        item_id=item_id,
+    )
+    if err is not None:
+        if "not found" in err.lower():
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=err)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=err)
+
+    if item is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
+
+    return item

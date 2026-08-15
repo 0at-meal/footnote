@@ -245,6 +245,72 @@ class ReviewRepository:
         self.save_review_items(job_id, items)
         return target_item, None
 
+    def unlock_item(
+        self,
+        job_id: str,
+        item_id: str,
+    ) -> tuple[ReviewItem | None, str | None]:
+        """
+        Explicitly unlock a locked item (spec AC-6).
+
+        Transitions out of locked status back to baseline review status:
+        - pending_taxonomy_confirmation if taxonomy_status is pending
+        - auto_accepted / needs_review / manual_required based on confidence_band.
+        """
+        items = self.get_review_items(job_id)
+        if items is None:
+            return None, "Job records not found"
+
+        target_item: ReviewItem | None = None
+        for item in items:
+            if item.id == item_id:
+                target_item = item
+                break
+
+        if target_item is None:
+            return None, f"Item with id '{item_id}' not found"
+
+        if target_item.status != ReviewStatus.locked:
+            return None, "Item is not currently locked."
+
+        # Transition out of locked back to baseline review status
+        if target_item.taxonomy_status == "pending_taxonomy_confirmation":
+            target_item.status = ReviewStatus.pending_taxonomy_confirmation
+        elif target_item.confidence_band == ConfidenceBand.auto_accepted:
+            target_item.status = ReviewStatus.auto_accepted
+        elif target_item.confidence_band == ConfidenceBand.needs_review:
+            target_item.status = ReviewStatus.needs_review
+        else:
+            target_item.status = ReviewStatus.manual_required
+
+        self.save_review_items(job_id, items)
+        return target_item, None
+
+    def protect_locked_items(
+        self,
+        job_id: str,
+        new_items: list[ReviewItem],
+    ) -> list[ReviewItem]:
+        """
+        Merge newly extracted/classified items while preserving locked items byte-identically (spec AC-5, EC-10).
+        """
+        existing = self.get_review_items(job_id)
+        if not existing:
+            self.save_review_items(job_id, new_items)
+            return new_items
+
+        locked_map = {item.id: item for item in existing if item.status == ReviewStatus.locked}
+        merged: list[ReviewItem] = []
+        for new_item in new_items:
+            if new_item.id in locked_map:
+                # Retain the locked item byte-identically
+                merged.append(locked_map[new_item.id])
+            else:
+                merged.append(new_item)
+
+        self.save_review_items(job_id, merged)
+        return merged
+
     def _from_classified_records(
         self,
         job_id: str,

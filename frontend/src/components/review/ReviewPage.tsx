@@ -260,6 +260,29 @@ export default function ReviewPage({ jobId, apiBase, onBack }: Props) {
     }
   }
 
+  async function handleUnlock(item: ReviewItem) {
+    setIsActionPending(true)
+
+    try {
+      const res = await fetch(`${apiBase}/review/${jobId}/items/${item.id}/unlock`, {
+        method: 'POST',
+      })
+
+      if (!res.ok) {
+        const detail = await res.json().catch(() => ({ detail: 'Failed to unlock item' }))
+        throw new Error(detail.detail || `Server error ${res.status}`)
+      }
+
+      const updatedItem = (await res.json()) as ReviewItem
+      setItems((prev) => prev.map((it) => (it.id === updatedItem.id ? updatedItem : it)))
+      setSelectedItem(updatedItem)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Unlock action failed')
+    } finally {
+      setIsActionPending(false)
+    }
+  }
+
   return (
     <div className="review-layout">
       {/* ── Review Header ── */}
@@ -417,8 +440,38 @@ export default function ReviewPage({ jobId, apiBase, onBack }: Props) {
                           </button>
                         </div>
                       </div>
+                    ) : item.status === 'locked' ? (
+                      /* ── Locked Item Actions (Feature 5 Step 4) ── */
+                      <div
+                        className="review-item-actions"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          type="button"
+                          className="review-btn review-btn--unlock"
+                          disabled={isActionPending}
+                          onClick={() => void handleUnlock(item)}
+                          title="Unlock item to permit edits"
+                        >
+                          <svg
+                            width="12"
+                            height="12"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden="true"
+                          >
+                            <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                            <path d="M7 11V7a5 5 0 0 1 9.9-1" />
+                          </svg>
+                          Unlock
+                        </button>
+                      </div>
                     ) : (
-                      /* ── Item Actions (Feature 5 Step 3) ── */
+                      /* ── Unlocked Item Actions (Feature 5 Step 3) ── */
                       <div
                         className="review-item-actions"
                         onClick={(e) => e.stopPropagation()}
@@ -427,7 +480,6 @@ export default function ReviewPage({ jobId, apiBase, onBack }: Props) {
                           type="button"
                           className="review-btn review-btn--confirm"
                           disabled={
-                            item.status === 'locked' ||
                             item.status === 'extraction_error' ||
                             isActionPending
                           }
@@ -443,7 +495,7 @@ export default function ReviewPage({ jobId, apiBase, onBack }: Props) {
                         <button
                           type="button"
                           className="review-btn review-btn--edit"
-                          disabled={item.status === 'locked' || isActionPending}
+                          disabled={isActionPending}
                           onClick={() => handleStartEdit(item)}
                         >
                           Edit
@@ -451,7 +503,7 @@ export default function ReviewPage({ jobId, apiBase, onBack }: Props) {
                         <button
                           type="button"
                           className={`review-btn review-btn--flag ${item.status === 'flagged' ? 'review-btn--flagged' : ''}`}
-                          disabled={item.status === 'locked' || isActionPending}
+                          disabled={isActionPending}
                           onClick={() => void handleFlag(item)}
                         >
                           {item.status === 'flagged' ? 'Flagged' : 'Flag'}

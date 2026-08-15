@@ -268,6 +268,22 @@
   border-color: #d97706;
 }
 
+.review-btn--unlock {
+  background: var(--surface);
+  color: var(--accent);
+  border-color: var(--accent-border);
+
+  &:hover:not(:disabled) {
+    background: var(--accent-bg);
+    border-color: var(--accent);
+  }
+}
+
+.status-badge--locked {
+  background: color-mix(in srgb, #6366f1 15%, transparent);
+  color: #4f46e5;
+}
+
 /* ── Inline Edit Form ─────────────────────────────────────── */
 
 .review-edit-form {

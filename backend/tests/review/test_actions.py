@@ -258,3 +258,84 @@ def test_flag_item_and_rejection_when_locked(tmp_path: Path) -> None:
         res_flag_locked = client.post(f"/review/{job_id}/items/{item_id}/flag")
         assert res_flag_locked.status_code == 400
         assert "cannot flag a locked item" in res_flag_locked.json()["detail"].lower()
+
+
+def test_unlock_item_success_and_rejection_when_not_locked(tmp_path: Path) -> None:
+    job_repo, review_repo, job_id = _setup_job_with_records(tmp_path)
+    item_id = f"{job_id}_0"
+
+    with patch("app.review.router._job_repo", job_repo), patch(
+        "app.review.router._review_repo", review_repo
+    ):
+        # 1. Unlock when not locked -> 400
+        res_fail = client.post(f"/review/{job_id}/items/{item_id}/unlock")
+        assert res_fail.status_code == 400
+        assert "not currently locked" in res_fail.json()["detail"].lower()
+
+        # 2. Confirm to lock
+        res_confirm = client.post(
+            f"/review/{job_id}/items/{item_id}/confirm",
+            json={"add_to_taxonomy": False},
+        )
+        assert res_confirm.status_code == 200
+        assert res_confirm.json()["status"] == ReviewStatus.locked.value
+
+        # 3. Explicit unlock -> 200, status returns to auto_accepted
+        res_unlock = client.post(f"/review/{job_id}/items/{item_id}/unlock")
+        assert res_unlock.status_code == 200
+        assert res_unlock.json()["status"] == ReviewStatus.auto_accepted.value
+
+
+def test_locked_status_persists_across_restart(tmp_path: Path) -> None:
+    job_repo, review_repo_1, job_id = _setup_job_with_records(tmp_path)
+    item_id = f"{job_id}_0"
+
+    with patch("app.review.router._job_repo", job_repo), patch(
+        "app.review.router._review_repo", review_repo_1
+    ):
+        # Confirm and lock item
+        res = client.post(
+            f"/review/{job_id}/items/{item_id}/confirm",
+            json={"add_to_taxonomy": False},
+        )
+        assert res.status_code == 200
+        assert res.json()["status"] == ReviewStatus.locked.value
+
+    # Simulate fresh backend instantiation / restart (EC-6)
+    review_repo_2 = ReviewRepository(data_dir=tmp_path)
+    with patch("app.review.router._job_repo", job_repo), patch(
+        "app.review.router._review_repo", review_repo_2
+    ):
+        items_res = client.get(f"/review/{job_id}/items")
+        assert items_res.status_code == 200
+        items = items_res.json()["items"]
+        locked_item = next(it for it in items if it["id"] == item_id)
+        assert locked_item["status"] == ReviewStatus.locked.value
+
+
+def test_protect_locked_items_against_extraction_rerun(tmp_path: Path) -> None:
+    job_repo, review_repo, job_id = _setup_job_with_records(tmp_path)
+    item_id = f"{job_id}_0"
+
+    with patch("app.review.router._job_repo", job_repo), patch(
+        "app.review.router._review_repo", review_repo
+    ):
+        # Lock item 0
+        client.post(f"/review/{job_id}/items/{item_id}/confirm", json={"add_to_taxonomy": False})
+
+    # Create new candidate items simulating re-extraction (EC-10)
+    items = review_repo.get_review_items(job_id)
+    assert items is not None
+    modified_candidates = [
+        item.model_copy(update={"value": "99,999", "label": "OVERWRITTEN_LABEL"})
+        for item in items
+    ]
+
+    # Merge with protection
+    merged = review_repo.protect_locked_items(job_id, modified_candidates)
+    locked_item = next(it for it in merged if it.id == item_id)
+
+    # Locked item retained original confirmed state byte-identically (AC-5, EC-10)
+    assert locked_item.value == "1,000"
+    assert locked_item.label == "Operating Expenses / SBC"
+    assert locked_item.status == ReviewStatus.locked
