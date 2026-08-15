@@ -195,6 +195,179 @@
   padding: 4px 8px;
 }
 
+/* ── Item Actions (Feature 5 Step 3) ──────────────────────── */
+
+.review-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.review-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background-color 0.15s, border-color 0.15s, opacity 0.15s;
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.review-btn--confirm {
+  background: color-mix(in srgb, #22c55e 15%, transparent);
+  color: #16a34a;
+  border-color: color-mix(in srgb, #22c55e 30%, transparent);
+
+  &:hover:not(:disabled) {
+    background: color-mix(in srgb, #22c55e 25%, transparent);
+  }
+}
+
+.review-btn--edit {
+  background: var(--surface);
+  color: var(--text-h);
+  border-color: var(--border);
+
+  &:hover:not(:disabled) {
+    background: var(--row-hover-bg);
+    border-color: var(--accent-border);
+  }
+}
+
+.review-btn--flag {
+  background: color-mix(in srgb, #f59e0b 15%, transparent);
+  color: #d97706;
+  border-color: color-mix(in srgb, #f59e0b 30%, transparent);
+
+  &:hover:not(:disabled) {
+    background: color-mix(in srgb, #f59e0b 25%, transparent);
+  }
+}
+
+.review-btn--flagged {
+  background: #f59e0b;
+  color: #ffffff;
+  border-color: #d97706;
+}
+
+/* ── Inline Edit Form ─────────────────────────────────────── */
+
+.review-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 8px;
+  background: var(--surface);
+  border: 1px solid var(--accent-border);
+  border-radius: 6px;
+}
+
+.review-edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.review-edit-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.review-edit-input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 5px 8px;
+  font-size: 13px;
+  color: var(--text-h);
+
+  &:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+}
+
+.review-edit-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.review-edit-error {
+  font-size: 11px;
+  color: var(--error);
+  margin: 0;
+}
+
+/* ── Modal Dialog ─────────────────────────────────────────── */
+
+.review-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.review-modal {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px;
+  max-width: 440px;
+  width: 90%;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.review-modal__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.review-modal__body {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.review-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
 /* ── Right PDF Viewer ─────────────────────────────────────── */
 
 .review-viewer {

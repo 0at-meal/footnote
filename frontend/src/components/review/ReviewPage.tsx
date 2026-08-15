@@ -46,6 +46,14 @@ export default function ReviewPage({ jobId, apiBase, onBack }: Props) {
   const [pageRenderError, setPageRenderError] = useState<string | null>(null)
   const [canvasSize, setCanvasSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 })
 
+  // ── Action State (Feature 5 Step 3) ─────────────────────────────────────
+  const [editingItemId, setEditingItemId] = useState<string | null>(null)
+  const [editValue, setEditValue] = useState<string>('')
+  const [editLabel, setEditLabel] = useState<string>('')
+  const [editError, setEditError] = useState<string | null>(null)
+  const [isActionPending, setIsActionPending] = useState<boolean>(false)
+  const [taxonomyPromptItem, setTaxonomyPromptItem] = useState<ReviewItem | null>(null)
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
   // ── 1. Fetch Review Items ───────────────────────────────────────────────
@@ -145,6 +153,111 @@ export default function ReviewPage({ jobId, apiBase, onBack }: Props) {
   function handleSelectItem(item: ReviewItem) {
     setSelectedItem(item)
     setCurrentPage(item.page)
+    // Clear editing mode when switching items
+    if (editingItemId && editingItemId !== item.id) {
+      setEditingItemId(null)
+      setEditError(null)
+    }
+  }
+
+  // ── Action Handlers (Feature 5 Step 3) ──────────────────────────────────
+
+  function handleStartEdit(item: ReviewItem) {
+    setEditingItemId(item.id)
+    setEditValue(item.value)
+    setEditLabel(item.label)
+    setEditError(null)
+  }
+
+  function handleCancelEdit() {
+    setEditingItemId(null)
+    setEditError(null)
+  }
+
+  async function handleSaveEdit(item: ReviewItem) {
+    if (!editLabel.trim()) {
+      setEditError('Label cannot be empty.')
+      return
+    }
+
+    setIsActionPending(true)
+    setEditError(null)
+
+    try {
+      const res = await fetch(`${apiBase}/review/${jobId}/items/${item.id}/edit`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value: editValue, label: editLabel }),
+      })
+
+      if (!res.ok) {
+        const detail = await res.json().catch(() => ({ detail: 'Failed to save edit' }))
+        throw new Error(detail.detail || `Server error ${res.status}`)
+      }
+
+      const updatedItem = (await res.json()) as ReviewItem
+      setItems((prev) => prev.map((it) => (it.id === updatedItem.id ? updatedItem : it)))
+      setSelectedItem(updatedItem)
+      setEditingItemId(null)
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : 'Failed to save edit')
+    } finally {
+      setIsActionPending(false)
+    }
+  }
+
+  async function handleConfirm(item: ReviewItem, addToTaxonomy: boolean = false) {
+    if (item.status === 'pending_taxonomy_confirmation' && !addToTaxonomy) {
+      setTaxonomyPromptItem(item)
+      return
+    }
+
+    setIsActionPending(true)
+
+    try {
+      const res = await fetch(`${apiBase}/review/${jobId}/items/${item.id}/confirm`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ add_to_taxonomy: addToTaxonomy }),
+      })
+
+      if (!res.ok) {
+        const detail = await res.json().catch(() => ({ detail: 'Failed to confirm item' }))
+        throw new Error(detail.detail || `Server error ${res.status}`)
+      }
+
+      const updatedItem = (await res.json()) as ReviewItem
+      setItems((prev) => prev.map((it) => (it.id === updatedItem.id ? updatedItem : it)))
+      setSelectedItem(updatedItem)
+      setTaxonomyPromptItem(null)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Confirmation failed')
+    } finally {
+      setIsActionPending(false)
+    }
+  }
+
+  async function handleFlag(item: ReviewItem) {
+    setIsActionPending(true)
+
+    try {
+      const res = await fetch(`${apiBase}/review/${jobId}/items/${item.id}/flag`, {
+        method: 'POST',
+      })
+
+      if (!res.ok) {
+        const detail = await res.json().catch(() => ({ detail: 'Failed to update flag state' }))
+        throw new Error(detail.detail || `Server error ${res.status}`)
+      }
+
+      const updatedItem = (await res.json()) as ReviewItem
+      setItems((prev) => prev.map((it) => (it.id === updatedItem.id ? updatedItem : it)))
+      setSelectedItem(updatedItem)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Flag action failed')
+    } finally {
+      setIsActionPending(false)
+    }
   }
 
   return (
@@ -207,6 +320,8 @@ export default function ReviewPage({ jobId, apiBase, onBack }: Props) {
             <div className="review-sidebar__list" role="listbox" aria-label="Extracted items list">
               {items.map((item) => {
                 const isSelected = selectedItem?.id === item.id
+                const isEditing = editingItemId === item.id
+
                 return (
                   <div
                     key={item.id}
@@ -217,8 +332,10 @@ export default function ReviewPage({ jobId, apiBase, onBack }: Props) {
                     onClick={() => handleSelectItem(item)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault()
-                        handleSelectItem(item)
+                        if (!isEditing) {
+                          e.preventDefault()
+                          handleSelectItem(item)
+                        }
                       }
                     }}
                   >
@@ -241,6 +358,104 @@ export default function ReviewPage({ jobId, apiBase, onBack }: Props) {
                     {item.error_detail && (
                       <div className="review-item-card__error-detail">
                         {item.error_detail}
+                      </div>
+                    )}
+
+                    {/* ── Inline Edit Mode ── */}
+                    {isEditing ? (
+                      <div
+                        className="review-edit-form"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="review-edit-field">
+                          <label className="review-edit-label" htmlFor={`edit-label-${item.id}`}>
+                            Label
+                          </label>
+                          <input
+                            id={`edit-label-${item.id}`}
+                            className="review-edit-input"
+                            value={editLabel}
+                            onChange={(e) => setEditLabel(e.target.value)}
+                            placeholder="Structural label"
+                          />
+                        </div>
+                        <div className="review-edit-field">
+                          <label className="review-edit-label" htmlFor={`edit-value-${item.id}`}>
+                            Value
+                          </label>
+                          <input
+                            id={`edit-value-${item.id}`}
+                            className="review-edit-input"
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            placeholder="Numeric value"
+                          />
+                        </div>
+
+                        {editError && (
+                          <p className="review-edit-error" role="alert">
+                            {editError}
+                          </p>
+                        )}
+
+                        <div className="review-edit-buttons">
+                          <button
+                            type="button"
+                            className="review-btn review-btn--edit"
+                            onClick={handleCancelEdit}
+                            disabled={isActionPending}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            className="review-btn review-btn--confirm"
+                            onClick={() => void handleSaveEdit(item)}
+                            disabled={isActionPending}
+                          >
+                            Save
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      /* ── Item Actions (Feature 5 Step 3) ── */
+                      <div
+                        className="review-item-actions"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          type="button"
+                          className="review-btn review-btn--confirm"
+                          disabled={
+                            item.status === 'locked' ||
+                            item.status === 'extraction_error' ||
+                            isActionPending
+                          }
+                          onClick={() => void handleConfirm(item)}
+                          title={
+                            item.status === 'extraction_error'
+                              ? 'Edit with valid values before confirming'
+                              : 'Confirm item and lock'
+                          }
+                        >
+                          Confirm
+                        </button>
+                        <button
+                          type="button"
+                          className="review-btn review-btn--edit"
+                          disabled={item.status === 'locked' || isActionPending}
+                          onClick={() => handleStartEdit(item)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          className={`review-btn review-btn--flag ${item.status === 'flagged' ? 'review-btn--flagged' : ''}`}
+                          disabled={item.status === 'locked' || isActionPending}
+                          onClick={() => void handleFlag(item)}
+                        >
+                          {item.status === 'flagged' ? 'Flagged' : 'Flag'}
+                        </button>
                       </div>
                     )}
                   </div>
@@ -342,6 +557,45 @@ export default function ReviewPage({ jobId, apiBase, onBack }: Props) {
           </div>
         </main>
       </div>
+
+      {/* ── Taxonomy Addition Confirmation Modal (EC-5) ── */}
+      {taxonomyPromptItem && (
+        <div
+          className="review-modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="tax-modal-title"
+        >
+          <div className="review-modal">
+            <h3 id="tax-modal-title" className="review-modal__title">
+              Confirm Taxonomy Addition
+            </h3>
+            <p className="review-modal__body">
+              The label <strong>&ldquo;{taxonomyPromptItem.label}&rdquo;</strong> is unrecognized
+              in the seed taxonomy. Confirming this item will add it to the active taxonomy baseline
+              and lock the item.
+            </p>
+            <div className="review-modal__footer">
+              <button
+                type="button"
+                className="review-btn review-btn--edit"
+                onClick={() => setTaxonomyPromptItem(null)}
+                disabled={isActionPending}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="review-btn review-btn--confirm"
+                onClick={() => void handleConfirm(taxonomyPromptItem, true)}
+                disabled={isActionPending}
+              >
+                Add to Taxonomy &amp; Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

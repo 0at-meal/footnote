@@ -82,3 +82,25 @@ class ReviewItemsResponse(BaseModel):
     job_id: str
     items: list[ReviewItem]
     total_items: int
+
+
+class ReviewItemEditRequest(BaseModel):
+    """
+    Payload for PATCH /review/{job_id}/items/{item_id}/edit.
+
+    Frozen fields (page, bbox, source_file) cannot be modified (CONSTITUTION §2.3, spec AC-9).
+    """
+
+    value: str | None = Field(default=None, description="Corrected value text")
+    label: str | None = Field(default=None, description="Corrected label text")
+
+
+class ReviewItemConfirmRequest(BaseModel):
+    """
+    Payload for POST /review/{job_id}/items/{item_id}/confirm.
+    """
+
+    add_to_taxonomy: bool = Field(
+        default=False,
+        description="Whether to confirm adding an unrecognized label to the taxonomy seed list (EC-5)",
+    )

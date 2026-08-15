@@ -10,7 +10,12 @@ from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import FileResponse
 
 from app.ingestion.repository import JobRepository
-from app.review.models import ReviewItemsResponse
+from app.review.models import (
+    ReviewItem,
+    ReviewItemConfirmRequest,
+    ReviewItemEditRequest,
+    ReviewItemsResponse,
+)
 from app.review.repository import ReviewRepository
 
 router = APIRouter(prefix="/review", tags=["review"])
@@ -93,3 +98,125 @@ def get_review_items(job_id: str) -> ReviewItemsResponse:
         items=items,
         total_items=len(items),
     )
+
+
+@router.patch(
+    "/{job_id}/items/{item_id}/edit",
+    response_model=ReviewItem,
+    summary="Edit an item's value or label",
+    responses={
+        200: {"description": "Item successfully updated."},
+        400: {"description": "Validation error or invalid item state."},
+        404: {"description": "Job or item not found."},
+    },
+)
+def edit_review_item(
+    job_id: str,
+    item_id: str,
+    payload: ReviewItemEditRequest,
+) -> ReviewItem:
+    """
+    Edit value or label for an item (spec AC-4, AC-8, AC-9).
+    """
+    job = _job_repo.get_job(job_id)
+    if job is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Job not found",
+        )
+
+    item, err = _review_repo.update_item(
+        job_id=job_id,
+        item_id=item_id,
+        value=payload.value,
+        label=payload.label,
+    )
+    if err is not None:
+        if "not found" in err.lower():
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=err)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=err)
+
+    if item is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
+
+    return item
+
+
+@router.post(
+    "/{job_id}/items/{item_id}/confirm",
+    response_model=ReviewItem,
+    summary="Confirm an item and transition to locked state",
+    responses={
+        200: {"description": "Item confirmed and locked."},
+        400: {"description": "Cannot confirm (e.g. extraction error or taxonomy rejection)."},
+        404: {"description": "Job or item not found."},
+    },
+)
+def confirm_review_item(
+    job_id: str,
+    item_id: str,
+    payload: ReviewItemConfirmRequest,
+) -> ReviewItem:
+    """
+    Confirm an item, locking it against automated overwrites (spec AC-4, AC-5, EC-1, EC-5).
+    """
+    job = _job_repo.get_job(job_id)
+    if job is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Job not found",
+        )
+
+    item, err = _review_repo.confirm_item(
+        job_id=job_id,
+        item_id=item_id,
+        add_to_taxonomy=payload.add_to_taxonomy,
+    )
+    if err is not None:
+        if "not found" in err.lower():
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=err)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=err)
+
+    if item is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
+
+    return item
+
+
+@router.post(
+    "/{job_id}/items/{item_id}/flag",
+    response_model=ReviewItem,
+    summary="Flag an item for attention or toggle flag",
+    responses={
+        200: {"description": "Item flag state updated."},
+        400: {"description": "Cannot flag a locked item."},
+        404: {"description": "Job or item not found."},
+    },
+)
+def flag_review_item(
+    job_id: str,
+    item_id: str,
+) -> ReviewItem:
+    """
+    Flag an item or toggle its flagged state (spec AC-4, AC-7, EC-8).
+    """
+    job = _job_repo.get_job(job_id)
+    if job is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Job not found",
+        )
+
+    item, err = _review_repo.flag_item(
+        job_id=job_id,
+        item_id=item_id,
+    )
+    if err is not None:
+        if "not found" in err.lower():
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=err)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=err)
+
+    if item is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
+
+    return item
