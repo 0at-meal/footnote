@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import type { ReviewItem, ReviewItemsResponse, ReviewStatus } from '../../types/review'
 import { loadPdf, renderPage } from '../../lib/pdf/renderer'
 import type { PDFDocumentProxy } from '../../lib/pdf/renderer'
+import { normalizeBboxToPixels } from '../../lib/pdf/coordinates'
 import './ReviewPage.css'
 
 interface Props {
@@ -43,6 +44,7 @@ export default function ReviewPage({ jobId, apiBase, onBack }: Props) {
 
   const [currentPage, setCurrentPage] = useState<number>(1)
   const [pageRenderError, setPageRenderError] = useState<string | null>(null)
+  const [canvasSize, setCanvasSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 })
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
@@ -121,6 +123,11 @@ export default function ReviewPage({ jobId, apiBase, onBack }: Props) {
         if (cancelled) return
         setCurrentPage(targetPage)
         setPageRenderError(null)
+        if (canvasRef.current) {
+          const width = parseInt(canvasRef.current.style.width, 10) || canvasRef.current.clientWidth
+          const height = parseInt(canvasRef.current.style.height, 10) || canvasRef.current.clientHeight
+          setCanvasSize({ width, height })
+        }
       } catch (err) {
         if (cancelled) return
         // EC-2 handling: Page not found in document
@@ -287,6 +294,50 @@ export default function ReviewPage({ jobId, apiBase, onBack }: Props) {
               }}
             >
               <canvas ref={canvasRef} className="review-viewer__canvas" />
+              {canvasSize.width > 0 && (
+                <div
+                  className="review-viewer__overlay"
+                  style={{ width: canvasSize.width, height: canvasSize.height }}
+                >
+                  {items
+                    .filter((item) => item.page === currentPage)
+                    .map((item) => {
+                      const isSelected = selectedItem?.id === item.id
+                      const pixelBox = normalizeBboxToPixels(
+                        item.bbox,
+                        canvasSize.width,
+                        canvasSize.height,
+                      )
+                      return (
+                        <div
+                          key={item.id}
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`Highlight for ${item.label}: ${item.value}`}
+                          className={`review-bbox ${isSelected ? 'review-bbox--active' : 'review-bbox--inactive'} ${item.status === 'extraction_error' ? 'review-bbox--extraction_error' : ''}`}
+                          style={{
+                            left: `${pixelBox.left}px`,
+                            top: `${pixelBox.top}px`,
+                            width: `${pixelBox.width}px`,
+                            height: `${pixelBox.height}px`,
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleSelectItem(item)
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              handleSelectItem(item)
+                            }
+                          }}
+                          title={`${item.label}: ${item.value}`}
+                        />
+                      )
+                    })}
+                </div>
+              )}
             </div>
           </div>
         </main>
