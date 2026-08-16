@@ -1,91 +1,82 @@
-# spec.md — Feature 5: Extraction Review UI
+# spec.md — Feature 6: Audit Trail Lookup
 
-**Satisfies:** FR7  
+**Satisfies:** FR8  
 **Phase:** 3 — Human Trust Layer  
-**Depends on:** Feature 1 (job record with `job_id` and persisted PDF path); Feature 2 (extraction records with `page`, `bbox`, `source_file`, `confidence_band`, `status`); Feature 3 (`pending_taxonomy_confirmation` records surfaced here for human resolution)  
+**Depends on:** Feature 4 (generated `.xlsx` workbook and W3C Web Annotation provenance records, one per cell); Feature 2 (extraction records supplying `page`, `bbox`, `source_file`); Feature 5 (review status — `locked`/`flagged` — per extraction record)  
 **Status:** Draft
 
 ---
 
 ## What This Feature Does
 
-1. **PDF page rendering.** For the extraction record under review, the UI renders the corresponding source PDF page in the browser using PDF.js. The page displayed is determined by the record's `page` field (1-indexed). The PDF binary is served by the FastAPI backend via an API endpoint; the frontend does not access the filesystem directly (CONSTITUTION §3.7). The rendered page must be the exact page from which the item was extracted — not page 1 by default, not the nearest available page.
+1. **Source-chain resolution.** Given a cell reference from the generated workbook (e.g., sheet name + cell address) or a provenance record ID from the exported metadata, the backend resolves the full source chain for that cell. The source chain is the ordered sequence: generated cell -> Feature 4 provenance record (W3C Web Annotation JSON) -> Feature 2 extraction record(s) -> `source_file`, `page`, `bbox`. For cells whose formula aggregates multiple source records (e.g., a SUMIFS over two Stock-Based Compensation entries), the chain includes all contributing records -- not just one. The resolution is performed by the backend API; the frontend submits a cell reference or provenance record ID and receives the complete chain as a structured response. No chain element may be omitted or silently skipped.
 
-2. **Extracted item display with bounding-box highlights.** The review UI presents all extracted items for a job alongside the rendered PDF page. Each item is visually highlighted on the PDF canvas at the position corresponding to its `bbox` field. The `bbox` coordinates (W3C Web Annotation–style, normalized 0–1000) are mapped to the rendered canvas coordinates at display time. Every item in the list has exactly one visible bounding-box highlight on the relevant PDF page; selecting an item in the list scrolls the PDF view to that item's page and focuses its highlight. Every extracted item in the job — across all confidence bands and statuses, including `needs_review`, `manual_required`, and `extraction_error` — is reachable from this UI.
+2. **Source chain display with PDF link.** The resolved source chain is displayed to the user. For each source component in the chain, the UI presents: the component's `normalized_label`, `value`, `source_file`, `page`, and `bbox` fields; and a direct link that, when activated, renders the originating PDF page in the browser with the bounding-box location visually indicated. The PDF rendering reuses the same backend PDF-serving endpoint and PDF.js rendering established in Feature 5. The link must render the exact `page` for that component and highlight the exact `bbox` region -- not the first page of the document, not an approximation.
 
-3. **Per-item confirm / edit / flag actions.** Each extracted item in the review UI exposes three distinct actions:
-   - **Confirm**: marks the item as human-verified. This is a human-only action — no code path may trigger a confirmation without an explicit user gesture (CONSTITUTION §6.6). Confirming a `pending_taxonomy_confirmation` item also resolves its taxonomy state (in coordination with Feature 3's confirmation flow). Confirming an `auto_accepted` item promotes it to explicitly human-verified status.
-   - **Edit**: allows the user to correct the item's displayed `value` or `label` field before or instead of confirming. An edit does not automatically confirm — the user must still explicitly confirm after editing. Editing does not alter the original `bbox`, `page`, or `source_file` fields.
-   - **Flag**: marks the item as requiring further attention without confirming it. A flagged item remains modifiable. Flagging and confirming are mutually exclusive states — an item cannot be both confirmed and flagged simultaneously.
-
-4. **Confirmed item lock.** Once a user confirms an item, that item transitions to `locked` status. A locked item cannot be altered by any automated pipeline step — no extraction rerun, reclassification, or formula regeneration may silently modify a locked item's `value`, `label`, `normalized_label`, `confidence_band`, or `status` (CONSTITUTION §6.6). The only permitted path back to a modifiable state is an explicit user unlock action in the review UI. The locked state is persisted; a backend restart does not reset it.
+3. **Review status per component.** For each component in the displayed source chain, the UI shows that component's current review status as set by Feature 5: `locked`, `flagged`, or unreviewed. The status is read from the Feature 5 state store at display time; it reflects the current state, not the state at the time the workbook was generated. Feature 6 is strictly read-only with respect to review status -- it displays it but does not modify it. No item's `locked` or `flagged` status can be changed from within the audit trail lookup UI (CONSTITUTION 6.6).
 
 ---
 
 ## What This Feature Does NOT Do
 
-- **Does not run extraction, classification, or formula generation.** This feature is a read-and-act interface over records produced by Features 1–4. It does not trigger any pipeline stage.
-- **Does not implement the audit trail source-chain lookup.** Tracing a generated workbook cell back to its source PDF page is Feature 6. This feature operates on raw extraction records, not on workbook cells.
-- **Does not render the generated `.xlsx` workbook.** The review UI shows extracted items from the source PDF. It does not display the Excel model.
-- **Does not auto-confirm any item.** No item transitions to confirmed status without a user gesture. Items classified `auto_accepted` by Feature 2 are not pre-confirmed — they are presented in the review UI as candidates for human confirmation (CONSTITUTION §6.6).
-- **Does not auto-resolve `pending_taxonomy_confirmation` items.** These items are surfaced for the user's explicit decision; they are never silently resolved.
-- **Does not perform OCR or re-parse the PDF.** The PDF is rendered for visual reference only. The displayed `value` and `label` fields are what Feature 2 extracted; this UI does not re-extract from the rendered image.
-- **Does not modify `bbox`, `page`, or `source_file` fields.** These provenance fields are frozen as extracted by Feature 2. Only `value` and `label` are user-editable in this UI.
-- **Does not support multi-user concurrent review.** MVP is single-user, single-session by design (CONSTITUTION §6.10).
-- **Does not generate or export any artifact.** The audit report export is Feature 8. This feature writes state changes (confirm/edit/flag/lock) to the backend store only.
-- **Does not display the decision log from Feature 3.** The classifier decision log is a separate audit artifact; it is not part of the review UI's item display.
+- **Does not modify any record, status, or field.** Feature 6 is a read-only lookup feature. It reads provenance records, extraction records, and review status; it writes nothing.
+- **Does not re-generate the workbook or re-run any pipeline stage.** The source chain it resolves is derived from the already-generated Feature 4 artifacts. It does not trigger extraction, classification, formula generation, or re-export.
+- **Does not implement the review UI actions (confirm, edit, flag).** Those are Feature 5's responsibility. Feature 6 displays review status; it cannot change it.
+- **Does not perform bounding-box coordinate recomputation.** The `bbox` coordinates displayed and used for PDF highlighting are exactly as stored in the Feature 2 record. No normalization, scaling, or re-mapping occurs in this feature beyond the canvas projection already established in Feature 5.
+- **Does not expose a workbook editing interface.** The audit trail lookup is read-only; the user cannot edit cell formulas or values from within this feature.
+- **Does not resolve source chains for cells that were not generated by Feature 4.** Manually added cells or cells outside the scope of Feature 4's generation are not covered. Attempting to look up such a cell returns a "no provenance record found" response, not an error.
+- **Does not generate the audit report.** Compiling and exporting the full audit report is Feature 8. Feature 6 is an interactive, per-cell lookup; Feature 8 is a document-level export.
+- **Does not implement authentication or per-user audit trail isolation.** Single-session by design (CONSTITUTION 6.10).
 
 ---
 
 ## Acceptance Criteria
 
-1. **Every extracted item is reachable from the review UI.** Given a completed job with N extraction records (any combination of `auto_accepted`, `needs_review`, `manual_required`, `extraction_error`, `pending_taxonomy_confirmation`), all N records are listed and individually selectable in the review UI. No item is hidden, filtered out by default, or inaccessible based on its confidence band or status.
+1. **Every generated cell resolves to a non-empty source chain.** For every cell in the workbook that was generated by Feature 4, submitting that cell's reference to the lookup API returns a source chain with at least one component. No generated cell returns an empty chain or a "not found" response.
 
-2. **Rendered page matches the item's `page` field.** Selecting an item in the review list renders the PDF page number equal to that item's `page` value (1-indexed). Selecting a different item whose `page` differs causes the PDF view to navigate to that item's page. The rendered page is never hardcoded to page 1.
+2. **All contributing records appear in the chain for aggregated formulas.** For a cell whose formula aggregates N source records (N >= 2), the returned chain contains exactly N source components. No contributing record is omitted. The chain is complete and consistent with the provenance records Feature 4 wrote at generation time.
 
-3. **Bounding-box highlight is positioned correctly.** For an item with `bbox: {x0, y0, x1, y1}` (0–1000 normalized), the highlight drawn on the PDF canvas covers the region proportionally equivalent to those coordinates on the rendered page. The mapping is: `canvas_x = (bbox.x / 1000) × canvas_width` and equivalent for y. A highlight that is visibly offset from the actual text location by more than 5% of page width/height is a test failure.
+3. **Each source component's PDF link renders the correct page and bbox.** Activating the PDF link for a source component renders: (a) the PDF page equal to that component's `page` field; (b) a bounding-box highlight covering the region defined by that component's `bbox` field (0-1000 normalized, same mapping as Feature 5 AC-3). A link that renders the wrong page or a mispositioned highlight is a test failure.
 
-4. **All three actions — confirm, edit, flag — are present and functional per item.** For any item in any non-locked status, the confirm, edit, and flag controls are visible and operable. Triggering confirm transitions the item to `locked`. Triggering edit opens the item's `value` and `label` fields for modification without confirming. Triggering flag transitions the item to `flagged` without confirming. These are the only state transitions available from the UI on non-locked items.
+4. **Review status displayed per component is current.** The `locked`/`flagged`/unreviewed status shown for each source component reflects the status stored by Feature 5 at the time of the lookup request -- not the status at workbook generation time. If a component was `flagged` after the workbook was generated, the lookup must show `flagged`, not unreviewed.
 
-5. **A confirmed item is immediately locked and cannot be silently modified.** After a user confirms an item, its status is `locked` in the backend store. Any subsequent automated pipeline call (e.g., re-extraction, reclassification) that would otherwise update this record must be rejected for the locked item specifically. The rejection must be logged. The item's fields remain byte-identical to their state at the moment of confirmation.
+5. **Feature 6 does not modify any review status.** After performing an audit trail lookup (including activating a PDF link), the `locked`/`flagged` status of every involved record is unchanged in the backend store. No lookup action -- including viewing or navigating the source chain -- constitutes a confirmation or a status change (CONSTITUTION 6.6).
 
-6. **Unlock is an explicit, separate user action.** A locked item cannot return to a modifiable state by any means other than the user explicitly triggering an unlock action in the review UI. A backend restart, a new extraction run, or any other system event must not reset a locked item to unlocked. After unlocking, the item's fields are editable again and its status transitions out of `locked`.
+6. **Cells outside Feature 4's scope return a clear "no provenance" response.** If a user submits a cell reference that does not correspond to any Feature 4-generated cell, the API returns a structured response indicating no provenance record was found. It does not return a server error, an empty response, or a chain with fabricated data.
 
-7. **Confirm and flag are mutually exclusive.** No item can carry both `confirmed/locked` and `flagged` status simultaneously. Confirming a flagged item clears the flag and sets the item to `locked`. Flagging a locked item is not permitted — the flag action is not available on locked items.
+7. **Provenance record ID lookup works independently of the workbook.** A provenance record ID (from Feature 4's exported metadata) submitted directly to the lookup API resolves to the same source chain as the corresponding cell reference. Both entry points are supported and produce identical chain output for the same underlying record.
 
-8. **Editing does not auto-confirm.** After a user edits an item's `value` or `label` and saves the edit, the item's status remains in its pre-edit state (e.g., `needs_review`, `flagged`). A separate confirm action is required to lock it. An edited-but-unconfirmed item is not treated as confirmed by any downstream feature.
+8. **Performance: full source chain resolved and displayed within 10 seconds.** From the moment a user initiates a cell lookup to the moment the complete source chain (all components, with their review statuses) is displayed, the elapsed time must not exceed 10 seconds on the local machine. This applies to any generated cell in the workbook, including aggregated formula cells with multiple source components.
 
-9. **`bbox`, `page`, and `source_file` fields are not user-editable.** The review UI does not expose controls to modify these three fields. Their displayed values in the UI are read-only. Any attempt to modify them via the API outside the UI is also rejected (these fields are frozen per CONSTITUTION §2.3, NFR7).
+9. **PDF link render time is within the 10-second chain resolution budget.** The 10-second limit in AC-8 covers the chain resolution step only. Activating a PDF link (navigating to the source page) is governed by the same 10-second limit established in Feature 5 AC-10 -- both share the same PDF-serving endpoint.
 
-10. **Performance: any item in a 200-page 10-K job is reachable within 10 seconds.** From the moment a user selects an item in the review list to the moment the correct PDF page is rendered with the bounding-box highlight visible, the elapsed time must not exceed 10 seconds on the local machine. This applies to any item in the job, not just the first one.
+10. **Source chain is consistent with the provenance records at generation time.** The chain resolved for a given cell must match the W3C Web Annotation provenance record that Feature 4 wrote at generation time. If the provenance record shows `source_file = "filing_2023.pdf"`, `page = 12`, `bbox = {x0: 120, y0: 340, x1: 280, y1: 370}`, the lookup must display exactly those values -- not re-derived or approximated values.
 
 ---
 
 ## Dependencies / Interfaces with Other Features
 
 ### Consumed from Feature 1
-- **`job_id`**: scopes which extraction records are loaded into the review UI.
-- **PDF file path**: the backend uses the persisted job record to locate and serve the source PDF binary to the frontend via API.
+- **PDF file path** (via `source_file` and `job_id`): the backend uses the persisted job record to locate and serve the source PDF binary when a PDF link is activated. Same mechanism as Feature 5.
 
 ### Consumed from Feature 2
-- **All extraction records** for the job: `value`, `label`, `page`, `bbox`, `source_file`, `confidence_band`, `status`. All fields are read for display; only `value` and `label` may be written back (on edit). `bbox`, `page`, `source_file` are strictly read-only in this feature.
-- **Contract:** The frozen field names (`value`, `label`, `page`, `bbox`, `source_file`) must remain unchanged (CONSTITUTION §2.3, NFR7).
+- **Extraction records** (`value`, `label`, `page`, `bbox`, `source_file`): these are the leaf nodes of the source chain. All fields are read-only in this feature.
+- **Contract:** The frozen field names (`value`, `label`, `page`, `bbox`, `source_file`) must remain unchanged (CONSTITUTION 2.3, NFR7).
 
-### Consumed from Feature 3
-- **`pending_taxonomy_confirmation` records**: surfaced here for human resolution. Confirming such an item in the review UI must also trigger the taxonomy confirmation flow (adding the label to the seed taxonomy if it was unrecognized), in coordination with Feature 3's state model.
-- **`normalized_label`**: displayed alongside `label` for confirmed records, to give the reviewer context on how the item was classified.
+### Consumed from Feature 4
+- **W3C Web Annotation provenance records**: one per generated cell, keyed by cell reference and by provenance record ID. These are the primary lookup index. Feature 6 reads them; it does not modify them.
+- **Generated workbook cell reference schema**: the cell reference format (sheet name + cell address) used as the lookup key must be stable and consistent with what Feature 4 writes into the provenance records.
 
-### Exposed for Feature 4
-- **Locked items**: Feature 4's formula engine reads only confirmed records. The `locked` status set by this feature is the gate Feature 4 relies on. Any record that is not `locked` is not available to the formula engine.
-- **Edited `value` / `label`**: if a user edits and then confirms an item, the edited fields are what Feature 4 reads — not the original Feature 2 values.
+### Consumed from Feature 5
+- **Review status** (`locked`, `flagged`, or unreviewed) per extraction record: read at lookup time to display current status per chain component. Feature 5 is the sole writer of this status; Feature 6 is read-only.
 
-### Exposed for Feature 6
-- **`flagged` / `locked` status per item**: Feature 6's audit trail lookup displays verified/flagged status per source component. The status set in this feature is the authoritative source for those indicators.
+### Exposed for Feature 8
+- **Source chain resolution API**: Feature 8's audit report uses the same chain resolution endpoint to build the full provenance table in the report. Feature 8 does not re-implement chain resolution; it calls Feature 6's API.
 
 ### Must Not Break
-- The frozen field names (`value`, `label`, `page`, `bbox`, `source_file`) must not be renamed or restructured by this feature (CONSTITUTION §2.3).
-- `lib/pdf/` (PDF.js integration) may only communicate with `components/review/`. It must not reach into backend modules directly (CONSTITUTION §3.7).
-- The confirmed/locked state transition is human-only, permanently. No test harness, no CI script, no pipeline step may programmatically confirm an item to make a run appear clean (CONSTITUTION §6.6, §6.11).
+- The W3C Web Annotation provenance record format (JSON, 0-1000 normalized bbox) must not be altered by this feature. It is fixed by plan 6.1 item 3.
+- The `audit_trail/` module must not import from `classification/`, `extraction/`, or `formula_engine/` (CONSTITUTION 3.4). It may only read from the shared data store and the PDF-serving endpoint.
+- No code in Feature 6 may write to the review status store. Read-only access is enforced at the data layer (CONSTITUTION 6.6).
 
 ---
 
@@ -93,13 +84,13 @@
 
 | # | Edge Case | Required Behavior |
 |---|---|---|
-| EC-1 | An item has `status: extraction_error` (Feature 2 could not resolve its bbox or value). | The item is listed in the review UI with its error detail displayed. The confirm action is not available for `extraction_error` items — the user can only flag them or manually enter a corrected value via the edit action, after which confirm becomes available. |
-| EC-2 | An item's `page` value is greater than the total number of pages in the PDF (data integrity violation from Feature 2). | The item is listed in the review UI. Attempting to render its page displays an inline error: "Page [N] not found in document." The item remains selectable and its other fields are displayed. The PDF view shows the error state, not a blank page. |
-| EC-3 | Two items have identical `bbox` coordinates on the same page (e.g., a repeated summary value — Feature 2 EC-6). | Both items are listed separately. Both produce overlapping highlights on the PDF canvas. The highlights are rendered as visually stacked layers; selecting each item focuses its own highlight. No deduplication occurs. |
-| EC-4 | A user edits an item's `label` to an empty string. | The edit is rejected inline with a validation error: "Label cannot be empty." The item's `label` field is not updated. |
-| EC-5 | A user attempts to confirm a `pending_taxonomy_confirmation` item whose label is still unrecognized. | Confirming the item prompts the user to also confirm addition of the label to the seed taxonomy. The item is not locked until both the item confirmation and the taxonomy addition are accepted. If the user declines the taxonomy addition, the item remains in `pending_taxonomy_confirmation`. |
-| EC-6 | A backend restart occurs while items are in `locked` status. | After restart, all `locked` items remain `locked`. The locked state is persisted in the backend store (not held in memory). The review UI reflects the correct locked state on reload. |
-| EC-7 | The PDF binary is unavailable when the review UI attempts to render a page (e.g., file moved or deleted). | The item list loads and items are selectable. The PDF canvas displays an inline error: "Source PDF unavailable." The bounding-box highlight cannot be shown, but the item's metadata (`value`, `label`, `page`, `bbox`) is still displayed in the item panel. The user can still confirm, edit, or flag the item. |
-| EC-8 | A user flags an item that was previously `auto_accepted` by Feature 2. | The item transitions to `flagged` status. Its `confidence_band` field from Feature 2 is not modified — it still records `auto_accepted` as the extraction band. `flagged` is a review-layer status, separate from the extraction confidence band. |
-| EC-9 | The user submits an edit to `value` that is identical to the current stored `value` (a no-op edit). | The edit is accepted without error. No state change occurs beyond recording the edit action timestamp. The item's status does not change. |
-| EC-10 | A new extraction run is triggered for a job that has locked items. | The locked items are not overwritten by the new extraction output. The new extraction run produces new candidate records for any non-locked items. Locked items remain at their confirmed state; the new candidates are presented in the review UI alongside them as distinct, unconfirmed records. |
+| EC-1 | A cell's formula aggregates two source records, but one of those records was subsequently deleted from the backend store (data integrity issue). | The chain is returned with the available component(s) present and a gap entry for the missing record: `{ "status": "source_record_missing", "provenance_id": "<id>" }`. The chain is not silently truncated to the available records only. |
+| EC-2 | A cell reference is submitted for a cell that exists in the workbook but was not generated by Feature 4 (e.g., a manually added cell). | The API returns a structured "no provenance record found" response for that cell reference. No chain is returned. The response is not an error -- it is a valid, expected outcome for non-generated cells. |
+| EC-3 | The workbook has been regenerated since the provenance record was written, and the cell reference has changed (e.g., rows shifted). | The old provenance record ID still resolves correctly to its source chain (provenance records are keyed by ID, not by cell position). The cell-reference lookup using the new cell address resolves to the new provenance record. Old and new provenance records co-exist and are independently queryable. |
+| EC-4 | A source component's `page` is out of range for the served PDF (Feature 2 data integrity issue). | The chain is displayed with the component's metadata. The PDF link for that component, when activated, renders an inline error: "Page [N] not found in document." The rest of the chain (other components with valid pages) renders normally. |
+| EC-5 | A source component's review status is `flagged`, and the user activates the PDF link. | The PDF page renders with the bounding-box highlight. The `flagged` status is displayed in the chain. No action is taken on the flag -- viewing the source does not modify status. |
+| EC-6 | The provenance record references a `source_file` that is no longer present on disk (file deleted after job completion). | The chain is displayed with the component's metadata. The PDF link, when activated, displays an inline error: "Source PDF unavailable." Other chain components whose PDFs are available render normally. |
+| EC-7 | A provenance record ID is submitted that does not exist in the store (e.g., stale ID from a prior generation run that was replaced). | The API returns a structured "provenance record not found" response. It does not return a 500 error or an empty chain. |
+| EC-8 | The feature is queried for a cell in a workbook that was generated for a different `job_id` than the current session. | The lookup API is scoped by `job_id`. Cross-job lookups are not supported. The API returns a "cell not found in this job" response. |
+| EC-9 | Two cells in the same workbook share a source component (the same extraction record contributes to two different formula cells). | Each cell resolves independently to its own chain. The shared extraction record appears in both chains. Displaying its review status in one chain does not affect its display in the other. |
+| EC-10 | A review status changes (e.g., from unreviewed to `flagged`) while the audit trail UI is open displaying that component's chain. | The displayed status does not auto-refresh. The next explicit lookup request (re-submitting the cell reference) reflects the updated status. No real-time push mechanism is required; the status shown is the value at the time of the last lookup request. |
