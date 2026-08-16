@@ -231,6 +231,28 @@
   color: var(--text-h);
 }
 
+.audit-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.audit-refresh-btn:hover {
+  background: var(--row-hover-bg);
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
 .audit-target-card__formula {
   font-size: 12px;
   font-family: var(--mono);

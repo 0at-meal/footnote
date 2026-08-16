@@ -7,6 +7,7 @@ import type {
 } from '../../types/audit'
 import { loadPdf, renderPage, type PDFDocumentProxy } from '../../lib/pdf/renderer'
 import { normalizeBboxToPixels, type PixelBoundingBox } from '../../lib/pdf/coordinates'
+import { computeChainRollup } from '../../lib/pdf/audit_status'
 import './AuditTrailView.css'
 
 interface Props {
@@ -15,13 +16,35 @@ interface Props {
   onBack: () => void
 }
 
+const STATUS_TOOLTIPS: Record<string, string> = {
+  locked: 'Confirmed by analyst & locked against further modification',
+  flagged: 'Flagged during review for discrepancy or manual inspection',
+  auto_accepted: 'High confidence extraction (≥ 0.95), auto-accepted',
+  needs_review: 'Medium confidence extraction (0.65–0.95), requires review',
+  manual_required: 'Low confidence extraction (< 0.65), requires manual verification',
+  pending_taxonomy_confirmation: 'Unrecognized label awaiting taxonomy confirmation',
+  source_record_missing: 'Underlying source record is missing from store',
+}
+
 function StatusBadge({ status, isMissing }: { status: string; isMissing: boolean }) {
   if (isMissing) {
-    return <span className="status-badge status-badge--failed">Missing Record</span>
+    return (
+      <span
+        className="status-badge status-badge--failed"
+        title="Underlying source record is missing from data store"
+      >
+        Missing Record
+      </span>
+    )
   }
   const badgeClass = `status-badge status-badge--${status}`
   const label = status.replace(/_/g, ' ')
-  return <span className={badgeClass}>{label}</span>
+  const tooltip = STATUS_TOOLTIPS[status] || label
+  return (
+    <span className={badgeClass} title={tooltip} aria-label={`Status: ${label}`}>
+      {label}
+    </span>
+  )
 }
 
 export default function AuditTrailView({ jobId, apiBase, onBack }: Props) {
@@ -64,8 +87,18 @@ export default function AuditTrailView({ jobId, apiBase, onBack }: Props) {
       const data = (await res.json()) as SourceChainResponse
       setChain(data)
       if (data.components.length > 0) {
-        setSelectedComponent(data.components[0])
-        setActivePage(data.components[0].page)
+        // Keep currently selected component if it still exists in the refreshed chain
+        setSelectedComponent((prev) => {
+          if (prev) {
+            const match = data.components.find((c) => c.component_id === prev.component_id)
+            if (match) return match
+          }
+          return data.components[0]
+        })
+        setActivePage((prev) => {
+          if (prev) return prev
+          return data.components[0].page
+        })
       } else {
         setSelectedComponent(null)
       }
@@ -217,6 +250,8 @@ export default function AuditTrailView({ jobId, apiBase, onBack }: Props) {
     bboxStyle = normalizeBboxToPixels(selectedComponent.bbox, canvasDims.width, canvasDims.height)
   }
 
+  const rollup = chain?.is_found ? computeChainRollup(chain.components) : null
+
   return (
     <div className="audit-page">
       <header className="audit-header">
@@ -351,15 +386,44 @@ export default function AuditTrailView({ jobId, apiBase, onBack }: Props) {
 
           {chain && chain.is_found && (
             <>
-              {/* Selected Cell Header Info */}
+              {/* Selected Cell Header Info with Status Rollup */}
               <div className="audit-target-card">
                 <div className="audit-target-card__header">
-                  <span className="audit-target-card__cell-ref">
-                    {chain.sheet_name ? `${chain.sheet_name}!${chain.cell_coord}` : chain.node_id}
-                  </span>
-                  <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                    {chain.is_formula ? 'Formula Cell' : 'Source Cell'}
-                  </span>
+                  <div>
+                    <span className="audit-target-card__cell-ref">
+                      {chain.sheet_name ? `${chain.sheet_name}!${chain.cell_coord}` : chain.node_id}
+                    </span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text)', marginLeft: '8px' }}>
+                      {chain.is_formula ? 'Formula Cell' : 'Source Cell'}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {rollup && (
+                      <span
+                        className={`status-badge ${rollup.badgeClass}`}
+                        title={rollup.summary}
+                        aria-label={`Verification rollup: ${rollup.label}`}
+                      >
+                        {rollup.label}
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      className="audit-refresh-btn"
+                      onClick={() => {
+                        if (chain.sheet_name && chain.cell_coord) {
+                          void resolveByCell(chain.sheet_name, chain.cell_coord)
+                        } else if (chain.provenance_id) {
+                          void resolveById(chain.provenance_id)
+                        }
+                      }}
+                      title="Refresh live review status (EC-10)"
+                      aria-label="Refresh live review status"
+                    >
+                      ↻
+                    </button>
+                  </div>
                 </div>
                 {chain.formula_expression && (
                   <div className="audit-target-card__formula">{chain.formula_expression}</div>

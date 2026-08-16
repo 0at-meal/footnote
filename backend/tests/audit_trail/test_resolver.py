@@ -281,3 +281,49 @@ def test_missing_review_record_gap_handling(populated_job_env: tuple[str, Path])
     comp_present = resp.components[1]
     assert not comp_present.is_missing
     assert comp_present.review_status == ReviewStatus.auto_accepted.value
+
+
+def test_flagged_item_pdf_lookup_does_not_modify_flag(populated_job_env: tuple[str, Path]) -> None:
+    """Test that looking up a flagged component and its PDF location leaves status as flagged (EC-5)."""
+    job_id, data_dir = populated_job_env
+    resolver = AuditTrailResolver(data_dir=data_dir)
+    review_repo = ReviewRepository(data_dir=data_dir)
+
+    # In populated_job_env, item 1 is flagged
+    items_before = review_repo.get_review_items(job_id)
+    assert items_before is not None
+    item_before = next(it for it in items_before if it.id == f"{job_id}_1")
+    assert item_before.status == ReviewStatus.flagged
+
+    # Perform lookup on Reconciliation!C7 (which aggregates item 1)
+    resp = resolver.resolve_by_cell(job_id, "Reconciliation", "C7")
+    assert resp.is_found
+    flagged_comp = next(c for c in resp.components if c.component_id == f"{job_id}_1")
+    assert flagged_comp.review_status == ReviewStatus.flagged.value
+
+    # Verify status in store remains strictly flagged (no mutation)
+    items_after = review_repo.get_review_items(job_id)
+    assert items_after is not None
+    item_after = next(it for it in items_after if it.id == f"{job_id}_1")
+    assert item_after.status == ReviewStatus.flagged
+
+
+def test_status_change_reflected_on_next_lookup(populated_job_env: tuple[str, Path]) -> None:
+    """Test that when a status transitions from unreviewed to flagged/locked, next query reflects it (EC-10)."""
+    job_id, data_dir = populated_job_env
+    resolver = AuditTrailResolver(data_dir=data_dir)
+    review_repo = ReviewRepository(data_dir=data_dir)
+
+    # Item 2 is currently auto_accepted
+    resp1 = resolver.resolve_by_cell(job_id, "Reconciliation", "C7")
+    comp2_initial = next(c for c in resp1.components if c.component_id == f"{job_id}_2")
+    assert comp2_initial.review_status == ReviewStatus.auto_accepted.value
+
+    # Analyst confirms and locks item 2 in review UI
+    review_repo.confirm_item(job_id, f"{job_id}_2")
+
+    # Next explicit query reflects the newly locked status
+    resp2 = resolver.resolve_by_cell(job_id, "Reconciliation", "C7")
+    comp2_updated = next(c for c in resp2.components if c.component_id == f"{job_id}_2")
+    assert comp2_updated.review_status == ReviewStatus.locked.value
+
