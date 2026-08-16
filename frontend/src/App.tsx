@@ -3,6 +3,7 @@ import UploadZone from './components/UploadZone'
 import JobList from './components/JobList'
 import SubmitBar from './components/SubmitBar'
 import ReviewPage from './components/review/ReviewPage'
+import AuditTrailView from './components/audit/AuditTrailView'
 import type { StagedFile, TargetMetric, JobRecord } from './types/job'
 import { DEFAULT_METRIC } from './types/job'
 import './App.css'
@@ -16,6 +17,7 @@ function App() {
   const [submissionErrors, setSubmissionErrors] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [activeReviewJobId, setActiveReviewJobId] = useState<string | null>(null)
+  const [activeAuditJobId, setActiveAuditJobId] = useState<string | null>(null)
 
   // ── On mount: restore persisted jobs from backend (spec AC-7) ───────────
   useEffect(() => {
@@ -149,6 +151,16 @@ function App() {
     )
   }
 
+  if (activeAuditJobId) {
+    return (
+      <AuditTrailView
+        jobId={activeAuditJobId}
+        apiBase={API_BASE}
+        onBack={() => setActiveAuditJobId(null)}
+      />
+    )
+  }
+
   return (
     <div className="app-layout">
       <header className="app-header">
@@ -231,6 +243,7 @@ function App() {
             onMetricChange={handleMetricChange}
             onRemove={handleRemove}
             onReview={(jobId) => setActiveReviewJobId(jobId)}
+            onAuditTrail={(jobId) => setActiveAuditJobId(jobId)}
           />
           <SubmitBar
             stagedFiles={stagedFiles}

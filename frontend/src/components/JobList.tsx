@@ -7,6 +7,7 @@ interface Props {
   onMetricChange: (id: string, metric: TargetMetric) => void
   onRemove: (id: string) => void
   onReview?: (jobId: string) => void
+  onAuditTrail?: (jobId: string) => void
 }
 
 function formatBytes(bytes: number): string {
@@ -51,7 +52,14 @@ function PdfIcon() {
   )
 }
 
-function JobList({ stagedFiles, persistedJobs, onMetricChange, onRemove, onReview }: Props) {
+function JobList({
+  stagedFiles,
+  persistedJobs,
+  onMetricChange,
+  onRemove,
+  onReview,
+  onAuditTrail,
+}: Props) {
   const isEmpty = stagedFiles.length === 0 && persistedJobs.length === 0
 
   if (isEmpty) {
@@ -156,16 +164,29 @@ function JobList({ stagedFiles, persistedJobs, onMetricChange, onRemove, onRevie
                 <StatusBadge status={job.status} />
               </td>
               <td className="job-table__remove">
-                {job.status === 'done' && onReview && (
-                  <button
-                    type="button"
-                    className="job-table__review-btn"
-                    onClick={() => onReview(job.job_id)}
-                    aria-label={`Review ${job.filename}`}
-                  >
-                    Review
-                  </button>
-                )}
+                <div style={{ display: 'flex', gap: '0.375rem', justifyContent: 'flex-end' }}>
+                  {job.status === 'done' && onReview && (
+                    <button
+                      type="button"
+                      className="job-table__review-btn"
+                      onClick={() => onReview(job.job_id)}
+                      aria-label={`Review ${job.filename}`}
+                    >
+                      Review
+                    </button>
+                  )}
+                  {job.status === 'done' && onAuditTrail && (
+                    <button
+                      type="button"
+                      className="job-table__review-btn"
+                      style={{ backgroundColor: '#0284c7', borderColor: '#0284c7', color: '#ffffff' }}
+                      onClick={() => onAuditTrail(job.job_id)}
+                      aria-label={`Audit Trail for ${job.filename}`}
+                    >
+                      Audit Trail
+                    </button>
+                  )}
+                </div>
               </td>
             </tr>
           ))}

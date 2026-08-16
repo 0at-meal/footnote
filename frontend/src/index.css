@@ -15,6 +15,7 @@
   /* Table */
   --table-head-bg: #fafafa;
   --row-hover-bg: rgba(0, 0, 0, 0.02);
+  --surface: #fafafa;
   /* Form controls */
   --select-bg: #fff;
   --shadow:
@@ -44,6 +45,7 @@
     --text: #9ca3af;
     --text-h: #f3f4f6;
     --bg: #16171d;
+    --surface: #1a1b22;
     --border: #2e303a;
     --code-bg: #1f2028;
     --accent: #c084fc;
@@ -69,11 +71,7 @@
 }
 
 #root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
+  width: 100%;
   min-height: 100svh;
   display: flex;
   flex-direction: column;
