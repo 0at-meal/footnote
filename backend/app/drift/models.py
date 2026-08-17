@@ -59,3 +59,48 @@ class DriftComparisonResult(BaseModel):
         ...,
         description="True if there are any added or removed component labels",
     )
+
+
+class DriftFlag(BaseModel):
+    """
+    Structured discrepancy record created when a metric redefinition is detected (spec §2, AC-2, AC-4).
+    """
+
+    flag_id: str = Field(..., description="Unique drift flag identifier (UUIDv4)")
+    job_id: str = Field(..., description="Job identifier of the current filing")
+    entity: str = Field(..., description="Entity identifier")
+    target_metric: str = Field(..., description="Target metric name")
+    filing_year: int = Field(..., description="Filing year of the current filing")
+    added_labels: list[str] = Field(
+        default_factory=list,
+        description="List of component labels added in this filing",
+    )
+    removed_labels: list[str] = Field(
+        default_factory=list,
+        description="List of component labels removed in this filing",
+    )
+    prior_node_id: str = Field(
+        ...,
+        description="Reference to the prior-year graph node compared against",
+    )
+    created_at: str = Field(..., description="ISO 8601 UTC timestamp of flag generation")
+
+
+class DriftFlagsResponse(BaseModel):
+    """
+    API response model for GET /drift/jobs/{job_id}/flags (spec AC-8, EC-10).
+    """
+
+    job_id: str = Field(..., description="Job identifier")
+    entity: str | None = Field(default=None, description="Entity identifier if known")
+    target_metric: str | None = Field(default=None, description="Target metric name if known")
+    filing_year: int | None = Field(default=None, description="Filing year if known")
+    is_baseline: bool = Field(
+        default=False,
+        description="True if the filing was a baseline year with no prior definition",
+    )
+    flags: list[DriftFlag] = Field(
+        default_factory=list,
+        description="List of active drift flags for this job",
+    )
+    total_flags: int = Field(..., description="Count of drift flags returned")

@@ -1,0 +1,83 @@
+"""
+FastAPI router for Cross-Year Drift Detection (Feature 7, Step 2).
+
+Exposes endpoints for querying drift flags and redefinition discrepancies.
+Governed by CONSTITUTION §1.1 (mypy --strict), §1.3 (Pydantic models), §3.11 (isolation).
+"""
+
+from fastapi import APIRouter, HTTPException, status
+
+from app.drift.models import DriftFlagsResponse
+from app.drift.repository import DriftRepository
+from app.ingestion.repository import JobRepository
+
+router = APIRouter(prefix="/drift", tags=["drift"])
+_drift_repo = DriftRepository()
+_job_repo = JobRepository()
+
+
+def get_drift_repository() -> DriftRepository:
+    """Return the active DriftRepository instance."""
+    return _drift_repo
+
+
+def set_drift_repository(repo: DriftRepository) -> None:
+    """Set the active DriftRepository instance (used for tests / DI)."""
+    global _drift_repo
+    _drift_repo = repo
+
+
+def get_job_repository() -> JobRepository:
+    """Return the active JobRepository instance."""
+    return _job_repo
+
+
+def set_job_repository(repo: JobRepository) -> None:
+    """Set the active JobRepository instance (used for tests / DI)."""
+    global _job_repo
+    _job_repo = repo
+
+
+@router.get(
+    "/jobs/{job_id}/flags",
+    response_model=DriftFlagsResponse,
+    summary="Get drift flags for a job",
+)
+@router.get(
+    "/flags/{job_id}",
+    response_model=DriftFlagsResponse,
+    summary="Get drift flags for a job (alias)",
+    include_in_schema=False,
+)
+def get_job_drift_flags(job_id: str) -> DriftFlagsResponse:
+    """
+    Retrieve all active drift flags for a processed job (spec AC-8, AC-9, EC-10).
+
+    Returns:
+    - 200 OK with flags list (empty if baseline year or identical definition).
+    - 404 Not Found if the job ID is unrecognized.
+    """
+    job = _job_repo.get_job(job_id)
+    comparison = _drift_repo.get_comparison_result(job_id)
+    flags = _drift_repo.get_drift_flags(job_id)
+
+    if job is None and comparison is None and not flags:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Job '{job_id}' not found.",
+        )
+
+    entity = comparison.entity if comparison else (getattr(job, "entity", None) or getattr(job, "filename", None))
+    target_metric = comparison.target_metric if comparison else (job.target_metric if job else None)
+    filing_year = comparison.filing_year if comparison else getattr(job, "filing_year", None)
+    is_baseline = comparison.is_baseline if comparison else False
+
+    return DriftFlagsResponse(
+        job_id=job_id,
+        entity=entity,
+        target_metric=target_metric,
+        filing_year=filing_year,
+        is_baseline=is_baseline,
+        flags=flags,
+        total_flags=len(flags),
+    )

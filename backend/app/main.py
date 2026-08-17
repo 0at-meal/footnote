@@ -17,6 +17,7 @@ from fastapi.openapi.utils import get_openapi
 
 from app.audit_trail.router import router as audit_trail_router
 from app.classification.router import router as classification_router
+from app.drift.router import router as drift_router
 from app.excel_export.router import router as excel_export_router
 from app.ingestion.router import router as ingestion_router
 from app.review.router import router as review_router
@@ -44,6 +45,7 @@ app.include_router(classification_router, prefix="/classification", tags=["class
 app.include_router(excel_export_router)
 app.include_router(review_router)
 app.include_router(audit_trail_router)
+app.include_router(drift_router)
 
 
 @app.get("/")
