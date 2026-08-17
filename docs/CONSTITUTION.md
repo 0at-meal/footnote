@@ -9,7 +9,7 @@ with a rule here, the rule wins — stop and ask, do not improvise around it.
 ## 1. Coding Standards
 
 1. Every module in `extraction/`, `ingestion/`, `review/`, `formula_engine/`,
-   `excel_export/`, and `audit_report/` must be fully typed. Run
+   `excel_export/`, `audit_trail/`, `drift/`, and `audit_report/` must be fully typed. Run
    `mypy --strict` on these before any commit touching them.
 2. `classification/` (the LLM boundary) may be typed more loosely, but its
    public interface must never expose a numeric return field.
@@ -82,6 +82,14 @@ with a rule here, the rule wins — stop and ask, do not improvise around it.
    `classification/` (persisted records), but must not import from
    `formula_engine/`, `excel_export/`, or `audit_report/`. Modules in
    `review/` are subject to the same `mypy --strict` requirement as §1.1.
+10. `audit_trail/` is the source-chain resolution stage (Feature 6).
+    `audit_trail/` may read from `ingestion/`, `extraction/`, and `review/`,
+    but must not import from `classification/` or `formula_engine/`. Modules
+    in `audit_trail/` are subject to the same `mypy --strict` requirement as §1.1.
+11. `drift/` is the cross-year drift detection stage (Feature 7).
+    `drift/` must not import from `classification/`, `extraction/`, or
+    `excel_export/`. Modules in `drift/` are subject to the same `mypy --strict`
+    requirement as §1.1.
 
 ## 4. Tech Stack
 
