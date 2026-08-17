@@ -4,7 +4,18 @@ Data models for Cross-Year Drift Detection (Feature 7).
 Governed by CONSTITUTION §1.1 (mypy --strict), §1.3 (Pydantic boundaries), §2.3 (frozen fields).
 """
 
+from enum import Enum
+
 from pydantic import BaseModel, Field
+
+
+class DriftEdgeType(str, Enum):
+    """
+    Type of directed transition edge in the historical drift graph.
+    """
+
+    redefinition = "redefinition"
+    continuation = "continuation"
 
 
 class MetricDefinitionNode(BaseModel):
@@ -21,6 +32,29 @@ class MetricDefinitionNode(BaseModel):
         description="Sorted list of normalized component labels that define this metric",
     )
     created_at: str = Field(..., description="ISO 8601 UTC creation timestamp")
+
+
+class DriftEdge(BaseModel):
+    """
+    Represents a directed link between metric definition states in the drift graph (spec §3).
+    """
+
+    edge_id: str = Field(..., description="Unique identifier for this drift graph edge")
+    from_node_id: str = Field(..., description="Originating prior definition node ID")
+    to_node_id: str = Field(..., description="Target definition node ID")
+    entity: str = Field(..., description="Entity identifier")
+    target_metric: str = Field(..., description="Target metric name")
+    filing_year: int = Field(..., description="Filing year of the transition")
+    edge_type: DriftEdgeType = Field(..., description="Whether definition changed or continued")
+    added_labels: list[str] = Field(
+        default_factory=list,
+        description="Component labels added in this transition",
+    )
+    removed_labels: list[str] = Field(
+        default_factory=list,
+        description="Component labels removed in this transition",
+    )
+    created_at: str = Field(..., description="ISO 8601 UTC timestamp of edge creation")
 
 
 class DriftComparisonResult(BaseModel):
@@ -104,3 +138,26 @@ class DriftFlagsResponse(BaseModel):
         description="List of active drift flags for this job",
     )
     total_flags: int = Field(..., description="Count of drift flags returned")
+
+
+class DriftGraphExport(BaseModel):
+    """
+    Export representation of the entire drift graph or a subtree (spec §3, §4).
+    """
+
+    nodes: list[MetricDefinitionNode] = Field(default_factory=list)
+    edges: list[DriftEdge] = Field(default_factory=list)
+    total_nodes: int = Field(default=0)
+    total_edges: int = Field(default=0)
+
+
+class MetricHistoryResponse(BaseModel):
+    """
+    Response model for historical evolution of a target metric definition for an entity (spec §3).
+    """
+
+    entity: str
+    target_metric: str
+    definitions: list[MetricDefinitionNode] = Field(default_factory=list)
+    edges: list[DriftEdge] = Field(default_factory=list)
+    total_definitions: int = Field(default=0)

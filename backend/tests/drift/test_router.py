@@ -1,5 +1,5 @@
 """
-Integration tests for Drift API router (Feature 7, Step 2).
+Integration tests for Drift API router (Feature 7, Steps 2 & 3).
 
 Governed by CONSTITUTION §1.1 (mypy --strict), §1.3 (Pydantic models), spec AC-8, AC-9, EC-10.
 """
@@ -7,9 +7,15 @@ Governed by CONSTITUTION §1.1 (mypy --strict), §1.3 (Pydantic models), spec AC
 from pathlib import Path
 
 import pytest
+from app.drift.comparator import compare_metric_components
+from app.drift.graph import HistoricalDriftGraph
 from app.drift.models import DriftComparisonResult, DriftFlag
 from app.drift.repository import DriftRepository
-from app.drift.router import set_drift_repository, set_job_repository
+from app.drift.router import (
+    set_drift_graph,
+    set_drift_repository,
+    set_job_repository,
+)
 from app.ingestion.repository import JobRepository
 from app.main import app
 from fastapi.testclient import TestClient
@@ -19,9 +25,11 @@ from fastapi.testclient import TestClient
 def client(tmp_path: Path) -> TestClient:
     drift_repo = DriftRepository(data_dir=tmp_path)
     job_repo = JobRepository(data_dir=tmp_path)
+    drift_graph = HistoricalDriftGraph()
 
     set_drift_repository(drift_repo)
     set_job_repository(job_repo)
+    set_drift_graph(drift_graph)
 
     return TestClient(app)
 
@@ -130,3 +138,32 @@ def test_get_drift_flags_not_found(client: TestClient) -> None:
     assert response.status_code == 404
     data = response.json()
     assert "not found" in data["detail"].lower()
+
+
+def test_get_metric_history_and_export_graph(client: TestClient) -> None:
+    graph = HistoricalDriftGraph()
+    n1, _ = graph.apply_comparison(
+        compare_metric_components("GAMMA", "Adjusted EBITDA", 2022, ["LabelA", "LabelB"], None)
+    )
+    _n2, _e2 = graph.apply_comparison(
+        compare_metric_components("GAMMA", "Adjusted EBITDA", 2023, ["LabelA", "LabelB", "LabelC"], n1)
+    )
+    set_drift_graph(graph)
+
+    # 1. Test history endpoint
+    res_history = client.get("/drift/history/GAMMA/Adjusted EBITDA")
+    assert res_history.status_code == 200
+    data_history = res_history.json()
+    assert data_history["entity"] == "GAMMA"
+    assert data_history["target_metric"] == "Adjusted EBITDA"
+    assert data_history["total_definitions"] == 2
+    assert len(data_history["definitions"]) == 2
+    assert len(data_history["edges"]) == 1
+
+    # 2. Test graph export endpoint
+    res_graph = client.get("/drift/graph?entity=GAMMA")
+    assert res_graph.status_code == 200
+    data_graph = res_graph.json()
+    assert data_graph["total_nodes"] == 2
+    assert data_graph["total_edges"] == 1
+    assert data_graph["nodes"][0]["entity"] == "GAMMA"
