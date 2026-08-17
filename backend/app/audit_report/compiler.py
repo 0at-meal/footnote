@@ -225,19 +225,31 @@ class AuditReportCompiler:
             is_manual_required = item.status == ReviewStatus.manual_required
 
             if is_edited_value or is_edited_label or was_extraction_error or is_manual_required:
+                if was_extraction_error:
+                    override_type = "extraction_error_recovery"
+                elif is_manual_required:
+                    override_type = "manual_required_entry"
+                else:
+                    override_type = "user_edit"
+
+                flags_list = list(item.flags) if item.flags else (list(orig_sr.flags) if orig_sr and orig_sr.flags else [])
+
                 overrides.append(
                     ManualOverrideItem(
                         item_id=item.id,
                         source_file=item.source_file,
                         page=item.page,
                         bbox=item.bbox,
+                        override_type=override_type,
                         original_value=orig_value,
                         final_value=item.value,
                         original_label=orig_label,
                         final_label=item.label,
                         review_status=item.status.value if hasattr(item.status, "value") else str(item.status),
                         confidence_band=item.confidence_band.value if hasattr(item.confidence_band, "value") else str(item.confidence_band),
+                        flags=flags_list,
                         error_detail=item.error_detail or (orig_sr.error_detail if orig_sr else None),
+                        confirmation_timestamp=None,
                         is_hardcode=False,
                     )
                 )
@@ -263,13 +275,16 @@ class AuditReportCompiler:
                         source_file=source_file,
                         page=page,
                         bbox=bbox_dict,
+                        override_type="manual_hardcode",
                         original_value=None,
                         final_value=r.body.value,
                         original_label=r.body.original_label,
                         final_label=r.body.label,
                         review_status="manual_hardcode",
                         confidence_band="manual_required",
+                        flags=["manual_hardcode"],
                         error_detail="Manual hardcode per NFR2",
+                        confirmation_timestamp=None,
                         is_hardcode=True,
                     )
                 )

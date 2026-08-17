@@ -90,19 +90,25 @@ def test_manual_override_item() -> None:
         source_file="acme_2024_10k.pdf",
         page=15,
         bbox={"x0": 50.0, "y0": 100.0, "x1": 200.0, "y1": 150.0},
+        override_type="user_edit",
         original_value="3500",
         final_value="35000",
         original_label="Lease adjustment",
         final_label="Operating Lease Expense",
         review_status="locked",
         confidence_band="needs_review",
+        flags=["unparseable_value"],
         error_detail=None,
+        confirmation_timestamp="2026-08-17T12:05:00Z",
         is_hardcode=False,
     )
+    assert override.override_type == "user_edit"
     assert override.original_value == "3500"
     assert override.final_value == "35000"
     assert override.original_label == "Lease adjustment"
     assert override.final_label == "Operating Lease Expense"
+    assert override.flags == ["unparseable_value"]
+    assert override.confirmation_timestamp == "2026-08-17T12:05:00Z"
 
 
 def test_classifier_governance_summary() -> None:

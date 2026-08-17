@@ -75,13 +75,19 @@ class ManualOverrideItem(BaseModel):
         ...,
         description="Bounding box coordinates in 0-1000 space: {x0, y0, x1, y1}",
     )
+    override_type: str = Field(
+        default="user_edit",
+        description="Category: 'user_edit', 'extraction_error_recovery', 'manual_required_entry', or 'manual_hardcode'",
+    )
     original_value: str | None = Field(default=None, description="Original value before human edit")
     final_value: str = Field(..., description="Final confirmed/locked value")
     original_label: str | None = Field(default=None, description="Original label before human edit")
     final_label: str = Field(..., description="Final confirmed/locked label")
     review_status: str = Field(..., description="Review status (e.g. locked, manual_required)")
     confidence_band: str | None = Field(default=None, description="Extraction confidence band")
+    flags: list[str] = Field(default_factory=list, description="Diagnostic extraction flags")
     error_detail: str | None = Field(default=None, description="Error detail if recovered from error")
+    confirmation_timestamp: str | None = Field(default=None, description="Human confirmation timestamp if recorded")
     is_hardcode: bool = Field(default=False, description="True if generated as manual hardcode")
 
 

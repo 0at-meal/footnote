@@ -270,16 +270,20 @@ def test_compile_manual_overrides_and_hardcodes(
 
     # Verify user edit override
     edit_override = next(o for o in dataset.manual_overrides if o.item_id == f"{job_id}_0")
+    assert edit_override.override_type == "extraction_error_recovery"
     assert edit_override.original_value == "3500"
     assert edit_override.final_value == "35000"
     assert edit_override.original_label == "Rent adj"
     assert edit_override.final_label == "Rent Adjustment"
+    assert edit_override.flags == ["unparseable_value"]
     assert edit_override.is_hardcode is False
 
     # Verify hardcode item
     hc_override = next(o for o in dataset.manual_overrides if o.is_hardcode is True)
+    assert hc_override.override_type == "manual_hardcode"
     assert hc_override.item_id == "Source_Inputs!B3"
     assert hc_override.final_value == "0.21"
+    assert "manual_hardcode" in hc_override.flags
 
 
 def test_compile_classifier_governance_numeric_free_log(

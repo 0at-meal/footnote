@@ -413,33 +413,68 @@ def render_audit_report_pdf(dataset: CompiledAuditDataset) -> bytes:
     elements.append(Paragraph("4. Manual Override & Exception Ledger", section_heading_style))
 
     if dataset.has_manual_overrides and dataset.manual_overrides:
+        override_summary_text = (
+            f"<b>Manual Review Ledger:</b> A total of <b>{len(dataset.manual_overrides)}</b> human intervention(s) "
+            "were applied during review and verified prior to model generation."
+        )
+        elements.append(
+            Table(
+                [[Paragraph(override_summary_text, table_cell_style)]],
+                colWidths=[720.0],
+                style=TableStyle(
+                    [
+                        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#FEF2F2")),
+                        ("BOX", (0, 0), (-1, -1), 1.0, colors.HexColor("#FCA5A5")),
+                        ("TOPPADDING", (0, 0), (-1, -1), 4),
+                        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+                        ("LEFTPADDING", (0, 0), (-1, -1), 8),
+                        ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+                    ]
+                ),
+            )
+        )
+        elements.append(Spacer(1, 4))
+
         override_headers = [
             Paragraph("Item ID / Ref", table_header_style),
+            Paragraph("Category / Type", table_header_style),
             Paragraph("Source & Page", table_header_style),
             Paragraph("Original Value & Label", table_header_style),
-            Paragraph("Confirmed Final Value & Label", table_header_style),
-            Paragraph("Review Status / Flag Detail", table_header_style),
+            Paragraph("Confirmed Value & Label", table_header_style),
+            Paragraph("Reason / Flags / Status", table_header_style),
         ]
         override_rows = [override_headers]
 
         for ov in dataset.manual_overrides:
-            orig_desc = f"val: <i>{_sanitize(ov.original_value or '[none]')}</i><br/>lbl: {_sanitize(ov.original_label or '[none]')}"
-            final_desc = f"val: <b>{_sanitize(ov.final_value)}</b><br/>lbl: <b>{_sanitize(ov.final_label)}</b>"
+            orig_desc = (
+                f"val: <i>{_sanitize(ov.original_value or '[none]')}</i><br/>"
+                f"lbl: {_sanitize(ov.original_label or '[none]')}"
+            )
+            final_desc = (
+                f"val: <b>{_sanitize(ov.final_value)}</b><br/>"
+                f"lbl: <b>{_sanitize(ov.final_label)}</b>"
+            )
+            type_label = ov.override_type.replace("_", " ").upper()
+            flag_str = f"<br/>flags: <i>{', '.join(_sanitize(f) for f in ov.flags)}</i>" if ov.flags else ""
             err_desc = _sanitize(ov.error_detail) if ov.error_detail else "Human edit during review"
 
             override_rows.append(
                 [
                     Paragraph(f"<b>{_sanitize(ov.item_id)}</b>", table_cell_style),
-                    Paragraph(f"{_sanitize(ov.source_file)} (p. {ov.page})", table_cell_style),
+                    Paragraph(f"<b>[{_sanitize(type_label)}]</b>", badge_style),
+                    Paragraph(f"{_sanitize(ov.source_file)}<br/>(p. {ov.page})", table_cell_style),
                     Paragraph(orig_desc, table_cell_style),
                     Paragraph(final_desc, table_cell_style),
-                    Paragraph(f"<b>[{_sanitize(ov.review_status)}]</b><br/>{err_desc}", table_cell_style),
+                    Paragraph(
+                        f"<b>[{_sanitize(ov.review_status)}]</b><br/>{err_desc}{flag_str}",
+                        table_cell_style,
+                    ),
                 ]
             )
 
         override_table = Table(
             override_rows,
-            colWidths=[110.0, 130.0, 150.0, 160.0, 170.0],
+            colWidths=[90.0, 110.0, 110.0, 130.0, 130.0, 150.0],
             repeatRows=1,
             style=TableStyle(
                 [
@@ -449,8 +484,8 @@ def render_audit_report_pdf(dataset: CompiledAuditDataset) -> bytes:
                     ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#E2E8F0")),
                     ("TOPPADDING", (0, 0), (-1, -1), 4),
                     ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
-                    ("LEFTPADDING", (0, 0), (-1, -1), 5),
-                    ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 4),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 4),
                 ]
             ),
         )

@@ -26,6 +26,7 @@ from app.audit_report.renderer import (
     render_audit_report_pdf,
 )
 from app.audit_report.repository import AuditReportRepository
+from app.audit_report.service import generate_audit_report
 
 __all__ = [
     "AuditReportCompiler",
@@ -42,5 +43,6 @@ __all__ = [
     "ReconciliationSummaryItem",
     "ReportMetadata",
     "compile_audit_dataset",
+    "generate_audit_report",
     "render_audit_report_pdf",
 ]
