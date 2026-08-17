@@ -1,7 +1,7 @@
 """
-FastAPI router for Cross-Year Drift Detection (Feature 7, Steps 2 & 3).
+FastAPI router for Cross-Year Drift Detection (Feature 7).
 
-Exposes endpoints for querying drift flags, graph definitions, and historical metric evolution.
+Exposes endpoints for querying drift flags, evaluation, graph definitions, and historical metric evolution.
 Governed by CONSTITUTION §1.1 (mypy --strict), §1.3 (Pydantic models), §3.11 (isolation).
 """
 
@@ -9,17 +9,22 @@ from fastapi import APIRouter, HTTPException, Query, status
 
 from app.drift.graph import HistoricalDriftGraph
 from app.drift.models import (
+    DriftEvaluationRequest,
+    DriftEvaluationResponse,
     DriftFlagsResponse,
     DriftGraphExport,
     MetricHistoryResponse,
 )
 from app.drift.repository import DriftRepository
+from app.drift.service import evaluate_job_drift
 from app.ingestion.repository import JobRepository
+from app.review.repository import ReviewRepository
 
 router = APIRouter(prefix="/drift", tags=["drift"])
 _drift_repo = DriftRepository()
 _job_repo = JobRepository()
-_drift_graph = HistoricalDriftGraph()
+_review_repo = ReviewRepository()
+_drift_graph_override: HistoricalDriftGraph | None = None
 
 
 def get_drift_repository() -> DriftRepository:
@@ -44,15 +49,87 @@ def set_job_repository(repo: JobRepository) -> None:
     _job_repo = repo
 
 
+def get_review_repository() -> ReviewRepository:
+    """Return the active ReviewRepository instance."""
+    return _review_repo
+
+
+def set_review_repository(repo: ReviewRepository) -> None:
+    """Set the active ReviewRepository instance (used for tests / DI)."""
+    global _review_repo
+    _review_repo = repo
+
+
 def get_drift_graph() -> HistoricalDriftGraph:
-    """Return the active HistoricalDriftGraph instance."""
-    return _drift_graph
+    """Return the authoritative HistoricalDriftGraph from SQLite or override."""
+    if _drift_graph_override is not None:
+        return _drift_graph_override
+    return _drift_repo.load_graph()
 
 
-def set_drift_graph(graph: HistoricalDriftGraph) -> None:
+def set_drift_graph(graph: HistoricalDriftGraph | None) -> None:
     """Set the active HistoricalDriftGraph instance (used for tests / DI)."""
-    global _drift_graph
-    _drift_graph = graph
+    global _drift_graph_override
+    _drift_graph_override = graph
+
+
+@router.post(
+    "/jobs/{job_id}/evaluate",
+    response_model=DriftEvaluationResponse,
+    summary="Evaluate drift for confirmed review items in a job",
+)
+def evaluate_job(
+    job_id: str,
+    payload: DriftEvaluationRequest | None = None,
+) -> DriftEvaluationResponse:
+    """
+    Run cross-year drift detection on confirmed locked items for a job (spec §1, §2, §3, §4).
+
+    Synchronously updates the SQLite drift graph and persists drift flags if discrepancies are detected.
+    """
+    entity = payload.entity if payload else None
+    filing_year = payload.filing_year if payload else None
+
+    try:
+        comparison, flag, node = evaluate_job_drift(
+            job_id=job_id,
+            repo=_drift_repo,
+            job_repo=_job_repo,
+            review_repo=_review_repo,
+            entity=entity,
+            filing_year=filing_year,
+        )
+    except ValueError as err:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(err),
+        ) from err
+
+    if comparison is None:
+        job = _job_repo.get_job(job_id)
+        return DriftEvaluationResponse(
+            job_id=job_id,
+            status="skipped_no_locked_records",
+            entity=entity or (getattr(job, "entity", None) if job else None),
+            target_metric=job.target_metric if job else None,
+            filing_year=filing_year or (getattr(job, "filing_year", None) if job else None),
+            is_baseline=False,
+            has_discrepancy=False,
+            flag=None,
+            active_definition_node=None,
+        )
+
+    return DriftEvaluationResponse(
+        job_id=job_id,
+        status="evaluated",
+        entity=comparison.entity,
+        target_metric=comparison.target_metric,
+        filing_year=comparison.filing_year,
+        is_baseline=comparison.is_baseline,
+        has_discrepancy=comparison.has_discrepancy,
+        flag=flag,
+        active_definition_node=node,
+    )
 
 
 @router.get(
@@ -112,8 +189,9 @@ def get_metric_history(
     """
     Retrieve the historical sequence of metric definition nodes and transition edges (spec §3, AC-8).
     """
-    definitions = _drift_graph.get_history(entity=entity, target_metric=target_metric)
-    edges = _drift_graph.get_edges(entity=entity, target_metric=target_metric)
+    graph = get_drift_graph()
+    definitions = graph.get_history(entity=entity, target_metric=target_metric)
+    edges = graph.get_edges(entity=entity, target_metric=target_metric)
 
     return MetricHistoryResponse(
         entity=entity,
@@ -136,4 +214,5 @@ def export_drift_graph(
     """
     Retrieve all nodes and edges in the drift graph, optionally filtered by entity and metric (spec §3, AC-8).
     """
-    return _drift_graph.export_graph(entity=entity, target_metric=target_metric)
+    graph = get_drift_graph()
+    return graph.export_graph(entity=entity, target_metric=target_metric)

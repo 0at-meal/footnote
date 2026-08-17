@@ -161,3 +161,28 @@ class MetricHistoryResponse(BaseModel):
     definitions: list[MetricDefinitionNode] = Field(default_factory=list)
     edges: list[DriftEdge] = Field(default_factory=list)
     total_definitions: int = Field(default=0)
+
+
+class DriftEvaluationRequest(BaseModel):
+    """
+    Optional payload for POST /drift/jobs/{job_id}/evaluate.
+    """
+
+    entity: str | None = Field(default=None, description="Optional entity identifier override")
+    filing_year: int | None = Field(default=None, description="Optional filing year override")
+
+
+class DriftEvaluationResponse(BaseModel):
+    """
+    Response model for POST /drift/jobs/{job_id}/evaluate.
+    """
+
+    job_id: str
+    status: str = Field(..., description="'evaluated' or 'skipped_no_locked_records'")
+    entity: str | None = None
+    target_metric: str | None = None
+    filing_year: int | None = None
+    is_baseline: bool = False
+    has_discrepancy: bool = False
+    flag: DriftFlag | None = None
+    active_definition_node: MetricDefinitionNode | None = None

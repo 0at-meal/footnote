@@ -14,6 +14,8 @@ from app.drift.models import (
     DriftComparisonResult,
     DriftEdge,
     DriftEdgeType,
+    DriftEvaluationRequest,
+    DriftEvaluationResponse,
     DriftFlag,
     DriftFlagsResponse,
     DriftGraphExport,
@@ -22,19 +24,25 @@ from app.drift.models import (
 )
 from app.drift.repository import DriftRepository
 from app.drift.router import router
+from app.drift.service import evaluate_job_drift
+from app.drift.storage import DriftGraphStore
 
 __all__ = [
     "DriftComparisonResult",
     "DriftEdge",
     "DriftEdgeType",
+    "DriftEvaluationRequest",
+    "DriftEvaluationResponse",
     "DriftFlag",
     "DriftFlagsResponse",
     "DriftGraphExport",
+    "DriftGraphStore",
     "DriftRepository",
     "HistoricalDriftGraph",
     "MetricDefinitionNode",
     "MetricHistoryResponse",
     "compare_metric_components",
+    "evaluate_job_drift",
     "extract_locked_normalized_labels",
     "generate_drift_flag",
     "router",
