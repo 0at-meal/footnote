@@ -21,9 +21,15 @@ from app.audit_report.models import (
     ReconciliationSummaryItem,
     ReportMetadata,
 )
+from app.audit_report.renderer import (
+    NumberedCanvas,
+    render_audit_report_pdf,
+)
+from app.audit_report.repository import AuditReportRepository
 
 __all__ = [
     "AuditReportCompiler",
+    "AuditReportRepository",
     "ClassifierAuditEntry",
     "ClassifierAuditSummary",
     "CompiledAuditDataset",
@@ -31,8 +37,10 @@ __all__ = [
     "JobNotFoundError",
     "ManualOverrideItem",
     "ModelNotCompleteError",
+    "NumberedCanvas",
     "ProvenanceMatrixItem",
     "ReconciliationSummaryItem",
     "ReportMetadata",
     "compile_audit_dataset",
+    "render_audit_report_pdf",
 ]
