@@ -1,82 +1,102 @@
-# spec.md — Feature 6: Audit Trail Lookup
+# spec.md -- Feature 8: Audit Report Export
 
-**Satisfies:** FR8  
-**Phase:** 3 — Human Trust Layer  
-**Depends on:** Feature 4 (generated `.xlsx` workbook and W3C Web Annotation provenance records, one per cell); Feature 2 (extraction records supplying `page`, `bbox`, `source_file`); Feature 5 (review status — `locked`/`flagged` — per extraction record)  
+**Satisfies:** FR9
+**Phase:** 4 -- Extensibility & Compliance Output
+**Depends on:** Feature 4 (generated `.xlsx` workbook and cell-level W3C Web Annotation provenance records); Feature 5 (review status, edit history, and confirmation timestamps); Feature 6 (source chain resolution for multi-contributor formula cells); Feature 7 (cross-year drift flags and baseline records)
 **Status:** Draft
 
 ---
 
 ## What This Feature Does
 
-1. **Source-chain resolution.** Given a cell reference from the generated workbook (e.g., sheet name + cell address) or a provenance record ID from the exported metadata, the backend resolves the full source chain for that cell. The source chain is the ordered sequence: generated cell -> Feature 4 provenance record (W3C Web Annotation JSON) -> Feature 2 extraction record(s) -> `source_file`, `page`, `bbox`. For cells whose formula aggregates multiple source records (e.g., a SUMIFS over two Stock-Based Compensation entries), the chain includes all contributing records -- not just one. The resolution is performed by the backend API; the frontend submits a cell reference or provenance record ID and receives the complete chain as a structured response. No chain element may be omitted or silently skipped.
+1. **Compile cell-level provenance and model metadata.** For a completed model (identified by `job_id`), the feature compiles the full set of audit data from all upstream pipeline stages into a unified report dataset. This includes: job and entity metadata (entity identifier, filing filename, filing year, target metric); the complete list of generated formula cells from Feature 4 (sheet name, cell coordinate, formula expression, computed output); the full source chain for every cell resolved via Feature 6 (contributing `source_file`, `page`, `bbox`, raw `label`, `normalized_label`, `value`); review statuses and confirmation timestamps from Feature 5; classifier audit logs from Feature 3 (demonstrating numeric-free output); and any cross-year drift flags recorded by Feature 7. Report compilation requires that Feature 4 model generation has completed successfully; jobs without a completed model cannot be compiled.
 
-2. **Source chain display with PDF link.** The resolved source chain is displayed to the user. For each source component in the chain, the UI presents: the component's `normalized_label`, `value`, `source_file`, `page`, and `bbox` fields; and a direct link that, when activated, renders the originating PDF page in the browser with the bounding-box location visually indicated. The PDF rendering reuses the same backend PDF-serving endpoint and PDF.js rendering established in Feature 5. The link must render the exact `page` for that component and highlight the exact `bbox` region -- not the first page of the document, not an approximation.
+2. **Render structured audit report PDF.** Using ReportLab or WeasyPrint, the compiled audit dataset is rendered into a structured, human-readable compliance-style PDF document. The report layout consists of:
+   - **Executive Summary & Metadata**: Job ID, company/entity name, target metric (Adjusted EBITDA), generation timestamp, total cell count, and breakdown of automated vs human-verified items.
+   - **Model & Reconciliation Summary**: High-level table of the target metric reconciliation showing all calculated formula items and line-item totals.
+   - **Comprehensive Provenance Matrix**: Complete tabular ledger mapping every formula cell and line item to its source document, exact 1-indexed page number, and normalized 0-1000 bounding box coordinates (`{x0, y0, x1, y1}`). Multi-page tables maintain repeated column headers on every page break and formatted page numbers ("Page X of Y").
+   - **Classifier Governance Proof**: Summary verifying that all LLM classifier interactions strictly returned labels and confidence scores with zero numeric extraction or computation.
+   - **Cross-Year Definitional Consistency**: Summary of Feature 7 drift detection results, detailing any added/removed components year-over-year or confirming baseline/continuation status.
 
-3. **Review status per component.** For each component in the displayed source chain, the UI shows that component's current review status as set by Feature 5: `locked`, `flagged`, or unreviewed. The status is read from the Feature 5 state store at display time; it reflects the current state, not the state at the time the workbook was generated. Feature 6 is strictly read-only with respect to review status -- it displays it but does not modify it. No item's `locked` or `flagged` status can be changed from within the audit trail lookup UI (CONSTITUTION 6.6).
+3. **Compile manual override and correction ledger.** The report includes a dedicated section detailing all manual overrides, user edits, and exceptions that occurred during the Feature 5 review stage:
+   - Every item where a user edited the raw extracted `value` or `label` before confirming, displaying the original extracted value alongside the edited value, the user confirmation timestamp, and reason/flags.
+   - Any cell generated as a manual hardcode (per CONSTITUTION 1.5 and NFR2).
+   - Any item that originated with `status: extraction_error` or `status: manual_required` and was resolved via human intervention.
+   - If zero items were edited, hardcoded, or overridden across the entire model, this section explicitly renders the statement: "Zero manual overrides -- 100% of values are derived from layout extraction and taxonomy-confirmed inputs."
+
+4. **Expose downloadable PDF via API and UI.** The generated PDF report is saved to persistent storage associated with the job and exposed via a dedicated FastAPI endpoint (`GET /api/jobs/{job_id}/audit-report`). The endpoint serves the binary file with appropriate MIME type (`application/pdf`) and `Content-Disposition` attachment headers for browser downloading. The frontend displays an active download control within the job/model view once model generation is complete, enabling one-click export of the compliance audit PDF.
 
 ---
 
 ## What This Feature Does NOT Do
 
-- **Does not modify any record, status, or field.** Feature 6 is a read-only lookup feature. It reads provenance records, extraction records, and review status; it writes nothing.
-- **Does not re-generate the workbook or re-run any pipeline stage.** The source chain it resolves is derived from the already-generated Feature 4 artifacts. It does not trigger extraction, classification, formula generation, or re-export.
-- **Does not implement the review UI actions (confirm, edit, flag).** Those are Feature 5's responsibility. Feature 6 displays review status; it cannot change it.
-- **Does not perform bounding-box coordinate recomputation.** The `bbox` coordinates displayed and used for PDF highlighting are exactly as stored in the Feature 2 record. No normalization, scaling, or re-mapping occurs in this feature beyond the canvas projection already established in Feature 5.
-- **Does not expose a workbook editing interface.** The audit trail lookup is read-only; the user cannot edit cell formulas or values from within this feature.
-- **Does not resolve source chains for cells that were not generated by Feature 4.** Manually added cells or cells outside the scope of Feature 4's generation are not covered. Attempting to look up such a cell returns a "no provenance record found" response, not an error.
-- **Does not generate the audit report.** Compiling and exporting the full audit report is Feature 8. Feature 6 is an interactive, per-cell lookup; Feature 8 is a document-level export.
-- **Does not implement authentication or per-user audit trail isolation.** Single-session by design (CONSTITUTION 6.10).
+- **Does not modify any model data, extraction records, or review statuses.** Feature 8 is strictly read-only with respect to pipeline state. It compiles and formats existing data without altering any stored values.
+- **Does not re-run extraction, classification, formula generation, or drift detection.** It consumes already-persisted outputs from Features 1 through 7.
+- **Does not call external LLM or cloud rendering APIs.** PDF compilation and rendering run entirely locally and deterministically using ReportLab or WeasyPrint (CONSTITUTION 4.4).
+- **Does not send filing content, extracted numbers, or report data to any remote telemetry or external service.** Data egress is strictly forbidden (CONSTITUTION 6.5).
+- **Does not support interactive in-PDF editing.** The output is a finalized, static PDF document intended for compliance, archiving, and audit trail verification.
+- **Does not generate an audit report for incomplete jobs.** Jobs still in ingestion, extraction, or review cannot produce an audit report until the `.xlsx` model has been generated.
+- **Does not re-implement source chain resolution.** Feature 8 queries the existing Feature 6 source chain resolution interface and Feature 4 provenance records.
+- **Does not implement multi-tenant document permissioning or DRM.** Single-user, single-session architecture per CONSTITUTION 6.10.
 
 ---
 
 ## Acceptance Criteria
 
-1. **Every generated cell resolves to a non-empty source chain.** For every cell in the workbook that was generated by Feature 4, submitting that cell's reference to the lookup API returns a source chain with at least one component. No generated cell returns an empty chain or a "not found" response.
+1. **Report generation succeeds for any completed model.** Given any job that has completed Feature 4 model generation with valid provenance records, triggering audit report generation produces a valid, non-empty PDF file.
 
-2. **All contributing records appear in the chain for aggregated formulas.** For a cell whose formula aggregates N source records (N >= 2), the returned chain contains exactly N source components. No contributing record is omitted. The chain is complete and consistent with the provenance records Feature 4 wrote at generation time.
+2. **Every summarized value links to a complete source chain.** 100% of numeric values and formula cells presented in the audit report provenance matrix trace to valid source metadata (`source_file`, `page`, `bbox`, `normalized_label`) or are explicitly cataloged in the manual overrides ledger.
 
-3. **Each source component's PDF link renders the correct page and bbox.** Activating the PDF link for a source component renders: (a) the PDF page equal to that component's `page` field; (b) a bounding-box highlight covering the region defined by that component's `bbox` field (0-1000 normalized, same mapping as Feature 5 AC-3). A link that renders the wrong page or a mispositioned highlight is a test failure.
+3. **Manual overrides section is complete and explicit.** Every item modified, hardcoded, or manually entered during Feature 5 review appears in the manual overrides table with both original and final values. If zero overrides exist, the report explicitly states that zero overrides occurred.
 
-4. **Review status displayed per component is current.** The `locked`/`flagged`/unreviewed status shown for each source component reflects the status stored by Feature 5 at the time of the lookup request -- not the status at workbook generation time. If a component was `flagged` after the workbook was generated, the lookup must show `flagged`, not unreviewed.
+4. **PDF formatting and visual structure are valid.** The generated PDF opens cleanly in standard PDF viewers without syntax or font errors. Multi-page tables include repeated table headers at the top of each page, proper cell wrapping without text clipping, and sequential page numbers ("Page X of Y").
 
-5. **Feature 6 does not modify any review status.** After performing an audit trail lookup (including activating a PDF link), the `locked`/`flagged` status of every involved record is unchanged in the backend store. No lookup action -- including viewing or navigating the source chain -- constitutes a confirmation or a status change (CONSTITUTION 6.6).
+5. **Deterministic report output.** Generating the audit report multiple times for the same unchanged job produces structurally identical PDF content and identical data tables.
 
-6. **Cells outside Feature 4's scope return a clear "no provenance" response.** If a user submits a cell reference that does not correspond to any Feature 4-generated cell, the API returns a structured response indicating no provenance record was found. It does not return a server error, an empty response, or a chain with fabricated data.
+6. **API download endpoint compliance.** The `GET /api/jobs/{job_id}/audit-report` endpoint returns HTTP 200, header `Content-Type: application/pdf`, and a valid attachment filename (`Content-Disposition: attachment; filename="audit_report_{job_id}.pdf"`).
 
-7. **Provenance record ID lookup works independently of the workbook.** A provenance record ID (from Feature 4's exported metadata) submitted directly to the lookup API resolves to the same source chain as the corresponding cell reference. Both entry points are supported and produce identical chain output for the same underlying record.
+7. **Classifier audit proof is included.** The report contains a dedicated section referencing the Feature 3 decision log, providing auditable confirmation that the LLM classifier operated strictly on labels with zero numeric output.
 
-8. **Performance: full source chain resolved and displayed within 10 seconds.** From the moment a user initiates a cell lookup to the moment the complete source chain (all components, with their review statuses) is displayed, the elapsed time must not exceed 10 seconds on the local machine. This applies to any generated cell in the workbook, including aggregated formula cells with multiple source components.
+8. **Cross-year drift status is included.** The report contains the Feature 7 drift analysis for the target metric, displaying any added/removed component flags or clearly stating baseline/continuation status.
 
-9. **PDF link render time is within the 10-second chain resolution budget.** The 10-second limit in AC-8 covers the chain resolution step only. Activating a PDF link (navigating to the source page) is governed by the same 10-second limit established in Feature 5 AC-10 -- both share the same PDF-serving endpoint.
+9. **Zero modification of underlying state.** Invoking audit report compilation and downloading the PDF causes zero modifications to stored extraction records, review statuses, formula trees, or drift graphs.
 
-10. **Source chain is consistent with the provenance records at generation time.** The chain resolved for a given cell must match the W3C Web Annotation provenance record that Feature 4 wrote at generation time. If the provenance record shows `source_file = "filing_2023.pdf"`, `page = 12`, `bbox = {x0: 120, y0: 340, x1: 280, y1: 370}`, the lookup must display exactly those values -- not re-derived or approximated values.
+10. **Performance budget.** For a standard financial model (up to 50 line items and associated provenance records), PDF compilation and rendering complete in under 15 seconds on the local machine.
 
 ---
 
 ## Dependencies / Interfaces with Other Features
 
 ### Consumed from Feature 1
-- **PDF file path** (via `source_file` and `job_id`): the backend uses the persisted job record to locate and serve the source PDF binary when a PDF link is activated. Same mechanism as Feature 5.
+- **`job_id`, entity name, and filing metadata**: Job parameters and source file references used in report headers and provenance mapping.
 
 ### Consumed from Feature 2
-- **Extraction records** (`value`, `label`, `page`, `bbox`, `source_file`): these are the leaf nodes of the source chain. All fields are read-only in this feature.
-- **Contract:** The frozen field names (`value`, `label`, `page`, `bbox`, `source_file`) must remain unchanged (CONSTITUTION 2.3, NFR7).
+- **Extraction records**: `value`, `label`, `page`, `bbox`, `source_file`, and `confidence_band` fields used as leaf records in the provenance matrix.
+- **Contract:** Frozen schema fields (`value`, `label`, `page`, `bbox`, `source_file`) are read-only (CONSTITUTION 2.3, NFR7).
+
+### Consumed from Feature 3
+- **`normalized_label` and decision log**: Taxonomy-mapped labels for line items and decision log entries proving numeric-free classification.
 
 ### Consumed from Feature 4
-- **W3C Web Annotation provenance records**: one per generated cell, keyed by cell reference and by provenance record ID. These are the primary lookup index. Feature 6 reads them; it does not modify them.
-- **Generated workbook cell reference schema**: the cell reference format (sheet name + cell address) used as the lookup key must be stable and consistent with what Feature 4 writes into the provenance records.
+- **`.xlsx` model structure and provenance records**: Cell coordinates, formulas, calculated values, and W3C Web Annotation records.
 
 ### Consumed from Feature 5
-- **Review status** (`locked`, `flagged`, or unreviewed) per extraction record: read at lookup time to display current status per chain component. Feature 5 is the sole writer of this status; Feature 6 is read-only.
+- **Review statuses and edit logs**: `locked`/`flagged` statuses, original vs edited values for modified items, and human confirmation timestamps.
 
-### Exposed for Feature 8
-- **Source chain resolution API**: Feature 8's audit report uses the same chain resolution endpoint to build the full provenance table in the report. Feature 8 does not re-implement chain resolution; it calls Feature 6's API.
+### Consumed from Feature 6
+- **Source chain resolution API**: Resolves multi-contributor formula cells into ordered lists of source components for provenance table rendering.
+
+### Consumed from Feature 7
+- **Drift flags and graph status**: Historical component comparison data for the filing and target metric.
+
+### Exposed for Frontend
+- **Download Endpoint**: `GET /api/jobs/{job_id}/audit-report` serving the generated PDF file.
+- **Report Status Endpoint**: Metadata endpoint indicating whether the audit report is ready for download.
 
 ### Must Not Break
-- The W3C Web Annotation provenance record format (JSON, 0-1000 normalized bbox) must not be altered by this feature. It is fixed by plan 6.1 item 3.
-- The `audit_trail/` module must not import from `classification/`, `extraction/`, or `formula_engine/` (CONSTITUTION 3.4). It may only read from the shared data store and the PDF-serving endpoint.
-- No code in Feature 6 may write to the review status store. Read-only access is enforced at the data layer (CONSTITUTION 6.6).
+- `audit_report/` must be fully typed and pass `mypy --strict` (CONSTITUTION 1.1).
+- `audit_report/` must not import from `classification/` or `formula_engine/` (CONSTITUTION 3.8).
+- Report generation must not send filing data outside the local environment (CONSTITUTION 6.5).
 
 ---
 
@@ -84,13 +104,13 @@
 
 | # | Edge Case | Required Behavior |
 |---|---|---|
-| EC-1 | A cell's formula aggregates two source records, but one of those records was subsequently deleted from the backend store (data integrity issue). | The chain is returned with the available component(s) present and a gap entry for the missing record: `{ "status": "source_record_missing", "provenance_id": "<id>" }`. The chain is not silently truncated to the available records only. |
-| EC-2 | A cell reference is submitted for a cell that exists in the workbook but was not generated by Feature 4 (e.g., a manually added cell). | The API returns a structured "no provenance record found" response for that cell reference. No chain is returned. The response is not an error -- it is a valid, expected outcome for non-generated cells. |
-| EC-3 | The workbook has been regenerated since the provenance record was written, and the cell reference has changed (e.g., rows shifted). | The old provenance record ID still resolves correctly to its source chain (provenance records are keyed by ID, not by cell position). The cell-reference lookup using the new cell address resolves to the new provenance record. Old and new provenance records co-exist and are independently queryable. |
-| EC-4 | A source component's `page` is out of range for the served PDF (Feature 2 data integrity issue). | The chain is displayed with the component's metadata. The PDF link for that component, when activated, renders an inline error: "Page [N] not found in document." The rest of the chain (other components with valid pages) renders normally. |
-| EC-5 | A source component's review status is `flagged`, and the user activates the PDF link. | The PDF page renders with the bounding-box highlight. The `flagged` status is displayed in the chain. No action is taken on the flag -- viewing the source does not modify status. |
-| EC-6 | The provenance record references a `source_file` that is no longer present on disk (file deleted after job completion). | The chain is displayed with the component's metadata. The PDF link, when activated, displays an inline error: "Source PDF unavailable." Other chain components whose PDFs are available render normally. |
-| EC-7 | A provenance record ID is submitted that does not exist in the store (e.g., stale ID from a prior generation run that was replaced). | The API returns a structured "provenance record not found" response. It does not return a 500 error or an empty chain. |
-| EC-8 | The feature is queried for a cell in a workbook that was generated for a different `job_id` than the current session. | The lookup API is scoped by `job_id`. Cross-job lookups are not supported. The API returns a "cell not found in this job" response. |
-| EC-9 | Two cells in the same workbook share a source component (the same extraction record contributes to two different formula cells). | Each cell resolves independently to its own chain. The shared extraction record appears in both chains. Displaying its review status in one chain does not affect its display in the other. |
-| EC-10 | A review status changes (e.g., from unreviewed to `flagged`) while the audit trail UI is open displaying that component's chain. | The displayed status does not auto-refresh. The next explicit lookup request (re-submitting the cell reference) reflects the updated status. No real-time push mechanism is required; the status shown is the value at the time of the last lookup request. |
+| EC-1 | A model has zero manual overrides, zero edits, and zero hardcodes. | The manual overrides section is not omitted; it explicitly renders the text confirming zero overrides were made during review. |
+| EC-2 | A line item had an extraction error in Feature 2 (`status: extraction_error`) and was corrected manually during Feature 5 review. | The report lists the item in the overrides section, displaying the original error description, the human-entered value, and the confirmation timestamp. |
+| EC-3 | A formula aggregates multiple line items located across different PDF pages (e.g. SBC footnote on page 45 and lease adjustment on page 78). | The provenance table lists all contributing components under that formula cell, showing each component's distinct page and bounding box. |
+| EC-4 | An extracted label or footnote text is unusually long (e.g. multi-line description). | The PDF table cell automatically wraps text with appropriate row height adjustments; text is never clipped or overflowing table borders. |
+| EC-5 | The provenance matrix spans a large number of pages (e.g. 15+ pages). | Page breaks occur cleanly between table rows; column headers repeat at the top of every page; page numbering ("Page X of Y") remains accurate. |
+| EC-6 | Audit report generation is requested for a job where model generation has not completed or failed. | The API returns an HTTP 400/404 error ("Audit report unavailable: model generation not complete"). No empty or partial PDF is generated. |
+| EC-7 | The filing is a baseline year with no prior drift history in Feature 7. | The drift section clearly states: "Baseline Year -- Initialized definition for [Metric]; no prior-year comparison available." |
+| EC-8 | Source filing filenames or taxonomy labels contain Unicode or special currency symbols (e.g. €, ¥, £, —, &). | ReportLab/WeasyPrint renders all characters cleanly using UTF-8 compliant fonts without character substitution errors (tofu boxes) or crashes. |
+| EC-9 | Concurrent download requests are received for the same completed job's audit report. | The backend serves the persisted PDF file safely without file locking collisions or duplicate generation overhead. |
+| EC-10 | A filesystem error occurs while saving the generated PDF (e.g. disk full or permission error). | The error is caught, logged, and an HTTP 500 error is returned with a descriptive message. No corrupt or truncated PDF file is saved or served. |
