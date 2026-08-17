@@ -1,9 +1,11 @@
 import type { StagedFile, TargetMetric, JobRecord, JobStatus } from '../types/job'
 import { TARGET_METRICS } from '../types/job'
+import { buildAuditReportDownloadUrl, buildAuditReportFilename, canDownloadAuditReport } from '../lib/audit_report'
 
 interface Props {
   stagedFiles: StagedFile[]
   persistedJobs: JobRecord[]
+  apiBase?: string
   onMetricChange: (id: string, metric: TargetMetric) => void
   onRemove: (id: string) => void
   onReview?: (jobId: string) => void
@@ -55,6 +57,7 @@ function PdfIcon() {
 function JobList({
   stagedFiles,
   persistedJobs,
+  apiBase = 'http://localhost:8000',
   onMetricChange,
   onRemove,
   onReview,
@@ -164,7 +167,7 @@ function JobList({
                 <StatusBadge status={job.status} />
               </td>
               <td className="job-table__remove">
-                <div style={{ display: 'flex', gap: '0.375rem', justifyContent: 'flex-end' }}>
+                <div style={{ display: 'flex', gap: '0.375rem', justifyContent: 'flex-end', alignItems: 'center' }}>
                   {job.status === 'done' && onReview && (
                     <button
                       type="button"
@@ -185,6 +188,24 @@ function JobList({
                     >
                       Audit Trail
                     </button>
+                  )}
+                  {canDownloadAuditReport(job.status) && (
+                    <a
+                      href={buildAuditReportDownloadUrl(apiBase, job.job_id)}
+                      download={buildAuditReportFilename(job.job_id)}
+                      className="job-table__review-btn"
+                      style={{
+                        backgroundColor: '#0f766e',
+                        borderColor: '#0f766e',
+                        color: '#ffffff',
+                        textDecoration: 'none',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                      }}
+                      aria-label={`Export Audit Report PDF for ${job.filename}`}
+                    >
+                      Audit PDF
+                    </a>
                   )}
                 </div>
               </td>

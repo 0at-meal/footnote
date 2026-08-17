@@ -8,6 +8,7 @@ import type {
 import { loadPdf, renderPage, type PDFDocumentProxy } from '../../lib/pdf/renderer'
 import { normalizeBboxToPixels, type PixelBoundingBox } from '../../lib/pdf/coordinates'
 import { computeChainRollup } from '../../lib/pdf/audit_status'
+import { buildAuditReportDownloadUrl, buildAuditReportFilename } from '../../lib/audit_report'
 import './AuditTrailView.css'
 
 interface Props {
@@ -268,6 +269,29 @@ export default function AuditTrailView({ jobId, apiBase, onBack }: Props) {
             <h1 className="audit-header__title">Audit Trail &amp; Source Chain Lookup</h1>
             <p className="audit-header__subtitle">Job: {jobId}</p>
           </div>
+        </div>
+        <div className="audit-header__right">
+          <a
+            href={buildAuditReportDownloadUrl(apiBase, jobId)}
+            download={buildAuditReportFilename(jobId)}
+            className="audit-header__export-btn"
+            style={{
+              backgroundColor: '#0f766e',
+              borderColor: '#0f766e',
+              color: '#ffffff',
+              padding: '0.4rem 0.8rem',
+              borderRadius: '4px',
+              fontSize: '0.85rem',
+              fontWeight: 500,
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.375rem',
+            }}
+            aria-label={`Export Audit Report PDF for ${jobId}`}
+          >
+            Export Audit PDF
+          </a>
         </div>
       </header>
 

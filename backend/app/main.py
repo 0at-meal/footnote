@@ -15,6 +15,7 @@ from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
+from app.audit_report.router import router as audit_report_router
 from app.audit_trail.router import router as audit_trail_router
 from app.classification.router import router as classification_router
 from app.drift.router import router as drift_router
@@ -46,6 +47,7 @@ app.include_router(excel_export_router)
 app.include_router(review_router)
 app.include_router(audit_trail_router)
 app.include_router(drift_router)
+app.include_router(audit_report_router)
 
 
 @app.get("/")

@@ -240,6 +240,7 @@ function App() {
           <JobList
             stagedFiles={stagedFiles}
             persistedJobs={persistedJobs}
+            apiBase={API_BASE}
             onMetricChange={handleMetricChange}
             onRemove={handleRemove}
             onReview={(jobId) => setActiveReviewJobId(jobId)}

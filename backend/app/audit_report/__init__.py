@@ -26,6 +26,7 @@ from app.audit_report.renderer import (
     render_audit_report_pdf,
 )
 from app.audit_report.repository import AuditReportRepository
+from app.audit_report.router import router as audit_report_router
 from app.audit_report.service import generate_audit_report
 
 __all__ = [
@@ -42,6 +43,7 @@ __all__ = [
     "ProvenanceMatrixItem",
     "ReconciliationSummaryItem",
     "ReportMetadata",
+    "audit_report_router",
     "compile_audit_dataset",
     "generate_audit_report",
     "render_audit_report_pdf",
