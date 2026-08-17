@@ -1,0 +1,106 @@
+{
+  "metadata": {
+    "filing_id": "acme_2023_10k",
+    "company_name": "Acme Corporation",
+    "ticker": "ACME",
+    "fiscal_year": 2023,
+    "filing_type": "10-K",
+    "pdf_filename": "acme_2023_10k.pdf",
+    "page_count": 2,
+    "target_metric": "Adjusted EBITDA",
+    "description": "Standard SaaS 10-K Adjusted EBITDA reconciliation with SBC and D&A."
+  },
+  "ground_truth_items": [
+    {
+      "value": "50,000",
+      "label": "Net income",
+      "normalized_label": "Net Income",
+      "page": 1,
+      "bbox": {
+        "x0": 653.59,
+        "y0": 151.52,
+        "x1": 849.67,
+        "y1": 170.45
+      },
+      "source_file": "acme_2023_10k.pdf",
+      "is_optional": false,
+      "section": "Item 7. Management's Discussion and Analysis of Financial Condition"
+    },
+    {
+      "value": "5,000",
+      "label": "Interest expense",
+      "normalized_label": "Interest Expense",
+      "page": 1,
+      "bbox": {
+        "x0": 653.59,
+        "y0": 179.29,
+        "x1": 849.67,
+        "y1": 198.23
+      },
+      "source_file": "acme_2023_10k.pdf",
+      "is_optional": false,
+      "section": "Item 7. Management's Discussion and Analysis of Financial Condition"
+    },
+    {
+      "value": "12,000",
+      "label": "Provision for income taxes",
+      "normalized_label": "Income Tax Expense",
+      "page": 1,
+      "bbox": {
+        "x0": 653.59,
+        "y0": 207.07,
+        "x1": 849.67,
+        "y1": 226.01
+      },
+      "source_file": "acme_2023_10k.pdf",
+      "is_optional": false,
+      "section": "Item 7. Management's Discussion and Analysis of Financial Condition"
+    },
+    {
+      "value": "8,000",
+      "label": "Depreciation and amortization",
+      "normalized_label": "Depreciation & Amortization",
+      "page": 1,
+      "bbox": {
+        "x0": 653.59,
+        "y0": 234.85,
+        "x1": 849.67,
+        "y1": 253.79
+      },
+      "source_file": "acme_2023_10k.pdf",
+      "is_optional": false,
+      "section": "Item 7. Management's Discussion and Analysis of Financial Condition"
+    },
+    {
+      "value": "15,000",
+      "label": "Stock-based compensation expense",
+      "normalized_label": "Stock-based compensation",
+      "page": 1,
+      "bbox": {
+        "x0": 653.59,
+        "y0": 262.63,
+        "x1": 849.67,
+        "y1": 281.57
+      },
+      "source_file": "acme_2023_10k.pdf",
+      "is_optional": false,
+      "section": "Item 7. Management's Discussion and Analysis of Financial Condition"
+    },
+    {
+      "value": "90,000",
+      "label": "Adjusted EBITDA",
+      "normalized_label": "Adjusted EBITDA",
+      "page": 1,
+      "bbox": {
+        "x0": 653.59,
+        "y0": 290.4,
+        "x1": 849.67,
+        "y1": 309.34
+      },
+      "source_file": "acme_2023_10k.pdf",
+      "is_optional": false,
+      "section": "Item 7. Management's Discussion and Analysis of Financial Condition"
+    }
+  ],
+  "expected_reconciliation_total": 90000.0
+}

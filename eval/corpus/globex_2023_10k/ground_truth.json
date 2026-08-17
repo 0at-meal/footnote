@@ -1,0 +1,91 @@
+{
+  "metadata": {
+    "filing_id": "globex_2023_10k",
+    "company_name": "Globex Industrial Holdings",
+    "ticker": "GLOB",
+    "fiscal_year": 2023,
+    "filing_type": "10-K",
+    "pdf_filename": "globex_2023_10k.pdf",
+    "page_count": 2,
+    "target_metric": "Adjusted EBITDA",
+    "description": "Industrial manufacturer with restructuring charges and litigation settlements."
+  },
+  "ground_truth_items": [
+    {
+      "value": "120,000",
+      "label": "Operating income",
+      "normalized_label": "Operating Income",
+      "page": 1,
+      "bbox": {
+        "x0": 653.59,
+        "y0": 151.52,
+        "x1": 849.67,
+        "y1": 170.45
+      },
+      "source_file": "globex_2023_10k.pdf",
+      "is_optional": false,
+      "section": "Item 7. Reconciliation of Non-GAAP Financial Measures"
+    },
+    {
+      "value": "22,000",
+      "label": "Depreciation and amortization",
+      "normalized_label": "Depreciation & Amortization",
+      "page": 1,
+      "bbox": {
+        "x0": 653.59,
+        "y0": 179.29,
+        "x1": 849.67,
+        "y1": 198.23
+      },
+      "source_file": "globex_2023_10k.pdf",
+      "is_optional": false,
+      "section": "Item 7. Reconciliation of Non-GAAP Financial Measures"
+    },
+    {
+      "value": "14,000",
+      "label": "Restructuring and facility exit costs",
+      "normalized_label": "Restructuring Charges",
+      "page": 1,
+      "bbox": {
+        "x0": 653.59,
+        "y0": 207.07,
+        "x1": 849.67,
+        "y1": 226.01
+      },
+      "source_file": "globex_2023_10k.pdf",
+      "is_optional": false,
+      "section": "Item 7. Reconciliation of Non-GAAP Financial Measures"
+    },
+    {
+      "value": "6,000",
+      "label": "Litigation settlement expense",
+      "normalized_label": "Litigation settlement",
+      "page": 1,
+      "bbox": {
+        "x0": 653.59,
+        "y0": 234.85,
+        "x1": 849.67,
+        "y1": 253.79
+      },
+      "source_file": "globex_2023_10k.pdf",
+      "is_optional": false,
+      "section": "Item 7. Reconciliation of Non-GAAP Financial Measures"
+    },
+    {
+      "value": "162,000",
+      "label": "Adjusted EBITDA",
+      "normalized_label": "Adjusted EBITDA",
+      "page": 1,
+      "bbox": {
+        "x0": 653.59,
+        "y0": 262.63,
+        "x1": 849.67,
+        "y1": 281.57
+      },
+      "source_file": "globex_2023_10k.pdf",
+      "is_optional": false,
+      "section": "Item 7. Reconciliation of Non-GAAP Financial Measures"
+    }
+  ],
+  "expected_reconciliation_total": 162000.0
+}

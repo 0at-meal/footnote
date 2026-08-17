@@ -1,0 +1,121 @@
+{
+  "metadata": {
+    "filing_id": "initech_2023_10k",
+    "company_name": "Initech Financial Solutions",
+    "ticker": "INIT",
+    "fiscal_year": 2023,
+    "filing_type": "10-K",
+    "pdf_filename": "initech_2023_10k.pdf",
+    "page_count": 2,
+    "target_metric": "Adjusted EBITDA",
+    "description": "Multi-year filing with negative values in parentheses (EC-2) and gain on sale."
+  },
+  "ground_truth_items": [
+    {
+      "value": "(15,000)",
+      "label": "Net loss",
+      "normalized_label": "Net Income",
+      "page": 1,
+      "bbox": {
+        "x0": 653.59,
+        "y0": 151.52,
+        "x1": 849.67,
+        "y1": 170.45
+      },
+      "source_file": "initech_2023_10k.pdf",
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Performance Measures"
+    },
+    {
+      "value": "8,000",
+      "label": "Interest expense, net",
+      "normalized_label": "Interest Expense",
+      "page": 1,
+      "bbox": {
+        "x0": 653.59,
+        "y0": 179.29,
+        "x1": 849.67,
+        "y1": 198.23
+      },
+      "source_file": "initech_2023_10k.pdf",
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Performance Measures"
+    },
+    {
+      "value": "(3,000)",
+      "label": "Income tax benefit",
+      "normalized_label": "Income Tax Expense",
+      "page": 1,
+      "bbox": {
+        "x0": 653.59,
+        "y0": 207.07,
+        "x1": 849.67,
+        "y1": 226.01
+      },
+      "source_file": "initech_2023_10k.pdf",
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Performance Measures"
+    },
+    {
+      "value": "12,000",
+      "label": "Depreciation and amortization",
+      "normalized_label": "Depreciation & Amortization",
+      "page": 1,
+      "bbox": {
+        "x0": 653.59,
+        "y0": 234.85,
+        "x1": 849.67,
+        "y1": 253.79
+      },
+      "source_file": "initech_2023_10k.pdf",
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Performance Measures"
+    },
+    {
+      "value": "18,000",
+      "label": "Share-based compensation",
+      "normalized_label": "Stock-based compensation",
+      "page": 1,
+      "bbox": {
+        "x0": 653.59,
+        "y0": 262.63,
+        "x1": 849.67,
+        "y1": 281.57
+      },
+      "source_file": "initech_2023_10k.pdf",
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Performance Measures"
+    },
+    {
+      "value": "(2,500)",
+      "label": "Gain on disposal of assets",
+      "normalized_label": "Other non-operating income",
+      "page": 1,
+      "bbox": {
+        "x0": 653.59,
+        "y0": 290.4,
+        "x1": 849.67,
+        "y1": 309.34
+      },
+      "source_file": "initech_2023_10k.pdf",
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Performance Measures"
+    },
+    {
+      "value": "17,500",
+      "label": "Adjusted EBITDA",
+      "normalized_label": "Adjusted EBITDA",
+      "page": 1,
+      "bbox": {
+        "x0": 653.59,
+        "y0": 318.18,
+        "x1": 849.67,
+        "y1": 337.12
+      },
+      "source_file": "initech_2023_10k.pdf",
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Performance Measures"
+    }
+  ],
+  "expected_reconciliation_total": 17500.0
+}

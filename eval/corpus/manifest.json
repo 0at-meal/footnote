@@ -1,0 +1,12 @@
+{
+  "corpus_name": "Footnote 10-K Benchmark Corpus",
+  "corpus_version": "1.0.0",
+  "target_metric": "Adjusted EBITDA",
+  "filing_ids": [
+    "acme_2023_10k",
+    "globex_2023_10k",
+    "initech_2023_10k",
+    "umbrella_2023_10k",
+    "wayne_2023_10k"
+  ]
+}

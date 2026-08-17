@@ -1,102 +1,106 @@
-# spec.md -- Feature 8: Audit Report Export
+# spec.md -- Feature 9: Evaluation Harness
 
-**Satisfies:** FR9
-**Phase:** 4 -- Extensibility & Compliance Output
-**Depends on:** Feature 4 (generated `.xlsx` workbook and cell-level W3C Web Annotation provenance records); Feature 5 (review status, edit history, and confirmation timestamps); Feature 6 (source chain resolution for multi-contributor formula cells); Feature 7 (cross-year drift flags and baseline records)
+**Satisfies:** Verification & Validation of FR1-FR9, NFR1-NFR4
+**Phase:** 5 -- Validation & Hardening
+**Depends on:** Feature 1 through Feature 8 (the evaluation harness executes the complete production pipeline end-to-end against a curated benchmark corpus)
 **Status:** Draft
 
 ---
 
 ## What This Feature Does
 
-1. **Compile cell-level provenance and model metadata.** For a completed model (identified by `job_id`), the feature compiles the full set of audit data from all upstream pipeline stages into a unified report dataset. This includes: job and entity metadata (entity identifier, filing filename, filing year, target metric); the complete list of generated formula cells from Feature 4 (sheet name, cell coordinate, formula expression, computed output); the full source chain for every cell resolved via Feature 6 (contributing `source_file`, `page`, `bbox`, raw `label`, `normalized_label`, `value`); review statuses and confirmation timestamps from Feature 5; classifier audit logs from Feature 3 (demonstrating numeric-free output); and any cross-year drift flags recorded by Feature 7. Report compilation requires that Feature 4 model generation has completed successfully; jobs without a completed model cannot be compiled.
+1. **Load benchmark corpus and ground truth.** The harness loads a curated benchmark corpus comprising 5 to 10 manually tied-out 10-K filings with accompanying ground-truth annotations. For each benchmark filing, the corpus provides: the source PDF document and a schema-validated ground-truth specification defining all expected line items for the target metric (Adjusted EBITDA), including raw `label`, normalized taxonomy `normalized_label`, exact ground-truth numeric `value`, 1-indexed page number, and bounding box coordinate regions. The harness verifies corpus data integrity and schema compliance before initiating an evaluation run.
 
-2. **Render structured audit report PDF.** Using ReportLab or WeasyPrint, the compiled audit dataset is rendered into a structured, human-readable compliance-style PDF document. The report layout consists of:
-   - **Executive Summary & Metadata**: Job ID, company/entity name, target metric (Adjusted EBITDA), generation timestamp, total cell count, and breakdown of automated vs human-verified items.
-   - **Model & Reconciliation Summary**: High-level table of the target metric reconciliation showing all calculated formula items and line-item totals.
-   - **Comprehensive Provenance Matrix**: Complete tabular ledger mapping every formula cell and line item to its source document, exact 1-indexed page number, and normalized 0-1000 bounding box coordinates (`{x0, y0, x1, y1}`). Multi-page tables maintain repeated column headers on every page break and formatted page numbers ("Page X of Y").
-   - **Classifier Governance Proof**: Summary verifying that all LLM classifier interactions strictly returned labels and confidence scores with zero numeric extraction or computation.
-   - **Cross-Year Definitional Consistency**: Summary of Feature 7 drift detection results, detailing any added/removed components year-over-year or confirming baseline/continuation status.
+2. **Execute full pipeline on benchmark filings.** The harness runs the complete, production Footnote pipeline end-to-end against each benchmark filing in the corpus. Per CONSTITUTION 3.5, the harness imports and executes the actual application modules directly (`ingestion/`, `extraction/`, `classification/`, `formula_engine/`, `excel_export/`, `drift/`, `audit_report/`) rather than duplicated or mock implementations. The pipeline processes each filing through PDF layout extraction, LLM classification, formula model generation, and provenance attachment, measuring granular execution runtimes per stage to verify compliance with NFR3 (processing a 200-page 10-K in under 5 minutes).
 
-3. **Compile manual override and correction ledger.** The report includes a dedicated section detailing all manual overrides, user edits, and exceptions that occurred during the Feature 5 review stage:
-   - Every item where a user edited the raw extracted `value` or `label` before confirming, displaying the original extracted value alongside the edited value, the user confirmation timestamp, and reason/flags.
-   - Any cell generated as a manual hardcode (per CONSTITUTION 1.5 and NFR2).
-   - Any item that originated with `status: extraction_error` or `status: manual_required` and was resolved via human intervention.
-   - If zero items were edited, hardcoded, or overridden across the entire model, this section explicitly renders the statement: "Zero manual overrides -- 100% of values are derived from layout extraction and taxonomy-confirmed inputs."
+3. **Multi-layer diffing against ground truth.** The harness performs an automated, structured comparison between the pipeline outputs and ground-truth records across three distinct architectural layers:
+   - **Extraction Diffs**: Evaluates whether all expected line items were extracted with correct raw labels, values, pages, and bounding boxes. Identifies false negatives (missed line items), false positives (spurious extractions), value string mismatches (e.g. sign or numeric parsing discrepancies), and coordinate localization errors.
+   - **Classification Diffs**: For correctly extracted items, verifies whether `normalized_label` matches ground-truth taxonomy mapping. Identifies misclassifications and taxonomy routing errors.
+   - **Generation & Formula Diffs**: Validates formula tree accuracy, recalculation integrity of the generated `.xlsx` workbook, and complete provenance attachment for every generated cell.
 
-4. **Expose downloadable PDF via API and UI.** The generated PDF report is saved to persistent storage associated with the job and exposed via a dedicated FastAPI endpoint (`GET /api/jobs/{job_id}/audit-report`). The endpoint serves the binary file with appropriate MIME type (`application/pdf`) and `Content-Disposition` attachment headers for browser downloading. The frontend displays an active download control within the job/model view once model generation is complete, enabling one-click export of the compliance audit PDF.
+4. **Generate accuracy, false-positive, and failure-pattern reports.** The harness compiles a structured evaluation report (available in both machine-readable JSON and human-readable Markdown/terminal formats). The report computes:
+   - Line-item extraction accuracy percentage (ratio of correctly extracted true positives to total ground-truth items).
+   - Precision, recall, and F1 scores per filing and corpus-wide.
+   - Separate metric isolation distinguishing extraction errors from classification errors and generation errors.
+   - False positive rate (spurious non-GAAP extractions).
+   - Failure pattern classification cataloging layout issues (multi-column text flow bleed, merged cell misalignment, footnote cross-page severance).
+   - Mandatory governance disclosure per CONSTITUTION 6.13 explicitly stating the benchmark corpus size and the exact count and percentage of items requiring human review or manual correction.
+
+5. **Enforce failed extraction threshold.** The harness computes the confidence-band distribution across all extracted items for each filing. If more than 15% of a filing's line items fall outside the auto-accept confidence band (i.e. if `(count(needs_review) + count(manual_required) + count(extraction_error)) / count(total_items) > 0.15`), the harness automatically designates that filing as a **failed extraction** (plan 6.1 item 4). Filings marked as failed extractions are flagged in the summary report and trigger targeted failure-pattern analysis.
 
 ---
 
 ## What This Feature Does NOT Do
 
-- **Does not modify any model data, extraction records, or review statuses.** Feature 8 is strictly read-only with respect to pipeline state. It compiles and formats existing data without altering any stored values.
-- **Does not re-run extraction, classification, formula generation, or drift detection.** It consumes already-persisted outputs from Features 1 through 7.
-- **Does not call external LLM or cloud rendering APIs.** PDF compilation and rendering run entirely locally and deterministically using ReportLab or WeasyPrint (CONSTITUTION 4.4).
-- **Does not send filing content, extracted numbers, or report data to any remote telemetry or external service.** Data egress is strictly forbidden (CONSTITUTION 6.5).
-- **Does not support interactive in-PDF editing.** The output is a finalized, static PDF document intended for compliance, archiving, and audit trail verification.
-- **Does not generate an audit report for incomplete jobs.** Jobs still in ingestion, extraction, or review cannot produce an audit report until the `.xlsx` model has been generated.
-- **Does not re-implement source chain resolution.** Feature 8 queries the existing Feature 6 source chain resolution interface and Feature 4 provenance records.
-- **Does not implement multi-tenant document permissioning or DRM.** Single-user, single-session architecture per CONSTITUTION 6.10.
+- **Does not modify confidence-band thresholds.** The 0.95 / 0.65 thresholds are fixed project defaults; the harness validates against them rather than adjusting them to pass.
+- **Does not bypass or auto-confirm review flags.** No programmatic shortcut or automated acceptance of low-confidence items is permitted to artificially inflate accuracy metrics (CONSTITUTION 6.6, 6.11).
+- **Does not import application code by copy.** The `eval/` package imports live production pipeline modules directly (CONSTITUTION 3.5).
+- **Does not retry failed extractions with modified heuristic parameters.** Low-confidence and failed extractions are recorded and reported as-is (CONSTITUTION 6.14).
+- **Does not report accuracy without mandatory disclosures.** Aggregate accuracy numbers must always state benchmark corpus size and manual intervention counts (CONSTITUTION 6.13).
+- **Does not send benchmark data to remote evaluation APIs.** All evaluation, diffing, and reporting execute locally (CONSTITUTION 6.5).
+- **Does not persist test artifacts into production stores.** Eval runs operate in isolated, sandboxed test environments without altering production databases, job queues, or drift graphs.
+- **Does not provide an end-user UI.** The eval harness is a CLI / script / pytest-driven verification suite for development and CI/CD automation.
 
 ---
 
 ## Acceptance Criteria
 
-1. **Report generation succeeds for any completed model.** Given any job that has completed Feature 4 model generation with valid provenance records, triggering audit report generation produces a valid, non-empty PDF file.
+1. **Benchmark corpus integrity:** The harness loads at least 5 curated, manually tied-out 10-K filings with valid ground-truth JSON/YAML specifications without schema validation errors.
 
-2. **Every summarized value links to a complete source chain.** 100% of numeric values and formula cells presented in the audit report provenance matrix trace to valid source metadata (`source_file`, `page`, `bbox`, `normalized_label`) or are explicitly cataloged in the manual overrides ledger.
+2. **Direct production module execution:** The evaluation harness imports and runs the actual production pipeline codebase without duplicating logic (CONSTITUTION 3.5).
 
-3. **Manual overrides section is complete and explicit.** Every item modified, hardcoded, or manually entered during Feature 5 review appears in the manual overrides table with both original and final values. If zero overrides exist, the report explicitly states that zero overrides occurred.
+3. **Target extraction accuracy achievement:** The end-to-end pipeline achieves >= 90% line-item extraction accuracy across the benchmark corpus on auto-accepted line items.
 
-4. **PDF formatting and visual structure are valid.** The generated PDF opens cleanly in standard PDF viewers without syntax or font errors. Multi-page tables include repeated table headers at the top of each page, proper cell wrapping without text clipping, and sequential page numbers ("Page X of Y").
+4. **Three-layer error categorization:** The evaluation report strictly isolates and quantifies: (a) extraction errors, (b) classification errors, and (c) formula/generation errors into distinct metric summaries.
 
-5. **Deterministic report output.** Generating the audit report multiple times for the same unchanged job produces structurally identical PDF content and identical data tables.
+5. **Deterministic 15% threshold enforcement:** Any filing where > 15% of extracted line items fall outside the auto-accept confidence band (score < 0.95) is explicitly marked as `failed_extraction: true` in the output report.
 
-6. **API download endpoint compliance.** The `GET /api/jobs/{job_id}/audit-report` endpoint returns HTTP 200, header `Content-Type: application/pdf`, and a valid attachment filename (`Content-Disposition: attachment; filename="audit_report_{job_id}.pdf"`).
+6. **Mandatory transparency disclosure:** Every generated evaluation report explicitly outputs the benchmark corpus size (number of filings and total line items) and the exact count and percentage of manually corrected/reviewed items (CONSTITUTION 6.13).
 
-7. **Classifier audit proof is included.** The report contains a dedicated section referencing the Feature 3 decision log, providing auditable confirmation that the LLM classifier operated strictly on labels with zero numeric output.
+7. **Structured failure pattern reporting:** Extraction errors are categorized into recognized failure patterns (e.g. multi-column flow error, merged cell error, footnote severance, sign misparsing).
 
-8. **Cross-year drift status is included.** The report contains the Feature 7 drift analysis for the target metric, displaying any added/removed component flags or clearly stating baseline/continuation status.
+8. **Zero formula error verification:** 100% of `.xlsx` workbooks generated across the benchmark corpus open cleanly and recalculate in Excel with zero formula errors (`#REF!`, `#VALUE!`, `#NAME?`).
 
-9. **Zero modification of underlying state.** Invoking audit report compilation and downloading the PDF causes zero modifications to stored extraction records, review statuses, formula trees, or drift graphs.
+9. **Complete test isolation:** Running the evaluation harness leaves zero persistent test records, temporary files, or modified state in production SQLite databases or file paths.
 
-10. **Performance budget.** For a standard financial model (up to 50 line items and associated provenance records), PDF compilation and rendering complete in under 15 seconds on the local machine.
+10. **Performance budget validation:** The harness measures and logs runtime for each filing, confirming whether a 200-page 10-K completes within the NFR3 budget (<= 5 minutes).
 
 ---
 
 ## Dependencies / Interfaces with Other Features
 
 ### Consumed from Feature 1
-- **`job_id`, entity name, and filing metadata**: Job parameters and source file references used in report headers and provenance mapping.
+- **Job Ingestion & Validation**: `ingestion/` module and job models for initializing pipeline runs.
 
 ### Consumed from Feature 2
-- **Extraction records**: `value`, `label`, `page`, `bbox`, `source_file`, and `confidence_band` fields used as leaf records in the provenance matrix.
-- **Contract:** Frozen schema fields (`value`, `label`, `page`, `bbox`, `source_file`) are read-only (CONSTITUTION 2.3, NFR7).
+- **Layout Extraction & Confidence Bands**: `extraction/` Docling parsing, PyMuPDF coordinates, and confidence scoring.
 
 ### Consumed from Feature 3
-- **`normalized_label` and decision log**: Taxonomy-mapped labels for line items and decision log entries proving numeric-free classification.
+- **Classification & Normalization**: `classification/` Groq batching, taxonomy lookup, and decision logs.
 
 ### Consumed from Feature 4
-- **`.xlsx` model structure and provenance records**: Cell coordinates, formulas, calculated values, and W3C Web Annotation records.
+- **Deterministic Model Generation**: `formula_engine/` and `excel_export/` formula trees, workbook generation, and provenance tags.
 
 ### Consumed from Feature 5
-- **Review statuses and edit logs**: `locked`/`flagged` statuses, original vs edited values for modified items, and human confirmation timestamps.
+- **Review State Contracts**: Confidence band thresholds (0.95 / 0.65) and lock contracts.
 
 ### Consumed from Feature 6
-- **Source chain resolution API**: Resolves multi-contributor formula cells into ordered lists of source components for provenance table rendering.
+- **Audit Trail Lookup**: `audit_trail/` source chain resolution validation.
 
 ### Consumed from Feature 7
-- **Drift flags and graph status**: Historical component comparison data for the filing and target metric.
+- **Cross-Year Drift**: `drift/` graph consistency and drift flag verification.
 
-### Exposed for Frontend
-- **Download Endpoint**: `GET /api/jobs/{job_id}/audit-report` serving the generated PDF file.
-- **Report Status Endpoint**: Metadata endpoint indicating whether the audit report is ready for download.
+### Consumed from Feature 8
+- **Audit Report Export**: `audit_report/` PDF compilation validation.
+
+### Exposed for CI/CD & Testing
+- **CLI Runner**: `eval/run_benchmark.py` runnable from terminal.
+- **Pytest Suite**: Test suite integration under `backend/tests/eval/`.
 
 ### Must Not Break
-- `audit_report/` must be fully typed and pass `mypy --strict` (CONSTITUTION 1.1).
-- `audit_report/` must not import from `classification/` or `formula_engine/` (CONSTITUTION 3.8).
-- Report generation must not send filing data outside the local environment (CONSTITUTION 6.5).
+- `eval/` imports live modules; code copy is strictly prohibited (CONSTITUTION 3.5).
+- Accuracy reporting must include full corpus and intervention disclosures (CONSTITUTION 6.13).
+- Review flags must never be suppressed to pass evaluation thresholds (CONSTITUTION 6.11, 6.14).
 
 ---
 
@@ -104,13 +108,13 @@
 
 | # | Edge Case | Required Behavior |
 |---|---|---|
-| EC-1 | A model has zero manual overrides, zero edits, and zero hardcodes. | The manual overrides section is not omitted; it explicitly renders the text confirming zero overrides were made during review. |
-| EC-2 | A line item had an extraction error in Feature 2 (`status: extraction_error`) and was corrected manually during Feature 5 review. | The report lists the item in the overrides section, displaying the original error description, the human-entered value, and the confirmation timestamp. |
-| EC-3 | A formula aggregates multiple line items located across different PDF pages (e.g. SBC footnote on page 45 and lease adjustment on page 78). | The provenance table lists all contributing components under that formula cell, showing each component's distinct page and bounding box. |
-| EC-4 | An extracted label or footnote text is unusually long (e.g. multi-line description). | The PDF table cell automatically wraps text with appropriate row height adjustments; text is never clipped or overflowing table borders. |
-| EC-5 | The provenance matrix spans a large number of pages (e.g. 15+ pages). | Page breaks occur cleanly between table rows; column headers repeat at the top of every page; page numbering ("Page X of Y") remains accurate. |
-| EC-6 | Audit report generation is requested for a job where model generation has not completed or failed. | The API returns an HTTP 400/404 error ("Audit report unavailable: model generation not complete"). No empty or partial PDF is generated. |
-| EC-7 | The filing is a baseline year with no prior drift history in Feature 7. | The drift section clearly states: "Baseline Year -- Initialized definition for [Metric]; no prior-year comparison available." |
-| EC-8 | Source filing filenames or taxonomy labels contain Unicode or special currency symbols (e.g. €, ¥, £, —, &). | ReportLab/WeasyPrint renders all characters cleanly using UTF-8 compliant fonts without character substitution errors (tofu boxes) or crashes. |
-| EC-9 | Concurrent download requests are received for the same completed job's audit report. | The backend serves the persisted PDF file safely without file locking collisions or duplicate generation overhead. |
-| EC-10 | A filesystem error occurs while saving the generated PDF (e.g. disk full or permission error). | The error is caught, logged, and an HTTP 500 error is returned with a descriptive message. No corrupt or truncated PDF file is saved or served. |
+| EC-1 | A benchmark ground-truth line item is absent from a filing because the company did not report that specific adjustment that year. | The ground-truth schema supports optional/conditional items; the diff engine correctly treats valid non-reporting as expected rather than penalizing recall. |
+| EC-2 | Extracted value represents a negative number in parentheses e.g. `(1,234)` while ground truth is stored as `-1234`. | The diff engine performs semantic numeric equivalence checking while also validating raw string formatting fidelity. |
+| EC-3 | A filing has exactly 15.01% of items in the review/manual band (boundary threshold). | The filing is deterministically marked as a failed extraction per the strict > 15% rule. |
+| EC-4 | A benchmark PDF file is missing or corrupted on disk. | The harness logs a descriptive error for that filing during corpus validation and aborts before running evaluations. |
+| EC-5 | Rate limit (429) is returned by Groq API during an evaluation run. | Feature 3's exponential backoff handles retry; the harness logs the rate-limit delay and tracks its impact on total runtime. |
+| EC-6 | Extracted bounding box covers 90% of the true bounding box with minor coordinate offset. | The diff engine uses an IoU (Intersection-over-Union) tolerance threshold to evaluate bounding box localization without penalizing minor pixel offsets. |
+| EC-7 | A filing achieves 100% auto-accepted extractions with zero items flagged for review. | The filing is recorded as an extraction success; report displays 0% manual review rate and 100% auto-accept rate. |
+| EC-8 | Model generation fails for one filing in the corpus due to missing provenance fields. | The failure is categorized specifically as a generation error; remaining benchmark filings continue processing. |
+| EC-9 | A benchmark filing exceeds 200 pages. | The pipeline processes all pages; the harness records the page count and flags if runtime exceeds the NFR3 5-minute budget. |
+| EC-10 | Ground truth contains duplicate normalized labels across different sections/pages. | The diff engine disambiguates and aligns items using page numbers and table structural context rather than collapsing by label string alone. |
