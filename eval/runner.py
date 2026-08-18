@@ -44,6 +44,7 @@ from app.ingestion.repository import JobRepository
 
 from eval.corpus_loader import DEFAULT_CORPUS_DIR, load_corpus
 from eval.models import (
+    BenchmarkCorpus,
     BenchmarkCorpusExecutionResult,
     BenchmarkFiling,
     BenchmarkFilingExecutionResult,
@@ -345,7 +346,7 @@ def _infer_error_stage(runtimes: StageRuntimes) -> str:
 
 
 def run_benchmark_corpus(
-    corpus: list[BenchmarkFiling] | None = None,
+    corpus: BenchmarkCorpus | list[BenchmarkFiling] | None = None,
     corpus_dir: Path | str | None = None,
     output_base_dir: Path | None = None,
     classifier_client: GroqClassifierClient | None = None,
@@ -353,7 +354,16 @@ def run_benchmark_corpus(
     """
     Executes the full pipeline against all filings in the benchmark corpus.
     """
-    filings = corpus if corpus is not None else load_corpus(corpus_dir)
+    if isinstance(corpus, BenchmarkCorpus):
+        filings = corpus.filings
+        corpus_name = corpus.manifest.corpus_name
+    elif isinstance(corpus, list):
+        filings = corpus
+        corpus_name = "Footnote Benchmark Corpus"
+    else:
+        filings = load_corpus(corpus_dir)
+        corpus_name = "Footnote Benchmark Corpus"
+
     results: list[BenchmarkFilingExecutionResult] = []
     total_runtime = 0.0
 
@@ -376,7 +386,7 @@ def run_benchmark_corpus(
     all_nfr3 = all(r.nfr3_compliant for r in results)
 
     return BenchmarkCorpusExecutionResult(
-        corpus_name="Footnote Benchmark Corpus",
+        corpus_name=corpus_name,
         total_filings=len(results),
         successful_filings=successful_count,
         failed_filings=failed_count,
