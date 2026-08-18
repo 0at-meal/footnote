@@ -7,6 +7,7 @@ filing metadata, and corpus validation results.
 Frozen schema fields (value, label, page, bbox, source_file) are preserved per CONSTITUTION §2.3.
 """
 
+from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -171,6 +172,17 @@ class BenchmarkCorpusManifest(BaseModel):
     )
 
 
+class BenchmarkCorpus(BaseModel):
+    """
+    Complete benchmark corpus specification comprising manifest and loaded filings.
+    """
+
+    manifest: BenchmarkCorpusManifest = Field(
+        default_factory=lambda: BenchmarkCorpusManifest(filing_ids=[])
+    )
+    filings: list[BenchmarkFiling] = Field(default_factory=list)
+
+
 class CorpusValidationResult(BaseModel):
     """
     Result summary of validating the benchmark corpus.
@@ -236,3 +248,141 @@ class BenchmarkCorpusExecutionResult(BaseModel):
     average_filing_runtime_seconds: float
     all_nfr3_compliant: bool
     filing_results: list[BenchmarkFilingExecutionResult]
+
+
+class FailurePattern(str, Enum):
+    """
+    Structural failure pattern taxonomy for layout and extraction anomalies (AC-7).
+    """
+
+    multi_column_bleed = "multi_column_bleed"
+    merged_cell_misalignment = "merged_cell_misalignment"
+    footnote_severance = "footnote_severance"
+    sign_mismatch = "sign_mismatch"
+    missing_item = "missing_item"
+    spurious_item = "spurious_item"
+    unrecognized_label = "unrecognized_label"
+    none = "none"
+
+
+class ItemMatchStatus(str, Enum):
+    """
+    Status of aligning an extracted line item against ground truth.
+    """
+
+    exact_match = "exact_match"
+    value_mismatch = "value_mismatch"
+    classification_mismatch = "classification_mismatch"
+    localization_error = "localization_error"
+    missed_item = "missed_item"
+    spurious_item = "spurious_item"
+
+
+class LineItemDiff(BaseModel):
+    """
+    Detailed comparison between a ground-truth line item and the extracted pipeline output.
+    """
+
+    ground_truth_label: str | None = None
+    ground_truth_normalized_label: str | None = None
+    ground_truth_value: str | None = None
+    extracted_label: str | None = None
+    extracted_normalized_label: str | None = None
+    extracted_value: str | None = None
+    page: int = 1
+    iou: float = Field(default=0.0, ge=0.0, le=1.0)
+    status: ItemMatchStatus
+    failure_pattern: FailurePattern = FailurePattern.none
+    is_optional: bool = False
+    detail: str | None = None
+
+
+class LayerMetricsSummary(BaseModel):
+    """
+    Isolated error counts per architectural pipeline layer (AC-4).
+    """
+
+    extraction_errors: int = Field(default=0, ge=0)
+    classification_errors: int = Field(default=0, ge=0)
+    generation_errors: int = Field(default=0, ge=0)
+
+
+class FilingAccuracyMetrics(BaseModel):
+    """
+    Structured evaluation and accuracy metrics for a single benchmark filing (AC-3, AC-4, AC-5).
+    """
+
+    filing_id: str
+    company_name: str
+    total_ground_truth_items: int
+    extracted_items_count: int
+    true_positives: int
+    false_positives: int
+    false_negatives: int
+    precision: float = Field(ge=0.0, le=1.0)
+    recall: float = Field(ge=0.0, le=1.0)
+    f1_score: float = Field(ge=0.0, le=1.0)
+    line_item_accuracy_percentage: float = Field(ge=0.0, le=100.0)
+    target_accuracy_achieved: bool = Field(
+        ..., description="True if line_item_accuracy_percentage >= 90.0% (AC-3)"
+    )
+    failed_extraction: bool = Field(
+        ...,
+        description="True if non-auto-accepted items exceed 15.0% threshold (AC-5, EC-3)",
+    )
+    non_auto_accepted_count: int = Field(default=0, ge=0)
+    non_auto_accepted_percentage: float = Field(default=0.0, ge=0.0, le=100.0)
+    layer_errors: LayerMetricsSummary = Field(default_factory=LayerMetricsSummary)
+    failure_patterns: list[FailurePattern] = Field(default_factory=list)
+    line_item_diffs: list[LineItemDiff] = Field(default_factory=list)
+    runtimes: StageRuntimes = Field(default_factory=StageRuntimes)
+    nfr3_compliant: bool = True
+
+
+class CorpusAccuracyMetrics(BaseModel):
+    """
+    Corpus-wide aggregate evaluation metrics with mandatory CONSTITUTION §6.13 governance disclosure.
+    """
+
+    corpus_name: str
+    total_filings: int
+    successful_filings: int
+    failed_extraction_filings_count: int
+    total_ground_truth_items: int
+    total_extracted_items: int
+    total_true_positives: int
+    total_false_positives: int
+    total_false_negatives: int
+    macro_precision: float = Field(ge=0.0, le=1.0)
+    macro_recall: float = Field(ge=0.0, le=1.0)
+    macro_f1_score: float = Field(ge=0.0, le=1.0)
+    micro_precision: float = Field(ge=0.0, le=1.0)
+    micro_recall: float = Field(ge=0.0, le=1.0)
+    micro_f1_score: float = Field(ge=0.0, le=1.0)
+    corpus_line_item_accuracy_percentage: float = Field(ge=0.0, le=100.0)
+    target_accuracy_achieved: bool = Field(
+        ...,
+        description="True if corpus_line_item_accuracy_percentage >= 90.0% (AC-3)",
+    )
+    layer_errors: LayerMetricsSummary = Field(default_factory=LayerMetricsSummary)
+    failure_pattern_counts: dict[str, int] = Field(default_factory=dict)
+    filing_metrics: list[FilingAccuracyMetrics] = Field(default_factory=list)
+    benchmark_corpus_size: int = Field(
+        ...,
+        description="Mandatory disclosure: count of filings in benchmark corpus (CONSTITUTION §6.13)",
+    )
+    total_manual_review_items: int = Field(
+        default=0,
+        ge=0,
+        description="Mandatory disclosure: total items requiring human review or manual correction (CONSTITUTION §6.13)",
+    )
+    manual_review_percentage: float = Field(
+        default=0.0,
+        ge=0.0,
+        le=100.0,
+        description="Mandatory disclosure: percentage of items requiring human review (CONSTITUTION §6.13)",
+    )
+    mandatory_governance_disclosure: str = Field(
+        ...,
+        description="Explicit formatted statement of corpus size and human review count per CONSTITUTION §6.13",
+    )
