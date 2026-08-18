@@ -17,14 +17,14 @@
       "normalized_label": "Net Income",
       "page": 1,
       "bbox": {
-        "x0": 653.59,
-        "y0": 151.52,
-        "x1": 849.67,
-        "y1": 170.45
+        "x0": 848.73,
+        "y0": 169.51,
+        "x1": 898.69,
+        "y1": 186.86
       },
       "source_file": "acme_2023_10k.pdf",
       "is_optional": false,
-      "section": "Item 7. Management's Discussion and Analysis of Financial Condition"
+      "section": "Item 7. Management's Discussion and Analysis - Non-GAAP Measures"
     },
     {
       "value": "5,000",
@@ -32,14 +32,14 @@
       "normalized_label": "Interest Expense",
       "page": 1,
       "bbox": {
-        "x0": 653.59,
-        "y0": 179.29,
-        "x1": 849.67,
-        "y1": 198.23
+        "x0": 857.81,
+        "y0": 199.81,
+        "x1": 898.69,
+        "y1": 217.16
       },
       "source_file": "acme_2023_10k.pdf",
       "is_optional": false,
-      "section": "Item 7. Management's Discussion and Analysis of Financial Condition"
+      "section": "Item 7. Management's Discussion and Analysis - Non-GAAP Measures"
     },
     {
       "value": "12,000",
@@ -47,14 +47,14 @@
       "normalized_label": "Income Tax Expense",
       "page": 1,
       "bbox": {
-        "x0": 653.59,
-        "y0": 207.07,
-        "x1": 849.67,
-        "y1": 226.01
+        "x0": 848.73,
+        "y0": 230.11,
+        "x1": 898.69,
+        "y1": 247.46
       },
       "source_file": "acme_2023_10k.pdf",
       "is_optional": false,
-      "section": "Item 7. Management's Discussion and Analysis of Financial Condition"
+      "section": "Item 7. Management's Discussion and Analysis - Non-GAAP Measures"
     },
     {
       "value": "8,000",
@@ -62,14 +62,14 @@
       "normalized_label": "Depreciation & Amortization",
       "page": 1,
       "bbox": {
-        "x0": 653.59,
-        "y0": 234.85,
-        "x1": 849.67,
-        "y1": 253.79
+        "x0": 857.81,
+        "y0": 260.42,
+        "x1": 898.69,
+        "y1": 277.77
       },
       "source_file": "acme_2023_10k.pdf",
       "is_optional": false,
-      "section": "Item 7. Management's Discussion and Analysis of Financial Condition"
+      "section": "Item 7. Management's Discussion and Analysis - Non-GAAP Measures"
     },
     {
       "value": "15,000",
@@ -77,14 +77,14 @@
       "normalized_label": "Stock-based compensation",
       "page": 1,
       "bbox": {
-        "x0": 653.59,
-        "y0": 262.63,
-        "x1": 849.67,
-        "y1": 281.57
+        "x0": 848.73,
+        "y0": 290.72,
+        "x1": 898.69,
+        "y1": 308.07
       },
       "source_file": "acme_2023_10k.pdf",
       "is_optional": false,
-      "section": "Item 7. Management's Discussion and Analysis of Financial Condition"
+      "section": "Item 7. Management's Discussion and Analysis - Non-GAAP Measures"
     },
     {
       "value": "90,000",
@@ -92,14 +92,14 @@
       "normalized_label": "Adjusted EBITDA",
       "page": 1,
       "bbox": {
-        "x0": 653.59,
-        "y0": 290.4,
-        "x1": 849.67,
-        "y1": 309.34
+        "x0": 848.73,
+        "y0": 321.02,
+        "x1": 898.69,
+        "y1": 338.37
       },
       "source_file": "acme_2023_10k.pdf",
       "is_optional": false,
-      "section": "Item 7. Management's Discussion and Analysis of Financial Condition"
+      "section": "Item 7. Management's Discussion and Analysis - Non-GAAP Measures"
     }
   ],
   "expected_reconciliation_total": 90000.0

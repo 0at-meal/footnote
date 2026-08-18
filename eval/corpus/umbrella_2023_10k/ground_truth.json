@@ -17,14 +17,14 @@
       "normalized_label": "Net Income",
       "page": 1,
       "bbox": {
-        "x0": 653.59,
-        "y0": 151.52,
-        "x1": 849.67,
-        "y1": 170.45
+        "x0": 848.73,
+        "y0": 169.51,
+        "x1": 898.69,
+        "y1": 186.86
       },
       "source_file": "umbrella_2023_10k.pdf",
       "is_optional": false,
-      "section": "Item 7. Executive Overview - Non-GAAP Adjusted EBITDA"
+      "section": "Item 7. Non-GAAP Adjusted EBITDA Reconciliation"
     },
     {
       "value": "18,000",
@@ -32,14 +32,14 @@
       "normalized_label": "Depreciation & Amortization",
       "page": 1,
       "bbox": {
-        "x0": 653.59,
-        "y0": 179.29,
-        "x1": 849.67,
-        "y1": 198.23
+        "x0": 848.73,
+        "y0": 199.81,
+        "x1": 898.69,
+        "y1": 217.16
       },
       "source_file": "umbrella_2023_10k.pdf",
       "is_optional": false,
-      "section": "Item 7. Executive Overview - Non-GAAP Adjusted EBITDA"
+      "section": "Item 7. Non-GAAP Adjusted EBITDA Reconciliation"
     },
     {
       "value": "25,000",
@@ -47,14 +47,14 @@
       "normalized_label": "Stock-based compensation",
       "page": 1,
       "bbox": {
-        "x0": 653.59,
-        "y0": 207.07,
-        "x1": 849.67,
-        "y1": 226.01
+        "x0": 848.73,
+        "y0": 230.11,
+        "x1": 898.69,
+        "y1": 247.46
       },
       "source_file": "umbrella_2023_10k.pdf",
       "is_optional": false,
-      "section": "Item 7. Executive Overview - Non-GAAP Adjusted EBITDA"
+      "section": "Item 7. Non-GAAP Adjusted EBITDA Reconciliation"
     },
     {
       "value": "123,000",
@@ -62,14 +62,14 @@
       "normalized_label": "Adjusted EBITDA",
       "page": 1,
       "bbox": {
-        "x0": 653.59,
-        "y0": 234.85,
-        "x1": 849.67,
-        "y1": 253.79
+        "x0": 839.64,
+        "y0": 260.42,
+        "x1": 898.69,
+        "y1": 277.77
       },
       "source_file": "umbrella_2023_10k.pdf",
       "is_optional": false,
-      "section": "Item 7. Executive Overview - Non-GAAP Adjusted EBITDA"
+      "section": "Item 7. Non-GAAP Adjusted EBITDA Reconciliation"
     },
     {
       "value": "15,000",
@@ -77,10 +77,10 @@
       "normalized_label": "Stock-based compensation",
       "page": 2,
       "bbox": {
-        "x0": 653.59,
-        "y0": 151.52,
-        "x1": 849.67,
-        "y1": 170.45
+        "x0": 848.73,
+        "y0": 192.23,
+        "x1": 898.69,
+        "y1": 209.58
       },
       "source_file": "umbrella_2023_10k.pdf",
       "is_optional": false,
@@ -92,10 +92,10 @@
       "normalized_label": "Stock-based compensation",
       "page": 2,
       "bbox": {
-        "x0": 653.59,
-        "y0": 179.29,
-        "x1": 849.67,
-        "y1": 198.23
+        "x0": 848.73,
+        "y0": 222.54,
+        "x1": 898.69,
+        "y1": 239.89
       },
       "source_file": "umbrella_2023_10k.pdf",
       "is_optional": false,

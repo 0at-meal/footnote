@@ -7,6 +7,8 @@ filing metadata, and corpus validation results.
 Frozen schema fields (value, label, page, bbox, source_file) are preserved per CONSTITUTION §2.3.
 """
 
+from typing import Any
+
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 
@@ -179,3 +181,58 @@ class CorpusValidationResult(BaseModel):
     total_items: int
     errors: list[str] = []
     warnings: list[str] = []
+
+
+class StageRuntimes(BaseModel):
+    """
+    Granular runtime measurements in seconds for each pipeline stage.
+    """
+
+    docling_time_seconds: float = Field(default=0.0, ge=0.0)
+    coordinate_norm_time_seconds: float = Field(default=0.0, ge=0.0)
+    assembly_and_scoring_time_seconds: float = Field(default=0.0, ge=0.0)
+    extraction_time_seconds: float = Field(default=0.0, ge=0.0)
+    classification_time_seconds: float = Field(default=0.0, ge=0.0)
+    formula_time_seconds: float = Field(default=0.0, ge=0.0)
+    generation_time_seconds: float = Field(default=0.0, ge=0.0)
+    total_time_seconds: float = Field(default=0.0, ge=0.0)
+
+
+class BenchmarkFilingExecutionResult(BaseModel):
+    """
+    Complete execution result for a single benchmark filing run through the production pipeline.
+    """
+
+    filing_id: str
+    company_name: str
+    job_id: str
+    success: bool
+    error_stage: str | None = None
+    error_detail: str | None = None
+    page_count: int
+    runtimes: StageRuntimes
+    nfr3_compliant: bool = Field(
+        ...,
+        description="True if total_time_seconds <= 300.0s (5-minute budget per NFR3)",
+    )
+    scored_records: list[Any] = Field(default_factory=list)
+    classified_records: list[Any] = Field(default_factory=list)
+    extraction_summary: Any | None = None
+    total_cells_generated: int = 0
+    provenance_count: int = 0
+    isolated_data_dir: str | None = None
+
+
+class BenchmarkCorpusExecutionResult(BaseModel):
+    """
+    Aggregate execution metrics across all filings in the benchmark corpus.
+    """
+
+    corpus_name: str
+    total_filings: int
+    successful_filings: int
+    failed_filings: int
+    total_runtime_seconds: float
+    average_filing_runtime_seconds: float
+    all_nfr3_compliant: bool
+    filing_results: list[BenchmarkFilingExecutionResult]
