@@ -26,10 +26,17 @@ from app.audit_report.models import (
     ReportMetadata,
 )
 from app.audit_trail.resolver import AuditTrailResolver
+from app.classification.repository import ClassificationRepository
 from app.drift.repository import DriftRepository
+from app.excel_export.generator import generate_workbook
 from app.excel_export.repository import ModelRepository
 from app.extraction.models import ScoredRecord
 from app.extraction.repository import ExtractionRepository
+from app.formula_engine.reader import (
+    read_formula_inputs,
+    read_formula_inputs_from_review,
+)
+from app.formula_engine.tree import build_formula_tree
 from app.ingestion.repository import JobRepository
 from app.review.models import ReviewItem, ReviewStatus
 from app.review.repository import ReviewRepository
@@ -74,7 +81,7 @@ class AuditReportCompiler:
 
         Raises:
             JobNotFoundError: If job_id does not exist in jobs.json.
-            ModelNotCompleteError: If model provenance records do not exist (EC-6).
+            ModelNotCompleteError: If model provenance records do not exist and cannot be compiled (EC-6).
         """
         job = self._job_repo.get_job(job_id)
         if job is None:
@@ -82,8 +89,36 @@ class AuditReportCompiler:
 
         provenance_records = self._model_repo.get_provenance_records(job_id)
         if not provenance_records:
+            # Attempt on-the-fly model compilation if confirmed/locked items exist (Ticket 5.2)
+            review_items_for_gen = self._review_repo.get_review_items(job_id)
+            classification_repo = ClassificationRepository(data_dir=self._data_dir)
+            classified_records = classification_repo.get_classified_records(job_id)
+
+            batch = None
+            if review_items_for_gen is not None and len(review_items_for_gen) > 0:
+                batch = read_formula_inputs_from_review(review_items_for_gen)
+            elif classified_records is not None and len(classified_records) > 0:
+                batch = read_formula_inputs(classified_records)
+
+            if batch is not None and len(batch.nodes) > 0:
+                target_metric = job.target_metric or "Adjusted EBITDA"
+                formula_tree = build_formula_tree(batch, target_metric=target_metric)
+                if formula_tree.is_valid:
+                    generation_result = generate_workbook(
+                        formula_tree,
+                        job_id=job_id,
+                        output_dir=self._data_dir,
+                    )
+                    self._model_repo.save_generation_result(job_id, generation_result)
+                    if generation_result.provenance_records:
+                        self._model_repo.save_provenance_records(
+                            job_id, generation_result.provenance_records
+                        )
+                        provenance_records = generation_result.provenance_records
+
+        if not provenance_records:
             raise ModelNotCompleteError(
-                f"Audit report unavailable: model generation not complete for job '{job_id}' (EC-6)."
+                f"Audit report unavailable: model generation not complete. At least one line item must be confirmed before generating an audit report for job '{job_id}' (EC-6)."
             )
 
         review_items = self._review_repo.get_review_items(job_id) or []

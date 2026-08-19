@@ -15,6 +15,7 @@ interface Props {
   jobId: string
   apiBase: string
   onBack: () => void
+  onReview?: (jobId: string) => void
 }
 
 const STATUS_TOOLTIPS: Record<string, string> = {
@@ -48,8 +49,9 @@ function StatusBadge({ status, isMissing }: { status: string; isMissing: boolean
   )
 }
 
-export default function AuditTrailView({ jobId, apiBase, onBack }: Props) {
+export default function AuditTrailView({ jobId, apiBase, onBack, onReview }: Props) {
   const [provenanceRecords, setProvenanceRecords] = useState<ProvenanceSummaryRecord[]>([])
+  const [isLoadingProvenance, setIsLoadingProvenance] = useState<boolean>(true)
   const [selectedSheet, setSelectedSheet] = useState<string>('Reconciliation')
   const [cellCoordInput, setCellCoordInput] = useState<string>('C4')
   const [provIdInput, setProvIdInput] = useState<string>('')
@@ -145,9 +147,13 @@ export default function AuditTrailView({ jobId, apiBase, onBack }: Props) {
     let cancelled = false
 
     async function fetchMetadataAndInitialChain() {
+      setIsLoadingProvenance(true)
       try {
         const res = await fetch(`${apiBase}/models/${jobId}/provenance`)
-        if (!res.ok) return
+        if (!res.ok) {
+          if (!cancelled) setProvenanceRecords([])
+          return
+        }
         const data = (await res.json()) as ProvenanceQueryResponse
         if (cancelled) return
         setProvenanceRecords(data.records || [])
@@ -172,6 +178,9 @@ export default function AuditTrailView({ jobId, apiBase, onBack }: Props) {
         }
       } catch {
         // Non-fatal fallback
+        if (!cancelled) setProvenanceRecords([])
+      } finally {
+        if (!cancelled) setIsLoadingProvenance(false)
       }
     }
 
@@ -295,6 +304,42 @@ export default function AuditTrailView({ jobId, apiBase, onBack }: Props) {
         </div>
       </header>
 
+      {/* ── Empty State Guidance Banner (Ticket 5.1) ── */}
+      {!isLoadingProvenance && provenanceRecords.length === 0 && (
+        <div className="audit-empty-banner" role="alert">
+          <div className="audit-empty-banner__message">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span>
+              No Excel model generated yet. Please review and confirm extracted line items first.
+            </span>
+          </div>
+          {onReview && (
+            <button
+              type="button"
+              className="audit-empty-banner__action-btn"
+              onClick={() => onReview(jobId)}
+              aria-label="Go to Review UI"
+            >
+              Go to Review UI →
+            </button>
+          )}
+        </div>
+      )}
+
       <div className="audit-body">
         {/* ── Left Pane: Query & Chain Display ── */}
         <div className="audit-sidebar">
@@ -395,6 +440,25 @@ export default function AuditTrailView({ jobId, apiBase, onBack }: Props) {
               </form>
             </div>
           </section>
+
+          {!isLoadingProvenance && provenanceRecords.length === 0 && (
+            <div className="audit-empty-guide-card">
+              <h3>No Model Generated</h3>
+              <p>
+                Provenance records are generated when the Excel model is compiled from confirmed line items.
+              </p>
+              {onReview && (
+                <button
+                  type="button"
+                  className="audit-empty-banner__action-btn"
+                  onClick={() => onReview(jobId)}
+                  aria-label="Go to Review UI"
+                >
+                  Go to Review UI →
+                </button>
+              )}
+            </div>
+          )}
 
           {chainError && (
             <div className="audit-error-state" role="alert">

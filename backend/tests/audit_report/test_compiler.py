@@ -101,8 +101,42 @@ def test_compile_raises_model_not_complete_when_provenance_missing(
     job_id = jobs[0].job_id
 
     compiler = AuditReportCompiler(data_dir=data_dir)
-    with pytest.raises(ModelNotCompleteError, match="model generation not complete"):
+    with pytest.raises(ModelNotCompleteError, match="model generation not complete.*At least one line item must be confirmed"):
         compiler.compile(job_id)
+
+
+def test_compile_auto_generates_model_when_confirmed_review_items_exist(
+    test_env: dict[str, Path],
+) -> None:
+    data_dir = test_env["data_dir"]
+    job_repo = JobRepository(data_dir=data_dir)
+    review_repo = ReviewRepository(data_dir=data_dir)
+
+    job_rec = job_repo.save_job("AutoModel_2024.pdf", b"%PDF-1.4 dummy", "Adjusted EBITDA")
+    job_id = job_rec.job_id
+
+    # Create locked review item but do NOT manually call model generation
+    review_item = ReviewItem(
+        id=f"{job_id}_0",
+        value="50000",
+        label="Stock-Based Compensation",
+        page=1,
+        bbox={"x0": 100.0, "y0": 200.0, "x1": 300.0, "y1": 250.0},
+        source_file="AutoModel_2024.pdf",
+        confidence_band=ConfidenceBand.auto_accepted,
+        confidence_score=0.99,
+        normalized_label="Stock-Based Compensation",
+        taxonomy_status="matched",
+        status=ReviewStatus.locked,
+    )
+    review_repo.save_review_items(job_id, [review_item])
+
+    compiler = AuditReportCompiler(data_dir=data_dir)
+    dataset = compiler.compile(job_id)
+
+    assert dataset.job_id == job_id
+    assert dataset.metadata.total_cells > 0
+    assert len(dataset.provenance_matrix) > 0
 
 
 def test_compile_successful_with_full_provenance_and_zero_overrides(

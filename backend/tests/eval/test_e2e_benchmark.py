@@ -220,3 +220,191 @@ def test_ac5_failed_extraction_threshold_boundary() -> None:
     metrics = diff_filing(filing, exec_res)
     assert metrics.failed_extraction is True
     assert metrics.non_auto_accepted_percentage == 16.0
+
+
+def test_full_e2e_pipeline_upload_to_audit_pdf(tmp_path: Path) -> None:
+    """
+    Ticket 5.3: Complete end-to-end pipeline integration test:
+    PDF Upload -> Extraction -> Review / Confirm -> Model Generation -> Excel Check -> Audit Trail -> Audit PDF.
+    """
+    from app.audit_report.service import generate_audit_report
+    from app.audit_trail.resolver import AuditTrailResolver
+    from app.excel_export.generator import generate_workbook
+    from app.excel_export.repository import ModelRepository
+    from app.extraction.models import ConfidenceBand, ExtractedRecord, ScoredRecord
+    from app.extraction.repository import ExtractionRepository
+    from app.formula_engine.reader import read_formula_inputs_from_review
+    from app.formula_engine.tree import build_formula_tree
+    from app.ingestion.models import JobStatus
+    from app.ingestion.repository import JobRepository
+    from app.review.models import ReviewItem, ReviewStatus
+    from app.review.repository import ReviewRepository
+
+    data_dir = tmp_path / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+
+    # 1. PDF Upload / Job Ingestion
+    job_repo = JobRepository(data_dir=data_dir)
+    job_rec = job_repo.save_job(
+        "Acme_Corp_2024_10K.pdf",
+        b"%PDF-1.4 Mock PDF Content",
+        "Adjusted EBITDA",
+    )
+    job_id = job_rec.job_id
+    assert job_rec.status == JobStatus.queued
+    assert job_rec.target_metric == "Adjusted EBITDA"
+
+    # 2. Extraction & Scoring State
+    extraction_repo = ExtractionRepository(data_dir=data_dir)
+    scored_items = [
+        ScoredRecord(
+            record=ExtractedRecord(
+                value="250000",
+                label="Operating Income (GAAP)",
+                page=12,
+                bbox={"x0": 72.0, "y0": 140.0, "x1": 420.0, "y1": 160.0},
+                source_file="Acme_Corp_2024_10K.pdf",
+            ),
+            confidence_score=0.98,
+            confidence_band=ConfidenceBand.auto_accepted,
+            flags=[],
+        ),
+        ScoredRecord(
+            record=ExtractedRecord(
+                value="45000",
+                label="Stock-based compensation expense",
+                page=12,
+                bbox={"x0": 72.0, "y0": 170.0, "x1": 420.0, "y1": 190.0},
+                source_file="Acme_Corp_2024_10K.pdf",
+            ),
+            confidence_score=0.95,
+            confidence_band=ConfidenceBand.auto_accepted,
+            flags=[],
+        ),
+        ScoredRecord(
+            record=ExtractedRecord(
+                value="15000",
+                label="Restructuring and acquisition costs",
+                page=13,
+                bbox={"x0": 72.0, "y0": 210.0, "x1": 420.0, "y1": 230.0},
+                source_file="Acme_Corp_2024_10K.pdf",
+            ),
+            confidence_score=0.92,
+            confidence_band=ConfidenceBand.needs_review,
+            flags=[],
+        ),
+    ]
+    extraction_repo.save_scored_records(job_id, scored_items)
+
+    # 3. Review & Confirmation State
+    review_repo = ReviewRepository(data_dir=data_dir)
+    review_items = [
+        ReviewItem(
+            id=f"{job_id}_0",
+            value="250000",
+            label="Operating Income",
+            page=12,
+            bbox={"x0": 72.0, "y0": 140.0, "x1": 420.0, "y1": 160.0},
+            source_file="Acme_Corp_2024_10K.pdf",
+            confidence_band=ConfidenceBand.auto_accepted,
+            confidence_score=0.98,
+            normalized_label="Operating Income",
+            taxonomy_status="matched",
+            status=ReviewStatus.locked,
+        ),
+        ReviewItem(
+            id=f"{job_id}_1",
+            value="45000",
+            label="Stock-based compensation expense",
+            page=12,
+            bbox={"x0": 72.0, "y0": 170.0, "x1": 420.0, "y1": 190.0},
+            source_file="Acme_Corp_2024_10K.pdf",
+            confidence_band=ConfidenceBand.auto_accepted,
+            confidence_score=0.95,
+            normalized_label="Stock-Based Compensation",
+            taxonomy_status="matched",
+            status=ReviewStatus.locked,
+        ),
+        ReviewItem(
+            id=f"{job_id}_2",
+            value="15000",
+            label="Restructuring charges",
+            page=13,
+            bbox={"x0": 72.0, "y0": 210.0, "x1": 420.0, "y1": 230.0},
+            source_file="Acme_Corp_2024_10K.pdf",
+            confidence_band=ConfidenceBand.needs_review,
+            confidence_score=0.92,
+            normalized_label="Restructuring Charges",
+            taxonomy_status="matched",
+            status=ReviewStatus.locked,
+        ),
+    ]
+    review_repo.save_review_items(job_id, review_items)
+    job_repo.update_job_status(job_id, JobStatus.done)
+
+    # 4. Model Generation from Review State
+    formula_batch = read_formula_inputs_from_review(review_items)
+    assert len(formula_batch.nodes) == 3
+    assert formula_batch.error_message is None
+
+    tree = build_formula_tree(formula_batch, target_metric="Adjusted EBITDA")
+    assert tree.is_valid is True
+    assert tree.root is not None
+
+    model_repo = ModelRepository(data_dir=data_dir)
+    generation_result = generate_workbook(tree, job_id=job_id, output_dir=data_dir)
+    assert generation_result.is_success is True
+    assert generation_result.total_cells_generated > 0
+    assert len(generation_result.provenance_records) > 0
+
+    model_repo.save_generation_result(job_id, generation_result)
+    model_repo.save_provenance_records(job_id, generation_result.provenance_records)
+
+    # 5. Excel File Verification
+    excel_path = Path(generation_result.file_path)
+    assert excel_path.exists()
+    assert excel_path.stat().st_size > 0
+
+    wb = openpyxl.load_workbook(excel_path, data_only=False)
+    assert "Source_Inputs" in wb.sheetnames
+    assert "Reconciliation" in wb.sheetnames
+
+    # Check for formula syntax and assert zero formula errors
+    has_formula_cells = False
+    for sheet in wb.worksheets:
+        for row in sheet.iter_rows(values_only=True):
+            for cell_val in row:
+                if isinstance(cell_val, str) and cell_val.startswith("="):
+                    has_formula_cells = True
+                    # Assert no corrupt Excel error tokens
+                    assert "#REF!" not in cell_val
+                    assert "#VALUE!" not in cell_val
+                    assert "#NAME?" not in cell_val
+                    assert "#DIV/0!" not in cell_val
+                    assert "#N/A" not in cell_val
+    assert has_formula_cells is True
+
+    # 6. Audit Trail Resolution
+    resolver = AuditTrailResolver(data_dir=data_dir)
+    recon_chain = resolver.resolve_by_cell(job_id, "Reconciliation", "C4")
+    if not recon_chain.is_found:
+        recon_chain = resolver.resolve_by_cell(job_id, "Source_Inputs", "B2")
+
+    assert recon_chain.is_found is True
+    assert len(recon_chain.components) > 0
+    for comp in recon_chain.components:
+        assert comp.page >= 1
+        assert 0.0 <= comp.bbox["x0"] <= 1000.0
+        assert 0.0 <= comp.bbox["y0"] <= 1000.0
+        assert 0.0 <= comp.bbox["x1"] <= 1000.0
+        assert 0.0 <= comp.bbox["y1"] <= 1000.0
+        assert comp.source_file == "Acme_Corp_2024_10K.pdf"
+
+    # 7. Audit PDF Report Generation
+    pdf_path = generate_audit_report(job_id, data_dir=data_dir)
+    assert pdf_path.exists()
+    assert pdf_path.stat().st_size > 0
+
+    pdf_bytes = pdf_path.read_bytes()
+    assert pdf_bytes.startswith(b"%PDF-")
+

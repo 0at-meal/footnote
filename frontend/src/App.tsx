@@ -161,6 +161,10 @@ function App() {
         jobId={activeAuditJobId}
         apiBase={API_BASE}
         onBack={() => setActiveAuditJobId(null)}
+        onReview={(jobId) => {
+          setActiveAuditJobId(null)
+          setActiveReviewJobId(jobId)
+        }}
       />
     )
   }
