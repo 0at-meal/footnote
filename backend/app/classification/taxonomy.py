@@ -11,6 +11,7 @@ Enforces:
 import json
 import logging
 import os
+import re
 from pathlib import Path
 
 from app.classification.models import (
@@ -35,6 +36,32 @@ SEED_TAXONOMY: list[str] = [
 ]
 
 _DEFAULT_DATA_DIR: Path = Path(__file__).parent.parent.parent / "data"
+
+
+def canonicalize_label(label: str) -> str:
+    """
+    Canonicalizes a line item label for direct fallback matching.
+    Collapses non-alphanumeric characters, strips, and converts to lowercase.
+    """
+    return re.sub(r"[^a-zA-Z0-9]+", " ", label).strip().lower()
+
+
+def match_canonical_taxonomy(
+    candidate_label: str,
+    active_taxonomy: list[str] | None = None,
+) -> str | None:
+    """
+    Attempts to match candidate_label against taxonomy entries using canonicalized string matching.
+    Returns the exact taxonomy entry string if matched, or None.
+    """
+    taxonomy = active_taxonomy if active_taxonomy is not None else SEED_TAXONOMY
+    canonical_cand = canonicalize_label(candidate_label)
+    if not canonical_cand:
+        return None
+    for entry in taxonomy:
+        if canonicalize_label(entry) == canonical_cand:
+            return entry
+    return None
 
 
 def check_label_against_taxonomy(

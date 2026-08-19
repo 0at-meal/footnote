@@ -128,3 +128,60 @@ def test_skipped_and_error_items_are_pending() -> None:
         assert item.taxonomy_status == TaxonomyStatus.pending_taxonomy_confirmation
         assert item.is_confirmed is False
         assert item.classifier_confidence is None
+
+
+def test_canonical_taxonomy_match_attaches_normalized_label() -> None:
+    records = [create_sample_scored_record("Stock based compensation", value="20,000")]
+    batch_result = ClassificationBatchResult(
+        results=[
+            ClassificationItemResult(
+                record_index=0,
+                payload=ClassifierInputPayload(label="Stock based compensation"),
+                raw_response=ClassifierRawResponse(label="stock-based compensation", confidence=0.92),
+                is_error=False,
+            )
+        ],
+        total_dispatched=1,
+        success_count=1,
+        error_count=0,
+        skipped_count=0,
+    )
+
+    classified = normalize_records(records, batch_result, SEED_TAXONOMY)
+    assert len(classified) == 1
+    item = classified[0]
+
+    assert item.normalized_label == "Stock-Based Compensation"
+    assert item.taxonomy_status == TaxonomyStatus.matched
+    assert item.is_confirmed is True
+    assert item.classifier_confidence == 0.92
+
+
+def test_offline_fallback_normalizer_attaches_seed_taxonomy() -> None:
+    records = [
+        create_sample_scored_record("Restructuring charges", value="5,000"),
+        create_sample_scored_record("Random custom note", value="1,000"),
+    ]
+    # Simulate failed/empty batch result
+    batch_result = ClassificationBatchResult(
+        results=[],
+        total_dispatched=0,
+        success_count=0,
+        error_count=0,
+        skipped_count=0,
+    )
+
+    classified = normalize_records(records, batch_result, SEED_TAXONOMY)
+    assert len(classified) == 2
+
+    # First record matches SEED_TAXONOMY canonically
+    assert classified[0].normalized_label == "Restructuring Charges"
+    assert classified[0].taxonomy_status == TaxonomyStatus.matched
+    assert classified[0].is_confirmed is True
+    assert classified[0].classifier_confidence == 0.95
+
+    # Second record does not match and remains pending
+    assert classified[1].normalized_label is None
+    assert classified[1].taxonomy_status == TaxonomyStatus.pending_taxonomy_confirmation
+    assert classified[1].is_confirmed is False
+    assert classified[1].classifier_confidence is None

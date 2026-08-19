@@ -7,12 +7,16 @@ Enforces:
 - CONSTITUTION §2.3, NFR7: 5-field schema integrity preserved.
 """
 
+from app.classification.dispatcher import ELIGIBLE_BANDS
 from app.classification.models import (
     ClassificationBatchResult,
     ClassifiedRecord,
     TaxonomyStatus,
 )
-from app.classification.taxonomy import check_label_against_taxonomy
+from app.classification.taxonomy import (
+    check_label_against_taxonomy,
+    match_canonical_taxonomy,
+)
 from app.extraction.models import ScoredRecord
 
 
@@ -45,7 +49,7 @@ def normalize_records(
 
         if item_res is not None and not item_res.is_error and item_res.raw_response is not None:
             match_res = check_label_against_taxonomy(item_res.raw_response.label, active_taxonomy)
-            if match_res.is_matched:
+            if match_res.is_matched and match_res.matched_entry is not None:
                 classified_records.append(
                     ClassifiedRecord(
                         record=record,
@@ -56,25 +60,57 @@ def normalize_records(
                     )
                 )
             else:
+                # Check canonical match on LLM label or raw record label
+                canonical_entry = match_canonical_taxonomy(
+                    item_res.raw_response.label, active_taxonomy
+                ) or match_canonical_taxonomy(record.record.label, active_taxonomy)
+
+                if canonical_entry is not None:
+                    classified_records.append(
+                        ClassifiedRecord(
+                            record=record,
+                            normalized_label=canonical_entry,
+                            taxonomy_status=TaxonomyStatus.matched,
+                            classifier_confidence=item_res.raw_response.confidence,
+                            is_confirmed=True,
+                        )
+                    )
+                else:
+                    classified_records.append(
+                        ClassifiedRecord(
+                            record=record,
+                            normalized_label=None,
+                            taxonomy_status=TaxonomyStatus.pending_taxonomy_confirmation,
+                            classifier_confidence=item_res.raw_response.confidence,
+                            is_confirmed=False,
+                        )
+                    )
+        else:
+            # Skipped (e.g. manual_required, extraction_error) or classifier failure
+            canonical_entry = match_canonical_taxonomy(record.record.label, active_taxonomy)
+            if (
+                canonical_entry is not None
+                and record.confidence_band in ELIGIBLE_BANDS
+                and record.status == "ok"
+            ):
+                classified_records.append(
+                    ClassifiedRecord(
+                        record=record,
+                        normalized_label=canonical_entry,
+                        taxonomy_status=TaxonomyStatus.matched,
+                        classifier_confidence=0.95,
+                        is_confirmed=True,
+                    )
+                )
+            else:
                 classified_records.append(
                     ClassifiedRecord(
                         record=record,
                         normalized_label=None,
                         taxonomy_status=TaxonomyStatus.pending_taxonomy_confirmation,
-                        classifier_confidence=item_res.raw_response.confidence,
+                        classifier_confidence=None,
                         is_confirmed=False,
                     )
                 )
-        else:
-            # Skipped (e.g. manual_required, extraction_error) or classifier failure
-            classified_records.append(
-                ClassifiedRecord(
-                    record=record,
-                    normalized_label=None,
-                    taxonomy_status=TaxonomyStatus.pending_taxonomy_confirmation,
-                    classifier_confidence=None,
-                    is_confirmed=False,
-                )
-            )
 
     return classified_records

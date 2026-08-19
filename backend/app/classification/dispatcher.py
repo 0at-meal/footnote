@@ -16,7 +16,9 @@ from app.classification.models import (
     ClassificationBatchResult,
     ClassificationItemResult,
     ClassifierInputPayload,
+    ClassifierRawResponse,
 )
+from app.classification.taxonomy import match_canonical_taxonomy
 from app.extraction.models import ConfidenceBand, ScoredRecord
 
 logger = logging.getLogger(__name__)
@@ -77,16 +79,33 @@ def dispatch_records_to_classifier(
             success_count += 1
         except (ValueError, TypeError, RateLimitError, APIConnectionError, APIError, RuntimeError) as err:
             logger.warning("Classification failed for record index %d ('%s'): %s", idx, raw_label, err)
-            item_results.append(
-                ClassificationItemResult(
-                    record_index=idx,
-                    payload=payload,
-                    raw_response=None,
-                    is_error=True,
-                    error_detail=str(err),
+            fallback_match = match_canonical_taxonomy(raw_label)
+            if fallback_match is not None:
+                logger.info("Direct taxonomy fallback matched '%s' -> '%s'", raw_label, fallback_match)
+                item_results.append(
+                    ClassificationItemResult(
+                        record_index=idx,
+                        payload=payload,
+                        raw_response=ClassifierRawResponse(
+                            label=fallback_match,
+                            confidence=0.95,
+                        ),
+                        is_error=False,
+                        error_detail=None,
+                    )
                 )
-            )
-            error_count += 1
+                success_count += 1
+            else:
+                item_results.append(
+                    ClassificationItemResult(
+                        record_index=idx,
+                        payload=payload,
+                        raw_response=None,
+                        is_error=True,
+                        error_detail=str(err),
+                    )
+                )
+                error_count += 1
 
     return ClassificationBatchResult(
         results=item_results,

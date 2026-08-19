@@ -21,6 +21,7 @@ from app.classification.models import (
     ClassifierInputPayload,
     ClassifierRawResponse,
 )
+from app.classification.taxonomy import SEED_TAXONOMY
 
 logger = logging.getLogger(__name__)
 
@@ -32,10 +33,15 @@ MAX_LABEL_CHARS = 2000  # Guard against oversized footnote text (EC-7)
 DEFAULT_MAX_RETRIES = 3
 INITIAL_RETRY_DELAY_SEC = 1.0
 
+_TAXONOMY_LIST_STR = "\n".join(f"- {category}" for category in SEED_TAXONOMY)
+
 CLASSIFIER_SYSTEM_PROMPT = (
     "You are a financial line-item taxonomy classifier. "
     "Given an extracted line item label and its structural context from a financial filing, "
-    "classify the item into a standardized non-GAAP reconciliation category. "
+    "classify the item into a standardized non-GAAP reconciliation category.\n\n"
+    "You MUST select the most accurate category from the following allowed taxonomy list when applicable:\n"
+    f"{_TAXONOMY_LIST_STR}\n\n"
+    "If no category fits, respond with the closest standard financial category name.\n\n"
     "You must respond ONLY with a valid JSON object containing exactly two fields:\n"
     '  "label": (string) the standardized category name,\n'
     '  "confidence": (float) your classification confidence between 0.0 and 1.0.\n'

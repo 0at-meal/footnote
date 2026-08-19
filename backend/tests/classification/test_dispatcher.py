@@ -19,6 +19,7 @@ from app.extraction.models import (
     ExtractedRecord,
     ScoredRecord,
 )
+from groq import APIConnectionError
 
 
 def create_sample_scored_record(
@@ -121,3 +122,29 @@ def test_dispatch_records_handles_item_error_without_aborting_batch() -> None:
 
     assert batch.results[2].is_error is False
     assert batch.results[2].raw_response is not None
+
+
+def test_dispatch_records_offline_direct_match_fallback_on_api_error() -> None:
+    records = [
+        create_sample_scored_record("Restructuring charges", ConfidenceBand.auto_accepted),
+        create_sample_scored_record("Unrelated arbitrary label", ConfidenceBand.auto_accepted),
+    ]
+
+    mock_client = MagicMock()
+    mock_client.classify.side_effect = APIConnectionError(request=MagicMock())
+
+    batch = dispatch_records_to_classifier(records, mock_client)
+
+    assert batch.total_dispatched == 2
+    assert batch.success_count == 1
+    assert batch.error_count == 1
+
+    # First record falls back to canonical match
+    assert batch.results[0].is_error is False
+    assert batch.results[0].raw_response is not None
+    assert batch.results[0].raw_response.label == "Restructuring Charges"
+    assert batch.results[0].raw_response.confidence == 0.95
+
+    # Second record has no match and records error
+    assert batch.results[1].is_error is True
+    assert batch.results[1].raw_response is None

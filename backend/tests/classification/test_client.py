@@ -13,11 +13,13 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from app.classification.client import (
+    CLASSIFIER_SYSTEM_PROMPT,
     MAX_LABEL_CHARS,
     MAX_RPD,
     GroqClassifierClient,
 )
 from app.classification.models import ClassifierInputPayload
+from app.classification.taxonomy import SEED_TAXONOMY
 from groq import APIConnectionError, RateLimitError
 
 
@@ -191,3 +193,12 @@ def test_classify_api_connection_error_propagates() -> None:
 
     with pytest.raises(APIConnectionError):
         client.classify(payload)
+
+
+def test_classifier_system_prompt_contains_seed_taxonomy() -> None:
+    for category in SEED_TAXONOMY:
+        assert category in CLASSIFIER_SYSTEM_PROMPT
+
+    assert "You MUST select the most accurate category from the following allowed taxonomy list" in CLASSIFIER_SYSTEM_PROMPT
+    assert '"label": (string)' in CLASSIFIER_SYSTEM_PROMPT
+    assert '"confidence": (float)' in CLASSIFIER_SYSTEM_PROMPT
