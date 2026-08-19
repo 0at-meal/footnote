@@ -124,17 +124,31 @@ def process_queued_job(
             job_id=job_id,
             output_dir=repo.data_dir,
         )
+        model_repo.save_generation_result(job_id, generation_result)
+
         if generation_result.is_success and generation_result.provenance_records:
             model_repo.save_provenance_records(job_id, generation_result.provenance_records)
+            logger.info(
+                "Generated Excel model workbook for job %s with %d cells",
+                job_id,
+                generation_result.total_cells_generated,
+            )
+        else:
+            logger.warning(
+                "Model workbook generation deferred for job %s: %s (requires human review/confirmation)",
+                job_id,
+                generation_result.error_detail or "No confirmed formula input records available",
+            )
 
         # Final status update to 'done'
         repo.update_job_status(job_id, JobStatus.done)
         logger.info(
-            "Completed pipeline for job %s: %d records assembled, %d classified, %d model cells generated",
+            "Completed pipeline for job %s: %d records assembled, %d classified, %d model cells generated (model_generated=%s)",
             job_id,
             summary.total_items,
             len(classified_records),
             generation_result.total_cells_generated,
+            generation_result.is_success,
         )
     except Exception as err:
         logger.error("Error processing job %s: %s", job_id, err)

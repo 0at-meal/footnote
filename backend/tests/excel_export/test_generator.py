@@ -254,3 +254,23 @@ def test_generate_workbook_exactly_one_comment_and_hyperlink_per_cell(tmp_path: 
         val_str = str(cell.value or "")
         assert val_str.startswith("=HYPERLINK("), f"Reconciliation!C{row} formula must contain HYPERLINK, got {val_str}"
 
+
+def test_generate_workbook_empty_leaves_invalid_tree(tmp_path: Path) -> None:
+    """Verifies that empty formula batch builds invalid tree and generate_workbook cleanly fails with zero output files."""
+    empty_batch = FormulaInputBatch(
+        nodes=[],
+        total_records_received=0,
+        confirmed_count=0,
+        excluded_count=0,
+        error_message="No confirmed records available for formula generation.",
+    )
+    tree = build_formula_tree(empty_batch, target_metric="Adjusted EBITDA")
+    assert tree.is_valid is False
+
+    result = generate_workbook(tree, job_id="job_empty_tree", output_dir=tmp_path)
+    assert result.is_success is False
+    assert result.total_cells_generated == 0
+    assert result.sheet_names == []
+    assert not Path(result.file_path).exists()
+    assert not (tmp_path / "models" / "job_empty_tree_model.xlsx.tmp").exists()
+

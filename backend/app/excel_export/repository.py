@@ -10,7 +10,10 @@ import logging
 import os
 from pathlib import Path
 
-from app.excel_export.models import W3CAnnotationRecord
+from app.excel_export.models import (
+    W3CAnnotationRecord,
+    WorkbookGenerationResult,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -94,3 +97,42 @@ class ModelRepository:
                 return record
 
         return None
+
+    def save_generation_result(
+        self,
+        job_id: str,
+        result: WorkbookGenerationResult,
+    ) -> Path:
+        """
+        Persists WorkbookGenerationResult for job_id to data/models/<job_id>_generation.json atomically.
+        """
+        self._ensure_dirs()
+        dest_path = self._models_dir / f"{job_id}_generation.json"
+        tmp_path = self._models_dir / f"{job_id}_generation.json.tmp"
+
+        payload = result.model_dump()
+        tmp_path.write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        os.replace(tmp_path, dest_path)
+        return dest_path
+
+    def get_generation_result(self, job_id: str) -> WorkbookGenerationResult | None:
+        """
+        Retrieves WorkbookGenerationResult for job_id from disk.
+        """
+        target_path = self._models_dir / f"{job_id}_generation.json"
+        if not target_path.exists():
+            return None
+
+        try:
+            content = target_path.read_text(encoding="utf-8")
+            data = json.loads(content)
+            if isinstance(data, dict):
+                return WorkbookGenerationResult.model_validate(data)
+            return None
+        except (json.JSONDecodeError, OSError, ValueError) as err:
+            logger.error("Failed to load generation result for job %s: %s", job_id, err)
+            return None
+

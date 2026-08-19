@@ -105,10 +105,22 @@ def generate_workbook(
     tmp_file = target_dir / f"{job_id}_model.xlsx.tmp"
 
     if not tree.is_valid or tree.root is None:
+        if tmp_file.exists():
+            try:
+                tmp_file.unlink(missing_ok=True)
+            except OSError:
+                pass
         return WorkbookGenerationResult(
             job_id=job_id,
             file_path=str(dest_file),
             target_metric=tree.target_metric,
+            sheet_names=[],
+            total_cells_generated=0,
+            formula_cells_count=0,
+            source_cells_count=0,
+            cell_references=[],
+            provenance_records=[],
+            warnings=[],
             is_success=False,
             error_detail=tree.error_message or "Invalid formula tree provided.",
         )

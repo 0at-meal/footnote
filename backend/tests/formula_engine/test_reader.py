@@ -279,3 +279,41 @@ def test_read_formula_inputs_purity() -> None:
 
     assert batch1 == batch2
     assert records == records_snapshot
+
+
+def test_read_formula_inputs_mixed_confirmed_unconfirmed_and_errors() -> None:
+    """Verifies that read_formula_inputs correctly separates confirmed, pending, and error items."""
+    records = [
+        _create_classified_record(value="100.0", normalized_label="Revenue", is_confirmed=True),
+        _create_classified_record(
+            value="20.0",
+            normalized_label=None,
+            is_confirmed=False,
+            taxonomy_status=TaxonomyStatus.pending_taxonomy_confirmation,
+        ),
+        _create_classified_record(
+            value="30.0",
+            normalized_label="Operating Expenses",
+            is_confirmed=True,
+        ),
+        _create_classified_record(
+            value="40.0",
+            normalized_label="Corrupted",
+            is_confirmed=False,
+            status="extraction_error",
+        ),
+        _create_classified_record(
+            value="50.0",
+            normalized_label="",
+            is_confirmed=True,
+        ),
+    ]
+
+    batch = read_formula_inputs(records)
+
+    assert batch.total_records_received == 5
+    assert batch.confirmed_count == 2
+    assert batch.excluded_count == 3
+    assert len(batch.nodes) == 2
+    assert [n.normalized_label for n in batch.nodes] == ["Revenue", "Operating Expenses"]
+    assert [n.value for n in batch.nodes] == ["100.0", "30.0"]

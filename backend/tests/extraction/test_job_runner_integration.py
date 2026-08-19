@@ -137,6 +137,7 @@ def test_process_queued_job_runs_full_pipeline(
     models_dir = tmp_path / "models"
     assert (models_dir / f"{job_id}_model.xlsx").exists()
     assert (models_dir / f"{job_id}_provenance.json").exists()
+    assert (models_dir / f"{job_id}_generation.json").exists()
 
 
 def test_process_queued_job_failure_updates_status_to_failed(
