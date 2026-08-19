@@ -17,7 +17,11 @@ import copy
 from app.classification.models import ClassifiedRecord, TaxonomyStatus
 from app.extraction.models import ConfidenceBand, ExtractedRecord, ScoredRecord
 from app.formula_engine.models import FormulaInputBatch
-from app.formula_engine.reader import read_formula_inputs
+from app.formula_engine.reader import (
+    read_formula_inputs,
+    read_formula_inputs_from_review,
+)
+from app.review.models import ReviewItem, ReviewStatus
 
 
 def _create_classified_record(
@@ -317,3 +321,95 @@ def test_read_formula_inputs_mixed_confirmed_unconfirmed_and_errors() -> None:
     assert len(batch.nodes) == 2
     assert [n.normalized_label for n in batch.nodes] == ["Revenue", "Operating Expenses"]
     assert [n.value for n in batch.nodes] == ["100.0", "30.0"]
+
+
+def test_read_formula_inputs_from_review_success() -> None:
+    items = [
+        ReviewItem(
+            id="item_1",
+            value="100.0",
+            label="Operating Expenses / SBC",
+            page=1,
+            bbox={"x0": 10.0, "y0": 20.0, "x1": 30.0, "y1": 40.0},
+            source_file="report.pdf",
+            confidence_band=ConfidenceBand.auto_accepted,
+            confidence_score=0.98,
+            normalized_label="Stock-Based Compensation",
+            status=ReviewStatus.locked,
+        ),
+        ReviewItem(
+            id="item_2",
+            value="250.0",
+            label="D&A",
+            page=2,
+            bbox={"x0": 10.0, "y0": 20.0, "x1": 30.0, "y1": 40.0},
+            source_file="report.pdf",
+            confidence_band=ConfidenceBand.needs_review,
+            confidence_score=0.85,
+            normalized_label="Depreciation & Amortization",
+            status=ReviewStatus.locked,
+        ),
+        ReviewItem(
+            id="item_3",
+            value="50.0",
+            label="Manual Fee",
+            page=3,
+            bbox={"x0": 10.0, "y0": 20.0, "x1": 30.0, "y1": 40.0},
+            source_file="report.pdf",
+            confidence_band=ConfidenceBand.manual_required,
+            confidence_score=0.50,
+            normalized_label="Consulting Fees",
+            status=ReviewStatus.locked,
+        ),
+        ReviewItem(
+            id="item_4",
+            value="999.0",
+            label="Unconfirmed",
+            page=4,
+            bbox={"x0": 10.0, "y0": 20.0, "x1": 30.0, "y1": 40.0},
+            source_file="report.pdf",
+            confidence_band=ConfidenceBand.needs_review,
+            confidence_score=0.70,
+            normalized_label=None,
+            status=ReviewStatus.pending_taxonomy_confirmation,
+        ),
+    ]
+
+    batch = read_formula_inputs_from_review(items)
+
+    assert batch.total_records_received == 4
+    assert batch.confirmed_count == 3
+    assert batch.excluded_count == 1
+    assert len(batch.nodes) == 3
+
+    assert batch.nodes[0].normalized_label == "Stock-Based Compensation"
+    assert batch.nodes[0].is_hardcode is False
+
+    assert batch.nodes[1].normalized_label == "Depreciation & Amortization"
+    assert batch.nodes[1].is_hardcode is False
+
+    assert batch.nodes[2].normalized_label == "Consulting Fees"
+    assert batch.nodes[2].is_hardcode is True  # manual_required treated as hardcode
+
+
+def test_read_formula_inputs_from_review_empty_or_unconfirmed() -> None:
+    items = [
+        ReviewItem(
+            id="item_1",
+            value="100.0",
+            label="Pending SBC",
+            page=1,
+            bbox={"x0": 10.0, "y0": 20.0, "x1": 30.0, "y1": 40.0},
+            source_file="report.pdf",
+            confidence_band=ConfidenceBand.needs_review,
+            confidence_score=0.70,
+            normalized_label=None,
+            status=ReviewStatus.pending_taxonomy_confirmation,
+        ),
+    ]
+
+    batch = read_formula_inputs_from_review(items)
+    assert batch.confirmed_count == 0
+    assert batch.excluded_count == 1
+    assert len(batch.nodes) == 0
+    assert batch.error_message == "No confirmed review records available for formula generation."

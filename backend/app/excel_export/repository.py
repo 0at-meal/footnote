@@ -29,6 +29,11 @@ class ModelRepository:
         self._data_dir = data_dir
         self._models_dir = data_dir / "models"
 
+    @property
+    def data_dir(self) -> Path:
+        """The root data directory for this repository instance."""
+        return self._data_dir
+
     def _ensure_dirs(self) -> None:
         """Create data/models/ if missing."""
         self._models_dir.mkdir(parents=True, exist_ok=True)

@@ -18,11 +18,16 @@ from app.excel_export.models import (
     W3CRefinedBy,
     W3CSelector,
     W3CTarget,
+    WorkbookGenerationResult,
 )
 from app.excel_export.repository import ModelRepository
+from app.extraction.models import ConfidenceBand
 from app.formula_engine.models import FormulaInputBatch, FormulaInputNode
 from app.formula_engine.tree import build_formula_tree
+from app.ingestion.repository import JobRepository
 from app.main import app
+from app.review.models import ReviewItem, ReviewStatus
+from app.review.repository import ReviewRepository
 from fastapi.testclient import TestClient
 
 client = TestClient(app)
@@ -121,5 +126,127 @@ def test_model_download_and_provenance_query(tmp_path: Path) -> None:
         assert cell_anno.body.label == "Stock-Based Compensation"
         assert cell_anno.target.source == "doc.pdf"
 
+    finally:
+        set_model_repository(original_repo)
+
+
+def test_generate_model_from_review_items_success(tmp_path: Path) -> None:
+    """Verifies that POST /models/{job_id}/generate creates .xlsx and saves provenance from review items."""
+    job_repo = JobRepository(data_dir=tmp_path)
+    job_repo.save_job(
+        filename="10k_filing.pdf",
+        content=b"%PDF-1.4 dummy",
+        target_metric="Adjusted EBITDA",
+    )
+    # The saved job will have its own UUID, but let's update or ensure the job exists with target_metric
+    jobs = job_repo.list_jobs()
+    real_job_id = jobs[0].job_id
+
+    review_repo = ReviewRepository(data_dir=tmp_path)
+    review_items = [
+        ReviewItem(
+            id=f"{real_job_id}_0",
+            value="1,200.00",
+            label="Operating Expenses / Stock-based comp",
+            page=15,
+            bbox={"x0": 100.0, "y0": 200.0, "x1": 300.0, "y1": 250.0},
+            source_file="10k_filing.pdf",
+            confidence_band=ConfidenceBand.auto_accepted,
+            confidence_score=0.98,
+            normalized_label="Stock-Based Compensation",
+            status=ReviewStatus.locked,
+        ),
+        ReviewItem(
+            id=f"{real_job_id}_1",
+            value="350.00",
+            label="Depreciation and amortization",
+            page=16,
+            bbox={"x0": 100.0, "y0": 300.0, "x1": 300.0, "y1": 350.0},
+            source_file="10k_filing.pdf",
+            confidence_band=ConfidenceBand.needs_review,
+            confidence_score=0.85,
+            normalized_label="Amortization of Intangibles",
+            status=ReviewStatus.locked,
+        ),
+    ]
+    review_repo.save_review_items(real_job_id, review_items)
+
+    model_repo = ModelRepository(data_dir=tmp_path)
+    from app.excel_export.router import get_model_repository, set_model_repository
+
+    original_repo = get_model_repository()
+    set_model_repository(model_repo)
+    try:
+        resp = client.post(f"/models/{real_job_id}/generate")
+        assert resp.status_code == 200
+        result = WorkbookGenerationResult.model_validate(resp.json())
+        assert result.is_success is True
+        assert result.total_cells_generated > 0
+        assert result.formula_cells_count > 0
+
+        # Assert .xlsx exists on disk
+        workbook_path = model_repo.get_workbook_path(real_job_id)
+        assert workbook_path is not None
+        assert workbook_path.exists()
+
+        # Assert provenance records saved to disk
+        prov_records = model_repo.get_provenance_records(real_job_id)
+        assert prov_records is not None
+        assert len(prov_records) == result.total_cells_generated
+
+    finally:
+        set_model_repository(original_repo)
+
+
+def test_generate_model_no_confirmed_items_raises_400(tmp_path: Path) -> None:
+    """Verifies that POST /models/{job_id}/generate returns 400 when no items are confirmed/locked."""
+    job_repo = JobRepository(data_dir=tmp_path)
+    job_repo.save_job(
+        filename="report.pdf",
+        content=b"%PDF-1.4 dummy",
+        target_metric="Adjusted EBITDA",
+    )
+    job_id = job_repo.list_jobs()[0].job_id
+
+    review_repo = ReviewRepository(data_dir=tmp_path)
+    review_items = [
+        ReviewItem(
+            id=f"{job_id}_0",
+            value="100.0",
+            label="Pending Item",
+            page=1,
+            bbox={"x0": 10.0, "y0": 20.0, "x1": 30.0, "y1": 40.0},
+            source_file="report.pdf",
+            confidence_band=ConfidenceBand.needs_review,
+            confidence_score=0.70,
+            normalized_label=None,
+            status=ReviewStatus.pending_taxonomy_confirmation,
+        ),
+    ]
+    review_repo.save_review_items(job_id, review_items)
+
+    model_repo = ModelRepository(data_dir=tmp_path)
+    from app.excel_export.router import get_model_repository, set_model_repository
+
+    original_repo = get_model_repository()
+    set_model_repository(model_repo)
+    try:
+        resp = client.post(f"/models/{job_id}/generate")
+        assert resp.status_code == 400
+        assert "no confirmed" in resp.json()["detail"].lower()
+    finally:
+        set_model_repository(original_repo)
+
+
+def test_generate_model_job_not_found_raises_404(tmp_path: Path) -> None:
+    """Verifies that POST /models/{job_id}/generate returns 404 for unknown jobs."""
+    model_repo = ModelRepository(data_dir=tmp_path)
+    from app.excel_export.router import get_model_repository, set_model_repository
+
+    original_repo = get_model_repository()
+    set_model_repository(model_repo)
+    try:
+        resp = client.post("/models/unknown_job_uuid/generate")
+        assert resp.status_code == 404
     finally:
         set_model_repository(original_repo)

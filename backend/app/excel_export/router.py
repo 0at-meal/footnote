@@ -10,11 +10,21 @@ Exposes:
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import FileResponse
 
+from app.classification.repository import ClassificationRepository
+from app.excel_export.generator import generate_workbook
 from app.excel_export.models import (
     ProvenanceQueryResponse,
     W3CAnnotationRecord,
+    WorkbookGenerationResult,
 )
 from app.excel_export.repository import ModelRepository
+from app.formula_engine.reader import (
+    read_formula_inputs,
+    read_formula_inputs_from_review,
+)
+from app.formula_engine.tree import build_formula_tree
+from app.ingestion.repository import JobRepository
+from app.review.repository import ReviewRepository
 
 router = APIRouter(prefix="/models", tags=["models"])
 _model_repo = ModelRepository()
@@ -29,6 +39,63 @@ def set_model_repository(repo: ModelRepository) -> None:
     """Sets the active model repository instance (used for testing / dependency injection)."""
     global _model_repo
     _model_repo = repo
+
+
+@router.post(
+    "/{job_id}/generate",
+    response_model=WorkbookGenerationResult,
+    summary="Compile confirmed review items into an Excel model workbook",
+)
+def generate_model_workbook(job_id: str) -> WorkbookGenerationResult:
+    """
+    Builds the deterministic FormulaTree and compiles the .xlsx model workbook
+    along with W3C Web Annotation provenance records. Reads from Review state (Feature 5)
+    or falls back to Classification state (Feature 3).
+    """
+    job_repo = JobRepository(data_dir=_model_repo.data_dir)
+    job = job_repo.get_job(job_id)
+    target_metric = (job.target_metric if job else None) or "Adjusted EBITDA"
+
+    review_repo = ReviewRepository(data_dir=_model_repo.data_dir)
+    review_items = review_repo.get_review_items(job_id)
+
+    if review_items is not None and len(review_items) > 0:
+        batch = read_formula_inputs_from_review(review_items)
+    else:
+        classification_repo = ClassificationRepository(data_dir=_model_repo.data_dir)
+        classified_records = classification_repo.get_classified_records(job_id)
+        if classified_records is not None and len(classified_records) > 0:
+            batch = read_formula_inputs(classified_records)
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No extraction or review records found for job '{job_id}'.",
+            )
+
+    formula_tree = build_formula_tree(batch, target_metric=target_metric)
+    if not formula_tree.is_valid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=formula_tree.error_message or "Formula tree is invalid (no confirmed line items).",
+        )
+
+    generation_result = generate_workbook(
+        formula_tree,
+        job_id=job_id,
+        output_dir=_model_repo.data_dir,
+    )
+    _model_repo.save_generation_result(job_id, generation_result)
+
+    if not generation_result.is_success:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=generation_result.error_detail or "Failed to generate workbook.",
+        )
+
+    if generation_result.provenance_records:
+        _model_repo.save_provenance_records(job_id, generation_result.provenance_records)
+
+    return generation_result
 
 
 @router.get(
