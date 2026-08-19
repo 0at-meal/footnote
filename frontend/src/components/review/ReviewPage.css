@@ -70,6 +70,110 @@
   font-family: var(--mono);
 }
 
+.review-header__right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.review-btn--generate {
+  background: #15803d;
+  color: #ffffff;
+  border-color: #15803d;
+  font-weight: 600;
+  padding: 6px 14px;
+  font-size: 13px;
+
+  &:hover:not(:disabled) {
+    background: #166534;
+    border-color: #166534;
+  }
+}
+
+/* ── Generation Status Banner (Ticket 4.1) ────────────────── */
+
+.review-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 24px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border);
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.review-banner--success {
+  background: color-mix(in srgb, #22c55e 12%, var(--bg));
+  border-color: color-mix(in srgb, #22c55e 30%, transparent);
+  color: #15803d;
+}
+
+.review-banner--error {
+  background: var(--error-bg);
+  border-color: var(--error-border);
+  color: var(--error);
+}
+
+.review-banner__content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.review-banner__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.review-banner__link-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  background: #15803d;
+  color: #ffffff;
+  text-decoration: none;
+  border: 1px solid #15803d;
+  cursor: pointer;
+  transition: background-color 0.15s;
+
+  &:hover {
+    background: #166534;
+  }
+}
+
+.review-banner__link-btn--secondary {
+  background: var(--surface);
+  color: var(--text-h);
+  border-color: var(--border);
+
+  &:hover {
+    background: var(--row-hover-bg);
+    border-color: var(--accent-border);
+  }
+}
+
+.review-banner__close-btn {
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 2px 6px;
+  font-size: 14px;
+  opacity: 0.7;
+  border-radius: 4px;
+
+  &:hover {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.05);
+  }
+}
+
 /* ── Split Body ───────────────────────────────────────────── */
 
 .review-body {

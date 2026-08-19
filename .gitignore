@@ -8,4 +8,6 @@ frontend/dist/
 *.xlsx
 backend/data/
 backend/temp_test_dir/
-.pytest_cache/
+.pytest_cache/
+.agents/
+skills-lock.json

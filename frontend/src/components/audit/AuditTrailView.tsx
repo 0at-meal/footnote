@@ -426,7 +426,7 @@ export default function AuditTrailView({ jobId, apiBase, onBack }: Props) {
                     {rollup && (
                       <span
                         className={`status-badge ${rollup.badgeClass}`}
-                        title={rollup.summary}
+                        title={rollup.detail}
                         aria-label={`Verification rollup: ${rollup.label}`}
                       >
                         {rollup.label}

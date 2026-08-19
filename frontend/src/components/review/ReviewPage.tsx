@@ -9,6 +9,7 @@ interface Props {
   jobId: string
   apiBase: string
   onBack: () => void
+  onAuditTrail?: (jobId: string) => void
 }
 
 const REVIEW_STATUS_LABELS: Record<ReviewStatus, string> = {
@@ -32,7 +33,7 @@ function ReviewStatusBadge({ status }: { status: ReviewStatus }) {
   )
 }
 
-export default function ReviewPage({ jobId, apiBase, onBack }: Props) {
+export default function ReviewPage({ jobId, apiBase, onBack, onAuditTrail }: Props) {
   const [items, setItems] = useState<ReviewItem[]>([])
   const [selectedItem, setSelectedItem] = useState<ReviewItem | null>(null)
   const [itemsLoading, setItemsLoading] = useState(true)
@@ -53,6 +54,13 @@ export default function ReviewPage({ jobId, apiBase, onBack }: Props) {
   const [editError, setEditError] = useState<string | null>(null)
   const [isActionPending, setIsActionPending] = useState<boolean>(false)
   const [taxonomyPromptItem, setTaxonomyPromptItem] = useState<ReviewItem | null>(null)
+
+  // ── Model Generation State (Ticket 4.1) ─────────────────────────────────
+  const [isGeneratingModel, setIsGeneratingModel] = useState<boolean>(false)
+  const [generateModelSuccess, setGenerateModelSuccess] = useState<{ totalCells: number; message: string } | null>(null)
+  const [generateModelError, setGenerateModelError] = useState<string | null>(null)
+
+  const lockedCount = items.filter((i) => i.status === 'locked').length
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
@@ -283,6 +291,35 @@ export default function ReviewPage({ jobId, apiBase, onBack }: Props) {
     }
   }
 
+  // ── Model Generation Handler (Ticket 4.1) ────────────────────────────────
+  async function handleGenerateModel() {
+    setIsGeneratingModel(true)
+    setGenerateModelError(null)
+    setGenerateModelSuccess(null)
+
+    try {
+      const res = await fetch(`${apiBase}/models/${jobId}/generate`, {
+        method: 'POST',
+      })
+
+      if (!res.ok) {
+        const detail = await res.json().catch(() => ({ detail: 'Model generation failed' }))
+        throw new Error(detail.detail || `Server error ${res.status}`)
+      }
+
+      const data = (await res.json()) as { total_cells_generated?: number; is_success?: boolean }
+      const lineItemCount = lockedCount
+      setGenerateModelSuccess({
+        totalCells: data.total_cells_generated ?? lineItemCount,
+        message: `Model generated with ${lineItemCount} line item${lineItemCount === 1 ? '' : 's'}`,
+      })
+    } catch (err) {
+      setGenerateModelError(err instanceof Error ? err.message : 'Model generation failed')
+    } finally {
+      setIsGeneratingModel(false)
+    }
+  }
+
   return (
     <div className="review-layout">
       {/* ── Review Header ── */}
@@ -303,10 +340,108 @@ export default function ReviewPage({ jobId, apiBase, onBack }: Props) {
             )}
           </h1>
         </div>
-        <div className="review-header__meta">
-          Job: <span>{jobId}</span>
+        <div className="review-header__right">
+          <div className="review-header__meta">
+            Job: <span>{jobId}</span>
+          </div>
+          <button
+            type="button"
+            className="review-btn review-btn--generate"
+            disabled={lockedCount === 0 || isGeneratingModel}
+            onClick={() => void handleGenerateModel()}
+            aria-label="Generate Excel Model"
+            title={
+              lockedCount === 0
+                ? 'Lock at least 1 item to generate model'
+                : 'Compile locked items into Excel model'
+            }
+          >
+            {isGeneratingModel
+              ? 'Generating Model...'
+              : `Generate Excel Model${lockedCount > 0 ? ` (${lockedCount})` : ''}`}
+          </button>
         </div>
       </header>
+
+      {/* ── Model Generation Status Banners (Ticket 4.1) ── */}
+      {generateModelSuccess && (
+        <div className="review-banner review-banner--success" role="status">
+          <div className="review-banner__content">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M20 6 9 17l-5-5" />
+            </svg>
+            <span>{generateModelSuccess.message}</span>
+          </div>
+          <div className="review-banner__actions">
+            <a
+              href={`${apiBase}/models/${jobId}/download`}
+              download={`${jobId}_model.xlsx`}
+              className="review-banner__link-btn"
+              aria-label={`Download Excel model for ${jobId}`}
+            >
+              Download Excel (.xlsx)
+            </a>
+            {onAuditTrail && (
+              <button
+                type="button"
+                className="review-banner__link-btn review-banner__link-btn--secondary"
+                onClick={() => onAuditTrail(jobId)}
+              >
+                View Audit Trail
+              </button>
+            )}
+            <button
+              type="button"
+              className="review-banner__close-btn"
+              onClick={() => setGenerateModelSuccess(null)}
+              aria-label="Dismiss message"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
+      {generateModelError && (
+        <div className="review-banner review-banner--error" role="alert">
+          <div className="review-banner__content">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span>{generateModelError}</span>
+          </div>
+          <button
+            type="button"
+            className="review-banner__close-btn"
+            onClick={() => setGenerateModelError(null)}
+            aria-label="Dismiss error"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* ── Split Body ── */}
       <div className="review-body">

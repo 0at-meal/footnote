@@ -178,6 +178,24 @@ function JobList({
                       Review
                     </button>
                   )}
+                  {job.status === 'done' && (
+                    <a
+                      href={`${apiBase}/models/${job.job_id}/download`}
+                      download={`${job.job_id}_model.xlsx`}
+                      className="job-table__review-btn"
+                      style={{
+                        backgroundColor: '#15803d',
+                        borderColor: '#15803d',
+                        color: '#ffffff',
+                        textDecoration: 'none',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                      }}
+                      aria-label={`Download Excel model for ${job.filename}`}
+                    >
+                      Excel (.xlsx)
+                    </a>
+                  )}
                   {job.status === 'done' && onAuditTrail && (
                     <button
                       type="button"
