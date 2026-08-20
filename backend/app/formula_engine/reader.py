@@ -6,6 +6,8 @@ Enforces CONSTITUTION §1.4:
 - Idempotent and deterministic for identical input data.
 """
 
+import logging
+
 from app.classification.models import ClassifiedRecord
 from app.extraction.models import ConfidenceBand
 from app.formula_engine.models import (
@@ -14,6 +16,8 @@ from app.formula_engine.models import (
     FormulaInputNode,
 )
 from app.review.models import ReviewItem, ReviewStatus
+
+_logger = logging.getLogger(__name__)
 
 _REQUIRED_BBOX_KEYS = ("x0", "y0", "x1", "y1")
 
@@ -45,30 +49,57 @@ def read_formula_inputs(records: list[ClassifiedRecord]) -> FormulaInputBatch:
     """
     Extracts and validates authoritative input nodes from a batch of ClassifiedRecord objects.
 
-    Rules (AC-8, AC-9, EC-1, EC-2, EC-3, EC-5, EC-8):
-    1. Only confirmed records with non-empty normalized_label are selected.
-    2. Pending, unconfirmed, and extraction_error records are excluded from the engine.
-    3. Provenance fields (value, page, bbox, source_file) are validated and passed without modification.
-    4. Out-of-bounds bbox (< 0.0 or > 1000.0) or invalid provenance surfaces as FormulaInputError.
-    5. Zero valid confirmed records sets top-level error message (EC-5).
+    Rules (AC-8, AC-9, EC-1, EC-2, EC-3, EC-5, EC-8, Ticket 0.1.1):
+    1. Two-path inclusion: auto-accepted records (confidence_band == auto_accepted) are included
+       regardless of is_confirmed; explicitly confirmed records with a non-empty normalized_label
+       are also included.
+    2. For auto-accepted records with no normalized_label, the raw label from ExtractedRecord is
+       used as the effective normalized label (DEBUG log emitted per passthrough).
+    3. Pending, unconfirmed low/mid-confidence, and extraction_error records are excluded.
+    4. Provenance fields (value, page, bbox, source_file) are validated and passed without modification.
+    5. Out-of-bounds bbox (< 0.0 or > 1000.0) or invalid provenance surfaces as FormulaInputError.
+    6. Zero valid records sets top-level error message (EC-5).
     """
     nodes: list[FormulaInputNode] = []
     errors: list[FormulaInputError] = []
     excluded_count = 0
 
     for idx, classified_record in enumerate(records):
-        # 1. Check if record is confirmed and has a valid normalized_label (AC-8)
-        if (
-            not classified_record.is_confirmed
-            or not classified_record.normalized_label
-            or not classified_record.normalized_label.strip()
-        ):
+        # 1. Determine eligibility via two-path inclusion (AC-8, Ticket 0.1.1):
+        #    Path A — auto-accepted: confidence_band == auto_accepted, regardless of is_confirmed.
+        #    Path B — explicit confirm: is_confirmed == True with a non-empty normalized_label.
+        is_auto_accepted = (
+            classified_record.record.confidence_band == ConfidenceBand.auto_accepted
+        )
+        is_explicitly_confirmed = classified_record.is_confirmed and bool(
+            classified_record.normalized_label
+            and classified_record.normalized_label.strip()
+        )
+
+        if not (is_auto_accepted or is_explicitly_confirmed):
             excluded_count += 1
             continue
 
+        # 2. Resolve effective normalized label.
+        #    Auto-accepted records that have no normalized_label fall back to the raw
+        #    extraction label so the node is still usable downstream (Ticket 0.1.1 §2).
+        if (
+            classified_record.normalized_label
+            and classified_record.normalized_label.strip()
+        ):
+            effective_normalized_label = classified_record.normalized_label.strip()
+        else:
+            effective_normalized_label = classified_record.record.record.label.strip()
+            _logger.debug(
+                "Auto-accepted record at index %d has no normalized_label; "
+                "falling back to raw label %r",
+                idx,
+                effective_normalized_label,
+            )
+
         raw_record = classified_record.record.record
 
-        # 2. Validate provenance fields (AC-9, EC-8)
+        # 3. Validate provenance fields (AC-9, EC-8)
         provenance_error: str | None = None
         if not raw_record.source_file or not raw_record.source_file.strip():
             provenance_error = "Missing or empty source_file"
@@ -84,16 +115,16 @@ def read_formula_inputs(records: list[ClassifiedRecord]) -> FormulaInputBatch:
                 FormulaInputError(
                     record_index=idx,
                     reason=provenance_error,
-                    label=classified_record.normalized_label,
+                    label=effective_normalized_label,
                     source_file=raw_record.source_file or None,
                 )
             )
             continue
 
-        # 3. Create valid FormulaInputNode
+        # 4. Create valid FormulaInputNode
         node = FormulaInputNode(
-            node_id=f"node_{idx}_{classified_record.normalized_label}",
-            normalized_label=classified_record.normalized_label.strip(),
+            node_id=f"node_{idx}_{effective_normalized_label}",
+            normalized_label=effective_normalized_label,
             value=raw_record.value,
             label=raw_record.label,
             page=raw_record.page,
@@ -120,42 +151,55 @@ def read_formula_inputs(records: list[ClassifiedRecord]) -> FormulaInputBatch:
 
 def read_formula_inputs_from_review(items: list[ReviewItem]) -> FormulaInputBatch:
     """
-    Extracts and validates authoritative input nodes from a list of ReviewItem objects (Feature 5 -> Feature 4).
+    Extracts and validates authoritative input nodes from a list of ReviewItem objects (Ticket 0.1.2).
 
     Rules:
-    1. Selects items that are locked (status == ReviewStatus.locked) or confirmed with a valid normalized_label.
-    2. Items marked extraction_error or without normalized_label/label are excluded.
-    3. Provenance fields (value, page, bbox, source_file) are validated and passed without modification.
-    4. Out-of-bounds bbox (< 0.0 or > 1000.0) or invalid provenance surfaces as FormulaInputError.
-    5. Returns FormulaInputBatch with nodes, errors, and metadata.
+    1. Selects items that are locked (status == ReviewStatus.locked) or confirmed/auto-accepted.
+    2. Items marked extraction_error or without non-empty normalized_label/label are excluded.
+    3. Uses item.normalized_label or item.label as the normalized_label for each FormulaInputNode.
+    4. Provenance fields (value, page, bbox, source_file) are validated and passed without modification.
+    5. Out-of-bounds bbox (< 0.0 or > 1000.0) or invalid provenance surfaces as FormulaInputError.
+    6. Returns FormulaInputBatch with nodes, errors, and metadata.
     """
     nodes: list[FormulaInputNode] = []
     errors: list[FormulaInputError] = []
     excluded_count = 0
 
     for idx, item in enumerate(items):
-        # 1. Check if item is confirmed / locked with a non-empty normalized_label
-        effective_label = (item.normalized_label or "").strip()
-        if not effective_label and item.status == ReviewStatus.locked and item.label.strip():
-            effective_label = item.label.strip()
+        # 1. Skip explicit extraction errors
+        if item.status == ReviewStatus.extraction_error:
+            excluded_count += 1
+            continue
 
-        is_eligible = (item.status == ReviewStatus.locked) or (
-            item.status in (ReviewStatus.auto_accepted, ReviewStatus.needs_review)
-            and bool(item.normalized_label and item.normalized_label.strip())
+        # 2. Resolve effective normalized label (Ticket 0.1.2: item.normalized_label or item.label)
+        effective_label = (item.normalized_label or "").strip() or (
+            item.label or ""
+        ).strip()
+
+        # 3. Check eligibility: locked, auto_accepted, or confirmed item with non-empty label
+        is_eligible = (
+            item.status == ReviewStatus.locked
+            or item.status == ReviewStatus.auto_accepted
+            or (
+                item.status == ReviewStatus.needs_review
+                and bool(item.normalized_label and item.normalized_label.strip())
+            )
         )
 
         if not is_eligible or not effective_label:
             excluded_count += 1
             continue
 
-        # 2. Validate provenance fields (AC-9, EC-8)
+        # 4. Validate provenance fields (AC-9, EC-8, CONSTITUTION §1.4)
         provenance_error: str | None = None
         if not item.source_file or not item.source_file.strip():
             provenance_error = "Missing or empty source_file"
         elif item.page < 1:
             provenance_error = f"Invalid page number {item.page} (must be >= 1)"
         elif not isinstance(item.bbox, dict):
-            provenance_error = f"Invalid bbox type: expected dict, got {type(item.bbox).__name__}"
+            provenance_error = (
+                f"Invalid bbox type: expected dict, got {type(item.bbox).__name__}"
+            )
         else:
             provenance_error = _validate_bbox(item.bbox)
 
@@ -170,7 +214,7 @@ def read_formula_inputs_from_review(items: list[ReviewItem]) -> FormulaInputBatc
             )
             continue
 
-        # 3. Create valid FormulaInputNode
+        # 5. Create valid FormulaInputNode
         node = FormulaInputNode(
             node_id=f"node_{idx}_{effective_label}",
             normalized_label=effective_label,

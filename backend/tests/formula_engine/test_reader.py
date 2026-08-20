@@ -39,6 +39,14 @@ def _create_classified_record(
     if bbox is None:
         bbox = {"x0": 100.0, "y0": 200.0, "x1": 300.0, "y1": 250.0}
 
+    # Derive confidence_band from score to match real pipeline thresholds.
+    if confidence_score >= 0.95:
+        band = ConfidenceBand.auto_accepted
+    elif confidence_score >= 0.65:
+        band = ConfidenceBand.needs_review
+    else:
+        band = ConfidenceBand.manual_required
+
     extracted = ExtractedRecord(
         value=value,
         label=label,
@@ -49,7 +57,7 @@ def _create_classified_record(
     scored = ScoredRecord(
         record=extracted,
         confidence_score=confidence_score,
-        confidence_band=ConfidenceBand.auto_accepted,
+        confidence_band=band,
         flags=[],
         status="ok" if status == "ok" else "extraction_error",
     )
@@ -75,6 +83,7 @@ def test_read_formula_inputs_confirmed_only() -> None:
             normalized_label=None,
             is_confirmed=False,
             taxonomy_status=TaxonomyStatus.pending_taxonomy_confirmation,
+            confidence_score=0.80,  # needs_review band — excluded by new predicate
         ),
         _create_classified_record(
             value="25.0",
@@ -110,16 +119,19 @@ def test_read_formula_inputs_excludes_pending_and_errors() -> None:
             normalized_label="SBC",
             is_confirmed=False,
             taxonomy_status=TaxonomyStatus.pending_taxonomy_confirmation,
+            confidence_score=0.80,  # needs_review band — excluded (not auto-accepted, not confirmed)
         ),
         _create_classified_record(
             value="20.0",
             normalized_label="",
             is_confirmed=True,
+            confidence_score=0.80,  # needs_review band — excluded (empty normalized_label)
         ),
         _create_classified_record(
             value="30.0",
             normalized_label=None,
             is_confirmed=False,
+            confidence_score=0.80,  # needs_review band — excluded (not auto-accepted, not confirmed)
         ),
     ]
 
@@ -129,7 +141,9 @@ def test_read_formula_inputs_excludes_pending_and_errors() -> None:
     assert batch.confirmed_count == 0
     assert batch.excluded_count == 3
     assert len(batch.nodes) == 0
-    assert batch.error_message == "No confirmed records available for formula generation."
+    assert (
+        batch.error_message == "No confirmed records available for formula generation."
+    )
 
 
 def test_read_formula_inputs_duplicate_labels_preserved() -> None:
@@ -264,7 +278,9 @@ def test_read_formula_inputs_empty_records() -> None:
     assert batch.confirmed_count == 0
     assert batch.excluded_count == 0
     assert len(batch.nodes) == 0
-    assert batch.error_message == "No confirmed records available for formula generation."
+    assert (
+        batch.error_message == "No confirmed records available for formula generation."
+    )
 
 
 def test_read_formula_inputs_purity() -> None:
@@ -288,12 +304,15 @@ def test_read_formula_inputs_purity() -> None:
 def test_read_formula_inputs_mixed_confirmed_unconfirmed_and_errors() -> None:
     """Verifies that read_formula_inputs correctly separates confirmed, pending, and error items."""
     records = [
-        _create_classified_record(value="100.0", normalized_label="Revenue", is_confirmed=True),
+        _create_classified_record(
+            value="100.0", normalized_label="Revenue", is_confirmed=True
+        ),
         _create_classified_record(
             value="20.0",
             normalized_label=None,
             is_confirmed=False,
             taxonomy_status=TaxonomyStatus.pending_taxonomy_confirmation,
+            confidence_score=0.80,  # needs_review band — excluded (not auto-accepted, not confirmed)
         ),
         _create_classified_record(
             value="30.0",
@@ -305,11 +324,13 @@ def test_read_formula_inputs_mixed_confirmed_unconfirmed_and_errors() -> None:
             normalized_label="Corrupted",
             is_confirmed=False,
             status="extraction_error",
+            confidence_score=0.80,  # needs_review band — excluded (not auto-accepted, not confirmed)
         ),
         _create_classified_record(
             value="50.0",
             normalized_label="",
             is_confirmed=True,
+            confidence_score=0.80,  # needs_review band — excluded (empty normalized_label)
         ),
     ]
 
@@ -319,7 +340,10 @@ def test_read_formula_inputs_mixed_confirmed_unconfirmed_and_errors() -> None:
     assert batch.confirmed_count == 2
     assert batch.excluded_count == 3
     assert len(batch.nodes) == 2
-    assert [n.normalized_label for n in batch.nodes] == ["Revenue", "Operating Expenses"]
+    assert [n.normalized_label for n in batch.nodes] == [
+        "Revenue",
+        "Operating Expenses",
+    ]
     assert [n.value for n in batch.nodes] == ["100.0", "30.0"]
 
 
@@ -406,10 +430,133 @@ def test_read_formula_inputs_from_review_empty_or_unconfirmed() -> None:
             normalized_label=None,
             status=ReviewStatus.pending_taxonomy_confirmation,
         ),
+        ReviewItem(
+            id="item_2",
+            value="50.0",
+            label="Extraction Error Row",
+            page=2,
+            bbox={"x0": 10.0, "y0": 20.0, "x1": 30.0, "y1": 40.0},
+            source_file="report.pdf",
+            confidence_band=ConfidenceBand.manual_required,
+            confidence_score=0.20,
+            normalized_label="Error Row",
+            status=ReviewStatus.extraction_error,
+        ),
     ]
 
     batch = read_formula_inputs_from_review(items)
+    assert batch.total_records_received == 2
     assert batch.confirmed_count == 0
-    assert batch.excluded_count == 1
+    assert batch.excluded_count == 2
     assert len(batch.nodes) == 0
-    assert batch.error_message == "No confirmed review records available for formula generation."
+    assert (
+        batch.error_message
+        == "No confirmed review records available for formula generation."
+    )
+
+
+def test_read_formula_inputs_auto_accepted_not_confirmed() -> None:
+    """Verifies that auto-accepted records (confidence >= 0.95) are included without explicit confirmation (Ticket 0.1.3 #1)."""
+    records = [
+        _create_classified_record(
+            value="120.0",
+            normalized_label="Revenue",
+            is_confirmed=False,
+            confidence_score=0.98,
+        ),
+        _create_classified_record(
+            value="45.0",
+            normalized_label="Cost of Goods Sold",
+            is_confirmed=False,
+            confidence_score=0.96,
+        ),
+    ]
+
+    batch = read_formula_inputs(records)
+
+    assert batch.total_records_received == 2
+    assert batch.confirmed_count == 2
+    assert batch.excluded_count == 0
+    assert len(batch.nodes) == 2
+    assert batch.error_message is None
+    assert batch.nodes[0].normalized_label == "Revenue"
+    assert batch.nodes[0].value == "120.0"
+    assert batch.nodes[1].normalized_label == "Cost of Goods Sold"
+    assert batch.nodes[1].value == "45.0"
+
+
+def test_read_formula_inputs_auto_accepted_pending_taxonomy_fallback() -> None:
+    """Verifies that pending_taxonomy_confirmation records at auto-accept confidence fall back to raw label (Ticket 0.1.3 #2)."""
+    records = [
+        _create_classified_record(
+            value="75.0",
+            label="Reconciliation / Custom Acquisition Adjustment",
+            normalized_label=None,
+            is_confirmed=False,
+            taxonomy_status=TaxonomyStatus.pending_taxonomy_confirmation,
+            confidence_score=0.99,
+        ),
+        _create_classified_record(
+            value="15.0",
+            label="Other Special Charges",
+            normalized_label="   ",
+            is_confirmed=False,
+            taxonomy_status=TaxonomyStatus.pending_taxonomy_confirmation,
+            confidence_score=0.95,
+        ),
+    ]
+
+    batch = read_formula_inputs(records)
+
+    assert batch.total_records_received == 2
+    assert batch.confirmed_count == 2
+    assert batch.excluded_count == 0
+    assert len(batch.nodes) == 2
+    assert batch.error_message is None
+    assert (
+        batch.nodes[0].normalized_label
+        == "Reconciliation / Custom Acquisition Adjustment"
+    )
+    assert batch.nodes[0].value == "75.0"
+    assert batch.nodes[1].normalized_label == "Other Special Charges"
+    assert batch.nodes[1].value == "15.0"
+
+
+def test_read_formula_inputs_from_review_locked_items_with_fallback() -> None:
+    """Verifies that locked ReviewItems are read correctly, falling back to raw label when normalized_label is absent (Ticket 0.1.3 #3)."""
+    items = [
+        ReviewItem(
+            id="item_locked_1",
+            value="300.0",
+            label="Operating Expenses / Restructuring",
+            page=5,
+            bbox={"x0": 100.0, "y0": 100.0, "x1": 200.0, "y1": 200.0},
+            source_file="filing.pdf",
+            confidence_band=ConfidenceBand.auto_accepted,
+            confidence_score=0.98,
+            normalized_label="Restructuring Charges",
+            status=ReviewStatus.locked,
+        ),
+        ReviewItem(
+            id="item_locked_2",
+            value="40.0",
+            label="Litigation Settlement",
+            page=6,
+            bbox={"x0": 100.0, "y0": 200.0, "x1": 200.0, "y1": 300.0},
+            source_file="filing.pdf",
+            confidence_band=ConfidenceBand.needs_review,
+            confidence_score=0.80,
+            normalized_label=None,  # Tests fallback to raw label
+            status=ReviewStatus.locked,
+        ),
+    ]
+
+    batch = read_formula_inputs_from_review(items)
+
+    assert batch.total_records_received == 2
+    assert batch.confirmed_count == 2
+    assert batch.excluded_count == 0
+    assert len(batch.nodes) == 2
+    assert batch.error_message is None
+    assert batch.nodes[0].normalized_label == "Restructuring Charges"
+    assert batch.nodes[1].normalized_label == "Litigation Settlement"

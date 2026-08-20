@@ -99,7 +99,9 @@ def test_build_formula_tree_duplicate_labels_aggregated() -> None:
     assert tree.is_valid is True
     assert tree.root is not None
     assert tree.total_leaves == 3  # All 3 underlying leaf nodes preserved
-    assert len(tree.root.children) == 2  # Operating Income (leaf) + Stock-Based Compensation (aggregate)
+    assert (
+        len(tree.root.children) == 2
+    )  # Operating Income (leaf) + Stock-Based Compensation (aggregate)
 
     # First child is Operating Income leaf
     assert tree.root.children[0].node_type == FormulaNodeType.leaf
@@ -165,7 +167,9 @@ def test_build_formula_tree_empty_batch() -> None:
 
     assert tree.is_valid is False
     assert tree.root is None
-    assert tree.error_message == "No confirmed records available for formula generation."
+    assert (
+        tree.error_message == "No confirmed records available for formula generation."
+    )
 
 
 def test_build_formula_tree_purity_and_determinism() -> None:
