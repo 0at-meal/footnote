@@ -115,9 +115,7 @@ class JobRepository:
         tmp_path.write_bytes(content)
         os.replace(tmp_path, pdf_path)
 
-        submitted_at: str = datetime.now(timezone.utc).strftime(
-            "%Y-%m-%dT%H:%M:%SZ"
-        )
+        submitted_at: str = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
         record = JobRecord(
             job_id=job_id,
@@ -155,14 +153,14 @@ class JobRepository:
         """Return the absolute path to the stored PDF for a job_id."""
         return self._uploads_dir / f"{job_id}.pdf"
 
-
     def update_job_status(
         self,
         job_id: str,
         status: JobStatus,
+        model_ready: bool | None = None,
     ) -> JobRecord | None:
         """
-        Update the status of a specific JobRecord and persist the change to jobs.json.
+        Update the status (and optionally model_ready flag) of a specific JobRecord and persist to jobs.json.
 
         This is a read-modify-write operation (read all → patch → write all).
         It is intentionally not atomic at the filesystem level — no file lock,
@@ -170,8 +168,9 @@ class JobRepository:
         single-session constraint (CONSTITUTION §6.10, module docstring).
 
         Args:
-            job_id: The UUID of the job to update.
-            status: The new JobStatus to set.
+            job_id:      The UUID of the job to update.
+            status:      The new JobStatus to set.
+            model_ready: Optional boolean indicating whether .xlsx model is ready.
 
         Returns:
             The updated JobRecord if found, or None if no job with job_id exists.
@@ -181,7 +180,10 @@ class JobRepository:
 
         for idx, rec in enumerate(records):
             if rec.job_id == job_id:
-                updated_record = rec.model_copy(update={"status": status})
+                updates: dict[str, Any] = {"status": status}
+                if model_ready is not None:
+                    updates["model_ready"] = model_ready
+                updated_record = rec.model_copy(update=updates)
                 records[idx] = updated_record
                 break
 

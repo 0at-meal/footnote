@@ -60,4 +60,7 @@ export type JobRecord = {
   target_metric: string
   /** ISO 8601 UTC timestamp of job creation. */
   submitted_at: string
+  /** Whether an Excel model workbook is ready for download (Ticket 0.4.3). */
+  model_ready?: boolean
 }
+

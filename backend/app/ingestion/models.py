@@ -10,7 +10,6 @@ ALLOWED_TARGET_METRICS: tuple[str, ...] = (
 )
 
 
-
 class FileValidationResult(BaseModel):
     """Result of server-side validation for a single uploaded file."""
 
@@ -49,6 +48,8 @@ class JobRecord(BaseModel):
     """User-selected target metric recorded before queuing (spec AC-6)."""
     submitted_at: str
     """ISO 8601 UTC timestamp of job creation, e.g. '2026-08-12T01:00:00Z'."""
+    model_ready: bool = False
+    """True if an .xlsx model workbook was generated successfully for this job."""
 
 
 class SubmitResponse(BaseModel):

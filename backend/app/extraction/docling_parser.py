@@ -21,11 +21,43 @@ import logging
 import os
 from pathlib import Path
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-# Disable PyTorch Inductor compilation to prevent missing MSVC cl.exe compiler errors on Windows
-os.environ["TORCH_COMPILE_DISABLE"] = "1"
-os.environ["TORCHINDUCTOR_DISABLE"] = "1"
+if TYPE_CHECKING:
+    from docling.datamodel.base_models import InputFormat
+    from docling.datamodel.pipeline_options import PdfPipelineOptions
+    from docling.document_converter import DocumentConverter, PdfFormatOption
+else:
+    try:
+        from docling.datamodel.base_models import InputFormat
+        from docling.datamodel.pipeline_options import PdfPipelineOptions
+        from docling.document_converter import DocumentConverter, PdfFormatOption
+    except ImportError:  # pragma: no cover
+        class _FallbackInputFormat:
+            PDF = "pdf"
+        InputFormat = _FallbackInputFormat
+
+        class _FallbackPdfPipelineOptions:
+            do_ocr: bool = False
+            generate_page_images: bool = False
+            generate_picture_images: bool = False
+            generate_table_images: bool = False
+        PdfPipelineOptions = _FallbackPdfPipelineOptions
+
+        class _FallbackPdfFormatOption:
+            def __init__(self, pipeline_options: Any = None) -> None:
+                self.pipeline_options = pipeline_options
+        PdfFormatOption = _FallbackPdfFormatOption
+
+        class _FallbackDocumentConverter:
+            def __init__(self, format_options: Any = None) -> None:
+                self.format_options = format_options
+            def convert(self, path: str) -> Any:
+                raise DoclingParseError("Docling library is not installed.")
+        DocumentConverter = _FallbackDocumentConverter
+
+
+
 
 from app.extraction.models import DoclingBbox, DoclingItem
 
@@ -176,10 +208,6 @@ def parse_pdf(pdf_path: Path, source_file: str) -> list[DoclingItem]:
         raise FileNotFoundError(f"PDF file not found at path: {pdf_path}")
 
     try:
-        from docling.datamodel.base_models import InputFormat
-        from docling.datamodel.pipeline_options import PdfPipelineOptions
-        from docling.document_converter import DocumentConverter, PdfFormatOption
-
         pipeline_options = PdfPipelineOptions()
         pipeline_options.do_ocr = False
         pipeline_options.generate_page_images = False
@@ -197,6 +225,7 @@ def parse_pdf(pdf_path: Path, source_file: str) -> list[DoclingItem]:
         raise DoclingParseError(
             f"Docling conversion failed for {source_file}: {err}"
         ) from err
+
 
     items: list[DoclingItem] = []
 

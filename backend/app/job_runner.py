@@ -105,8 +105,11 @@ def process_queued_job(
         client = classifier_client or GroqClassifierClient()
         active_taxonomy = taxonomy_repo.load_taxonomy()
 
+        target_metric = job.target_metric or "Adjusted EBITDA"
         batch_result = dispatch_records_to_classifier(scored_records, client)
-        classified_records = normalize_records(scored_records, batch_result, active_taxonomy)
+        classified_records = normalize_records(
+            scored_records, batch_result, active_taxonomy, target_metric=target_metric
+        )
         classification_repo.save_classified_records(job_id, classified_records)
 
         # Append-only machine-readable decision log (spec.md §6, AC-2, AC-7)
@@ -115,40 +118,62 @@ def process_queued_job(
 
         # Stage 7: Formula Engine Input & Tree Construction (Feature 4 Steps 1-2)
         formula_inputs = read_formula_inputs(classified_records)
-        target_metric = job.target_metric or "Adjusted EBITDA"
-        formula_tree = build_formula_tree(formula_inputs, target_metric=target_metric)
+        model_ready = False
 
-        # Stage 8: Excel Export & Provenance Tagging (Feature 4 Steps 3-4)
-        generation_result = generate_workbook(
-            formula_tree,
-            job_id=job_id,
-            output_dir=repo.data_dir,
-        )
-        model_repo.save_generation_result(job_id, generation_result)
-
-        if generation_result.is_success and generation_result.provenance_records:
-            model_repo.save_provenance_records(job_id, generation_result.provenance_records)
-            logger.info(
-                "Generated Excel model workbook for job %s with %d cells",
-                job_id,
-                generation_result.total_cells_generated,
+        if len(formula_inputs.nodes) > 0:
+            formula_tree = build_formula_tree(
+                formula_inputs, target_metric=target_metric
             )
+
+            # Stage 8: Excel Export & Provenance Tagging (Feature 4 Steps 3-4)
+            if formula_tree.is_valid:
+                generation_result = generate_workbook(
+                    formula_tree,
+                    job_id=job_id,
+                    output_dir=repo.data_dir,
+                )
+                model_repo.save_generation_result(job_id, generation_result)
+
+                if (
+                    generation_result.is_success
+                    and generation_result.provenance_records
+                ):
+                    model_repo.save_provenance_records(
+                        job_id, generation_result.provenance_records
+                    )
+                    model_ready = True
+                    logger.info(
+                        "Generated draft Excel model workbook for job %s with %d cells",
+                        job_id,
+                        generation_result.total_cells_generated,
+                    )
+                else:
+                    logger.warning(
+                        "Model workbook generation unsuccessful for job %s: %s",
+                        job_id,
+                        generation_result.error_detail or "Generation failed",
+                    )
+            else:
+                logger.warning(
+                    "Formula tree invalid for draft generation in job %s: %s",
+                    job_id,
+                    formula_tree.error_message,
+                )
         else:
             logger.warning(
-                "Model workbook generation deferred for job %s: %s (requires human review/confirmation)",
+                "No auto-accepted or confirmed records available for draft model in job %s: %s (requires human review/confirmation)",
                 job_id,
-                generation_result.error_detail or "No confirmed formula input records available",
+                formula_inputs.error_message or "Batch empty",
             )
 
-        # Final status update to 'done'
-        repo.update_job_status(job_id, JobStatus.done)
+        # Final status update to 'done' with model_ready flag
+        repo.update_job_status(job_id, JobStatus.done, model_ready=model_ready)
         logger.info(
-            "Completed pipeline for job %s: %d records assembled, %d classified, %d model cells generated (model_generated=%s)",
+            "Completed pipeline for job %s: %d records assembled, %d classified, model_ready=%s",
             job_id,
             summary.total_items,
             len(classified_records),
-            generation_result.total_cells_generated,
-            generation_result.is_success,
+            model_ready,
         )
     except Exception as err:
         logger.error("Error processing job %s: %s", job_id, err)

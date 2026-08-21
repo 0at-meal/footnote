@@ -38,6 +38,7 @@ router = APIRouter()
 
 # ── Dependency ────────────────────────────────────────────────────────────────
 
+
 def get_repository() -> JobRepository:
     """
     Provide the default JobRepository instance.
@@ -49,6 +50,7 @@ def get_repository() -> JobRepository:
 
 
 # ── POST /upload/validate (Step 2 — unchanged) ────────────────────────────────
+
 
 @router.post(
     "/validate",
@@ -84,8 +86,8 @@ async def validate_uploads(
     return ValidationResponse(results=results)
 
 
-
 # ── POST /upload/jobs (Step 3) ────────────────────────────────────────────────
+
 
 @router.post(
     "/jobs",
@@ -164,6 +166,7 @@ async def submit_jobs(
 
 
 # ── GET /upload/jobs (Step 3) ─────────────────────────────────────────────────
+
 
 @router.get(
     "/jobs",

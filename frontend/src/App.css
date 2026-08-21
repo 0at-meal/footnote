@@ -511,6 +511,16 @@
   color: #16a34a;
 }
 
+.status-badge--model-ready {
+  background: color-mix(in srgb, #22c55e 12%, transparent);
+  color: #16a34a;
+}
+
+.status-badge--awaiting-review {
+  background: color-mix(in srgb, #f59e0b 12%, transparent);
+  color: #d97706;
+}
+
 .status-badge--failed {
   background: var(--error-bg);
   color: var(--error);

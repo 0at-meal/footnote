@@ -26,7 +26,22 @@ const STATUS_LABELS: Record<JobStatus, string> = {
   failed: 'Failed',
 }
 
-function StatusBadge({ status }: { status: JobStatus }) {
+function StatusBadge({ status, modelReady }: { status: JobStatus; modelReady?: boolean }) {
+  if (status === 'done') {
+    if (modelReady) {
+      return (
+        <span className="status-badge status-badge--done status-badge--model-ready" aria-label="Status: Model Ready">
+          Model Ready
+        </span>
+      )
+    }
+    return (
+      <span className="status-badge status-badge--awaiting-review" aria-label="Status: Awaiting Review">
+        Awaiting Review
+      </span>
+    )
+  }
+
   return (
     <span className={`status-badge status-badge--${status}`} aria-label={`Status: ${STATUS_LABELS[status]}`}>
       {STATUS_LABELS[status]}
@@ -164,11 +179,11 @@ function JobList({
                 <span className="job-table__metric-locked">{job.target_metric}</span>
               </td>
               <td className="job-table__status">
-                <StatusBadge status={job.status} />
+                <StatusBadge status={job.status} modelReady={job.model_ready} />
               </td>
               <td className="job-table__remove">
                 <div style={{ display: 'flex', gap: '0.375rem', justifyContent: 'flex-end', alignItems: 'center' }}>
-                  {job.status === 'done' && (
+                  {job.status === 'done' && job.model_ready && (
                     <a
                       href={`${apiBase}/models/${job.job_id}/download`}
                       download={`${job.job_id}_model.xlsx`}

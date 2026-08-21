@@ -124,6 +124,7 @@ def test_process_queued_job_runs_full_pipeline(
     updated_job = mock_job_repo.get_job(job_id)
     assert updated_job is not None
     assert updated_job.status == JobStatus.done
+    assert updated_job.model_ready is True
 
     results_dir = tmp_path / "results"
     assert (results_dir / f"{job_id}_docling.json").exists()
