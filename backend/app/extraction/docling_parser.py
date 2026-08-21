@@ -20,19 +20,137 @@ Isolation (CONSTITUTION §3.8, §3.2):
 import logging
 import os
 from pathlib import Path
+import re
 from typing import Any
 
 # Disable PyTorch Inductor compilation to prevent missing MSVC cl.exe compiler errors on Windows
 os.environ["TORCH_COMPILE_DISABLE"] = "1"
 os.environ["TORCHINDUCTOR_DISABLE"] = "1"
 
-from docling.datamodel.base_models import InputFormat
-from docling.datamodel.pipeline_options import PdfPipelineOptions
-from docling.document_converter import DocumentConverter, PdfFormatOption
-
 from app.extraction.models import DoclingBbox, DoclingItem
 
 logger = logging.getLogger(__name__)
+
+# SEC boilerplate patterns (case-insensitive)
+_SEC_BOILERPLATE_REGEX = re.compile(
+    r"^(item\s+\d+[a-z]?\.?|part\s+[ivx]+|table\s+of\s+contents|management'?s?\s+discussion"
+    r"|index\s+to\s+financial\s+statements|see\s+accompanying\s+notes|notes\s+to\s+consolidated\s+financial\s+statements)"
+    r".*$",
+    re.IGNORECASE,
+)
+
+# Currency and unit qualifier declarations (case-insensitive)
+_UNIT_QUALIFIER_REGEX = re.compile(
+    r"^(\(?\s*in\s+(thousands|millions|billions)(\s*,\s*except.*)?\)?|\(?\s*unaudited\s*\)?|\(?\s*audited\s*\)?|\(?\s*dollars\s+in\s+(thousands|millions)\s*\)?|\(?\s*in\s+usd\s*\)?|\(?\s*amounts\s+in\s+(thousands|millions)\s*\)?|\(?\s*\$\s*in\s+(thousands|millions)\s*\)?)$",
+    re.IGNORECASE,
+)
+
+# Recognized non-numeric financial placeholders (e.g. dash or N/A)
+_FINANCIAL_PLACEHOLDERS = {"—", "-", "–", "--", "n/a", "na", "none", "*", "•"}
+
+
+def _is_noise_cell(cell_text: str, row_idx: int, col_idx: int) -> bool:
+    """
+    Identifies non-data noise cells that should be suppressed from extraction.
+
+    Filters:
+    1. SEC document boilerplate (e.g. 'Item 7.', 'PART I', 'Table of Contents').
+    2. Currency and unit qualifier declarations (e.g. 'in millions', '(unaudited)').
+    3. Cells containing zero numeric digits that are not valid financial placeholders.
+    """
+    cleaned = cell_text.strip()
+    if not cleaned:
+        return True
+
+    # 1. SEC boilerplate
+    if _SEC_BOILERPLATE_REGEX.search(cleaned):
+        return True
+
+    # 2. Currency and unit qualifier declarations
+    if _UNIT_QUALIFIER_REGEX.search(cleaned):
+        return True
+
+    # 3. Non-digit cells that are not financial placeholders
+    has_digit = bool(re.search(r"\d", cleaned))
+    if not has_digit:
+        if cleaned.lower() not in _FINANCIAL_PLACEHOLDERS:
+            return True
+
+    return False
+
+
+def _extract_table_title(table: Any, table_idx: int, table_cells: list[Any]) -> str:
+    """
+    Extract the enclosing table or section title from a Docling table structure.
+    """
+    # Check table caption
+    try:
+        caption = getattr(table, "caption", None)
+        if caption:
+            if isinstance(caption, str) and caption.strip():
+                return caption.strip()
+            caption_text = getattr(caption, "text", None)
+            if caption_text and isinstance(caption_text, str) and caption_text.strip():
+                return caption_text.strip()
+    except Exception:  # noqa: BLE001
+        pass
+
+    # Check label or name
+    try:
+        label = getattr(table, "label", None)
+        if (
+            label
+            and isinstance(label, str)
+            and label.strip()
+            and label.lower() not in ("table", "data_table")
+        ):
+            return label.strip()
+    except Exception:  # noqa: BLE001
+        pass
+
+    # Check for title in row 0 cells or header cells
+    for cell in table_cells:
+        try:
+            row_idx = getattr(cell, "start_row_offset_idx", 0)
+            if row_idx == 0:
+                text = (getattr(cell, "text", "") or "").strip()
+                if text and len(text) > 3:
+                    lower = text.lower()
+                    if any(
+                        kw in lower
+                        for kw in [
+                            "reconciliation",
+                            "non-gaap",
+                            "adjusted ebitda",
+                            "ebitda",
+                            "balance sheet",
+                            "income statement",
+                            "operations",
+                            "cash flow",
+                            "segment",
+                            "schedule",
+                        ]
+                    ):
+                        return text
+        except Exception:  # noqa: BLE001
+            continue
+
+    # Check first row header or row section header
+    for cell in table_cells:
+        try:
+            if getattr(cell, "row_section_header", False) or getattr(
+                cell, "column_header", False
+            ):
+                text = (getattr(cell, "text", "") or "").strip()
+                lower = text.lower()
+                if any(
+                    kw in lower for kw in ["reconciliation", "non-gaap", "adjusted ebitda"]
+                ):
+                    return text
+        except Exception:  # noqa: BLE001
+            continue
+
+    return f"Table {table_idx + 1}"
 
 
 class DoclingParseError(Exception):
@@ -58,6 +176,10 @@ def parse_pdf(pdf_path: Path, source_file: str) -> list[DoclingItem]:
         raise FileNotFoundError(f"PDF file not found at path: {pdf_path}")
 
     try:
+        from docling.datamodel.base_models import InputFormat
+        from docling.datamodel.pipeline_options import PdfPipelineOptions
+        from docling.document_converter import DocumentConverter, PdfFormatOption
+
         pipeline_options = PdfPipelineOptions()
         pipeline_options.do_ocr = False
         pipeline_options.generate_page_images = False
@@ -88,6 +210,8 @@ def parse_pdf(pdf_path: Path, source_file: str) -> list[DoclingItem]:
 
             if not table_cells:
                 continue
+
+            table_title = _extract_table_title(table, table_idx, table_cells)
 
             # Identify header text by column and row indices
             col_headers: dict[int, list[str]] = {}
@@ -141,6 +265,10 @@ def parse_pdf(pdf_path: Path, source_file: str) -> list[DoclingItem]:
                     row_idx = getattr(cell, "start_row_offset_idx", 0)
                     col_idx = getattr(cell, "start_col_offset_idx", 0)
 
+                    # Pre-filter noise cells (Ticket 1.1)
+                    if _is_noise_cell(cell_text, row_idx, col_idx):
+                        continue
+
                     # Assemble structural label path
                     label_parts: list[str] = []
 
@@ -177,10 +305,18 @@ def parse_pdf(pdf_path: Path, source_file: str) -> list[DoclingItem]:
                     bbox_obj = DoclingBbox(x0=0.0, y0=0.0, x1=0.0, y1=0.0)
                     if raw_bbox is not None:
                         # Extract l, t, r, b or x0, y0, x1, y1
-                        x0 = float(getattr(raw_bbox, "l", getattr(raw_bbox, "x0", 0.0)))
-                        y0 = float(getattr(raw_bbox, "t", getattr(raw_bbox, "y0", 0.0)))
-                        x1 = float(getattr(raw_bbox, "r", getattr(raw_bbox, "x1", 0.0)))
-                        y1 = float(getattr(raw_bbox, "b", getattr(raw_bbox, "y1", 0.0)))
+                        x0 = float(
+                            getattr(raw_bbox, "l", getattr(raw_bbox, "x0", 0.0))
+                        )
+                        y0 = float(
+                            getattr(raw_bbox, "t", getattr(raw_bbox, "y0", 0.0))
+                        )
+                        x1 = float(
+                            getattr(raw_bbox, "r", getattr(raw_bbox, "x1", 0.0))
+                        )
+                        y1 = float(
+                            getattr(raw_bbox, "b", getattr(raw_bbox, "y1", 0.0))
+                        )
                         bbox_obj = DoclingBbox(x0=x0, y0=y0, x1=x1, y1=y1)
 
                     item = DoclingItem(
@@ -189,6 +325,7 @@ def parse_pdf(pdf_path: Path, source_file: str) -> list[DoclingItem]:
                         page=page_no,
                         bbox=bbox_obj,
                         source_file=source_file,
+                        table_name=table_title,
                     )
                     items.append(item)
 
@@ -223,6 +360,7 @@ def parse_pdf(pdf_path: Path, source_file: str) -> list[DoclingItem]:
                         page=page_no,
                         bbox=DoclingBbox(x0=0.0, y0=0.0, x1=0.0, y1=0.0),
                         source_file=source_file,
+                        table_name=table_title,
                         is_error=True,
                         error_detail=str(cell_err),
                     )

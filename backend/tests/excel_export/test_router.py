@@ -107,7 +107,10 @@ def test_model_download_and_provenance_query(tmp_path: Path) -> None:
         # Test 1: Download workbook
         dl_resp = client.get(f"/models/{job_id}/download")
         assert dl_resp.status_code == 200
-        assert dl_resp.headers["content-type"] == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        assert (
+            dl_resp.headers["content-type"]
+            == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
         assert len(dl_resp.content) > 0
 
         # Test 2: Get all provenance records
@@ -248,5 +251,85 @@ def test_generate_model_job_not_found_raises_404(tmp_path: Path) -> None:
     try:
         resp = client.post("/models/unknown_job_uuid/generate")
         assert resp.status_code == 404
+    finally:
+        set_model_repository(original_repo)
+
+
+def test_generate_then_download_e2e(tmp_path: Path) -> None:
+    """Ticket 0.2.3: End-to-end integration test validating POST generate immediately followed by GET download."""
+    job_repo = JobRepository(data_dir=tmp_path)
+    job_repo.save_job(
+        filename="apple_10k.pdf",
+        content=b"%PDF-1.4 mock",
+        target_metric="Adjusted EBITDA",
+    )
+    job_id = job_repo.list_jobs()[0].job_id
+
+    review_repo = ReviewRepository(data_dir=tmp_path)
+    items = [
+        ReviewItem(
+            id=f"{job_id}_sbc",
+            value="8,500.00",
+            label="Stock-based compensation expense",
+            page=24,
+            bbox={"x0": 100.0, "y0": 200.0, "x1": 300.0, "y1": 250.0},
+            source_file="apple_10k.pdf",
+            confidence_band=ConfidenceBand.auto_accepted,
+            confidence_score=0.98,
+            normalized_label="Stock-Based Compensation",
+            status=ReviewStatus.locked,
+        ),
+        ReviewItem(
+            id=f"{job_id}_da",
+            value="11,200.00",
+            label="Depreciation and amortization",
+            page=25,
+            bbox={"x0": 100.0, "y0": 300.0, "x1": 300.0, "y1": 350.0},
+            source_file="apple_10k.pdf",
+            confidence_band=ConfidenceBand.needs_review,
+            confidence_score=0.88,
+            normalized_label="Depreciation & Amortization",
+            status=ReviewStatus.locked,
+        ),
+    ]
+    review_repo.save_review_items(job_id, items)
+
+    model_repo = ModelRepository(data_dir=tmp_path)
+    from app.excel_export.router import get_model_repository, set_model_repository
+
+    original_repo = get_model_repository()
+    set_model_repository(model_repo)
+    try:
+        # 1. POST /models/{job_id}/generate
+        gen_resp = client.post(f"/models/{job_id}/generate")
+        assert gen_resp.status_code == 200
+        gen_data = WorkbookGenerationResult.model_validate(gen_resp.json())
+        assert gen_data.is_success is True
+        assert gen_data.total_cells_generated > 0
+
+        # Verify file exists on disk
+        file_path = model_repo.get_workbook_path(job_id)
+        assert file_path is not None
+        assert file_path.exists()
+        assert file_path.stat().st_size > 0
+
+        # 2. GET /models/{job_id}/download
+        dl_resp = client.get(f"/models/{job_id}/download")
+        assert dl_resp.status_code == 200
+        assert (
+            dl_resp.headers["content-type"]
+            == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        assert (
+            dl_resp.headers["content-disposition"].endswith('.xlsx"')
+            or f"{job_id}_model.xlsx" in dl_resp.headers["content-disposition"]
+        )
+        assert len(dl_resp.content) == file_path.stat().st_size
+
+        # 3. GET /models/{job_id}/provenance
+        prov_resp = client.get(f"/models/{job_id}/provenance")
+        assert prov_resp.status_code == 200
+        prov_data = ProvenanceQueryResponse.model_validate(prov_resp.json())
+        assert prov_data.total_records == gen_data.total_cells_generated
     finally:
         set_model_repository(original_repo)

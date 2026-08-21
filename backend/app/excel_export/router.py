@@ -54,7 +54,12 @@ def generate_model_workbook(job_id: str) -> WorkbookGenerationResult:
     """
     job_repo = JobRepository(data_dir=_model_repo.data_dir)
     job = job_repo.get_job(job_id)
-    target_metric = (job.target_metric if job else None) or "Adjusted EBITDA"
+    if job is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Job '{job_id}' not found.",
+        )
+    target_metric = job.target_metric or "Adjusted EBITDA"
 
     review_repo = ReviewRepository(data_dir=_model_repo.data_dir)
     review_items = review_repo.get_review_items(job_id)
@@ -68,15 +73,23 @@ def generate_model_workbook(job_id: str) -> WorkbookGenerationResult:
             batch = read_formula_inputs(classified_records)
         else:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"No extraction or review records found for job '{job_id}'.",
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"No confirmed or extracted records found for job '{job_id}'.",
             )
+
+    if batch.error_message or len(batch.nodes) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=batch.error_message
+            or "No confirmed records available for formula generation.",
+        )
 
     formula_tree = build_formula_tree(batch, target_metric=target_metric)
     if not formula_tree.is_valid:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=formula_tree.error_message or "Formula tree is invalid (no confirmed line items).",
+            detail=formula_tree.error_message
+            or "Formula tree is invalid (no confirmed line items).",
         )
 
     generation_result = generate_workbook(
@@ -93,7 +106,9 @@ def generate_model_workbook(job_id: str) -> WorkbookGenerationResult:
         )
 
     if generation_result.provenance_records:
-        _model_repo.save_provenance_records(job_id, generation_result.provenance_records)
+        _model_repo.save_provenance_records(
+            job_id, generation_result.provenance_records
+        )
 
     return generation_result
 

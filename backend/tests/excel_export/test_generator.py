@@ -75,7 +75,9 @@ def test_generate_workbook_success(tmp_path: Path) -> None:
     assert result.source_cells_count == 3
 
 
-def test_generate_workbook_zero_numeric_literals_in_derived_cells(tmp_path: Path) -> None:
+def test_generate_workbook_zero_numeric_literals_in_derived_cells(
+    tmp_path: Path,
+) -> None:
     """Verifies that every derived cell in Reconciliation sheet contains a formula string (AC-2)."""
     nodes = [
         _make_input_node(0, "Operating Income", value="1000.0", page=5),
@@ -99,7 +101,9 @@ def test_generate_workbook_zero_numeric_literals_in_derived_cells(tmp_path: Path
     # Value column is column C (index 3). Rows 4, 5 are component formulas, Row 6 is total formula.
     for row in range(4, ws_recon.max_row + 1):
         cell_val = str(ws_recon.cell(row=row, column=3).value or "")
-        assert cell_val.startswith("="), f"Cell C{row} should contain formula, got {cell_val}"
+        assert cell_val.startswith(
+            "="
+        ), f"Cell C{row} should contain formula, got {cell_val}"
         assert not isinstance(ws_recon.cell(row=row, column=3).value, (int, float))
 
 
@@ -186,7 +190,9 @@ def test_generate_workbook_atomic_write_error_handling(tmp_path: Path) -> None:
     )
     tree = build_formula_tree(batch, target_metric="Adjusted EBITDA")
 
-    with patch("xlsxwriter.Workbook.add_worksheet", side_effect=OSError("Disk write failure")):
+    with patch(
+        "xlsxwriter.Workbook.add_worksheet", side_effect=OSError("Disk write failure")
+    ):
         result = generate_workbook(tree, job_id="job_test_err", output_dir=tmp_path)
 
     assert result.is_success is False
@@ -203,14 +209,18 @@ def test_generate_workbook_invalid_tree(tmp_path: Path) -> None:
         error_message="Unsupported metric",
     )
 
-    result = generate_workbook(invalid_tree, job_id="job_test_invalid", output_dir=tmp_path)
+    result = generate_workbook(
+        invalid_tree, job_id="job_test_invalid", output_dir=tmp_path
+    )
 
     assert result.is_success is False
     assert result.error_detail == "Unsupported metric"
     assert not Path(result.file_path).exists()
 
 
-def test_generate_workbook_exactly_one_comment_and_hyperlink_per_cell(tmp_path: Path) -> None:
+def test_generate_workbook_exactly_one_comment_and_hyperlink_per_cell(
+    tmp_path: Path,
+) -> None:
     """Verifies that 100% of generated data/formula cells carry exactly 1 comment and 1 hyperlink (AC-6)."""
     nodes = [
         _make_input_node(0, "Operating Income", value="1,000.00", page=12),
@@ -242,7 +252,10 @@ def test_generate_workbook_exactly_one_comment_and_hyperlink_per_cell(tmp_path: 
         assert cell.comment is not None, f"Source_Inputs!F{row} missing comment"
         assert "[Footnote Provenance]" in cell.comment.text
         assert cell.hyperlink is not None, f"Source_Inputs!F{row} missing hyperlink"
-        assert "http://localhost:8000/models/job_ac6_test/provenance/Source_Inputs/F" in cell.hyperlink.target
+        assert (
+            "http://localhost:8000/models/job_ac6_test/provenance/Source_Inputs/F"
+            in cell.hyperlink.target
+        )
 
     # 2. Check Reconciliation value column (Col C / 3)
     ws_recon = wb["Reconciliation"]
@@ -252,7 +265,9 @@ def test_generate_workbook_exactly_one_comment_and_hyperlink_per_cell(tmp_path: 
         assert "[Footnote Provenance" in cell.comment.text
         # Formulas use =HYPERLINK(...) wrapper
         val_str = str(cell.value or "")
-        assert val_str.startswith("=HYPERLINK("), f"Reconciliation!C{row} formula must contain HYPERLINK, got {val_str}"
+        assert val_str.startswith(
+            "=HYPERLINK("
+        ), f"Reconciliation!C{row} formula must contain HYPERLINK, got {val_str}"
 
 
 def test_generate_workbook_empty_leaves_invalid_tree(tmp_path: Path) -> None:
@@ -273,4 +288,3 @@ def test_generate_workbook_empty_leaves_invalid_tree(tmp_path: Path) -> None:
     assert result.sheet_names == []
     assert not Path(result.file_path).exists()
     assert not (tmp_path / "models" / "job_empty_tree_model.xlsx.tmp").exists()
-

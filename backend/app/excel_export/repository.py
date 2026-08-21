@@ -80,7 +80,9 @@ class ModelRepository:
                 return [W3CAnnotationRecord.model_validate(item) for item in data]
             return None
         except (json.JSONDecodeError, OSError, ValueError) as err:
-            logger.error("Failed to load provenance records for job %s: %s", job_id, err)
+            logger.error(
+                "Failed to load provenance records for job %s: %s", job_id, err
+            )
             return None
 
     def get_cell_provenance(
@@ -98,7 +100,10 @@ class ModelRepository:
 
         target_coord = cell_coord.upper()
         for record in records:
-            if record.sheet_name == sheet_name and record.cell_coord.upper() == target_coord:
+            if (
+                record.sheet_name == sheet_name
+                and record.cell_coord.upper() == target_coord
+            ):
                 return record
 
         return None
@@ -140,4 +145,3 @@ class ModelRepository:
         except (json.JSONDecodeError, OSError, ValueError) as err:
             logger.error("Failed to load generation result for job %s: %s", job_id, err)
             return None
-

@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 _DEFAULT_DATA_DIR: Path = Path(__file__).parent.parent.parent / "data"
 
 # Standard IB currency number format: positive, negative in parens, zero as dash
-_IB_CURRENCY_FORMAT = "$#,##0.00;($#,##0.00);\"-\""
+_IB_CURRENCY_FORMAT = '$#,##0.00;($#,##0.00);"-"'
 
 
 def _parse_numeric_value(raw_val: str) -> tuple[float | None, bool]:
@@ -135,60 +135,78 @@ def generate_workbook(
         workbook = xlsxwriter.Workbook(str(tmp_file))
 
         # Define IB-compliant format styles (CONSTITUTION §2.5)
-        fmt_header = workbook.add_format({
-            "bold": True,
-            "bg_color": "#F2F2F2",
-            "border": 1,
-            "align": "left",
-            "valign": "vcenter",
-        })
-        fmt_header_num = workbook.add_format({
-            "bold": True,
-            "bg_color": "#F2F2F2",
-            "border": 1,
-            "align": "right",
-            "valign": "vcenter",
-        })
-        fmt_title = workbook.add_format({
-            "bold": True,
-            "font_size": 14,
-            "font_color": "#000000",
-        })
-        fmt_source_num = workbook.add_format({
-            "font_color": "#000000",
-            "num_format": _IB_CURRENCY_FORMAT,
-            "align": "right",
-        })
-        fmt_hardcode_num = workbook.add_format({
-            "font_color": "#0000FF",  # Blue for hardcodes (CONSTITUTION §2.5)
-            "num_format": _IB_CURRENCY_FORMAT,
-            "align": "right",
-        })
-        fmt_formula_num = workbook.add_format({
-            "font_color": "#000000",  # Black for formulas (CONSTITUTION §2.5)
-            "num_format": _IB_CURRENCY_FORMAT,
-            "align": "right",
-        })
-        fmt_sheet_link = workbook.add_format({
-            "font_color": "#008000",  # Green for sheet links (CONSTITUTION §2.5)
-            "num_format": _IB_CURRENCY_FORMAT,
-            "align": "right",
-        })
-        fmt_total = workbook.add_format({
-            "bold": True,
-            "font_color": "#000000",
-            "num_format": _IB_CURRENCY_FORMAT,
-            "top": 1,
-            "bottom": 6,  # Double line bottom
-            "align": "right",
-        })
-        fmt_total_label = workbook.add_format({
-            "bold": True,
-            "font_color": "#000000",
-            "top": 1,
-            "bottom": 6,
-            "align": "left",
-        })
+        fmt_header = workbook.add_format(
+            {
+                "bold": True,
+                "bg_color": "#F2F2F2",
+                "border": 1,
+                "align": "left",
+                "valign": "vcenter",
+            }
+        )
+        fmt_header_num = workbook.add_format(
+            {
+                "bold": True,
+                "bg_color": "#F2F2F2",
+                "border": 1,
+                "align": "right",
+                "valign": "vcenter",
+            }
+        )
+        fmt_title = workbook.add_format(
+            {
+                "bold": True,
+                "font_size": 14,
+                "font_color": "#000000",
+            }
+        )
+        fmt_source_num = workbook.add_format(
+            {
+                "font_color": "#000000",
+                "num_format": _IB_CURRENCY_FORMAT,
+                "align": "right",
+            }
+        )
+        fmt_hardcode_num = workbook.add_format(
+            {
+                "font_color": "#0000FF",  # Blue for hardcodes (CONSTITUTION §2.5)
+                "num_format": _IB_CURRENCY_FORMAT,
+                "align": "right",
+            }
+        )
+        fmt_formula_num = workbook.add_format(
+            {
+                "font_color": "#000000",  # Black for formulas (CONSTITUTION §2.5)
+                "num_format": _IB_CURRENCY_FORMAT,
+                "align": "right",
+            }
+        )
+        fmt_sheet_link = workbook.add_format(
+            {
+                "font_color": "#008000",  # Green for sheet links (CONSTITUTION §2.5)
+                "num_format": _IB_CURRENCY_FORMAT,
+                "align": "right",
+            }
+        )
+        fmt_total = workbook.add_format(
+            {
+                "bold": True,
+                "font_color": "#000000",
+                "num_format": _IB_CURRENCY_FORMAT,
+                "top": 1,
+                "bottom": 6,  # Double line bottom
+                "align": "right",
+            }
+        )
+        fmt_total_label = workbook.add_format(
+            {
+                "bold": True,
+                "font_color": "#000000",
+                "top": 1,
+                "bottom": 6,
+                "align": "left",
+            }
+        )
         fmt_text = workbook.add_format({"align": "left"})
 
         # ----------------------------------------------------
@@ -239,12 +257,16 @@ def generate_workbook(
             val_coord = _to_cell_coord(row_idx, val_col)
 
             # Build canonical W3C Web Annotation record (plan §6.1 item 7)
-            anno = build_w3c_annotation_for_node(job_id, "Source_Inputs", val_coord, leaf)
+            anno = build_w3c_annotation_for_node(
+                job_id, "Source_Inputs", val_coord, leaf
+            )
             provenance_records.append(anno)
 
             # Format 1 comment and 1 hyperlink URL (AC-6, AC-7)
             comment_text = format_cell_comment(anno)
-            hyperlink_url = format_cell_hyperlink_url(job_id, "Source_Inputs", val_coord, base_url=base_url)
+            hyperlink_url = format_cell_hyperlink_url(
+                job_id, "Source_Inputs", val_coord, base_url=base_url
+            )
 
             # Write comment (AC-6)
             ws_inputs.write_comment(
@@ -257,7 +279,9 @@ def generate_workbook(
             is_hardcode = source_node.is_hardcode if source_node else False
             val_format = fmt_hardcode_num if is_hardcode else fmt_source_num
 
-            display_str = f"{parsed_num:,.2f}" if (is_num and parsed_num is not None) else raw_val
+            display_str = (
+                f"{parsed_num:,.2f}" if (is_num and parsed_num is not None) else raw_val
+            )
             if not is_num:
                 warnings.append(
                     f"Row {row_idx + 1} item '{leaf.label}' raw value '{raw_val}' is not a valid number (EC-2)"
@@ -316,11 +340,15 @@ def generate_workbook(
                 val_coord = _to_cell_coord(curr_row, 2)
 
                 # Canonical W3C annotation for reconciliation cell (AC-5, plan §6.1 item 7)
-                anno = build_w3c_annotation_for_node(job_id, "Reconciliation", val_coord, child)
+                anno = build_w3c_annotation_for_node(
+                    job_id, "Reconciliation", val_coord, child
+                )
                 provenance_records.append(anno)
 
                 comment_text = format_cell_comment(anno)
-                hyperlink_url = format_cell_hyperlink_url(job_id, "Reconciliation", val_coord, base_url=base_url)
+                hyperlink_url = format_cell_hyperlink_url(
+                    job_id, "Reconciliation", val_coord, base_url=base_url
+                )
 
                 src_ref = (
                     f"{child.source_node.source_file} (p. {child.source_node.page})"
@@ -352,7 +380,9 @@ def generate_workbook(
                         formula=formula_str,
                         is_formula=True,
                         is_hardcode=False,
-                        source_node_id=child.source_node.node_id if child.source_node else None,
+                        source_node_id=(
+                            child.source_node.node_id if child.source_node else None
+                        ),
                         annotation_id=anno.id,
                     )
                 )
@@ -366,11 +396,15 @@ def generate_workbook(
                     sub_source_input_coord = f"Source_Inputs!F{sub_input_row + 1}"
                     sub_val_coord = _to_cell_coord(curr_row, 2)
 
-                    sub_anno = build_w3c_annotation_for_node(job_id, "Reconciliation", sub_val_coord, sub_leaf)
+                    sub_anno = build_w3c_annotation_for_node(
+                        job_id, "Reconciliation", sub_val_coord, sub_leaf
+                    )
                     provenance_records.append(sub_anno)
 
                     sub_comment = format_cell_comment(sub_anno)
-                    sub_url = format_cell_hyperlink_url(job_id, "Reconciliation", sub_val_coord, base_url=base_url)
+                    sub_url = format_cell_hyperlink_url(
+                        job_id, "Reconciliation", sub_val_coord, base_url=base_url
+                    )
 
                     sub_src_ref = (
                         f"{sub_leaf.source_node.source_file} (p. {sub_leaf.source_node.page})"
@@ -378,7 +412,9 @@ def generate_workbook(
                         else "Extracted"
                     )
 
-                    sub_formula_str = f'=HYPERLINK("{sub_url}", {sub_source_input_coord})'
+                    sub_formula_str = (
+                        f'=HYPERLINK("{sub_url}", {sub_source_input_coord})'
+                    )
 
                     ws_recon.write(curr_row, 0, f"  - {sub_leaf.label}", fmt_text)
                     ws_recon.write(curr_row, 1, sub_src_ref, fmt_text)
@@ -402,7 +438,11 @@ def generate_workbook(
                             formula=sub_formula_str,
                             is_formula=True,
                             is_hardcode=False,
-                            source_node_id=sub_leaf.source_node.node_id if sub_leaf.source_node else None,
+                            source_node_id=(
+                                sub_leaf.source_node.node_id
+                                if sub_leaf.source_node
+                                else None
+                            ),
                             annotation_id=sub_anno.id,
                         )
                     )
@@ -410,11 +450,15 @@ def generate_workbook(
 
                 # Aggregate summary row
                 agg_val_coord = _to_cell_coord(curr_row, 2)
-                agg_anno = build_w3c_annotation_for_node(job_id, "Reconciliation", agg_val_coord, child)
+                agg_anno = build_w3c_annotation_for_node(
+                    job_id, "Reconciliation", agg_val_coord, child
+                )
                 provenance_records.append(agg_anno)
 
                 agg_comment = format_cell_comment(agg_anno)
-                agg_url = format_cell_hyperlink_url(job_id, "Reconciliation", agg_val_coord, base_url=base_url)
+                agg_url = format_cell_hyperlink_url(
+                    job_id, "Reconciliation", agg_val_coord, base_url=base_url
+                )
 
                 agg_formula = f'=HYPERLINK("{agg_url}", SUM({", ".join(sub_coords)}))'
 
@@ -448,13 +492,19 @@ def generate_workbook(
 
         # Final Target Metric Root Row
         root_val_coord = _to_cell_coord(curr_row, 2)
-        root_anno = build_w3c_annotation_for_node(job_id, "Reconciliation", root_val_coord, tree.root)
+        root_anno = build_w3c_annotation_for_node(
+            job_id, "Reconciliation", root_val_coord, tree.root
+        )
         provenance_records.append(root_anno)
 
         root_comment = format_cell_comment(root_anno)
-        root_url = format_cell_hyperlink_url(job_id, "Reconciliation", root_val_coord, base_url=base_url)
+        root_url = format_cell_hyperlink_url(
+            job_id, "Reconciliation", root_val_coord, base_url=base_url
+        )
 
-        total_formula = f'=HYPERLINK("{root_url}", SUM({", ".join(component_value_cells)}))'
+        total_formula = (
+            f'=HYPERLINK("{root_url}", SUM({", ".join(component_value_cells)}))'
+        )
 
         ws_recon.write(curr_row, 0, tree.target_metric, fmt_total_label)
         ws_recon.write(curr_row, 1, "Total", fmt_total_label)

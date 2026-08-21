@@ -32,9 +32,13 @@ class W3CSelector(BaseModel):
     """W3C Media Fragments selector for PDF page and coordinate targeting."""
 
     type: Literal["FragmentSelector"] = "FragmentSelector"
-    conformsTo: Literal["http://www.w3.org/TR/media-frags/"] = "http://www.w3.org/TR/media-frags/"
+    conformsTo: Literal["http://www.w3.org/TR/media-frags/"] = (
+        "http://www.w3.org/TR/media-frags/"
+    )
     page: int = Field(..., ge=1, description="1-indexed source PDF page")
-    value: str = Field(..., description="Media fragments selector string (e.g. xywh=...)")
+    value: str = Field(
+        ..., description="Media fragments selector string (e.g. xywh=...)"
+    )
     refinedBy: W3CRefinedBy
 
 
@@ -49,9 +53,13 @@ class W3CBody(BaseModel):
     """W3C Web Annotation Body containing the extracted and normalized textual description."""
 
     type: Literal["TextualBody"] = "TextualBody"
-    value: str = Field(..., description="Extracted raw string or calculation representation")
+    value: str = Field(
+        ..., description="Extracted raw string or calculation representation"
+    )
     label: str = Field(..., description="Normalized taxonomy label")
-    original_label: str | None = Field(default=None, description="Original structural label")
+    original_label: str | None = Field(
+        default=None, description="Original structural label"
+    )
     purpose: Literal["describing"] = "describing"
 
 
@@ -70,7 +78,9 @@ class W3CAnnotationRecord(BaseModel):
     sheet_name: str = Field(..., description="Space-free worksheet name")
     cell_coord: str = Field(..., description="Excel A1 coordinate (e.g. 'F2', 'C4')")
     node_id: str = Field(..., description="Associated FormulaNode ID")
-    is_formula: bool = Field(default=False, description="True if cell is formula-driven")
+    is_formula: bool = Field(
+        default=False, description="True if cell is formula-driven"
+    )
     body: W3CBody
     target: W3CTarget
 
