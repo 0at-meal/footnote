@@ -33,11 +33,15 @@ function ReviewStatusBadge({ status }: { status: ReviewStatus }) {
   )
 }
 
+type FilterTab = 'target_metric_bridge' | 'needs_review' | 'locked' | 'all'
+
 export default function ReviewPage({ jobId, apiBase, onBack, onAuditTrail }: Props) {
   const [items, setItems] = useState<ReviewItem[]>([])
   const [selectedItem, setSelectedItem] = useState<ReviewItem | null>(null)
   const [itemsLoading, setItemsLoading] = useState(true)
   const [itemsError, setItemsError] = useState<string | null>(null)
+
+  const [activeTab, setActiveTab] = useState<FilterTab>('target_metric_bridge')
 
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null)
   const [pdfLoading, setPdfLoading] = useState(true)
@@ -61,6 +65,40 @@ export default function ReviewPage({ jobId, apiBase, onBack, onAuditTrail }: Pro
   const [generateModelError, setGenerateModelError] = useState<string | null>(null)
 
   const lockedCount = items.filter((i) => i.status === 'locked').length
+
+  const filteredItems = items.filter((item) => {
+    if (activeTab === 'target_metric_bridge') {
+      return item.is_target_metric_candidate !== false
+    }
+    if (activeTab === 'needs_review') {
+      return (
+        item.status === 'needs_review' ||
+        item.status === 'manual_required' ||
+        item.status === 'pending_taxonomy_confirmation'
+      )
+    }
+    if (activeTab === 'locked') {
+      return item.status === 'locked'
+    }
+    return true // 'all'
+  })
+
+  // Group filtered items by table_name
+  type TableGroup = {
+    tableName: string | null
+    items: ReviewItem[]
+  }
+
+  const tableGroups: TableGroup[] = []
+  filteredItems.forEach((item) => {
+    const currentTable = item.table_name || null
+    const lastGroup = tableGroups[tableGroups.length - 1]
+    if (lastGroup && lastGroup.tableName === currentTable) {
+      lastGroup.items.push(item)
+    } else {
+      tableGroups.push({ tableName: currentTable, items: [item] })
+    }
+  })
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
@@ -320,6 +358,54 @@ export default function ReviewPage({ jobId, apiBase, onBack, onAuditTrail }: Pro
     }
   }
 
+  async function handleApproveBridgeAndGenerateModel() {
+    setIsGeneratingModel(true)
+    setGenerateModelError(null)
+    setGenerateModelSuccess(null)
+    try {
+      // 1. Batch confirm all target candidates (Ticket 4.1)
+      const batchRes = await fetch(`${apiBase}/review/${jobId}/confirm-batch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          target_candidates_only: true,
+          auto_add_pending_taxonomy: true,
+        }),
+      })
+
+      if (!batchRes.ok) {
+        const detail = await batchRes.json().catch(() => ({ detail: 'Failed to batch approve items' }))
+        throw new Error(detail.detail || `Server error ${batchRes.status}`)
+      }
+
+      const batchData = await batchRes.json()
+      if (batchData.items) {
+        setItems(batchData.items)
+      }
+
+      // 2. Generate model
+      const genRes = await fetch(`${apiBase}/models/${jobId}/generate`, {
+        method: 'POST',
+      })
+
+      if (!genRes.ok) {
+        const detail = await genRes.json().catch(() => ({ detail: 'Model compilation failed' }))
+        throw new Error(detail.detail || `Server error ${genRes.status}`)
+      }
+
+      const genData = await genRes.json()
+      const totalCells = genData.total_cells_generated ?? (batchData.total_locked || 1)
+      setGenerateModelSuccess({
+        totalCells,
+        message: `Reconciliation bridge approved and model generated (${batchData.total_locked || totalCells} items)`,
+      })
+    } catch (err) {
+      setGenerateModelError(err instanceof Error ? err.message : 'Batch approval & generation failed')
+    } finally {
+      setIsGeneratingModel(false)
+    }
+  }
+
   return (
     <div className="review-layout">
       {/* ── Review Header ── */}
@@ -344,21 +430,27 @@ export default function ReviewPage({ jobId, apiBase, onBack, onAuditTrail }: Pro
           <div className="review-header__meta">
             Job: <span>{jobId}</span>
           </div>
+          {lockedCount > 0 && (
+            <button
+              type="button"
+              className="review-btn review-btn--edit"
+              disabled={isGeneratingModel}
+              onClick={() => void handleGenerateModel()}
+              aria-label="Generate Excel Model"
+              title="Compile currently locked items into Excel model"
+            >
+              {isGeneratingModel ? 'Generating Model...' : `Generate Excel Model (${lockedCount})`}
+            </button>
+          )}
           <button
             type="button"
             className="review-btn review-btn--generate"
-            disabled={lockedCount === 0 || isGeneratingModel}
-            onClick={() => void handleGenerateModel()}
-            aria-label="Generate Excel Model"
-            title={
-              lockedCount === 0
-                ? 'Lock at least 1 item to generate model'
-                : 'Compile locked items into Excel model'
-            }
+            disabled={items.length === 0 || isGeneratingModel}
+            onClick={() => void handleApproveBridgeAndGenerateModel()}
+            aria-label="Approve Bridge & Generate Model"
+            title="Batch approve target reconciliation bridge and compile Excel model (1-Click)"
           >
-            {isGeneratingModel
-              ? 'Generating Model...'
-              : `Generate Excel Model${lockedCount > 0 ? ` (${lockedCount})` : ''}`}
+            {isGeneratingModel ? 'Processing...' : 'Approve Bridge & Generate Model'}
           </button>
         </div>
       </header>
@@ -451,6 +543,46 @@ export default function ReviewPage({ jobId, apiBase, onBack, onAuditTrail }: Pro
             <h2 className="review-sidebar__heading">Extracted Items</h2>
           </div>
 
+          {/* ── Scoped Filter Tabs (Ticket 3.1) ── */}
+          <div className="review-tabs" role="tablist" aria-label="Filter extracted items">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'target_metric_bridge'}
+              className={`review-tab ${activeTab === 'target_metric_bridge' ? 'review-tab--active' : ''}`}
+              onClick={() => setActiveTab('target_metric_bridge')}
+            >
+              Target Metric Bridge
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'needs_review'}
+              className={`review-tab ${activeTab === 'needs_review' ? 'review-tab--active' : ''}`}
+              onClick={() => setActiveTab('needs_review')}
+            >
+              Needs Review
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'locked'}
+              className={`review-tab ${activeTab === 'locked' ? 'review-tab--active' : ''}`}
+              onClick={() => setActiveTab('locked')}
+            >
+              Confirmed / Locked
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'all'}
+              className={`review-tab ${activeTab === 'all' ? 'review-tab--active' : ''}`}
+              onClick={() => setActiveTab('all')}
+            >
+              All Filing Tables
+            </button>
+          </div>
+
           {itemsLoading && (
             <div className="job-list--empty">
               <p>Loading extracted items...</p>
@@ -468,35 +600,45 @@ export default function ReviewPage({ jobId, apiBase, onBack, onAuditTrail }: Pro
             </div>
           )}
 
-          {!itemsLoading && !itemsError && items.length === 0 && (
+          {!itemsLoading && !itemsError && filteredItems.length === 0 && (
             <div className="job-list--empty">
-              <p>No extracted items found for this job.</p>
+              <p>No extracted items match the selected view.</p>
             </div>
           )}
 
-          {!itemsLoading && !itemsError && items.length > 0 && (
+          {!itemsLoading && !itemsError && filteredItems.length > 0 && (
             <div className="review-sidebar__list" role="listbox" aria-label="Extracted items list">
-              {items.map((item) => {
-                const isSelected = selectedItem?.id === item.id
-                const isEditing = editingItemId === item.id
+              {tableGroups.map((group, groupIdx) => (
+                <div key={groupIdx} className="review-table-group">
+                  {group.tableName && (
+                    <div className="review-table-header" title={`Table: ${group.tableName}`}>
+                      <span className="review-table-header__icon">📊</span>
+                      <span className="review-table-header__title">{group.tableName}</span>
+                    </div>
+                  )}
+                  <div className="review-table-group__items">
+                    {group.items.map((item) => {
+                      const isSelected = selectedItem?.id === item.id
+                      const isEditing = editingItemId === item.id
+                      const isCandidate = item.is_target_metric_candidate !== false
 
-                return (
-                  <div
-                    key={item.id}
-                    role="option"
-                    aria-selected={isSelected}
-                    tabIndex={0}
-                    className={`review-item-card ${isSelected ? 'review-item-card--selected' : ''}`}
-                    onClick={() => handleSelectItem(item)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        if (!isEditing) {
-                          e.preventDefault()
-                          handleSelectItem(item)
-                        }
-                      }
-                    }}
-                  >
+                      return (
+                        <div
+                          key={item.id}
+                          role="option"
+                          aria-selected={isSelected}
+                          tabIndex={0}
+                          className={`review-item-card ${isSelected ? 'review-item-card--selected' : ''} ${isCandidate ? 'review-item-card--candidate' : ''}`}
+                          onClick={() => handleSelectItem(item)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              if (!isEditing) {
+                                e.preventDefault()
+                                handleSelectItem(item)
+                              }
+                            }
+                          }}
+                        >
                     <div className="review-item-card__top">
                       <span className="review-item-card__label">{item.label}</span>
                       <ReviewStatusBadge status={item.status} />
@@ -643,11 +785,14 @@ export default function ReviewPage({ jobId, apiBase, onBack, onAuditTrail }: Pro
                         >
                           {item.status === 'flagged' ? 'Flagged' : 'Flag'}
                         </button>
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
             </div>
           )}
         </aside>

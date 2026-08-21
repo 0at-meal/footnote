@@ -168,16 +168,6 @@ function JobList({
               </td>
               <td className="job-table__remove">
                 <div style={{ display: 'flex', gap: '0.375rem', justifyContent: 'flex-end', alignItems: 'center' }}>
-                  {job.status === 'done' && onReview && (
-                    <button
-                      type="button"
-                      className="job-table__review-btn"
-                      onClick={() => onReview(job.job_id)}
-                      aria-label={`Review ${job.filename}`}
-                    >
-                      Review
-                    </button>
-                  )}
                   {job.status === 'done' && (
                     <a
                       href={`${apiBase}/models/${job.job_id}/download`}
@@ -195,6 +185,16 @@ function JobList({
                     >
                       Excel (.xlsx)
                     </a>
+                  )}
+                  {job.status === 'done' && onReview && (
+                    <button
+                      type="button"
+                      className="job-table__review-btn"
+                      onClick={() => onReview(job.job_id)}
+                      aria-label={`Review ${job.filename}`}
+                    >
+                      Review
+                    </button>
                   )}
                   {job.status === 'done' && onAuditTrail && (
                     <button
