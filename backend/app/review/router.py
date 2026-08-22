@@ -11,6 +11,8 @@ from fastapi.responses import FileResponse
 
 from app.ingestion.repository import JobRepository
 from app.review.models import (
+    ReviewBatchConfirmRequest,
+    ReviewBatchConfirmResponse,
     ReviewItem,
     ReviewItemConfirmRequest,
     ReviewItemEditRequest,
@@ -259,3 +261,48 @@ def unlock_review_item(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
 
     return item
+
+
+@router.post(
+    "/{job_id}/confirm-batch",
+    response_model=ReviewBatchConfirmResponse,
+    summary="Batch confirm and lock items for a job",
+    responses={
+        200: {"description": "Items successfully batch confirmed and locked."},
+        400: {"description": "Batch confirmation failed."},
+        404: {"description": "Job not found."},
+    },
+)
+def confirm_batch_review_items(
+    job_id: str,
+    payload: ReviewBatchConfirmRequest,
+) -> ReviewBatchConfirmResponse:
+    """
+    Batch confirm and lock target candidate items for a job (Ticket 4.1).
+    """
+    job = _job_repo.get_job(job_id)
+    if job is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Job not found",
+        )
+
+    items, locked_ids, err = _review_repo.confirm_batch(
+        job_id=job_id,
+        target_candidates_only=payload.target_candidates_only,
+        item_ids=payload.item_ids,
+        auto_add_pending_taxonomy=payload.auto_add_pending_taxonomy,
+    )
+    if err is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=err,
+        )
+
+    return ReviewBatchConfirmResponse(
+        job_id=job_id,
+        total_locked=len(locked_ids),
+        locked_item_ids=locked_ids,
+        items=items,
+    )
+

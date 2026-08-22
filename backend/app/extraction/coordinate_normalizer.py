@@ -78,6 +78,8 @@ def normalize_item_bbox(
             y1=y1_clamped,
         ),
         source_file=item.source_file,
+        table_name=item.table_name,
+        is_reconciliation_candidate=item.is_reconciliation_candidate,
     )
 
 
@@ -125,8 +127,10 @@ def normalize_coordinates(
                         page=item.page,
                         bbox=NormalizedBbox(x0=0.0, y0=0.0, x1=0.0, y1=0.0),
                         source_file=item.source_file,
+                        table_name=item.table_name,
                         is_error=True,
                         error_detail=item.error_detail or "Docling cell parse error",
+                        is_reconciliation_candidate=item.is_reconciliation_candidate,
                     )
                 )
                 continue
@@ -160,8 +164,10 @@ def normalize_coordinates(
                     page=item.page,
                     bbox=NormalizedBbox(x0=0.0, y0=0.0, x1=0.0, y1=0.0),
                     source_file=item.source_file,
+                    table_name=item.table_name,
                     is_error=True,
                     error_detail=str(exc),
+                    is_reconciliation_candidate=item.is_reconciliation_candidate,
                 )
                 normalized_items.append(err_item)
 

@@ -78,8 +78,10 @@ def process_queued_job(
     try:
         pdf_path = repo.get_pdf_path(job_id)
 
+        target_metric = job.target_metric or "Adjusted EBITDA"
+
         # Stage 1: Docling structural parse
-        docling_items = parse_pdf(pdf_path, job.filename)
+        docling_items = parse_pdf(pdf_path, job.filename, target_metric=target_metric)
         extraction_repo.save_docling_items(job_id, docling_items)
 
         # Stage 2: PyMuPDF 0-1000 coordinate normalization
@@ -105,10 +107,25 @@ def process_queued_job(
         client = classifier_client or GroqClassifierClient()
         active_taxonomy = taxonomy_repo.load_taxonomy()
 
-        target_metric = job.target_metric or "Adjusted EBITDA"
-        batch_result = dispatch_records_to_classifier(scored_records, client)
+        # Filter to reconciliation candidates before Groq dispatch (Ticket 1.1.3)
+        reconciliation_candidates = [
+            r for r in scored_records if r.is_reconciliation_candidate
+        ]
+        filtered_out_count = len(scored_records) - len(reconciliation_candidates)
+        logger.info(
+            "Job %s: %d total scored records, %d reconciliation candidates, %d filtered out before classification",
+            job_id,
+            len(scored_records),
+            len(reconciliation_candidates),
+            filtered_out_count,
+        )
+
+        batch_result = dispatch_records_to_classifier(reconciliation_candidates, client)
         classified_records = normalize_records(
-            scored_records, batch_result, active_taxonomy, target_metric=target_metric
+            reconciliation_candidates,
+            batch_result,
+            active_taxonomy,
+            target_metric=target_metric,
         )
         classification_repo.save_classified_records(job_id, classified_records)
 

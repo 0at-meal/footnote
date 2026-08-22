@@ -7,10 +7,41 @@ from app.extraction.models import ExtractedRecord, NormalizedBbox, NormalizedIte
 
 
 def test_extracted_record_schema_fields_frozen() -> None:
-    """Verify ExtractedRecord schema fields match the frozen specification exactly."""
-    expected_fields = {"value", "label", "page", "bbox", "source_file"}
+    """Verify ExtractedRecord schema fields match the frozen specification plus metadata."""
+    expected_fields = {
+        "value",
+        "label",
+        "page",
+        "bbox",
+        "source_file",
+        "is_reconciliation_candidate",
+    }
     actual_fields = set(ExtractedRecord.model_fields.keys())
     assert actual_fields == expected_fields
+
+
+def test_assemble_record_propagates_reconciliation_candidate() -> None:
+    item_true = NormalizedItem(
+        value="100",
+        label="Adjusted EBITDA",
+        page=1,
+        bbox=NormalizedBbox(x0=0.0, y0=0.0, x1=10.0, y1=10.0),
+        source_file="test.pdf",
+        is_reconciliation_candidate=True,
+    )
+    rec_true = assemble_record(item_true)
+    assert rec_true.is_reconciliation_candidate is True
+
+    item_false = NormalizedItem(
+        value="200",
+        label="Cash",
+        page=1,
+        bbox=NormalizedBbox(x0=0.0, y0=0.0, x1=10.0, y1=10.0),
+        source_file="test.pdf",
+        is_reconciliation_candidate=False,
+    )
+    rec_false = assemble_record(item_false)
+    assert rec_false.is_reconciliation_candidate is False
 
 
 def test_assemble_record_converts_bbox_to_dict() -> None:

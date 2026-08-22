@@ -18,9 +18,8 @@ Isolation (CONSTITUTION §3.8, §3.2):
 """
 
 import logging
-import os
-from pathlib import Path
 import re
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -33,8 +32,10 @@ else:
         from docling.datamodel.pipeline_options import PdfPipelineOptions
         from docling.document_converter import DocumentConverter, PdfFormatOption
     except ImportError:  # pragma: no cover
+
         class _FallbackInputFormat:
             PDF = "pdf"
+
         InputFormat = _FallbackInputFormat
 
         class _FallbackPdfPipelineOptions:
@@ -42,21 +43,23 @@ else:
             generate_page_images: bool = False
             generate_picture_images: bool = False
             generate_table_images: bool = False
+
         PdfPipelineOptions = _FallbackPdfPipelineOptions
 
         class _FallbackPdfFormatOption:
             def __init__(self, pipeline_options: Any = None) -> None:
                 self.pipeline_options = pipeline_options
+
         PdfFormatOption = _FallbackPdfFormatOption
 
         class _FallbackDocumentConverter:
             def __init__(self, format_options: Any = None) -> None:
                 self.format_options = format_options
+
             def convert(self, path: str) -> Any:
                 raise DoclingParseError("Docling library is not installed.")
+
         DocumentConverter = _FallbackDocumentConverter
-
-
 
 
 from app.extraction.models import DoclingBbox, DoclingItem
@@ -104,11 +107,7 @@ def _is_noise_cell(cell_text: str, row_idx: int, col_idx: int) -> bool:
 
     # 3. Non-digit cells that are not financial placeholders
     has_digit = bool(re.search(r"\d", cleaned))
-    if not has_digit:
-        if cleaned.lower() not in _FINANCIAL_PLACEHOLDERS:
-            return True
-
-    return False
+    return not has_digit and cleaned.lower() not in _FINANCIAL_PLACEHOLDERS
 
 
 def _extract_table_title(table: Any, table_idx: int, table_cells: list[Any]) -> str:
@@ -124,8 +123,8 @@ def _extract_table_title(table: Any, table_idx: int, table_cells: list[Any]) -> 
             caption_text = getattr(caption, "text", None)
             if caption_text and isinstance(caption_text, str) and caption_text.strip():
                 return caption_text.strip()
-    except Exception:  # noqa: BLE001
-        pass
+    except Exception as exc:  # noqa: BLE001
+        logger.debug("Failed reading table caption: %s", exc)
 
     # Check label or name
     try:
@@ -137,8 +136,8 @@ def _extract_table_title(table: Any, table_idx: int, table_cells: list[Any]) -> 
             and label.lower() not in ("table", "data_table")
         ):
             return label.strip()
-    except Exception:  # noqa: BLE001
-        pass
+    except Exception as exc:  # noqa: BLE001
+        logger.debug("Failed reading table label: %s", exc)
 
     # Check for title in row 0 cells or header cells
     for cell in table_cells:
@@ -164,7 +163,8 @@ def _extract_table_title(table: Any, table_idx: int, table_cells: list[Any]) -> 
                         ]
                     ):
                         return text
-        except Exception:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("Skipping row 0 cell for title: %s", exc)
             continue
 
     # Check first row header or row section header
@@ -176,26 +176,53 @@ def _extract_table_title(table: Any, table_idx: int, table_cells: list[Any]) -> 
                 text = (getattr(cell, "text", "") or "").strip()
                 lower = text.lower()
                 if any(
-                    kw in lower for kw in ["reconciliation", "non-gaap", "adjusted ebitda"]
+                    kw in lower
+                    for kw in ["reconciliation", "non-gaap", "adjusted ebitda"]
                 ):
                     return text
-        except Exception:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("Skipping header cell for title: %s", exc)
             continue
 
     return f"Table {table_idx + 1}"
+
+
+def _is_reconciliation_table(table_title: str, target_metric: str = "") -> bool:
+    """
+    Deterministically determines if a table is a reconciliation candidate table.
+
+    Returns True if table_title contains target_metric (case-insensitive, when non-empty)
+    OR any of: non-gaap, reconciliation, adjusted, non gaap, bridge.
+    """
+    if not table_title:
+        return False
+    title_lower = table_title.lower()
+    if target_metric and target_metric.strip().lower() in title_lower:
+        return True
+    reconciliation_keywords = (
+        "non-gaap",
+        "reconciliation",
+        "adjusted",
+        "non gaap",
+        "bridge",
+    )
+    return any(kw in title_lower for kw in reconciliation_keywords)
 
 
 class DoclingParseError(Exception):
     """Raised when an unrecoverable structural parse error occurs during extraction."""
 
 
-def parse_pdf(pdf_path: Path, source_file: str) -> list[DoclingItem]:
+def parse_pdf(
+    pdf_path: Path, source_file: str, target_metric: str = ""
+) -> list[DoclingItem]:
     """
     Parse a local PDF filing using Docling and extract raw table cell items.
 
     Args:
         pdf_path: Absolute or relative Path to the stored PDF file on disk.
         source_file: Original filename string stored in the job record (UTF-8, EC-8).
+        target_metric: Optional target financial metric name to match in table titles.
 
     Returns:
         List of DoclingItem objects ordered deterministically by page, row, col (NFR1).
@@ -226,7 +253,6 @@ def parse_pdf(pdf_path: Path, source_file: str) -> list[DoclingItem]:
             f"Docling conversion failed for {source_file}: {err}"
         ) from err
 
-
     items: list[DoclingItem] = []
 
     try:
@@ -241,6 +267,7 @@ def parse_pdf(pdf_path: Path, source_file: str) -> list[DoclingItem]:
                 continue
 
             table_title = _extract_table_title(table, table_idx, table_cells)
+            is_reconciliation = _is_reconciliation_table(table_title, target_metric)
 
             # Identify header text by column and row indices
             col_headers: dict[int, list[str]] = {}
@@ -334,18 +361,10 @@ def parse_pdf(pdf_path: Path, source_file: str) -> list[DoclingItem]:
                     bbox_obj = DoclingBbox(x0=0.0, y0=0.0, x1=0.0, y1=0.0)
                     if raw_bbox is not None:
                         # Extract l, t, r, b or x0, y0, x1, y1
-                        x0 = float(
-                            getattr(raw_bbox, "l", getattr(raw_bbox, "x0", 0.0))
-                        )
-                        y0 = float(
-                            getattr(raw_bbox, "t", getattr(raw_bbox, "y0", 0.0))
-                        )
-                        x1 = float(
-                            getattr(raw_bbox, "r", getattr(raw_bbox, "x1", 0.0))
-                        )
-                        y1 = float(
-                            getattr(raw_bbox, "b", getattr(raw_bbox, "y1", 0.0))
-                        )
+                        x0 = float(getattr(raw_bbox, "l", getattr(raw_bbox, "x0", 0.0)))
+                        y0 = float(getattr(raw_bbox, "t", getattr(raw_bbox, "y0", 0.0)))
+                        x1 = float(getattr(raw_bbox, "r", getattr(raw_bbox, "x1", 0.0)))
+                        y1 = float(getattr(raw_bbox, "b", getattr(raw_bbox, "y1", 0.0)))
                         bbox_obj = DoclingBbox(x0=x0, y0=y0, x1=x1, y1=y1)
 
                     item = DoclingItem(
@@ -355,6 +374,7 @@ def parse_pdf(pdf_path: Path, source_file: str) -> list[DoclingItem]:
                         bbox=bbox_obj,
                         source_file=source_file,
                         table_name=table_title,
+                        is_reconciliation_candidate=is_reconciliation,
                     )
                     items.append(item)
 
@@ -392,6 +412,7 @@ def parse_pdf(pdf_path: Path, source_file: str) -> list[DoclingItem]:
                         table_name=table_title,
                         is_error=True,
                         error_detail=str(cell_err),
+                        is_reconciliation_candidate=is_reconciliation,
                     )
                     items.append(err_item)
 

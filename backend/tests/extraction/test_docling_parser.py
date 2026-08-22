@@ -9,7 +9,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
-from app.extraction.docling_parser import parse_pdf
+from app.extraction.docling_parser import _is_reconciliation_table, parse_pdf
 
 # ── Helper Mocks ─────────────────────────────────────────────────────────────
 
@@ -132,7 +132,7 @@ def test_page_number_is_1_indexed(tmp_path: Path) -> None:
     pdf_file = tmp_path / "p2.pdf"
     pdf_file.write_bytes(b"%PDF-1.4 dummy")
 
-    cell = _make_mock_cell("Val", row=0, col=0, page_no=3)
+    cell = _make_mock_cell("100", row=0, col=0, page_no=3)
     table = _make_mock_table([cell])
 
     with patch("app.extraction.docling_parser.DocumentConverter") as MockConverter:
@@ -148,13 +148,9 @@ def test_output_order_is_deterministic(tmp_path: Path) -> None:
     pdf_file = tmp_path / "order.pdf"
     pdf_file.write_bytes(b"%PDF-1.4 dummy")
 
-    c1 = _make_mock_cell("Page2", row=0, col=0, page_no=2, bbox_tuple=(10, 10, 20, 20))
-    c2 = _make_mock_cell(
-        "Page1_Lower", row=1, col=0, page_no=1, bbox_tuple=(10, 50, 20, 60)
-    )
-    c3 = _make_mock_cell(
-        "Page1_Upper", row=0, col=0, page_no=1, bbox_tuple=(10, 10, 20, 20)
-    )
+    c1 = _make_mock_cell("20", row=0, col=0, page_no=2, bbox_tuple=(10, 10, 20, 20))
+    c2 = _make_mock_cell("15", row=1, col=0, page_no=1, bbox_tuple=(10, 50, 20, 60))
+    c3 = _make_mock_cell("10", row=0, col=0, page_no=1, bbox_tuple=(10, 10, 20, 20))
 
     table = _make_mock_table([c1, c2, c3])
 
@@ -165,7 +161,7 @@ def test_output_order_is_deterministic(tmp_path: Path) -> None:
         items1 = parse_pdf(pdf_file, "order.pdf")
         items2 = parse_pdf(pdf_file, "order.pdf")
 
-    assert [i.value for i in items1] == ["Page1_Upper", "Page1_Lower", "Page2"]
+    assert [i.value for i in items1] == ["10", "15", "20"]
     assert items1 == items2
 
 
@@ -224,3 +220,156 @@ def test_source_file_preserved_verbatim(tmp_path: Path) -> None:
         items = parse_pdf(pdf_file, unicode_filename)
 
     assert items[0].source_file == unicode_filename
+
+
+def test_boilerplate_and_noise_cells_are_suppressed(tmp_path: Path) -> None:
+    """Verify SEC boilerplate, unit qualifier declarations, and pure text noise are dropped."""
+    pdf_file = tmp_path / "noise.pdf"
+    pdf_file.write_bytes(b"%PDF-1.4 dummy")
+
+    c_boilerplate = _make_mock_cell(
+        "Item 7. Management's Discussion and Analysis", row=1, col=0
+    )
+    c_unit = _make_mock_cell("(in millions, except per share amounts)", row=1, col=1)
+    c_unaudited = _make_mock_cell("unaudited", row=2, col=0)
+    c_pure_text = _make_mock_cell("Random descriptive non-header text", row=2, col=1)
+    c_valid_numeric = _make_mock_cell("$1,234.5", row=3, col=1)
+    c_dash = _make_mock_cell("—", row=3, col=2)
+
+    table = _make_mock_table(
+        [
+            c_boilerplate,
+            c_unit,
+            c_unaudited,
+            c_pure_text,
+            c_valid_numeric,
+            c_dash,
+        ]
+    )
+
+    with patch("app.extraction.docling_parser.DocumentConverter") as MockConverter:
+        MockConverter.return_value.convert.return_value = SimpleNamespace(
+            document=SimpleNamespace(tables=[table])
+        )
+        items = parse_pdf(pdf_file, "noise.pdf")
+
+    # Only the valid numeric cell and financial dash should be emitted
+    values = [i.value for i in items]
+    assert "$1,234.5" in values
+    assert "—" in values
+    assert "Item 7. Management's Discussion and Analysis" not in values
+    assert "(in millions, except per share amounts)" not in values
+    assert "unaudited" not in values
+    assert "Random descriptive non-header text" not in values
+    assert len(items) == 2
+
+
+def test_table_title_extraction_and_propagation(tmp_path: Path) -> None:
+    """Verify table title is extracted from caption or headers and attached to items."""
+    pdf_file = tmp_path / "title.pdf"
+    pdf_file.write_bytes(b"%PDF-1.4 dummy")
+
+    title_cell = _make_mock_cell(
+        "Reconciliation of Net Income to Non-GAAP Adjusted EBITDA",
+        row=0,
+        col=0,
+        is_row_header=True,
+    )
+    data_cell = _make_mock_cell("500", row=1, col=1)
+
+    table_data = SimpleNamespace(
+        grid=[[1, 1]],
+        table_cells=[title_cell, data_cell],
+    )
+    table = SimpleNamespace(
+        data=table_data,
+        prov=[SimpleNamespace(page_no=1)],
+        caption="Reconciliation of Net Income to Non-GAAP Adjusted EBITDA",
+    )
+
+    with patch("app.extraction.docling_parser.DocumentConverter") as MockConverter:
+        MockConverter.return_value.convert.return_value = SimpleNamespace(
+            document=SimpleNamespace(tables=[table])
+        )
+        items = parse_pdf(pdf_file, "title.pdf")
+
+    assert len(items) == 1
+    assert items[0].value == "500"
+    assert (
+        items[0].table_name
+        == "Reconciliation of Net Income to Non-GAAP Adjusted EBITDA"
+    )
+    assert items[0].is_reconciliation_candidate is True
+
+
+def test_is_reconciliation_table_detection() -> None:
+    """Verify pure function _is_reconciliation_table matches target metrics and keywords."""
+    # Keyword matches
+    assert (
+        _is_reconciliation_table("Reconciliation of Non-GAAP Financial Measures")
+        is True
+    )
+    assert _is_reconciliation_table("Non-GAAP Measures") is True
+    assert _is_reconciliation_table("non gaap measures") is True
+    assert _is_reconciliation_table("Adjusted Operating Income") is True
+    assert _is_reconciliation_table("Margin Bridge Analysis") is True
+
+    # Target metric match (case-insensitive)
+    assert (
+        _is_reconciliation_table(
+            "Consolidated Free Cash Flow", target_metric="Free Cash Flow"
+        )
+        is True
+    )
+    assert (
+        _is_reconciliation_table(
+            "free cash flow schedule", target_metric="FREE CASH FLOW"
+        )
+        is True
+    )
+
+    # Non-reconciliation tables
+    assert _is_reconciliation_table("Consolidated Balance Sheets") is False
+    assert _is_reconciliation_table("Statements of Operations") is False
+    assert _is_reconciliation_table("Consolidated Statements of Cash Flows") is False
+    assert _is_reconciliation_table("Table 1") is False
+    assert _is_reconciliation_table("") is False
+
+
+def test_parse_pdf_reconciliation_candidate_flag(tmp_path: Path) -> None:
+    """Verify items from reconciliation tables are flagged True, others False."""
+    pdf_file = tmp_path / "two_tables.pdf"
+    pdf_file.write_bytes(b"%PDF-1.4 dummy")
+
+    # Table 1: Balance Sheet
+    bs_header = _make_mock_cell("2023", row=0, col=1, is_col_header=True)
+    bs_row = _make_mock_cell("Cash", row=1, col=0, is_row_header=True)
+    bs_val = _make_mock_cell("100", row=1, col=1)
+    table_bs = SimpleNamespace(
+        data=SimpleNamespace(grid=[[1, 1]], table_cells=[bs_header, bs_row, bs_val]),
+        prov=[SimpleNamespace(page_no=1)],
+        caption="Consolidated Balance Sheets",
+    )
+
+    # Table 2: Non-GAAP Reconciliation
+    rec_header = _make_mock_cell("2023", row=0, col=1, is_col_header=True)
+    rec_row = _make_mock_cell("Adjusted EBITDA", row=1, col=0, is_row_header=True)
+    rec_val = _make_mock_cell("200", row=1, col=1)
+    table_rec = SimpleNamespace(
+        data=SimpleNamespace(grid=[[1, 1]], table_cells=[rec_header, rec_row, rec_val]),
+        prov=[SimpleNamespace(page_no=2)],
+        caption="Reconciliation of Net Income to Adjusted EBITDA",
+    )
+
+    with patch("app.extraction.docling_parser.DocumentConverter") as MockConverter:
+        MockConverter.return_value.convert.return_value = SimpleNamespace(
+            document=SimpleNamespace(tables=[table_bs, table_rec])
+        )
+        items = parse_pdf(pdf_file, "two_tables.pdf")
+
+    assert len(items) == 2
+    bs_item = next(i for i in items if i.value == "100")
+    rec_item = next(i for i in items if i.value == "200")
+
+    assert bs_item.is_reconciliation_candidate is False
+    assert rec_item.is_reconciliation_candidate is True

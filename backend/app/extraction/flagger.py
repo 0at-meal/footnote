@@ -58,6 +58,9 @@ def create_extraction_summary(
         1 for r in records if r.confidence_band == ConfidenceBand.manual_required
     )
     extraction_error_count = sum(1 for r in records if r.status == "extraction_error")
+    filtered_non_reconciliation_count = sum(
+        1 for r in records if not r.is_reconciliation_candidate
+    )
     flagged_count = needs_review_count + manual_required_count
 
     if total_items > 0:
@@ -77,4 +80,5 @@ def create_extraction_summary(
         flagged_count=flagged_count,
         flagged_percentage=flagged_percentage,
         passed_threshold=passed_threshold,
+        filtered_non_reconciliation_count=filtered_non_reconciliation_count,
     )

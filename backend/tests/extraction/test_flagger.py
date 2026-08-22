@@ -87,3 +87,16 @@ def test_create_extraction_summary_with_image_only_pages() -> None:
     summary = create_extraction_summary(records, image_only_page_count=3)
     assert summary.total_items == 5
     assert summary.image_only_page_count == 3
+
+
+def test_create_extraction_summary_computes_filtered_non_reconciliation_count() -> None:
+    rec1 = _make_scored(ConfidenceBand.auto_accepted)
+    rec1.is_reconciliation_candidate = True
+    rec2 = _make_scored(ConfidenceBand.auto_accepted)
+    rec2.is_reconciliation_candidate = False
+    rec3 = _make_scored(ConfidenceBand.needs_review)
+    rec3.is_reconciliation_candidate = False
+
+    summary = create_extraction_summary([rec1, rec2, rec3])
+    assert summary.total_items == 3
+    assert summary.filtered_non_reconciliation_count == 2

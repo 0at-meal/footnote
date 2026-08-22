@@ -68,6 +68,14 @@ class ReviewItem(BaseModel):
         default_factory=list,
         description="Diagnostic flags attached during extraction",
     )
+    is_target_metric_candidate: bool = Field(
+        default=True,
+        description="True if item belongs to target metric reconciliation bridge",
+    )
+    table_name: str | None = Field(
+        default=None,
+        description="Enclosing table or section title",
+    )
     error_detail: str | None = Field(
         default=None,
         description="Details of extraction or parse error if applicable",
@@ -104,3 +112,34 @@ class ReviewItemConfirmRequest(BaseModel):
         default=False,
         description="Whether to confirm adding an unrecognized label to the taxonomy seed list (EC-5)",
     )
+
+
+class ReviewBatchConfirmRequest(BaseModel):
+    """
+    Request payload for POST /review/{job_id}/confirm-batch (Ticket 4.1).
+    """
+
+    target_candidates_only: bool = Field(
+        default=True,
+        description="If True, confirms all items where is_target_metric_candidate is True and status is not extraction_error",
+    )
+    item_ids: list[str] | None = Field(
+        default=None,
+        description="Optional explicit list of item IDs to confirm and lock",
+    )
+    auto_add_pending_taxonomy: bool = Field(
+        default=True,
+        description="If True, adds pending taxonomy labels to active taxonomy repository",
+    )
+
+
+class ReviewBatchConfirmResponse(BaseModel):
+    """
+    Response model for POST /review/{job_id}/confirm-batch (Ticket 4.1).
+    """
+
+    job_id: str
+    total_locked: int
+    locked_item_ids: list[str]
+    items: list[ReviewItem]
+

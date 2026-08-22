@@ -27,6 +27,7 @@ def create_sample_scored_record(
     band: ConfidenceBand,
     status: str = "ok",
     value: str = "123,456",
+    is_reconciliation_candidate: bool = True,
 ) -> ScoredRecord:
     record = ExtractedRecord(
         value=value,
@@ -34,6 +35,7 @@ def create_sample_scored_record(
         page=1,
         bbox={"x0": 0.0, "y0": 0.0, "x1": 100.0, "y1": 100.0},
         source_file="filing.pdf",
+        is_reconciliation_candidate=is_reconciliation_candidate,
     )
     return ScoredRecord(
         record=record,
@@ -41,6 +43,7 @@ def create_sample_scored_record(
         confidence_band=band,
         flags=[],
         status="ok" if status == "ok" else "extraction_error",
+        is_reconciliation_candidate=is_reconciliation_candidate,
     )
 
 
@@ -54,16 +57,29 @@ def test_is_record_eligible_for_classification() -> None:
     rec_manual = create_sample_scored_record("Other", ConfidenceBand.manual_required)
     assert is_record_eligible_for_classification(rec_manual) is False
 
-    rec_error = create_sample_scored_record("Error item", ConfidenceBand.auto_accepted, status="extraction_error")
+    rec_error = create_sample_scored_record(
+        "Error item", ConfidenceBand.auto_accepted, status="extraction_error"
+    )
     assert is_record_eligible_for_classification(rec_error) is False
 
 
 def test_dispatch_records_filters_and_sanitizes_payloads() -> None:
     records = [
-        create_sample_scored_record("Stock compensation", ConfidenceBand.auto_accepted, value="10,000"),
-        create_sample_scored_record("Manual adjustment", ConfidenceBand.manual_required, value="20,000"),
-        create_sample_scored_record("Litigation reserve", ConfidenceBand.needs_review, value="30,000"),
-        create_sample_scored_record("Corrupted line", ConfidenceBand.needs_review, status="extraction_error", value="40,000"),
+        create_sample_scored_record(
+            "Stock compensation", ConfidenceBand.auto_accepted, value="10,000"
+        ),
+        create_sample_scored_record(
+            "Manual adjustment", ConfidenceBand.manual_required, value="20,000"
+        ),
+        create_sample_scored_record(
+            "Litigation reserve", ConfidenceBand.needs_review, value="30,000"
+        ),
+        create_sample_scored_record(
+            "Corrupted line",
+            ConfidenceBand.needs_review,
+            status="extraction_error",
+            value="40,000",
+        ),
     ]
 
     mock_client = MagicMock()
@@ -126,8 +142,12 @@ def test_dispatch_records_handles_item_error_without_aborting_batch() -> None:
 
 def test_dispatch_records_offline_direct_match_fallback_on_api_error() -> None:
     records = [
-        create_sample_scored_record("Restructuring charges", ConfidenceBand.auto_accepted),
-        create_sample_scored_record("Unrelated arbitrary label", ConfidenceBand.auto_accepted),
+        create_sample_scored_record(
+            "Restructuring charges", ConfidenceBand.auto_accepted
+        ),
+        create_sample_scored_record(
+            "Unrelated arbitrary label", ConfidenceBand.auto_accepted
+        ),
     ]
 
     mock_client = MagicMock()
@@ -148,3 +168,32 @@ def test_dispatch_records_offline_direct_match_fallback_on_api_error() -> None:
     # Second record has no match and records error
     assert batch.results[1].is_error is True
     assert batch.results[1].raw_response is None
+
+
+def test_dispatch_records_receives_reconciliation_candidates_only() -> None:
+    """Verify that dispatch operates strictly on candidate records passed to it."""
+    candidate_records = [
+        create_sample_scored_record(
+            "Stock compensation",
+            ConfidenceBand.auto_accepted,
+            is_reconciliation_candidate=True,
+        ),
+        create_sample_scored_record(
+            "Litigation charges",
+            ConfidenceBand.needs_review,
+            is_reconciliation_candidate=True,
+        ),
+    ]
+
+    mock_client = MagicMock()
+    mock_client.classify.side_effect = [
+        ClassifierRawResponse(label="Stock-Based Compensation", confidence=0.96),
+        ClassifierRawResponse(label="Litigation Charges", confidence=0.90),
+    ]
+
+    batch = dispatch_records_to_classifier(candidate_records, mock_client)
+    assert batch.total_dispatched == 2
+    assert batch.success_count == 2
+    assert batch.skipped_count == 0
+    assert len(batch.results) == 2
+    assert mock_client.classify.call_count == 2

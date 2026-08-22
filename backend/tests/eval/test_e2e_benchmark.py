@@ -408,3 +408,199 @@ def test_full_e2e_pipeline_upload_to_audit_pdf(tmp_path: Path) -> None:
     pdf_bytes = pdf_path.read_bytes()
     assert pdf_bytes.startswith(b"%PDF-")
 
+
+def test_e2e_reconciliation_batch_approval_and_regeneration(tmp_path: Path) -> None:
+    """
+    Ticket 5.3: End-to-end integration test validating:
+    Ingestion -> Extraction & Noise Filter -> Candidate Tagging -> Initial Draft Generation
+    -> 1-Click Batch Approval -> Model Re-generation -> Formula & Provenance Validation.
+    """
+    from app.excel_export.generator import generate_workbook
+    from app.excel_export.repository import ModelRepository
+    from app.extraction.models import ConfidenceBand, ExtractedRecord, ScoredRecord
+    from app.extraction.repository import ExtractionRepository
+    from app.formula_engine.reader import (
+        read_formula_inputs,
+        read_formula_inputs_from_review,
+    )
+    from app.formula_engine.tree import build_formula_tree
+    from app.ingestion.models import JobStatus
+    from app.ingestion.repository import JobRepository
+    from app.review.models import ReviewStatus
+    from app.review.repository import ReviewRepository
+
+    data_dir = tmp_path / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+
+    # 1. Job Ingestion
+    job_repo = JobRepository(data_dir=data_dir)
+    job = job_repo.save_job("TechCorp_Q3_2024.pdf", b"%PDF-1.4 sample", "Adjusted EBITDA")
+    job_id = job.job_id
+
+    # 2. Simulated Scored Extraction Records with table names and noise
+    extraction_repo = ExtractionRepository(data_dir=data_dir)
+    rec1 = ScoredRecord(
+        record=ExtractedRecord(
+            value="150,000",
+            label="Net income (loss)",
+            page=10,
+            bbox={"x0": 100, "y0": 200, "x1": 400, "y1": 220},
+            source_file="TechCorp_Q3_2024.pdf",
+        ),
+        confidence_score=0.98,
+        confidence_band=ConfidenceBand.auto_accepted,
+        flags=[],
+        table_name="Reconciliation of Net Income to Adjusted EBITDA",
+    )
+    rec2 = ScoredRecord(
+        record=ExtractedRecord(
+            value="25,000",
+            label="Stock-based compensation",
+            page=10,
+            bbox={"x0": 100, "y0": 240, "x1": 400, "y1": 260},
+            source_file="TechCorp_Q3_2024.pdf",
+        ),
+        confidence_score=0.95,
+        confidence_band=ConfidenceBand.auto_accepted,
+        flags=[],
+        table_name="Reconciliation of Net Income to Adjusted EBITDA",
+    )
+    rec3 = ScoredRecord(
+        record=ExtractedRecord(
+            value="18,000",
+            label="Depreciation and amortization",
+            page=10,
+            bbox={"x0": 100, "y0": 280, "x1": 400, "y1": 300},
+            source_file="TechCorp_Q3_2024.pdf",
+        ),
+        confidence_score=0.96,
+        confidence_band=ConfidenceBand.auto_accepted,
+        flags=[],
+        table_name="Reconciliation of Net Income to Adjusted EBITDA",
+    )
+    rec_bs = ScoredRecord(
+        record=ExtractedRecord(
+            value="500,000",
+            label="Total assets",
+            page=4,
+            bbox={"x0": 100, "y0": 100, "x1": 400, "y1": 120},
+            source_file="TechCorp_Q3_2024.pdf",
+        ),
+        confidence_score=0.97,
+        confidence_band=ConfidenceBand.auto_accepted,
+        flags=[],
+        table_name="Consolidated Balance Sheets",
+    )
+
+    scored_records = [rec1, rec2, rec3, rec_bs]
+    extraction_repo.save_scored_records(job_id, scored_records)
+
+    # 3. Target Candidate Classification (Feature 3 + Step 2)
+    from app.classification.models import (
+        ClassificationBatchResult,
+        ClassificationItemResult,
+        ClassifierInputPayload,
+        ClassifierRawResponse,
+    )
+    from app.classification.normalizer import normalize_records
+    from app.classification.repository import ClassificationRepository
+    from app.classification.taxonomy import SEED_TAXONOMY
+
+    batch_res = ClassificationBatchResult(
+        results=[
+            ClassificationItemResult(
+                record_index=0,
+                payload=ClassifierInputPayload(label="Net income (loss)"),
+                raw_response=ClassifierRawResponse(label="Net Income", confidence=0.98),
+                is_error=False,
+            ),
+            ClassificationItemResult(
+                record_index=1,
+                payload=ClassifierInputPayload(label="Stock-based compensation"),
+                raw_response=ClassifierRawResponse(label="Stock-Based Compensation", confidence=0.99),
+                is_error=False,
+            ),
+            ClassificationItemResult(
+                record_index=2,
+                payload=ClassifierInputPayload(label="Depreciation and amortization"),
+                raw_response=ClassifierRawResponse(label="Amortization of Intangibles", confidence=0.94),
+                is_error=False,
+            ),
+        ],
+        total_dispatched=3,
+        success_count=3,
+        error_count=0,
+        skipped_count=1,
+    )
+
+    classified_records = normalize_records(
+        scored_records, batch_res, SEED_TAXONOMY, target_metric="Adjusted EBITDA"
+    )
+    assert len(classified_records) == 4
+    # Candidates 0, 1, 2 are True; Balance Sheet item 3 is False
+    assert classified_records[0].is_target_metric_candidate is True
+    assert classified_records[1].is_target_metric_candidate is True
+    assert classified_records[2].is_target_metric_candidate is True
+    assert classified_records[3].is_target_metric_candidate is False
+
+    class_repo = ClassificationRepository(data_dir=data_dir)
+    class_repo.save_classified_records(job_id, classified_records)
+
+    # 4. Initial Draft Model Auto-Generation (Ticket 5.1)
+    formula_inputs = read_formula_inputs(classified_records)
+    assert len(formula_inputs.nodes) >= 2
+    tree = build_formula_tree(formula_inputs, target_metric="Adjusted EBITDA")
+    assert tree.is_valid is True
+
+    model_repo = ModelRepository(data_dir=data_dir)
+    initial_gen = generate_workbook(tree, job_id=job_id, output_dir=data_dir)
+    assert initial_gen.is_success is True
+    assert Path(initial_gen.file_path).exists()
+    job_repo.update_job_status(job_id, JobStatus.done)
+
+    # 5. 1-Click Batch Confirmation (Step 4)
+    review_repo = ReviewRepository(data_dir=data_dir)
+    review_items = review_repo.get_review_items(job_id)
+    assert review_items is not None
+
+    updated_items, locked_ids, err = review_repo.confirm_batch(
+        job_id=job_id,
+        target_candidates_only=True,
+        auto_add_pending_taxonomy=True,
+    )
+    assert err is None
+    assert len(locked_ids) == 3
+    assert f"{job_id}_0" in locked_ids
+    assert f"{job_id}_1" in locked_ids
+    assert f"{job_id}_2" in locked_ids
+    assert f"{job_id}_3" not in locked_ids  # balance sheet not locked
+
+    # 6. Re-generation from Confirmed Review Items (Ticket 4.2)
+    review_formula_inputs = read_formula_inputs_from_review(updated_items)
+    assert len(review_formula_inputs.nodes) == 3
+    final_tree = build_formula_tree(review_formula_inputs, target_metric="Adjusted EBITDA")
+    assert final_tree.is_valid is True
+
+    final_gen = generate_workbook(final_tree, job_id=job_id, output_dir=data_dir)
+    assert final_gen.is_success is True
+    assert final_gen.total_cells_generated > 0
+
+    wb = openpyxl.load_workbook(final_gen.file_path, data_only=False)
+    assert "Reconciliation" in wb.sheetnames
+    assert "Source_Inputs" in wb.sheetnames
+
+    # Check cell formulas
+    formulas = [
+        cell
+        for sheet in wb.worksheets
+        for row in sheet.iter_rows(values_only=True)
+        for cell in row
+        if isinstance(cell, str) and cell.startswith("=")
+    ]
+    assert len(formulas) > 0
+    for f in formulas:
+        assert "#REF!" not in f
+        assert "#VALUE!" not in f
+        assert "#NAME?" not in f
+
+

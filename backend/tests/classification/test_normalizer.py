@@ -185,3 +185,50 @@ def test_offline_fallback_normalizer_attaches_seed_taxonomy() -> None:
     assert classified[1].taxonomy_status == TaxonomyStatus.pending_taxonomy_confirmation
     assert classified[1].is_confirmed is False
     assert classified[1].classifier_confidence is None
+
+
+def test_target_metric_candidate_tagging_reconciliation_vs_balance_sheet() -> None:
+    """Ticket 2.3: Reconciliation bridge items are marked candidates; balance sheet items are not."""
+    # 1. Non-GAAP reconciliation table items
+    rec_sbc = create_sample_scored_record("Stock-based compensation expense", value="12,000")
+    rec_sbc.table_name = "Reconciliation of Net Income to Non-GAAP Adjusted EBITDA"
+
+    rec_da = create_sample_scored_record("Depreciation and amortization", value="34,000")
+    rec_da.table_name = "Non-GAAP Financial Measures"
+
+    rec_restruct = create_sample_scored_record("Restructuring and severance charges", value="5,000")
+    rec_restruct.table_name = "Adjusted EBITDA Reconciliation"
+
+    # 2. Balance sheet / lease / PPE items
+    rec_cash = create_sample_scored_record("Cash and cash equivalents", value="150,000")
+    rec_cash.table_name = "Consolidated Balance Sheets"
+
+    rec_ppe = create_sample_scored_record("Property, plant and equipment, net", value="850,000")
+    rec_ppe.table_name = "Property and Equipment Schedule"
+
+    rec_lease = create_sample_scored_record("Operating lease liabilities, non-current", value="45,000")
+    rec_lease.table_name = "Operating Lease Commitments"
+
+    records = [rec_sbc, rec_da, rec_restruct, rec_cash, rec_ppe, rec_lease]
+    batch_result = ClassificationBatchResult(
+        results=[],
+        total_dispatched=0,
+        success_count=0,
+        error_count=0,
+        skipped_count=6,
+    )
+
+    classified = normalize_records(
+        records, batch_result, SEED_TAXONOMY, target_metric="Adjusted EBITDA"
+    )
+    assert len(classified) == 6
+
+    # Reconciliation items should be target metric candidates
+    assert classified[0].is_target_metric_candidate is True
+    assert classified[1].is_target_metric_candidate is True
+    assert classified[2].is_target_metric_candidate is True
+
+    # Balance sheet and lease items must NOT be target metric candidates
+    assert classified[3].is_target_metric_candidate is False
+    assert classified[4].is_target_metric_candidate is False
+    assert classified[5].is_target_metric_candidate is False

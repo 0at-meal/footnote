@@ -52,11 +52,17 @@ class DoclingItem(BaseModel):
     source_file: str
     """Original filename string as uploaded (UTF-8, stored as-is — EC-8 contract)."""
 
+    table_name: str | None = None
+    """Enclosing table or section title extracted from the document."""
+
     is_error: bool = False
     """Flag indicating whether an error occurred during Docling cell-level parsing."""
 
     error_detail: str | None = None
     """Description of the parse error if is_error is True."""
+
+    is_reconciliation_candidate: bool = False
+    """Flag indicating whether this item belongs to a reconciliation candidate table."""
 
 
 class NormalizedBbox(BaseModel):
@@ -82,8 +88,10 @@ class NormalizedItem(BaseModel):
     page: int
     bbox: NormalizedBbox
     source_file: str
+    table_name: str | None = None
     is_error: bool = False
     error_detail: str | None = None
+    is_reconciliation_candidate: bool = False
 
 
 class ExtractedRecord(BaseModel):
@@ -91,7 +99,8 @@ class ExtractedRecord(BaseModel):
     Canonical 5-field frozen schema for an extracted line item (spec.md FR2, AC-3).
 
     Field names (value, label, page, bbox, source_file) are frozen for the project lifetime
-    (CONSTITUTION §2.3, NFR7).
+    (CONSTITUTION §2.3, NFR7). Metadata fields like is_reconciliation_candidate do not alter
+    the frozen 5 schema fields.
     """
 
     value: str
@@ -108,6 +117,9 @@ class ExtractedRecord(BaseModel):
 
     source_file: str
     """Original filename string as uploaded (UTF-8, unmodified)."""
+
+    is_reconciliation_candidate: bool = False
+    """Flag indicating whether this item belongs to a reconciliation candidate table."""
 
 
 class ConfidenceBand(str, Enum):
@@ -134,8 +146,10 @@ class ScoredRecord(BaseModel):
     confidence_score: float
     confidence_band: ConfidenceBand
     flags: list[str]
+    table_name: str | None = None
     status: Literal["ok", "extraction_error"] = "ok"
     error_detail: str | None = None
+    is_reconciliation_candidate: bool = False
 
 
 class ExtractionSummary(BaseModel):
@@ -152,3 +166,4 @@ class ExtractionSummary(BaseModel):
     flagged_count: int
     flagged_percentage: float
     passed_threshold: bool
+    filtered_non_reconciliation_count: int = 0

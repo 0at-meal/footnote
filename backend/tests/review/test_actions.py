@@ -339,3 +339,127 @@ def test_protect_locked_items_against_extraction_rerun(tmp_path: Path) -> None:
     assert locked_item.value == "1,000"
     assert locked_item.label == "Operating Expenses / SBC"
     assert locked_item.status == ReviewStatus.locked
+
+
+def test_review_repository_propagates_target_metric_and_table_name(tmp_path: Path) -> None:
+    """Ticket 2.3: Verify _from_classified_records propagates candidate and table_name."""
+    repo = ReviewRepository(data_dir=tmp_path)
+
+    sr1 = ScoredRecord(
+        record=ExtractedRecord(
+            value="5,000",
+            label="Stock-based compensation",
+            page=1,
+            bbox={"x0": 10, "y0": 20, "x1": 100, "y1": 50},
+            source_file="filing.pdf",
+        ),
+        confidence_score=0.98,
+        confidence_band=ConfidenceBand.auto_accepted,
+        flags=[],
+        table_name="Adjusted EBITDA Reconciliation",
+        status="ok",
+    )
+    sr2 = ScoredRecord(
+        record=ExtractedRecord(
+            value="25,000",
+            label="Accounts payable",
+            page=1,
+            bbox={"x0": 10, "y0": 60, "x1": 100, "y1": 90},
+            source_file="filing.pdf",
+        ),
+        confidence_score=0.95,
+        confidence_band=ConfidenceBand.auto_accepted,
+        flags=[],
+        table_name="Consolidated Balance Sheets",
+        status="ok",
+    )
+
+    cr1 = ClassifiedRecord(
+        record=sr1,
+        normalized_label="Stock-Based Compensation",
+        taxonomy_status=TaxonomyStatus.matched,
+        classifier_confidence=0.96,
+        is_confirmed=True,
+        is_target_metric_candidate=True,
+    )
+    cr2 = ClassifiedRecord(
+        record=sr2,
+        normalized_label=None,
+        taxonomy_status=TaxonomyStatus.pending_taxonomy_confirmation,
+        classifier_confidence=None,
+        is_confirmed=False,
+        is_target_metric_candidate=False,
+    )
+
+    items = repo._from_classified_records("job_123", [cr1, cr2])
+    assert len(items) == 2
+
+    assert items[0].id == "job_123_0"
+    assert items[0].is_target_metric_candidate is True
+    assert items[0].table_name == "Adjusted EBITDA Reconciliation"
+
+    assert items[1].id == "job_123_1"
+    assert items[1].is_target_metric_candidate is False
+    assert items[1].table_name == "Consolidated Balance Sheets"
+
+    # Save and reload
+    repo.save_review_items("job_123", items)
+    loaded = repo.get_review_items("job_123")
+    assert loaded is not None
+    assert len(loaded) == 2
+    assert loaded[0].is_target_metric_candidate is True
+    assert loaded[0].table_name == "Adjusted EBITDA Reconciliation"
+    assert loaded[1].is_target_metric_candidate is False
+    assert loaded[1].table_name == "Consolidated Balance Sheets"
+
+
+def test_confirm_batch_locks_target_candidates_and_skips_errors(tmp_path: Path) -> None:
+    """Ticket 4.1 & 4.3: confirm_batch locks candidates, adds pending taxonomy, and skips extraction errors."""
+    job_repo, review_repo, job_id = _setup_job_with_records(tmp_path)
+    # _setup_job_with_records creates:
+    # item 0: matched SBC (candidate=True)
+    # item 1: pending litigation (candidate=True)
+    # item 2: extraction error (candidate=True)
+
+    items, locked_ids, err = review_repo.confirm_batch(
+        job_id=job_id,
+        target_candidates_only=True,
+        auto_add_pending_taxonomy=True,
+    )
+    assert err is None
+    # 2 items should be locked (item 0 and item 1); item 2 has extraction_error so it's skipped
+    assert len(locked_ids) == 2
+    assert f"{job_id}_0" in locked_ids
+    assert f"{job_id}_1" in locked_ids
+    assert f"{job_id}_2" not in locked_ids
+
+    # Item 1 should have had its taxonomy status updated to matched
+    item1 = next(it for it in items if it.id == f"{job_id}_1")
+    assert item1.status == ReviewStatus.locked
+    assert item1.taxonomy_status == "matched"
+
+    # Item 2 should remain extraction_error
+    item2 = next(it for it in items if it.id == f"{job_id}_2")
+    assert item2.status == ReviewStatus.extraction_error
+
+
+def test_confirm_batch_router_endpoint(tmp_path: Path) -> None:
+    """Ticket 4.3: POST /review/{job_id}/confirm-batch integration test."""
+    job_repo, review_repo, job_id = _setup_job_with_records(tmp_path)
+
+    with patch("app.review.router._job_repo", job_repo), patch(
+        "app.review.router._review_repo", review_repo
+    ):
+        res = client.post(
+            f"/review/{job_id}/confirm-batch",
+            json={"target_candidates_only": True, "auto_add_pending_taxonomy": True},
+        )
+
+    assert res.status_code == 200
+    data = res.json()
+    assert data["job_id"] == job_id
+    assert data["total_locked"] == 2
+    assert f"{job_id}_0" in data["locked_item_ids"]
+    assert f"{job_id}_1" in data["locked_item_ids"]
+    assert f"{job_id}_2" not in data["locked_item_ids"]
+

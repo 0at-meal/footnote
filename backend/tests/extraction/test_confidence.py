@@ -89,3 +89,27 @@ def test_score_records_preserves_ordering() -> None:
     assert len(scored_list) == 2
     assert scored_list[0].record.value == "10"
     assert scored_list[1].record.value == "20"
+
+
+def test_score_record_propagates_reconciliation_candidate_from_record() -> None:
+    rec_true = ExtractedRecord(
+        value="100",
+        label="Adjusted EBITDA / Tax",
+        page=1,
+        bbox={"x0": 0.0, "y0": 0.0, "x1": 10.0, "y1": 10.0},
+        source_file="test.pdf",
+        is_reconciliation_candidate=True,
+    )
+    scored_true = score_record(rec_true)
+    assert scored_true.is_reconciliation_candidate is True
+
+    rec_false = ExtractedRecord(
+        value="200",
+        label="Cash and Equivalents",
+        page=1,
+        bbox={"x0": 0.0, "y0": 0.0, "x1": 10.0, "y1": 10.0},
+        source_file="test.pdf",
+        is_reconciliation_candidate=False,
+    )
+    scored_false = score_record(rec_false)
+    assert scored_false.is_reconciliation_candidate is False

@@ -38,6 +38,8 @@ def test_job_runner_auto_accepted_generates_draft_model(tmp_path: Path) -> None:
             page=1,
             bbox=DoclingBbox(x0=10.0, y0=20.0, x1=30.0, y1=40.0),
             source_file="apple_report.pdf",
+            table_name="Reconciliation of Non-GAAP Adjusted EBITDA",
+            is_reconciliation_candidate=True,
         )
     ]
     sample_normalized = [
@@ -47,6 +49,8 @@ def test_job_runner_auto_accepted_generates_draft_model(tmp_path: Path) -> None:
             page=1,
             bbox=NormalizedBbox(x0=100.0, y0=200.0, x1=300.0, y1=400.0),
             source_file="apple_report.pdf",
+            table_name="Reconciliation of Non-GAAP Adjusted EBITDA",
+            is_reconciliation_candidate=True,
         )
     ]
     sample_records = [
@@ -56,6 +60,7 @@ def test_job_runner_auto_accepted_generates_draft_model(tmp_path: Path) -> None:
             page=1,
             bbox={"x0": 100.0, "y0": 200.0, "x1": 300.0, "y1": 400.0},
             source_file="apple_report.pdf",
+            is_reconciliation_candidate=True,
         )
     ]
     sample_scored = [
@@ -64,6 +69,8 @@ def test_job_runner_auto_accepted_generates_draft_model(tmp_path: Path) -> None:
             confidence_score=0.99,
             confidence_band=ConfidenceBand.auto_accepted,
             flags=[],
+            table_name="Reconciliation of Non-GAAP Adjusted EBITDA",
+            is_reconciliation_candidate=True,
         )
     ]
     sample_summary = ExtractionSummary(
@@ -210,3 +217,114 @@ def test_job_repository_model_ready_roundtrip(tmp_path: Path) -> None:
     all_jobs = repo2.list_jobs()
     assert len(all_jobs) == 1
     assert all_jobs[0].model_ready is True
+
+
+def test_job_runner_filters_non_reconciliation_candidates_before_classification(
+    tmp_path: Path,
+) -> None:
+    """Verifies that non-reconciliation candidate records are excluded from classifier dispatch."""
+    repo = JobRepository(data_dir=tmp_path)
+    repo.save_job(
+        filename="filing_2023.pdf",
+        content=b"%PDF-1.4 dummy",
+        target_metric="Adjusted EBITDA",
+    )
+    job_id = repo.list_jobs()[0].job_id
+
+    # Item 1: Reconciliation item
+    rec1 = ExtractedRecord(
+        value="50.0",
+        label="Operating Expenses / Stock-based comp",
+        page=1,
+        bbox={"x0": 0.0, "y0": 0.0, "x1": 10.0, "y1": 10.0},
+        source_file="filing_2023.pdf",
+        is_reconciliation_candidate=True,
+    )
+    scored1 = ScoredRecord(
+        record=rec1,
+        confidence_score=0.99,
+        confidence_band=ConfidenceBand.auto_accepted,
+        flags=[],
+        table_name="Reconciliation of Non-GAAP Adjusted EBITDA",
+        is_reconciliation_candidate=True,
+    )
+
+    # Item 2: Balance sheet item (not a candidate)
+    rec2 = ExtractedRecord(
+        value="1000.0",
+        label="Assets / Cash and cash equivalents",
+        page=2,
+        bbox={"x0": 0.0, "y0": 0.0, "x1": 10.0, "y1": 10.0},
+        source_file="filing_2023.pdf",
+        is_reconciliation_candidate=False,
+    )
+    scored2 = ScoredRecord(
+        record=rec2,
+        confidence_score=0.99,
+        confidence_band=ConfidenceBand.auto_accepted,
+        flags=[],
+        table_name="Consolidated Balance Sheets",
+        is_reconciliation_candidate=False,
+    )
+
+    mock_classifier = MagicMock()
+    mock_classifier.classify.return_value = ClassifierRawResponse(
+        label="Stock-Based Compensation",
+        confidence=0.99,
+    )
+
+    sample_docling = [
+        DoclingItem(
+            value="50.0",
+            label="Operating Expenses / Stock-based comp",
+            page=1,
+            bbox=DoclingBbox(x0=0.0, y0=0.0, x1=10.0, y1=10.0),
+            source_file="filing_2023.pdf",
+            table_name="Reconciliation of Non-GAAP Adjusted EBITDA",
+            is_reconciliation_candidate=True,
+        ),
+        DoclingItem(
+            value="1000.0",
+            label="Assets / Cash and cash equivalents",
+            page=2,
+            bbox=DoclingBbox(x0=0.0, y0=0.0, x1=10.0, y1=10.0),
+            source_file="filing_2023.pdf",
+            table_name="Consolidated Balance Sheets",
+            is_reconciliation_candidate=False,
+        ),
+    ]
+
+    sample_normalized = [
+        NormalizedItem(
+            value="50.0",
+            label="Operating Expenses / Stock-based comp",
+            page=1,
+            bbox=NormalizedBbox(x0=0.0, y0=0.0, x1=10.0, y1=10.0),
+            source_file="filing_2023.pdf",
+            table_name="Reconciliation of Non-GAAP Adjusted EBITDA",
+            is_reconciliation_candidate=True,
+        ),
+        NormalizedItem(
+            value="1000.0",
+            label="Assets / Cash and cash equivalents",
+            page=2,
+            bbox=NormalizedBbox(x0=0.0, y0=0.0, x1=10.0, y1=10.0),
+            source_file="filing_2023.pdf",
+            table_name="Consolidated Balance Sheets",
+            is_reconciliation_candidate=False,
+        ),
+    ]
+
+    with (
+        patch("app.job_runner.parse_pdf", return_value=sample_docling),
+        patch("app.job_runner.normalize_coordinates", return_value=sample_normalized),
+        patch("app.job_runner.assemble_records", return_value=[rec1, rec2]),
+        patch("app.job_runner.score_records", return_value=[scored1, scored2]),
+        patch("app.job_runner.count_image_only_pages", return_value=0),
+    ):
+        process_queued_job(job_id, repo, classifier_client=mock_classifier)
+
+    # Verify classifier called exactly once (for the reconciliation item only)
+    assert mock_classifier.classify.call_count == 1
+    call_args = mock_classifier.classify.call_args[0][0]
+    assert call_args.label == "Operating Expenses / Stock-based comp"

@@ -129,6 +129,10 @@ class ClassifiedRecord(BaseModel):
         default=False,
         description="True if normalized_label is confirmed and matched against active taxonomy",
     )
+    is_target_metric_candidate: bool = Field(
+        default=True,
+        description="True if item belongs to the target metric reconciliation bridge",
+    )
 
 
 class DecisionLogEntry(BaseModel):

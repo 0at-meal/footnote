@@ -46,6 +46,8 @@ def test_process_queued_job_runs_full_pipeline(
             page=1,
             bbox=DoclingBbox(x0=10.0, y0=20.0, x1=30.0, y1=40.0),
             source_file="filing.pdf",
+            table_name="Reconciliation of Non-GAAP Adjusted EBITDA",
+            is_reconciliation_candidate=True,
         )
     ]
     sample_normalized = [
@@ -55,6 +57,8 @@ def test_process_queued_job_runs_full_pipeline(
             page=1,
             bbox=NormalizedBbox(x0=100.0, y0=200.0, x1=300.0, y1=400.0),
             source_file="filing.pdf",
+            table_name="Reconciliation of Non-GAAP Adjusted EBITDA",
+            is_reconciliation_candidate=True,
         )
     ]
     sample_records = [
@@ -64,6 +68,7 @@ def test_process_queued_job_runs_full_pipeline(
             page=1,
             bbox={"x0": 100.0, "y0": 200.0, "x1": 300.0, "y1": 400.0},
             source_file="filing.pdf",
+            is_reconciliation_candidate=True,
         )
     ]
     sample_scored = [
@@ -72,6 +77,8 @@ def test_process_queued_job_runs_full_pipeline(
             confidence_score=1.0,
             confidence_band=ConfidenceBand.auto_accepted,
             flags=[],
+            table_name="Reconciliation of Non-GAAP Adjusted EBITDA",
+            is_reconciliation_candidate=True,
         )
     ]
     sample_summary = ExtractionSummary(

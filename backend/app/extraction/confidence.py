@@ -99,14 +99,23 @@ def score_record(
     Returns:
         A ScoredRecord with confidence_score, confidence_band, and flags.
     """
+    table_name = normalized_item.table_name if normalized_item is not None else None
+    is_rec = (
+        normalized_item.is_reconciliation_candidate
+        if normalized_item is not None
+        else record.is_reconciliation_candidate
+    )
+
     if normalized_item is not None and normalized_item.is_error:
         return ScoredRecord(
             record=record,
             confidence_score=0.0,
             confidence_band=ConfidenceBand.manual_required,
             flags=["extraction_error"],
+            table_name=table_name,
             status="extraction_error",
             error_detail=normalized_item.error_detail or "Extraction error",
+            is_reconciliation_candidate=is_rec,
         )
 
     score, flags = compute_confidence_score(record)
@@ -116,8 +125,10 @@ def score_record(
         confidence_score=score,
         confidence_band=band,
         flags=flags,
+        table_name=table_name,
         status="ok",
         error_detail=None,
+        is_reconciliation_candidate=is_rec,
     )
 
 

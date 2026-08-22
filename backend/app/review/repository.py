@@ -11,6 +11,7 @@ from pathlib import Path
 
 from app.classification.models import ClassifiedRecord, TaxonomyStatus
 from app.classification.repository import ClassificationRepository
+from app.classification.taxonomy import TaxonomyRepository
 from app.extraction.models import ConfidenceBand, ScoredRecord
 from app.extraction.repository import ExtractionRepository
 from app.review.models import ReviewItem, ReviewStatus
@@ -286,6 +287,72 @@ class ReviewRepository:
         self.save_review_items(job_id, items)
         return target_item, None
 
+    def confirm_batch(
+        self,
+        job_id: str,
+        target_candidates_only: bool = True,
+        item_ids: list[str] | None = None,
+        auto_add_pending_taxonomy: bool = True,
+    ) -> tuple[list[ReviewItem], list[str], str | None]:
+        """
+        Batch confirms items, transitions them to locked status, and persists (Ticket 4.1).
+
+        Args:
+            job_id: The job identifier.
+            target_candidates_only: If True, confirms all target candidates (default).
+            item_ids: Optional list of specific item IDs.
+            auto_add_pending_taxonomy: If True, confirms pending taxonomy labels to active taxonomy.
+
+        Returns:
+            (items, locked_item_ids, error_message)
+        """
+        items = self.get_review_items(job_id)
+        if items is None:
+            return [], [], "Job records not found"
+
+        taxonomy_repo = TaxonomyRepository(data_dir=self._data_dir)
+        explicit_id_set = set(item_ids) if item_ids is not None else None
+
+        locked_ids: list[str] = []
+
+        for item in items:
+            # Determine if this item should be confirmed
+            should_confirm = False
+            if explicit_id_set is not None:
+                should_confirm = item.id in explicit_id_set
+            elif target_candidates_only:
+                should_confirm = bool(item.is_target_metric_candidate)
+            else:
+                should_confirm = True
+
+            if not should_confirm:
+                if item.status == ReviewStatus.locked:
+                    locked_ids.append(item.id)
+                continue
+
+            # Skip items with extraction error (EC-1)
+            if item.status == ReviewStatus.extraction_error:
+                continue
+
+            # Handle pending taxonomy confirmation
+            if (
+                item.status == ReviewStatus.pending_taxonomy_confirmation
+                or item.taxonomy_status == "pending_taxonomy_confirmation"
+            ):
+                if auto_add_pending_taxonomy:
+                    term_to_add = item.normalized_label or item.label
+                    taxonomy_repo.add_entry(term_to_add)
+                    item.taxonomy_status = "matched"
+                    if item.normalized_label is None:
+                        item.normalized_label = item.label
+
+            # Lock the item and clear flag
+            item.status = ReviewStatus.locked
+            locked_ids.append(item.id)
+
+        self.save_review_items(job_id, items)
+        return items, locked_ids, None
+
     def protect_locked_items(
         self,
         job_id: str,
@@ -356,6 +423,8 @@ class ReviewRepository:
                     taxonomy_status=taxonomy_status_val,
                     status=status,
                     flags=sr.flags,
+                    is_target_metric_candidate=cr.is_target_metric_candidate,
+                    table_name=sr.table_name,
                     error_detail=sr.error_detail,
                 )
             )
@@ -394,6 +463,8 @@ class ReviewRepository:
                     taxonomy_status=None,
                     status=status,
                     flags=sr.flags,
+                    is_target_metric_candidate=True,
+                    table_name=sr.table_name,
                     error_detail=sr.error_detail,
                 )
             )
