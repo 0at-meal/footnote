@@ -98,13 +98,13 @@ def test_generate_workbook_zero_numeric_literals_in_derived_cells(
     wb = openpyxl.load_workbook(result.file_path, data_only=False)
     ws_recon = wb["Reconciliation"]
 
-    # Value column is column C (index 3). Rows 4, 5 are component formulas, Row 6 is total formula.
+    # Value column is column B (index 2). Rows 4, 5 are component formulas, Row 6 is total formula.
     for row in range(4, ws_recon.max_row + 1):
-        cell_val = str(ws_recon.cell(row=row, column=3).value or "")
+        cell_val = str(ws_recon.cell(row=row, column=2).value or "")
         assert cell_val.startswith(
             "="
-        ), f"Cell C{row} should contain formula, got {cell_val}"
-        assert not isinstance(ws_recon.cell(row=row, column=3).value, (int, float))
+        ), f"Cell B{row} should contain formula, got {cell_val}"
+        assert not isinstance(ws_recon.cell(row=row, column=2).value, (int, float))
 
 
 def test_generate_workbook_sheet_names_have_no_spaces(tmp_path: Path) -> None:
@@ -172,7 +172,7 @@ def test_generate_workbook_duplicate_label_aggregation(tmp_path: Path) -> None:
     aggregate_found = False
     for row in range(4, ws_recon.max_row + 1):
         label = ws_recon.cell(row=row, column=1).value
-        val_formula = str(ws_recon.cell(row=row, column=3).value or "")
+        val_formula = str(ws_recon.cell(row=row, column=2).value or "")
         if label == "Total Stock-Based Compensation":
             aggregate_found = True
             assert "SUM(" in val_formula
@@ -245,29 +245,29 @@ def test_generate_workbook_exactly_one_comment_and_hyperlink_per_cell(
 
     wb = openpyxl.load_workbook(result.file_path, data_only=False)
 
-    # 1. Check Source_Inputs value column (Col F / 6)
+    # 1. Check Source_Inputs value column (Col B / 2)
     ws_inputs = wb["Source_Inputs"]
     for row in range(2, 6):  # 4 data rows
-        cell = ws_inputs.cell(row=row, column=6)
-        assert cell.comment is not None, f"Source_Inputs!F{row} missing comment"
+        cell = ws_inputs.cell(row=row, column=2)
+        assert cell.comment is not None, f"Source_Inputs!B{row} missing comment"
         assert "[Footnote Provenance]" in cell.comment.text
-        assert cell.hyperlink is not None, f"Source_Inputs!F{row} missing hyperlink"
+        assert cell.hyperlink is not None, f"Source_Inputs!B{row} missing hyperlink"
         assert (
-            "http://localhost:8000/models/job_ac6_test/provenance/Source_Inputs/F"
+            "http://localhost:8000/models/job_ac6_test/provenance/Source_Inputs/B"
             in cell.hyperlink.target
         )
 
-    # 2. Check Reconciliation value column (Col C / 3)
+    # 2. Check Reconciliation value column (Col B / 2)
     ws_recon = wb["Reconciliation"]
     for row in range(4, ws_recon.max_row + 1):
-        cell = ws_recon.cell(row=row, column=3)
-        assert cell.comment is not None, f"Reconciliation!C{row} missing comment"
+        cell = ws_recon.cell(row=row, column=2)
+        assert cell.comment is not None, f"Reconciliation!B{row} missing comment"
         assert "[Footnote Provenance" in cell.comment.text
         # Formulas use =HYPERLINK(...) wrapper
         val_str = str(cell.value or "")
         assert val_str.startswith(
             "=HYPERLINK("
-        ), f"Reconciliation!C{row} formula must contain HYPERLINK, got {val_str}"
+        ), f"Reconciliation!B{row} formula must contain HYPERLINK, got {val_str}"
 
 
 def test_generate_workbook_empty_leaves_invalid_tree(tmp_path: Path) -> None:
@@ -288,3 +288,88 @@ def test_generate_workbook_empty_leaves_invalid_tree(tmp_path: Path) -> None:
     assert result.sheet_names == []
     assert not Path(result.file_path).exists()
     assert not (tmp_path / "models" / "job_empty_tree_model.xlsx.tmp").exists()
+
+
+def test_banker_editable_two_column_structure_and_formulas(tmp_path: Path) -> None:
+    """
+    Comprehensive verification for Ticket 1.3.3:
+    1. Exactly 2 sheets: Source_Inputs and Reconciliation.
+    2. Source_Inputs has 2 columns (Label, Value) with comments containing provenance.
+    3. Reconciliation has 2 columns (Line Item, Value) with cross-sheet formulas.
+    4. Target metric total uses =SUM(...) formula over component rows.
+    5. Editing Source_Inputs cell coordinates propagates to Reconciliation formulas.
+    """
+    nodes = [
+        _make_input_node(
+            0, "Operating Income", value="1,200.00", page=8, source_file="10k_2023.pdf"
+        ),
+        _make_input_node(
+            1,
+            "Depreciation & Amortization",
+            value="300.00",
+            page=12,
+            source_file="10k_2023.pdf",
+        ),
+        _make_input_node(
+            2,
+            "Stock-Based Compensation",
+            value="80.00",
+            page=22,
+            source_file="10k_2023.pdf",
+        ),
+    ]
+    batch = FormulaInputBatch(
+        nodes=nodes,
+        total_records_received=3,
+        confirmed_count=3,
+        excluded_count=0,
+    )
+    tree = build_formula_tree(batch, target_metric="Adjusted EBITDA")
+    assert tree.is_valid is True
+
+    result = generate_workbook(tree, job_id="job_ticket_1_3_3", output_dir=tmp_path)
+    assert result.is_success is True
+
+    wb = openpyxl.load_workbook(result.file_path, data_only=False)
+
+    # 1. Exactly 2 sheets
+    assert wb.sheetnames == ["Source_Inputs", "Reconciliation"]
+
+    # 2. Source_Inputs 2-column layout and provenance comments
+    ws_inputs = wb["Source_Inputs"]
+    assert ws_inputs.max_column == 2
+    assert ws_inputs.cell(row=1, column=1).value == "Label"
+    assert ws_inputs.cell(row=1, column=2).value == "Value ($)"
+
+    for r in range(2, 5):
+        val_cell = ws_inputs.cell(row=r, column=2)
+        assert (
+            val_cell.comment is not None
+        ), f"Source_Inputs!B{r} missing provenance comment"
+        comment_text = val_cell.comment.text
+        assert "[Footnote Provenance]" in comment_text
+        assert "Source: 10k_2023.pdf" in comment_text
+        assert "BBox [0-1000]" in comment_text
+        assert val_cell.hyperlink is not None, f"Source_Inputs!B{r} missing hyperlink"
+
+    # 3. Reconciliation 2-column layout and cross-sheet formulas
+    ws_recon = wb["Reconciliation"]
+    assert ws_recon.max_column == 2
+    assert ws_recon.cell(row=1, column=1).value == "Adjusted EBITDA Reconciliation"
+    assert ws_recon.cell(row=3, column=1).value == "Line Item"
+    assert ws_recon.cell(row=3, column=2).value == "Value ($)"
+
+    # Rows 4, 5, 6 are component lines referencing Source_Inputs!B2, B3, B4
+    for idx, r in enumerate(range(4, 7), start=2):
+        cell_formula = str(ws_recon.cell(row=r, column=2).value or "")
+        assert (
+            f"Source_Inputs!B{idx}" in cell_formula
+        ), f"Expected Reconciliation!B{r} to reference Source_Inputs!B{idx}, got {cell_formula}"
+        assert cell_formula.startswith("=HYPERLINK(")
+
+    # Row 7 is Adjusted EBITDA total using =SUM(...)
+    total_cell_label = ws_recon.cell(row=7, column=1).value
+    total_cell_formula = str(ws_recon.cell(row=7, column=2).value or "")
+    assert total_cell_label == "Adjusted EBITDA"
+    assert "SUM(B4, B5, B6)" in total_cell_formula or "SUM(" in total_cell_formula
+    assert total_cell_formula.startswith("=HYPERLINK(")

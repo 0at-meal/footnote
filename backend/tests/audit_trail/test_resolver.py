@@ -38,12 +38,14 @@ def _create_sample_classified_records(job_id: str) -> list[ClassifiedRecord]:
                     page=10,
                     bbox={"x0": 100.0, "y0": 150.0, "x1": 400.0, "y1": 180.0},
                     source_file="filing_2023.pdf",
+                    is_reconciliation_candidate=True,
                 ),
                 confidence_score=0.98,
                 confidence_band=ConfidenceBand.auto_accepted,
                 flags=[],
                 status="ok",
                 error_detail=None,
+                is_reconciliation_candidate=True,
             ),
             normalized_label="Operating Income",
             taxonomy_status=TaxonomyStatus.matched,
@@ -59,12 +61,14 @@ def _create_sample_classified_records(job_id: str) -> list[ClassifiedRecord]:
                     page=14,
                     bbox={"x0": 110.0, "y0": 220.0, "x1": 380.0, "y1": 240.0},
                     source_file="filing_2023.pdf",
+                    is_reconciliation_candidate=True,
                 ),
                 confidence_score=0.96,
                 confidence_band=ConfidenceBand.auto_accepted,
                 flags=[],
                 status="ok",
                 error_detail=None,
+                is_reconciliation_candidate=True,
             ),
             normalized_label="Stock-Based Compensation",
             taxonomy_status=TaxonomyStatus.matched,
@@ -80,12 +84,14 @@ def _create_sample_classified_records(job_id: str) -> list[ClassifiedRecord]:
                     page=18,
                     bbox={"x0": 120.0, "y0": 310.0, "x1": 390.0, "y1": 330.0},
                     source_file="filing_2023.pdf",
+                    is_reconciliation_candidate=True,
                 ),
                 confidence_score=0.95,
                 confidence_band=ConfidenceBand.auto_accepted,
                 flags=[],
                 status="ok",
                 error_detail=None,
+                is_reconciliation_candidate=True,
             ),
             normalized_label="Stock-Based Compensation",
             taxonomy_status=TaxonomyStatus.matched,
@@ -110,7 +116,7 @@ def populated_job_env(tmp_path: Path) -> tuple[str, Path]:
     review_items = review_repo.get_review_items(job_id)
     assert review_items is not None
     review_repo.confirm_item(job_id, f"{job_id}_0")  # Locked
-    review_repo.flag_item(job_id, f"{job_id}_1")     # Flagged
+    review_repo.flag_item(job_id, f"{job_id}_1")  # Flagged
 
     # 3. Generate formula tree and workbook
     inputs = read_formula_inputs(records)
@@ -130,12 +136,12 @@ def test_resolve_single_leaf_cell(populated_job_env: tuple[str, Path]) -> None:
     job_id, data_dir = populated_job_env
     resolver = AuditTrailResolver(data_dir=data_dir)
 
-    # Source_Inputs!F2 is Operating Income
-    resp = resolver.resolve_by_cell(job_id, "Source_Inputs", "F2")
+    # Source_Inputs!B2 is Operating Income
+    resp = resolver.resolve_by_cell(job_id, "Source_Inputs", "B2")
     assert resp.is_found
     assert resp.job_id == job_id
     assert resp.sheet_name == "Source_Inputs"
-    assert resp.cell_coord == "F2"
+    assert resp.cell_coord == "B2"
     assert not resp.is_formula
     assert len(resp.components) == 1
 
@@ -159,7 +165,7 @@ def test_resolve_aggregated_formula_cell(populated_job_env: tuple[str, Path]) ->
     # Row 5: SBC p.14
     # Row 6: SBC p.18
     # Row 7: Total SBC (aggregate formula)
-    resp = resolver.resolve_by_cell(job_id, "Reconciliation", "C7")
+    resp = resolver.resolve_by_cell(job_id, "Reconciliation", "B7")
     assert resp.is_found
     assert resp.is_formula
     assert resp.node_id is not None and resp.node_id.startswith("agg_")
@@ -169,7 +175,9 @@ def test_resolve_aggregated_formula_cell(populated_job_env: tuple[str, Path]) ->
     comp1 = resp.components[0]
     comp2 = resp.components[1]
     assert comp1.page == 14
-    assert comp1.review_status == ReviewStatus.flagged.value  # Current live status (AC-4)
+    assert (
+        comp1.review_status == ReviewStatus.flagged.value
+    )  # Current live status (AC-4)
     assert comp2.page == 18
     assert comp2.review_status == ReviewStatus.auto_accepted.value
 
@@ -179,8 +187,8 @@ def test_resolve_root_total_cell(populated_job_env: tuple[str, Path]) -> None:
     job_id, data_dir = populated_job_env
     resolver = AuditTrailResolver(data_dir=data_dir)
 
-    # Reconciliation!C8 is Adjusted EBITDA total root
-    resp = resolver.resolve_by_cell(job_id, "Reconciliation", "C8")
+    # Reconciliation!B8 is Adjusted EBITDA total root
+    resp = resolver.resolve_by_cell(job_id, "Reconciliation", "B8")
     assert resp.is_found
     assert resp.is_formula
     assert resp.node_id is not None and resp.node_id.startswith("root_")
@@ -195,16 +203,18 @@ def test_resolve_by_provenance_id(populated_job_env: tuple[str, Path]) -> None:
     job_id, data_dir = populated_job_env
     resolver = AuditTrailResolver(data_dir=data_dir)
 
-    prov_id = f"urn:footnote:provenance:{job_id}:Reconciliation:C4"
+    prov_id = f"urn:footnote:provenance:{job_id}:Reconciliation:B4"
     resp_by_id = resolver.resolve_by_provenance_id(job_id, prov_id)
-    resp_by_cell = resolver.resolve_by_cell(job_id, "Reconciliation", "C4")
+    resp_by_cell = resolver.resolve_by_cell(job_id, "Reconciliation", "B4")
 
     assert resp_by_id.is_found
     assert resp_by_cell.is_found
     assert resp_by_id.provenance_id == prov_id
     assert resp_by_id.cell_coord == resp_by_cell.cell_coord
     assert len(resp_by_id.components) == len(resp_by_cell.components)
-    assert resp_by_id.components[0].component_id == resp_by_cell.components[0].component_id
+    assert (
+        resp_by_id.components[0].component_id == resp_by_cell.components[0].component_id
+    )
     assert resp_by_id.components[0].value == resp_by_cell.components[0].value
 
 
@@ -226,7 +236,9 @@ def test_resolve_unknown_provenance_id(populated_job_env: tuple[str, Path]) -> N
     job_id, data_dir = populated_job_env
     resolver = AuditTrailResolver(data_dir=data_dir)
 
-    resp = resolver.resolve_by_provenance_id(job_id, "urn:footnote:provenance:fake_job:Sheet1:A1")
+    resp = resolver.resolve_by_provenance_id(
+        job_id, "urn:footnote:provenance:fake_job:Sheet1:A1"
+    )
     assert not resp.is_found
     assert len(resp.components) == 0
     assert resp.error_detail is not None
@@ -244,9 +256,11 @@ def test_read_only_invariance(populated_job_env: tuple[str, Path]) -> None:
     status_map_before = {item.id: item.status for item in items_before}
 
     # Perform multiple lookups
-    resolver.resolve_by_cell(job_id, "Reconciliation", "C7")
-    resolver.resolve_by_cell(job_id, "Source_Inputs", "F2")
-    resolver.resolve_by_provenance_id(job_id, f"urn:footnote:provenance:{job_id}:Reconciliation:C8")
+    resolver.resolve_by_cell(job_id, "Reconciliation", "B7")
+    resolver.resolve_by_cell(job_id, "Source_Inputs", "B2")
+    resolver.resolve_by_provenance_id(
+        job_id, f"urn:footnote:provenance:{job_id}:Reconciliation:B8"
+    )
 
     # State after lookups must be strictly identical
     items_after = review_repo.get_review_items(job_id)
@@ -256,7 +270,9 @@ def test_read_only_invariance(populated_job_env: tuple[str, Path]) -> None:
     assert status_map_before == status_map_after
 
 
-def test_missing_review_record_gap_handling(populated_job_env: tuple[str, Path]) -> None:
+def test_missing_review_record_gap_handling(
+    populated_job_env: tuple[str, Path],
+) -> None:
     """Test gap handling when a review record was deleted from the store (EC-1)."""
     job_id, data_dir = populated_job_env
     resolver = AuditTrailResolver(data_dir=data_dir)
@@ -270,7 +286,7 @@ def test_missing_review_record_gap_handling(populated_job_env: tuple[str, Path])
     review_repo.save_review_items(job_id, filtered_items)
 
     # Lookup aggregate cell that includes item 1 and item 2
-    resp = resolver.resolve_by_cell(job_id, "Reconciliation", "C7")
+    resp = resolver.resolve_by_cell(job_id, "Reconciliation", "B7")
     assert resp.is_found
     assert len(resp.components) == 2  # Chain is not silently truncated!
 
@@ -283,7 +299,9 @@ def test_missing_review_record_gap_handling(populated_job_env: tuple[str, Path])
     assert comp_present.review_status == ReviewStatus.auto_accepted.value
 
 
-def test_flagged_item_pdf_lookup_does_not_modify_flag(populated_job_env: tuple[str, Path]) -> None:
+def test_flagged_item_pdf_lookup_does_not_modify_flag(
+    populated_job_env: tuple[str, Path],
+) -> None:
     """Test that looking up a flagged component and its PDF location leaves status as flagged (EC-5)."""
     job_id, data_dir = populated_job_env
     resolver = AuditTrailResolver(data_dir=data_dir)
@@ -295,8 +313,8 @@ def test_flagged_item_pdf_lookup_does_not_modify_flag(populated_job_env: tuple[s
     item_before = next(it for it in items_before if it.id == f"{job_id}_1")
     assert item_before.status == ReviewStatus.flagged
 
-    # Perform lookup on Reconciliation!C7 (which aggregates item 1)
-    resp = resolver.resolve_by_cell(job_id, "Reconciliation", "C7")
+    # Perform lookup on Reconciliation!B7 (which aggregates item 1)
+    resp = resolver.resolve_by_cell(job_id, "Reconciliation", "B7")
     assert resp.is_found
     flagged_comp = next(c for c in resp.components if c.component_id == f"{job_id}_1")
     assert flagged_comp.review_status == ReviewStatus.flagged.value
@@ -308,14 +326,16 @@ def test_flagged_item_pdf_lookup_does_not_modify_flag(populated_job_env: tuple[s
     assert item_after.status == ReviewStatus.flagged
 
 
-def test_status_change_reflected_on_next_lookup(populated_job_env: tuple[str, Path]) -> None:
+def test_status_change_reflected_on_next_lookup(
+    populated_job_env: tuple[str, Path],
+) -> None:
     """Test that when a status transitions from unreviewed to flagged/locked, next query reflects it (EC-10)."""
     job_id, data_dir = populated_job_env
     resolver = AuditTrailResolver(data_dir=data_dir)
     review_repo = ReviewRepository(data_dir=data_dir)
 
     # Item 2 is currently auto_accepted
-    resp1 = resolver.resolve_by_cell(job_id, "Reconciliation", "C7")
+    resp1 = resolver.resolve_by_cell(job_id, "Reconciliation", "B7")
     comp2_initial = next(c for c in resp1.components if c.component_id == f"{job_id}_2")
     assert comp2_initial.review_status == ReviewStatus.auto_accepted.value
 
@@ -323,7 +343,6 @@ def test_status_change_reflected_on_next_lookup(populated_job_env: tuple[str, Pa
     review_repo.confirm_item(job_id, f"{job_id}_2")
 
     # Next explicit query reflects the newly locked status
-    resp2 = resolver.resolve_by_cell(job_id, "Reconciliation", "C7")
+    resp2 = resolver.resolve_by_cell(job_id, "Reconciliation", "B7")
     comp2_updated = next(c for c in resp2.components if c.component_id == f"{job_id}_2")
     assert comp2_updated.review_status == ReviewStatus.locked.value
-

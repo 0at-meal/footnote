@@ -433,9 +433,9 @@ Phase 1 -- Business Model Alignment
     [x] Ticket 1.2.3 -- Approve All and Generate Model button
     [x] Ticket 1.2.4 -- Review UI frontend tests
   Step 1.3 -- Redesign Excel output to banker-editable format
-    [ ] Ticket 1.3.1 -- Source_Inputs: plain values + comments
-    [ ] Ticket 1.3.2 -- Reconciliation: cross-sheet refs + SUM
-    [ ] Ticket 1.3.3 -- Excel generator tests
+    [x] Ticket 1.3.1 -- Source_Inputs: plain values + comments
+    [x] Ticket 1.3.2 -- Reconciliation: cross-sheet refs + SUM
+    [x] Ticket 1.3.3 -- Excel generator tests
   Step 1.4 -- Fix Audit Trail empty state
     [ ] Ticket 1.4.1 -- Pre-generation guidance in AuditTrailView
 

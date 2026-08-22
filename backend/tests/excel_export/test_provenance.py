@@ -74,5 +74,5 @@ def test_format_cell_comment_leaf() -> None:
 
 def test_format_cell_hyperlink_url() -> None:
     """Verifies canonical URL construction for provenance hyperlink."""
-    url = format_cell_hyperlink_url("job_123", "Reconciliation", "C4")
-    assert url == "http://localhost:8000/models/job_123/provenance/Reconciliation/C4"
+    url = format_cell_hyperlink_url("job_123", "Reconciliation", "B4")
+    assert url == "http://localhost:8000/models/job_123/provenance/Reconciliation/B4"

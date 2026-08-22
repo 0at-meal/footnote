@@ -140,6 +140,7 @@ def generate_workbook(
                 "bold": True,
                 "bg_color": "#F2F2F2",
                 "border": 1,
+                "font_size": 10,
                 "align": "left",
                 "valign": "vcenter",
             }
@@ -149,6 +150,7 @@ def generate_workbook(
                 "bold": True,
                 "bg_color": "#F2F2F2",
                 "border": 1,
+                "font_size": 10,
                 "align": "right",
                 "valign": "vcenter",
             }
@@ -156,41 +158,50 @@ def generate_workbook(
         fmt_title = workbook.add_format(
             {
                 "bold": True,
-                "font_size": 14,
+                "font_size": 12,
                 "font_color": "#000000",
             }
         )
         fmt_source_num = workbook.add_format(
             {
                 "font_color": "#000000",
+                "font_size": 10,
                 "num_format": _IB_CURRENCY_FORMAT,
                 "align": "right",
+                "border": 1,
             }
         )
         fmt_hardcode_num = workbook.add_format(
             {
                 "font_color": "#0000FF",  # Blue for hardcodes (CONSTITUTION §2.5)
+                "font_size": 10,
                 "num_format": _IB_CURRENCY_FORMAT,
                 "align": "right",
+                "border": 1,
             }
         )
         fmt_formula_num = workbook.add_format(
             {
                 "font_color": "#000000",  # Black for formulas (CONSTITUTION §2.5)
+                "font_size": 10,
                 "num_format": _IB_CURRENCY_FORMAT,
                 "align": "right",
+                "border": 1,
             }
         )
         fmt_sheet_link = workbook.add_format(
             {
                 "font_color": "#008000",  # Green for sheet links (CONSTITUTION §2.5)
+                "font_size": 10,
                 "num_format": _IB_CURRENCY_FORMAT,
                 "align": "right",
+                "border": 1,
             }
         )
         fmt_total = workbook.add_format(
             {
                 "bold": True,
+                "font_size": 10,
                 "font_color": "#000000",
                 "num_format": _IB_CURRENCY_FORMAT,
                 "top": 1,
@@ -201,41 +212,25 @@ def generate_workbook(
         fmt_total_label = workbook.add_format(
             {
                 "bold": True,
+                "font_size": 10,
                 "font_color": "#000000",
                 "top": 1,
                 "bottom": 6,
                 "align": "left",
             }
         )
-        fmt_text = workbook.add_format({"align": "left"})
+        fmt_text = workbook.add_format({"align": "left", "font_size": 10, "border": 1})
 
         # ----------------------------------------------------
-        # 1. Populate Sheet 'Source_Inputs'
+        # 1. Populate Sheet 'Source_Inputs' (Ticket 1.3.1)
         # ----------------------------------------------------
         ws_inputs = workbook.add_worksheet("Source_Inputs")
-        ws_inputs.set_column("A:A", 22)
-        ws_inputs.set_column("B:B", 35)
-        ws_inputs.set_column("C:C", 35)
-        ws_inputs.set_column("D:D", 10)
-        ws_inputs.set_column("E:E", 25)
-        ws_inputs.set_column("F:F", 20)
+        ws_inputs.set_column("A:A", 40)
+        ws_inputs.set_column("B:B", 20)
 
-        # Header
-        input_headers = [
-            "Item ID",
-            "Normalized Label",
-            "Original Structural Label",
-            "Page",
-            "Source File",
-            "Extracted Value",
-        ]
-        for col_idx, h_text in enumerate(input_headers):
-            ws_inputs.write(
-                0,
-                col_idx,
-                h_text,
-                fmt_header_num if col_idx == 5 else fmt_header,
-            )
+        # Header: Column A: Label, Column B: Value
+        ws_inputs.write(0, 0, "Label", fmt_header)
+        ws_inputs.write(0, 1, "Value ($)", fmt_header_num)
 
         # Leaf node rows mapping: node_id -> row_idx
         source_cell_map: dict[str, int] = {}
@@ -244,16 +239,11 @@ def generate_workbook(
             raw_val = source_node.value if source_node else ""
             source_file = source_node.source_file if source_node else ""
             page = source_node.page if source_node else 1
-            orig_label = source_node.label if source_node else ""
 
-            ws_inputs.write(row_idx, 0, leaf.node_id, fmt_text)
-            ws_inputs.write(row_idx, 1, leaf.label, fmt_text)
-            ws_inputs.write(row_idx, 2, orig_label, fmt_text)
-            ws_inputs.write(row_idx, 3, page, fmt_text)
-            ws_inputs.write(row_idx, 4, source_file, fmt_text)
+            ws_inputs.write(row_idx, 0, leaf.label, fmt_text)
 
             parsed_num, is_num = _parse_numeric_value(raw_val)
-            val_col = 5
+            val_col = 1
             val_coord = _to_cell_coord(row_idx, val_col)
 
             # Build canonical W3C Web Annotation record (plan §6.1 item 7)
@@ -315,20 +305,18 @@ def generate_workbook(
             )
 
         # ----------------------------------------------------
-        # 2. Populate Sheet 'Reconciliation'
+        # 2. Populate Sheet 'Reconciliation' (Ticket 1.3.2)
         # ----------------------------------------------------
         ws_recon = workbook.add_worksheet("Reconciliation")
         ws_recon.set_column("A:A", 40)
-        ws_recon.set_column("B:B", 30)
-        ws_recon.set_column("C:C", 22)
+        ws_recon.set_column("B:B", 20)
 
         # Title
         ws_recon.write(0, 0, f"{tree.target_metric} Reconciliation", fmt_title)
 
-        # Headers (Row 2)
+        # Headers (Row 2): Column A: Line Item, Column B: Value
         ws_recon.write(2, 0, "Line Item", fmt_header)
-        ws_recon.write(2, 1, "Source Reference", fmt_header)
-        ws_recon.write(2, 2, "Value ($)", fmt_header_num)
+        ws_recon.write(2, 1, "Value ($)", fmt_header_num)
 
         curr_row = 3
         component_value_cells: list[str] = []
@@ -336,8 +324,8 @@ def generate_workbook(
         for child in tree.root.children:
             if child.node_type == FormulaNodeType.leaf:
                 input_row = source_cell_map[child.node_id]
-                source_input_coord = f"Source_Inputs!F{input_row + 1}"
-                val_coord = _to_cell_coord(curr_row, 2)
+                source_input_coord = f"Source_Inputs!B{input_row + 1}"
+                val_coord = _to_cell_coord(curr_row, 1)
 
                 # Canonical W3C annotation for reconciliation cell (AC-5, plan §6.1 item 7)
                 anno = build_w3c_annotation_for_node(
@@ -350,20 +338,13 @@ def generate_workbook(
                     job_id, "Reconciliation", val_coord, base_url=base_url
                 )
 
-                src_ref = (
-                    f"{child.source_node.source_file} (p. {child.source_node.page})"
-                    if child.source_node
-                    else "Extracted"
-                )
-
                 formula_str = f'=HYPERLINK("{hyperlink_url}", {source_input_coord})'
 
                 ws_recon.write(curr_row, 0, child.label, fmt_text)
-                ws_recon.write(curr_row, 1, src_ref, fmt_text)
-                ws_recon.write_formula(curr_row, 2, formula_str, fmt_sheet_link)
+                ws_recon.write_formula(curr_row, 1, formula_str, fmt_sheet_link)
                 ws_recon.write_comment(
                     curr_row,
-                    2,
+                    1,
                     comment_text,
                     {"visible": False, "width": 240, "height": 110},
                 )
@@ -374,7 +355,7 @@ def generate_workbook(
                     CellReference(
                         sheet_name="Reconciliation",
                         row=curr_row,
-                        col=2,
+                        col=1,
                         coordinate=val_coord,
                         node_id=child.node_id,
                         formula=formula_str,
@@ -393,8 +374,8 @@ def generate_workbook(
                 sub_coords: list[str] = []
                 for sub_leaf in child.children:
                     sub_input_row = source_cell_map[sub_leaf.node_id]
-                    sub_source_input_coord = f"Source_Inputs!F{sub_input_row + 1}"
-                    sub_val_coord = _to_cell_coord(curr_row, 2)
+                    sub_source_input_coord = f"Source_Inputs!B{sub_input_row + 1}"
+                    sub_val_coord = _to_cell_coord(curr_row, 1)
 
                     sub_anno = build_w3c_annotation_for_node(
                         job_id, "Reconciliation", sub_val_coord, sub_leaf
@@ -406,22 +387,15 @@ def generate_workbook(
                         job_id, "Reconciliation", sub_val_coord, base_url=base_url
                     )
 
-                    sub_src_ref = (
-                        f"{sub_leaf.source_node.source_file} (p. {sub_leaf.source_node.page})"
-                        if sub_leaf.source_node
-                        else "Extracted"
-                    )
-
                     sub_formula_str = (
                         f'=HYPERLINK("{sub_url}", {sub_source_input_coord})'
                     )
 
                     ws_recon.write(curr_row, 0, f"  - {sub_leaf.label}", fmt_text)
-                    ws_recon.write(curr_row, 1, sub_src_ref, fmt_text)
-                    ws_recon.write_formula(curr_row, 2, sub_formula_str, fmt_sheet_link)
+                    ws_recon.write_formula(curr_row, 1, sub_formula_str, fmt_sheet_link)
                     ws_recon.write_comment(
                         curr_row,
-                        2,
+                        1,
                         sub_comment,
                         {"visible": False, "width": 240, "height": 110},
                     )
@@ -432,7 +406,7 @@ def generate_workbook(
                         CellReference(
                             sheet_name="Reconciliation",
                             row=curr_row,
-                            col=2,
+                            col=1,
                             coordinate=sub_val_coord,
                             node_id=sub_leaf.node_id,
                             formula=sub_formula_str,
@@ -449,7 +423,7 @@ def generate_workbook(
                     curr_row += 1
 
                 # Aggregate summary row
-                agg_val_coord = _to_cell_coord(curr_row, 2)
+                agg_val_coord = _to_cell_coord(curr_row, 1)
                 agg_anno = build_w3c_annotation_for_node(
                     job_id, "Reconciliation", agg_val_coord, child
                 )
@@ -461,13 +435,17 @@ def generate_workbook(
                 )
 
                 agg_formula = f'=HYPERLINK("{agg_url}", SUM({", ".join(sub_coords)}))'
+                agg_label = (
+                    child.label
+                    if child.label.startswith("Total")
+                    else f"Total {child.label}"
+                )
 
-                ws_recon.write(curr_row, 0, child.label, fmt_text)
-                ws_recon.write(curr_row, 1, "Aggregated", fmt_text)
-                ws_recon.write_formula(curr_row, 2, agg_formula, fmt_formula_num)
+                ws_recon.write(curr_row, 0, agg_label, fmt_text)
+                ws_recon.write_formula(curr_row, 1, agg_formula, fmt_formula_num)
                 ws_recon.write_comment(
                     curr_row,
-                    2,
+                    1,
                     agg_comment,
                     {"visible": False, "width": 240, "height": 110},
                 )
@@ -478,7 +456,7 @@ def generate_workbook(
                     CellReference(
                         sheet_name="Reconciliation",
                         row=curr_row,
-                        col=2,
+                        col=1,
                         coordinate=agg_val_coord,
                         node_id=child.node_id,
                         formula=agg_formula,
@@ -490,8 +468,8 @@ def generate_workbook(
                 )
                 curr_row += 1
 
-        # Final Target Metric Root Row
-        root_val_coord = _to_cell_coord(curr_row, 2)
+        # Final Target Metric Root Row (Bold, 10pt, double-underline bottom)
+        root_val_coord = _to_cell_coord(curr_row, 1)
         root_anno = build_w3c_annotation_for_node(
             job_id, "Reconciliation", root_val_coord, tree.root
         )
@@ -507,11 +485,10 @@ def generate_workbook(
         )
 
         ws_recon.write(curr_row, 0, tree.target_metric, fmt_total_label)
-        ws_recon.write(curr_row, 1, "Total", fmt_total_label)
-        ws_recon.write_formula(curr_row, 2, total_formula, fmt_total)
+        ws_recon.write_formula(curr_row, 1, total_formula, fmt_total)
         ws_recon.write_comment(
             curr_row,
-            2,
+            1,
             root_comment,
             {"visible": False, "width": 240, "height": 110},
         )
@@ -520,7 +497,7 @@ def generate_workbook(
             CellReference(
                 sheet_name="Reconciliation",
                 row=curr_row,
-                col=2,
+                col=1,
                 coordinate=root_val_coord,
                 node_id=tree.root.node_id,
                 formula=total_formula,

@@ -121,11 +121,11 @@ def test_model_download_and_provenance_query(tmp_path: Path) -> None:
         assert prov_data.total_records == gen_result.total_cells_generated
 
         # Test 3: Get specific cell provenance
-        cell_resp = client.get(f"/models/{job_id}/provenance/Source_Inputs/F2")
+        cell_resp = client.get(f"/models/{job_id}/provenance/Source_Inputs/B2")
         assert cell_resp.status_code == 200
         cell_anno = W3CAnnotationRecord.model_validate(cell_resp.json())
         assert cell_anno.sheet_name == "Source_Inputs"
-        assert cell_anno.cell_coord == "F2"
+        assert cell_anno.cell_coord == "B2"
         assert cell_anno.body.label == "Stock-Based Compensation"
         assert cell_anno.target.source == "doc.pdf"
 

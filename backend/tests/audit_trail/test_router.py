@@ -39,12 +39,14 @@ def client(tmp_path: Path) -> TestClient:
                     page=8,
                     bbox={"x0": 100.0, "y0": 200.0, "x1": 300.0, "y1": 220.0},
                     source_file="doc_2023.pdf",
+                    is_reconciliation_candidate=True,
                 ),
                 confidence_score=0.99,
                 confidence_band=ConfidenceBand.auto_accepted,
                 flags=[],
                 status="ok",
                 error_detail=None,
+                is_reconciliation_candidate=True,
             ),
             normalized_label="Operating Income",
             taxonomy_status=TaxonomyStatus.matched,
@@ -75,13 +77,13 @@ def client(tmp_path: Path) -> TestClient:
 
 def test_get_cell_source_chain_success(client: TestClient) -> None:
     """Test GET /audit-trail/{job_id}/cell/{sheet_name}/{cell_coord} returns valid source chain."""
-    response = client.get("/audit-trail/job_api_test_456/cell/Source_Inputs/F2")
+    response = client.get("/audit-trail/job_api_test_456/cell/Source_Inputs/B2")
     assert response.status_code == 200
     data = response.json()
     assert data["is_found"] is True
     assert data["job_id"] == "job_api_test_456"
     assert data["sheet_name"] == "Source_Inputs"
-    assert data["cell_coord"] == "F2"
+    assert data["cell_coord"] == "B2"
     assert len(data["components"]) == 1
     assert data["components"][0]["review_status"] == "locked"
     assert data["components"][0]["source_file"] == "doc_2023.pdf"
@@ -100,8 +102,10 @@ def test_get_cell_source_chain_not_found(client: TestClient) -> None:
 
 def test_get_record_source_chain_query(client: TestClient) -> None:
     """Test GET /audit-trail/{job_id}/record?provenance_id=... query parameter lookup (AC-7)."""
-    prov_id = "urn:footnote:provenance:job_api_test_456:Source_Inputs:F2"
-    response = client.get(f"/audit-trail/job_api_test_456/record?provenance_id={prov_id}")
+    prov_id = "urn:footnote:provenance:job_api_test_456:Source_Inputs:B2"
+    response = client.get(
+        f"/audit-trail/job_api_test_456/record?provenance_id={prov_id}"
+    )
     assert response.status_code == 200
     data = response.json()
     assert data["is_found"] is True
@@ -111,7 +115,7 @@ def test_get_record_source_chain_query(client: TestClient) -> None:
 
 def test_get_record_source_chain_path(client: TestClient) -> None:
     """Test GET /audit-trail/{job_id}/provenance/{provenance_id:path} lookup (AC-7)."""
-    prov_id = "urn:footnote:provenance:job_api_test_456:Source_Inputs:F2"
+    prov_id = "urn:footnote:provenance:job_api_test_456:Source_Inputs:B2"
     response = client.get(f"/audit-trail/job_api_test_456/provenance/{prov_id}")
     assert response.status_code == 200
     data = response.json()
