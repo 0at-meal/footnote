@@ -304,8 +304,8 @@ export default function AuditTrailView({ jobId, apiBase, onBack, onReview }: Pro
         </div>
       </header>
 
-      {/* ── Empty State Guidance Banner (Ticket 5.1) ── */}
-      {!isLoadingProvenance && provenanceRecords.length === 0 && (
+      {/* ── Empty State Guidance Banner (Ticket 1.4.1) ── */}
+      {provenanceRecords.length === 0 && (
         <div className="audit-empty-banner" role="alert">
           <div className="audit-empty-banner__message">
             <svg
@@ -324,7 +324,7 @@ export default function AuditTrailView({ jobId, apiBase, onBack, onReview }: Pro
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
             <span>
-              No Excel model generated yet. Please review and confirm extracted line items first.
+              Model not yet generated. Approve items and click &apos;Generate Model&apos; to view cell-level audit trail.
             </span>
           </div>
           {onReview && (
@@ -332,9 +332,9 @@ export default function AuditTrailView({ jobId, apiBase, onBack, onReview }: Pro
               type="button"
               className="audit-empty-banner__action-btn"
               onClick={() => onReview(jobId)}
-              aria-label="Go to Review UI"
+              aria-label="Go to Review Tab"
             >
-              Go to Review UI →
+              Go to Review Tab →
             </button>
           )}
         </div>

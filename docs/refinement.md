@@ -437,7 +437,7 @@ Phase 1 -- Business Model Alignment
     [x] Ticket 1.3.2 -- Reconciliation: cross-sheet refs + SUM
     [x] Ticket 1.3.3 -- Excel generator tests
   Step 1.4 -- Fix Audit Trail empty state
-    [ ] Ticket 1.4.1 -- Pre-generation guidance in AuditTrailView
+    [x] Ticket 1.4.1 -- Pre-generation guidance in AuditTrailView
 
 Phase 2 -- Multi-Year Company Architecture
   Step 2.1 -- Company data model
