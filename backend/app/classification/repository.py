@@ -65,5 +65,7 @@ class ClassificationRepository:
                 return [ClassifiedRecord.model_validate(item) for item in data]
             return None
         except (json.JSONDecodeError, OSError, ValueError) as err:
-            logger.error("Failed to load classified records for job %s: %s", job_id, err)
+            logger.error(
+                "Failed to load classified records for job %s: %s", job_id, err
+            )
             return None

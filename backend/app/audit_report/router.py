@@ -47,9 +47,13 @@ class ReportStatusResponse(BaseModel):
     """Status metadata for an audit report (spec §4)."""
 
     job_id: str = Field(..., description="Job identifier")
-    is_ready: bool = Field(..., description="True if report is generated and ready on disk")
+    is_ready: bool = Field(
+        ..., description="True if report is generated and ready on disk"
+    )
     download_url: str = Field(..., description="API download endpoint path")
-    error_detail: str | None = Field(default=None, description="Diagnostic error if unavailable")
+    error_detail: str | None = Field(
+        default=None, description="Diagnostic error if unavailable"
+    )
 
 
 @router.get(
@@ -95,7 +99,9 @@ def download_audit_report(job_id: str) -> FileResponse:
         path=pdf_path,
         media_type="application/pdf",
         filename=f"audit_report_{job_id}.pdf",
-        headers={"Content-Disposition": f'attachment; filename="audit_report_{job_id}.pdf"'},
+        headers={
+            "Content-Disposition": f'attachment; filename="audit_report_{job_id}.pdf"'
+        },
     )
 
 
@@ -121,5 +127,7 @@ def get_audit_report_status(job_id: str) -> ReportStatusResponse:
         job_id=job_id,
         is_ready=is_ready,
         download_url=f"/api/jobs/{job_id}/audit-report",
-        error_detail=None if is_ready else "Report not yet generated or model incomplete",
+        error_detail=(
+            None if is_ready else "Report not yet generated or model incomplete"
+        ),
     )

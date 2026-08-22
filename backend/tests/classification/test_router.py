@@ -30,7 +30,9 @@ def test_get_decision_log_success_200(tmp_path) -> None:  # type: ignore[no-unty
         record_index=0,
         timestamp="2026-08-14T20:00:00Z",
         input_payload=ClassifierInputPayload(label="Stock-based comp"),
-        raw_response=ClassifierRawResponse(label="Stock-Based Compensation", confidence=0.99),
+        raw_response=ClassifierRawResponse(
+            label="Stock-Based Compensation", confidence=0.99
+        ),
         taxonomy_status=TaxonomyStatus.matched,
         resulting_state="confirmed",
     )

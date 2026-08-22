@@ -39,8 +39,7 @@ class DriftGraphStore:
     def _init_db(self) -> None:
         """Create database tables if they do not already exist."""
         with self._get_connection() as conn:
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE TABLE IF NOT EXISTS drift_nodes (
                     node_id TEXT PRIMARY KEY,
                     entity TEXT NOT NULL,
@@ -49,10 +48,8 @@ class DriftGraphStore:
                     component_labels TEXT NOT NULL,
                     created_at TEXT NOT NULL
                 )
-                """
-            )
-            conn.execute(
-                """
+                """)
+            conn.execute("""
                 CREATE TABLE IF NOT EXISTS drift_edges (
                     edge_id TEXT PRIMARY KEY,
                     from_node_id TEXT NOT NULL,
@@ -65,18 +62,15 @@ class DriftGraphStore:
                     removed_labels TEXT NOT NULL,
                     created_at TEXT NOT NULL
                 )
-                """
-            )
-            conn.execute(
-                """
+                """)
+            conn.execute("""
                 CREATE TABLE IF NOT EXISTS drift_latest_nodes (
                     entity TEXT NOT NULL,
                     target_metric TEXT NOT NULL,
                     node_id TEXT NOT NULL,
                     PRIMARY KEY (entity, target_metric)
                 )
-                """
-            )
+                """)
 
     def save_graph(self, graph: HistoricalDriftGraph) -> None:
         """
@@ -153,7 +147,11 @@ class DriftGraphStore:
                 target_metric = str(row["target_metric"])
                 filing_year = int(row["filing_year"])
                 raw_labels = json.loads(str(row["component_labels"]))
-                component_labels = [str(lbl) for lbl in raw_labels] if isinstance(raw_labels, list) else []
+                component_labels = (
+                    [str(lbl) for lbl in raw_labels]
+                    if isinstance(raw_labels, list)
+                    else []
+                )
                 created_at = str(row["created_at"])
 
                 graph._graph.add_node(
@@ -166,12 +164,10 @@ class DriftGraphStore:
                 )
 
             # Load edges
-            cursor = conn.execute(
-                """
+            cursor = conn.execute("""
                 SELECT edge_id, from_node_id, to_node_id, entity, target_metric, filing_year, edge_type, added_labels, removed_labels, created_at
                 FROM drift_edges
-                """
-            )
+                """)
             for row in cursor.fetchall():
                 edge_id = str(row["edge_id"])
                 from_node_id = str(row["from_node_id"])
@@ -181,9 +177,17 @@ class DriftGraphStore:
                 filing_year = int(row["filing_year"])
                 edge_type = DriftEdgeType(str(row["edge_type"]))
                 raw_added = json.loads(str(row["added_labels"]))
-                added_labels = [str(lbl) for lbl in raw_added] if isinstance(raw_added, list) else []
+                added_labels = (
+                    [str(lbl) for lbl in raw_added]
+                    if isinstance(raw_added, list)
+                    else []
+                )
                 raw_removed = json.loads(str(row["removed_labels"]))
-                removed_labels = [str(lbl) for lbl in raw_removed] if isinstance(raw_removed, list) else []
+                removed_labels = (
+                    [str(lbl) for lbl in raw_removed]
+                    if isinstance(raw_removed, list)
+                    else []
+                )
                 created_at = str(row["created_at"])
 
                 edge = DriftEdge(
@@ -199,7 +203,9 @@ class DriftGraphStore:
                     created_at=created_at,
                 )
                 graph._edges.append(edge)
-                if graph._graph.has_node(from_node_id) and graph._graph.has_node(to_node_id):
+                if graph._graph.has_node(from_node_id) and graph._graph.has_node(
+                    to_node_id
+                ):
                     graph._graph.add_edge(
                         from_node_id,
                         to_node_id,
@@ -212,7 +218,9 @@ class DriftGraphStore:
                     )
 
             # Load latest nodes
-            cursor = conn.execute("SELECT entity, target_metric, node_id FROM drift_latest_nodes")
+            cursor = conn.execute(
+                "SELECT entity, target_metric, node_id FROM drift_latest_nodes"
+            )
             for row in cursor.fetchall():
                 ent = str(row["entity"])
                 metric = str(row["target_metric"])

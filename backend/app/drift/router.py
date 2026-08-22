@@ -112,7 +112,8 @@ def evaluate_job(
             status="skipped_no_locked_records",
             entity=entity or (getattr(job, "entity", None) if job else None),
             target_metric=job.target_metric if job else None,
-            filing_year=filing_year or (getattr(job, "filing_year", None) if job else None),
+            filing_year=filing_year
+            or (getattr(job, "filing_year", None) if job else None),
             is_baseline=False,
             has_discrepancy=False,
             flag=None,
@@ -161,9 +162,17 @@ def get_job_drift_flags(job_id: str) -> DriftFlagsResponse:
             detail=f"Job '{job_id}' not found.",
         )
 
-    entity = comparison.entity if comparison else (getattr(job, "entity", None) or getattr(job, "filename", None))
-    target_metric = comparison.target_metric if comparison else (job.target_metric if job else None)
-    filing_year = comparison.filing_year if comparison else getattr(job, "filing_year", None)
+    entity = (
+        comparison.entity
+        if comparison
+        else (getattr(job, "entity", None) or getattr(job, "filename", None))
+    )
+    target_metric = (
+        comparison.target_metric if comparison else (job.target_metric if job else None)
+    )
+    filing_year = (
+        comparison.filing_year if comparison else getattr(job, "filing_year", None)
+    )
     is_baseline = comparison.is_baseline if comparison else False
 
     return DriftFlagsResponse(
@@ -209,7 +218,9 @@ def get_metric_history(
 )
 def export_drift_graph(
     entity: str | None = Query(default=None, description="Optional filter by entity"),
-    target_metric: str | None = Query(default=None, description="Optional filter by target metric"),
+    target_metric: str | None = Query(
+        default=None, description="Optional filter by target metric"
+    ),
 ) -> DriftGraphExport:
     """
     Retrieve all nodes and edges in the drift graph, optionally filtered by entity and metric (spec §3, AC-8).

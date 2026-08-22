@@ -94,19 +94,26 @@ class GroqClassifierClient:
             )
 
         # Purge timestamps older than 60 seconds
-        self._request_timestamps = [ts for ts in self._request_timestamps if now - ts < 60.0]
+        self._request_timestamps = [
+            ts for ts in self._request_timestamps if now - ts < 60.0
+        ]
 
         if len(self._request_timestamps) >= MAX_RPM:
             oldest = self._request_timestamps[0]
             sleep_duration = max(0.0, 60.0 - (now - oldest) + 0.1)
-            logger.info("Throttling Groq requests: sleeping for %.2fs to observe 30 RPM cap", sleep_duration)
+            logger.info(
+                "Throttling Groq requests: sleeping for %.2fs to observe 30 RPM cap",
+                sleep_duration,
+            )
             time.sleep(sleep_duration)
 
         current_time = time.time()
         self._request_timestamps.append(current_time)
         self._daily_request_count += 1
 
-    def _truncate_payload_if_oversized(self, payload: ClassifierInputPayload) -> ClassifierInputPayload:
+    def _truncate_payload_if_oversized(
+        self, payload: ClassifierInputPayload
+    ) -> ClassifierInputPayload:
         """
         Truncate oversized label or context to prevent breaching the 8,000 TPM limit (EC-7).
         """
@@ -137,7 +144,9 @@ class GroqClassifierClient:
 
         prompt_user_content = f"Item Label: {sanitized_payload.label}"
         if sanitized_payload.structural_context:
-            prompt_user_content += f"\nStructural Context: {sanitized_payload.structural_context}"
+            prompt_user_content += (
+                f"\nStructural Context: {sanitized_payload.structural_context}"
+            )
 
         messages: list[ChatCompletionMessageParam] = [
             {"role": "system", "content": CLASSIFIER_SYSTEM_PROMPT},
@@ -163,7 +172,11 @@ class GroqClassifierClient:
             except RateLimitError as err:
                 attempt += 1
                 if attempt > self.max_retries:
-                    logger.error("Exceeded max retries (%d) for rate limit: %s", self.max_retries, err)
+                    logger.error(
+                        "Exceeded max retries (%d) for rate limit: %s",
+                        self.max_retries,
+                        err,
+                    )
                     raise
 
                 delay = self.initial_retry_delay * (2 ** (attempt - 1))
@@ -190,15 +203,21 @@ class GroqClassifierClient:
         try:
             data = json.loads(raw_content)
         except json.JSONDecodeError as err:
-            raise ValueError(f"Malformed JSON response from Groq classifier: {raw_content!r}") from err
+            raise ValueError(
+                f"Malformed JSON response from Groq classifier: {raw_content!r}"
+            ) from err
 
         if not isinstance(data, dict):
-            raise TypeError(f"Expected JSON object from classifier, got {type(data).__name__}")
+            raise TypeError(
+                f"Expected JSON object from classifier, got {type(data).__name__}"
+            )
 
         # Check for disallowed numeric output keys beyond confidence
         disallowed_keys = [k for k in data if k not in ("label", "confidence")]
         if disallowed_keys:
-            logger.warning("Classifier returned unexpected extra fields: %s", disallowed_keys)
+            logger.warning(
+                "Classifier returned unexpected extra fields: %s", disallowed_keys
+            )
 
         try:
             return ClassifierRawResponse(
@@ -206,4 +225,6 @@ class GroqClassifierClient:
                 confidence=float(data.get("confidence", -1.0)),
             )
         except (ValidationError, TypeError, ValueError) as err:
-            raise ValueError(f"Classifier response failed schema validation: {raw_content!r}") from err
+            raise ValueError(
+                f"Classifier response failed schema validation: {raw_content!r}"
+            ) from err

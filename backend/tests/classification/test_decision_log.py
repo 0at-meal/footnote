@@ -105,7 +105,9 @@ def test_decision_log_numeric_invariance_proof(tmp_path: Path) -> None:
             ClassificationItemResult(
                 record_index=0,
                 payload=ClassifierInputPayload(label="Restructuring costs"),
-                raw_response=ClassifierRawResponse(label="Restructuring Charges", confidence=0.91),
+                raw_response=ClassifierRawResponse(
+                    label="Restructuring Charges", confidence=0.91
+                ),
                 is_error=False,
             )
         ],

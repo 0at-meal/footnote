@@ -25,8 +25,12 @@ class MetricDefinitionNode(BaseModel):
 
     node_id: str = Field(..., description="Unique identifier for this definition node")
     entity: str = Field(..., description="Entity identifier (e.g. company ticker/name)")
-    target_metric: str = Field(..., description="Target metric name (e.g. 'Adjusted EBITDA')")
-    filing_year: int = Field(..., description="Filing year associated with this definition")
+    target_metric: str = Field(
+        ..., description="Target metric name (e.g. 'Adjusted EBITDA')"
+    )
+    filing_year: int = Field(
+        ..., description="Filing year associated with this definition"
+    )
     component_labels: list[str] = Field(
         default_factory=list,
         description="Sorted list of normalized component labels that define this metric",
@@ -45,7 +49,9 @@ class DriftEdge(BaseModel):
     entity: str = Field(..., description="Entity identifier")
     target_metric: str = Field(..., description="Target metric name")
     filing_year: int = Field(..., description="Filing year of the transition")
-    edge_type: DriftEdgeType = Field(..., description="Whether definition changed or continued")
+    edge_type: DriftEdgeType = Field(
+        ..., description="Whether definition changed or continued"
+    )
     added_labels: list[str] = Field(
         default_factory=list,
         description="Component labels added in this transition",
@@ -117,7 +123,9 @@ class DriftFlag(BaseModel):
         ...,
         description="Reference to the prior-year graph node compared against",
     )
-    created_at: str = Field(..., description="ISO 8601 UTC timestamp of flag generation")
+    created_at: str = Field(
+        ..., description="ISO 8601 UTC timestamp of flag generation"
+    )
 
 
 class DriftFlagsResponse(BaseModel):
@@ -127,7 +135,9 @@ class DriftFlagsResponse(BaseModel):
 
     job_id: str = Field(..., description="Job identifier")
     entity: str | None = Field(default=None, description="Entity identifier if known")
-    target_metric: str | None = Field(default=None, description="Target metric name if known")
+    target_metric: str | None = Field(
+        default=None, description="Target metric name if known"
+    )
     filing_year: int | None = Field(default=None, description="Filing year if known")
     is_baseline: bool = Field(
         default=False,
@@ -168,8 +178,12 @@ class DriftEvaluationRequest(BaseModel):
     Optional payload for POST /drift/jobs/{job_id}/evaluate.
     """
 
-    entity: str | None = Field(default=None, description="Optional entity identifier override")
-    filing_year: int | None = Field(default=None, description="Optional filing year override")
+    entity: str | None = Field(
+        default=None, description="Optional entity identifier override"
+    )
+    filing_year: int | None = Field(
+        default=None, description="Optional filing year override"
+    )
 
 
 class DriftEvaluationResponse(BaseModel):

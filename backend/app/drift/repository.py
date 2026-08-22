@@ -82,7 +82,9 @@ class DriftRepository:
             logger.error("Failed to load drift flags for job %s: %s", job_id, err)
             return []
 
-    def save_comparison_result(self, job_id: str, result: DriftComparisonResult) -> Path:
+    def save_comparison_result(
+        self, job_id: str, result: DriftComparisonResult
+    ) -> Path:
         """
         Atomically persist full comparison result for a job to data/results/<job_id>_drift_comparison.json.
         """

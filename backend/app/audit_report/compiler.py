@@ -124,7 +124,9 @@ class AuditReportCompiler:
         review_items = self._review_repo.get_review_items(job_id) or []
         scored_records = self._load_scored_records(job_id)
 
-        reconciliation_summary = self._compile_reconciliation_summary(provenance_records)
+        reconciliation_summary = self._compile_reconciliation_summary(
+            provenance_records
+        )
         provenance_matrix = self._compile_provenance_matrix(job_id, provenance_records)
         manual_overrides = self._compile_manual_overrides(
             job_id, review_items, scored_records, provenance_records
@@ -176,7 +178,9 @@ class AuditReportCompiler:
         items: list[ReconciliationSummaryItem] = []
 
         summary_records = [
-            r for r in provenance_records if r.sheet_name == "Model_Summary" or r.is_formula
+            r
+            for r in provenance_records
+            if r.sheet_name == "Model_Summary" or r.is_formula
         ]
         records_to_use = summary_records if summary_records else provenance_records
 
@@ -256,10 +260,18 @@ class AuditReportCompiler:
 
             is_edited_value = orig_value is not None and item.value != orig_value
             is_edited_label = orig_label is not None and item.label != orig_label
-            was_extraction_error = orig_status == "extraction_error" or item.status == ReviewStatus.extraction_error
+            was_extraction_error = (
+                orig_status == "extraction_error"
+                or item.status == ReviewStatus.extraction_error
+            )
             is_manual_required = item.status == ReviewStatus.manual_required
 
-            if is_edited_value or is_edited_label or was_extraction_error or is_manual_required:
+            if (
+                is_edited_value
+                or is_edited_label
+                or was_extraction_error
+                or is_manual_required
+            ):
                 if was_extraction_error:
                     override_type = "extraction_error_recovery"
                 elif is_manual_required:
@@ -267,7 +279,11 @@ class AuditReportCompiler:
                 else:
                     override_type = "user_edit"
 
-                flags_list = list(item.flags) if item.flags else (list(orig_sr.flags) if orig_sr and orig_sr.flags else [])
+                flags_list = (
+                    list(item.flags)
+                    if item.flags
+                    else (list(orig_sr.flags) if orig_sr and orig_sr.flags else [])
+                )
 
                 overrides.append(
                     ManualOverrideItem(
@@ -280,10 +296,19 @@ class AuditReportCompiler:
                         final_value=item.value,
                         original_label=orig_label,
                         final_label=item.label,
-                        review_status=item.status.value if hasattr(item.status, "value") else str(item.status),
-                        confidence_band=item.confidence_band.value if hasattr(item.confidence_band, "value") else str(item.confidence_band),
+                        review_status=(
+                            item.status.value
+                            if hasattr(item.status, "value")
+                            else str(item.status)
+                        ),
+                        confidence_band=(
+                            item.confidence_band.value
+                            if hasattr(item.confidence_band, "value")
+                            else str(item.confidence_band)
+                        ),
                         flags=flags_list,
-                        error_detail=item.error_detail or (orig_sr.error_detail if orig_sr else None),
+                        error_detail=item.error_detail
+                        or (orig_sr.error_detail if orig_sr else None),
                         confirmation_timestamp=None,
                         is_hardcode=False,
                     )
@@ -369,16 +394,25 @@ class AuditReportCompiler:
 
                         # Verify that raw response does not have numeric calculation fields
                         for k, v in raw_resp.items():
-                            if k not in ("label", "confidence") and isinstance(v, (int, float)):
+                            if k not in ("label", "confidence") and isinstance(
+                                v, (int, float)
+                            ):
                                 strictly_numeric_free = False
 
-                    tax_status = str(data.get("taxonomy_status", "pending_taxonomy_confirmation"))
-                    resulting_state = str(data.get("resulting_state", "pending_confirmation"))
+                    tax_status = str(
+                        data.get("taxonomy_status", "pending_taxonomy_confirmation")
+                    )
+                    resulting_state = str(
+                        data.get("resulting_state", "pending_confirmation")
+                    )
                     err_detail = data.get("error_detail")
 
                     if tax_status == "matched" or resulting_state == "confirmed":
                         matched_count += 1
-                    elif resulting_state == "classification_error" or err_detail is not None:
+                    elif (
+                        resulting_state == "classification_error"
+                        or err_detail is not None
+                    ):
                         error_count += 1
                     else:
                         pending_count += 1
@@ -416,7 +450,9 @@ class AuditReportCompiler:
                 entries=[],
             )
 
-    def _compile_drift_summary(self, job_id: str, target_metric: str) -> DriftAuditSummary:
+    def _compile_drift_summary(
+        self, job_id: str, target_metric: str
+    ) -> DriftAuditSummary:
         """
         Compiles the cross-year drift summary from Feature 7 results (spec §2, AC-8, EC-7).
         """

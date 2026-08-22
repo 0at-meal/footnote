@@ -76,7 +76,9 @@ def test_classifier_raw_response_rejects_confidence_above_one() -> None:
         ClassifierRawResponse(label="Lease Adjustment", confidence=1.05)
 
 
-def test_classifier_raw_response_schema_strictly_numeric_free_except_confidence() -> None:
+def test_classifier_raw_response_schema_strictly_numeric_free_except_confidence() -> (
+    None
+):
     schema = ClassifierRawResponse.model_json_schema()
     properties = schema.get("properties", {})
     # Only "label" (string) and "confidence" (number) may exist

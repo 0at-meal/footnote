@@ -30,7 +30,9 @@ from fastapi.testclient import TestClient
 client = TestClient(app)
 
 
-def _setup_job_with_records(tmp_path: Path) -> tuple[JobRepository, ReviewRepository, str]:
+def _setup_job_with_records(
+    tmp_path: Path,
+) -> tuple[JobRepository, ReviewRepository, str]:
     job_repo = JobRepository(data_dir=tmp_path)
     job = job_repo.save_job(
         filename="test_filing.pdf",
@@ -48,11 +50,13 @@ def _setup_job_with_records(tmp_path: Path) -> tuple[JobRepository, ReviewReposi
             page=1,
             bbox={"x0": 100, "y0": 100, "x1": 200, "y1": 200},
             source_file="test_filing.pdf",
+            is_reconciliation_candidate=True,
         ),
         confidence_score=0.98,
         confidence_band=ConfidenceBand.auto_accepted,
         flags=[],
         status="ok",
+        is_reconciliation_candidate=True,
     )
     cr1 = ClassifiedRecord(
         record=sr1,
@@ -70,11 +74,13 @@ def _setup_job_with_records(tmp_path: Path) -> tuple[JobRepository, ReviewReposi
             page=2,
             bbox={"x0": 100, "y0": 300, "x1": 200, "y1": 400},
             source_file="test_filing.pdf",
+            is_reconciliation_candidate=True,
         ),
         confidence_score=0.88,
         confidence_band=ConfidenceBand.needs_review,
         flags=[],
         status="ok",
+        is_reconciliation_candidate=True,
     )
     cr2 = ClassifiedRecord(
         record=sr2,
@@ -92,12 +98,14 @@ def _setup_job_with_records(tmp_path: Path) -> tuple[JobRepository, ReviewReposi
             page=3,
             bbox={"x0": 0, "y0": 0, "x1": 10, "y1": 10},
             source_file="test_filing.pdf",
+            is_reconciliation_candidate=True,
         ),
         confidence_score=0.1,
         confidence_band=ConfidenceBand.manual_required,
         flags=["corrupted"],
         status="extraction_error",
         error_detail="Docling cell parsing failed",
+        is_reconciliation_candidate=True,
     )
     cr3 = ClassifiedRecord(
         record=sr3,
@@ -321,7 +329,9 @@ def test_protect_locked_items_against_extraction_rerun(tmp_path: Path) -> None:
         "app.review.router._review_repo", review_repo
     ):
         # Lock item 0
-        client.post(f"/review/{job_id}/items/{item_id}/confirm", json={"add_to_taxonomy": False})
+        client.post(
+            f"/review/{job_id}/items/{item_id}/confirm", json={"add_to_taxonomy": False}
+        )
 
     # Create new candidate items simulating re-extraction (EC-10)
     items = review_repo.get_review_items(job_id)
@@ -341,7 +351,9 @@ def test_protect_locked_items_against_extraction_rerun(tmp_path: Path) -> None:
     assert locked_item.status == ReviewStatus.locked
 
 
-def test_review_repository_propagates_target_metric_and_table_name(tmp_path: Path) -> None:
+def test_review_repository_propagates_target_metric_and_table_name(
+    tmp_path: Path,
+) -> None:
     """Ticket 2.3: Verify _from_classified_records propagates candidate and table_name."""
     repo = ReviewRepository(data_dir=tmp_path)
 
@@ -352,12 +364,14 @@ def test_review_repository_propagates_target_metric_and_table_name(tmp_path: Pat
             page=1,
             bbox={"x0": 10, "y0": 20, "x1": 100, "y1": 50},
             source_file="filing.pdf",
+            is_reconciliation_candidate=True,
         ),
         confidence_score=0.98,
         confidence_band=ConfidenceBand.auto_accepted,
         flags=[],
         table_name="Adjusted EBITDA Reconciliation",
         status="ok",
+        is_reconciliation_candidate=True,
     )
     sr2 = ScoredRecord(
         record=ExtractedRecord(
@@ -366,12 +380,14 @@ def test_review_repository_propagates_target_metric_and_table_name(tmp_path: Pat
             page=1,
             bbox={"x0": 10, "y0": 60, "x1": 100, "y1": 90},
             source_file="filing.pdf",
+            is_reconciliation_candidate=False,
         ),
         confidence_score=0.95,
         confidence_band=ConfidenceBand.auto_accepted,
         flags=[],
         table_name="Consolidated Balance Sheets",
         status="ok",
+        is_reconciliation_candidate=False,
     )
 
     cr1 = ClassifiedRecord(
@@ -392,30 +408,25 @@ def test_review_repository_propagates_target_metric_and_table_name(tmp_path: Pat
     )
 
     items = repo._from_classified_records("job_123", [cr1, cr2])
-    assert len(items) == 2
+    # cr2 is excluded because is_reconciliation_candidate is False
+    assert len(items) == 1
 
     assert items[0].id == "job_123_0"
     assert items[0].is_target_metric_candidate is True
     assert items[0].table_name == "Adjusted EBITDA Reconciliation"
 
-    assert items[1].id == "job_123_1"
-    assert items[1].is_target_metric_candidate is False
-    assert items[1].table_name == "Consolidated Balance Sheets"
-
     # Save and reload
     repo.save_review_items("job_123", items)
     loaded = repo.get_review_items("job_123")
     assert loaded is not None
-    assert len(loaded) == 2
+    assert len(loaded) == 1
     assert loaded[0].is_target_metric_candidate is True
     assert loaded[0].table_name == "Adjusted EBITDA Reconciliation"
-    assert loaded[1].is_target_metric_candidate is False
-    assert loaded[1].table_name == "Consolidated Balance Sheets"
 
 
 def test_confirm_batch_locks_target_candidates_and_skips_errors(tmp_path: Path) -> None:
     """Ticket 4.1 & 4.3: confirm_batch locks candidates, adds pending taxonomy, and skips extraction errors."""
-    job_repo, review_repo, job_id = _setup_job_with_records(tmp_path)
+    _job_repo, review_repo, job_id = _setup_job_with_records(tmp_path)
     # _setup_job_with_records creates:
     # item 0: matched SBC (candidate=True)
     # item 1: pending litigation (candidate=True)
@@ -462,4 +473,3 @@ def test_confirm_batch_router_endpoint(tmp_path: Path) -> None:
     assert f"{job_id}_0" in data["locked_item_ids"]
     assert f"{job_id}_1" in data["locked_item_ids"]
     assert f"{job_id}_2" not in data["locked_item_ids"]
-

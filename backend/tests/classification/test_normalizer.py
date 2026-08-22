@@ -46,13 +46,17 @@ def create_sample_scored_record(
 
 
 def test_matched_item_attaches_normalized_label() -> None:
-    records = [create_sample_scored_record("Stock compensation expense", value="15,000")]
+    records = [
+        create_sample_scored_record("Stock compensation expense", value="15,000")
+    ]
     batch_result = ClassificationBatchResult(
         results=[
             ClassificationItemResult(
                 record_index=0,
                 payload=ClassifierInputPayload(label="Stock compensation expense"),
-                raw_response=ClassifierRawResponse(label="Stock-Based Compensation", confidence=0.96),
+                raw_response=ClassifierRawResponse(
+                    label="Stock-Based Compensation", confidence=0.96
+                ),
                 is_error=False,
             )
         ],
@@ -85,7 +89,9 @@ def test_unrecognized_item_has_none_normalized_label() -> None:
             ClassificationItemResult(
                 record_index=0,
                 payload=ClassifierInputPayload(label="Custom hedge adjustment"),
-                raw_response=ClassifierRawResponse(label="Non-Standard Hedging Loss", confidence=0.85),
+                raw_response=ClassifierRawResponse(
+                    label="Non-Standard Hedging Loss", confidence=0.85
+                ),
                 is_error=False,
             )
         ],
@@ -109,7 +115,9 @@ def test_unrecognized_item_has_none_normalized_label() -> None:
 
 def test_skipped_and_error_items_are_pending() -> None:
     records = [
-        create_sample_scored_record("Manual entry row", band=ConfidenceBand.manual_required),
+        create_sample_scored_record(
+            "Manual entry row", band=ConfidenceBand.manual_required
+        ),
         create_sample_scored_record("Corrupted row", status="extraction_error"),
     ]
     batch_result = ClassificationBatchResult(
@@ -137,7 +145,9 @@ def test_canonical_taxonomy_match_attaches_normalized_label() -> None:
             ClassificationItemResult(
                 record_index=0,
                 payload=ClassifierInputPayload(label="Stock based compensation"),
-                raw_response=ClassifierRawResponse(label="stock-based compensation", confidence=0.92),
+                raw_response=ClassifierRawResponse(
+                    label="stock-based compensation", confidence=0.92
+                ),
                 is_error=False,
             )
         ],
@@ -190,23 +200,33 @@ def test_offline_fallback_normalizer_attaches_seed_taxonomy() -> None:
 def test_target_metric_candidate_tagging_reconciliation_vs_balance_sheet() -> None:
     """Ticket 2.3: Reconciliation bridge items are marked candidates; balance sheet items are not."""
     # 1. Non-GAAP reconciliation table items
-    rec_sbc = create_sample_scored_record("Stock-based compensation expense", value="12,000")
+    rec_sbc = create_sample_scored_record(
+        "Stock-based compensation expense", value="12,000"
+    )
     rec_sbc.table_name = "Reconciliation of Net Income to Non-GAAP Adjusted EBITDA"
 
-    rec_da = create_sample_scored_record("Depreciation and amortization", value="34,000")
+    rec_da = create_sample_scored_record(
+        "Depreciation and amortization", value="34,000"
+    )
     rec_da.table_name = "Non-GAAP Financial Measures"
 
-    rec_restruct = create_sample_scored_record("Restructuring and severance charges", value="5,000")
+    rec_restruct = create_sample_scored_record(
+        "Restructuring and severance charges", value="5,000"
+    )
     rec_restruct.table_name = "Adjusted EBITDA Reconciliation"
 
     # 2. Balance sheet / lease / PPE items
     rec_cash = create_sample_scored_record("Cash and cash equivalents", value="150,000")
     rec_cash.table_name = "Consolidated Balance Sheets"
 
-    rec_ppe = create_sample_scored_record("Property, plant and equipment, net", value="850,000")
+    rec_ppe = create_sample_scored_record(
+        "Property, plant and equipment, net", value="850,000"
+    )
     rec_ppe.table_name = "Property and Equipment Schedule"
 
-    rec_lease = create_sample_scored_record("Operating lease liabilities, non-current", value="45,000")
+    rec_lease = create_sample_scored_record(
+        "Operating lease liabilities, non-current", value="45,000"
+    )
     rec_lease.table_name = "Operating Lease Commitments"
 
     records = [rec_sbc, rec_da, rec_restruct, rec_cash, rec_ppe, rec_lease]

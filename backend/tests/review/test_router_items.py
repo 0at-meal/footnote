@@ -37,6 +37,7 @@ def _create_sample_scored_record(
     confidence_score: float = 0.98,
     status: str = "ok",
     error_detail: str | None = None,
+    is_reconciliation_candidate: bool = True,
 ) -> ScoredRecord:
     return ScoredRecord(
         record=ExtractedRecord(
@@ -45,12 +46,14 @@ def _create_sample_scored_record(
             page=page,
             bbox={"x0": 100.0, "y0": 200.0, "x1": 300.0, "y1": 250.0},
             source_file="test_10k.pdf",
+            is_reconciliation_candidate=is_reconciliation_candidate,
         ),
         confidence_score=confidence_score,
         confidence_band=confidence_band,
         flags=["valid_number"],
         status=status,  # type: ignore[arg-type]
         error_detail=error_detail,
+        is_reconciliation_candidate=is_reconciliation_candidate,
     )
 
 
@@ -63,7 +66,9 @@ def test_get_review_items_from_classified_records_200(tmp_path: Path) -> None:
     )
 
     class_repo = ClassificationRepository(data_dir=tmp_path)
-    sr1 = _create_sample_scored_record(value="1,250", confidence_band=ConfidenceBand.auto_accepted)
+    sr1 = _create_sample_scored_record(
+        value="1,250", confidence_band=ConfidenceBand.auto_accepted
+    )
     sr2 = _create_sample_scored_record(
         value="450",
         label="Lease adjustments",
@@ -200,3 +205,52 @@ def test_get_review_items_records_not_found_404(tmp_path: Path) -> None:
 
     assert response.status_code == 404
     assert response.json()["detail"] == "No extraction records found for job"
+
+
+def test_get_review_items_filters_out_non_reconciliation_items(tmp_path: Path) -> None:
+    """Ticket 1.2.1: Verify non-reconciliation items (e.g. balance sheet rows) are omitted from review items."""
+    job_repo = JobRepository(data_dir=tmp_path)
+    job = job_repo.save_job(
+        filename="test_10k.pdf",
+        content=b"%PDF-1.4 sample",
+        target_metric="Adjusted EBITDA",
+    )
+
+    class_repo = ClassificationRepository(data_dir=tmp_path)
+
+    # 1 reconciliation candidate
+    sr_rec = _create_sample_scored_record(
+        value="500",
+        label="Adjusted EBITDA / SBC",
+        is_reconciliation_candidate=True,
+    )
+    cr_rec = ClassifiedRecord(
+        record=sr_rec,
+        normalized_label="Stock-Based Compensation",
+        taxonomy_status=TaxonomyStatus.matched,
+        classifier_confidence=0.99,
+        is_confirmed=True,
+    )
+
+    # 1 non-reconciliation item (e.g. balance sheet)
+    sr_bs = _create_sample_scored_record(
+        value="9000",
+        label="Assets / Cash",
+        is_reconciliation_candidate=False,
+    )
+    cr_bs = ClassifiedRecord(
+        record=sr_bs,
+        normalized_label=None,
+        taxonomy_status=TaxonomyStatus.pending_taxonomy_confirmation,
+        classifier_confidence=None,
+        is_confirmed=False,
+    )
+
+    class_repo.save_classified_records(job.job_id, [cr_rec, cr_bs])
+    review_repo = ReviewRepository(data_dir=tmp_path)
+
+    items = review_repo.get_review_items(job.job_id)
+    assert items is not None
+    assert len(items) == 1
+    assert items[0].value == "500"
+    assert items[0].label == "Adjusted EBITDA / SBC"

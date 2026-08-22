@@ -31,6 +31,8 @@ export type ReviewItem = {
   taxonomy_status: string | null
   status: ReviewStatus
   flags: string[]
+  is_target_metric_candidate?: boolean
+  table_name?: string | null
   error_detail: string | null
 }
 

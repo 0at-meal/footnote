@@ -181,7 +181,9 @@ class AuditTrailResolver:
             # Extract record index from leaf_id: leaf_{record_index}_{slug}
             m = re.match(r"^leaf_(\d+)_", leaf_id)
             record_index = int(m.group(1)) if m else None
-            review_item_id = f"{job_id}_{record_index}" if record_index is not None else None
+            review_item_id = (
+                f"{job_id}_{record_index}" if record_index is not None else None
+            )
 
             review_item: ReviewItem | None = None
             if review_item_id and review_item_id in review_items_by_id:

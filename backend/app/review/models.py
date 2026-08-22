@@ -34,7 +34,9 @@ class ReviewItem(BaseModel):
     """
 
     id: str = Field(..., description="Unique review item identifier within the job")
-    value: str = Field(..., description="Displayed value text (unmodified or user-edited)")
+    value: str = Field(
+        ..., description="Displayed value text (unmodified or user-edited)"
+    )
     label: str = Field(..., description="Structural label path")
     page: int = Field(..., ge=1, description="1-indexed page number in the source PDF")
     bbox: dict[str, float] = Field(
@@ -142,4 +144,3 @@ class ReviewBatchConfirmResponse(BaseModel):
     total_locked: int
     locked_item_ids: list[str]
     items: list[ReviewItem]
-

@@ -198,9 +198,7 @@ def render_audit_report_pdf(dataset: CompiledAuditDataset) -> bytes:
     # 1. Header Banner & Title
     # ──────────────────────────────────────────────────────────────────────────
     meta = dataset.metadata
-    elements.append(
-        Paragraph("COMPLIANCE & PROVENANCE AUDIT REPORT", title_style)
-    )
+    elements.append(Paragraph("COMPLIANCE & PROVENANCE AUDIT REPORT", title_style))
     elements.append(
         Paragraph(
             f"<b>Target Metric:</b> {_sanitize(meta.target_metric)} &nbsp;|&nbsp; "
@@ -223,7 +221,9 @@ def render_audit_report_pdf(dataset: CompiledAuditDataset) -> bytes:
     # ──────────────────────────────────────────────────────────────────────────
     # 2. Executive Summary & Model Metadata (spec §2)
     # ──────────────────────────────────────────────────────────────────────────
-    elements.append(Paragraph("1. Executive Summary & Model Metadata", section_heading_style))
+    elements.append(
+        Paragraph("1. Executive Summary & Model Metadata", section_heading_style)
+    )
 
     summary_data = [
         [
@@ -240,7 +240,9 @@ def render_audit_report_pdf(dataset: CompiledAuditDataset) -> bytes:
         ],
         [
             Paragraph("<b>Filing Year</b>", table_cell_style),
-            Paragraph(str(meta.filing_year) if meta.filing_year else "N/A", table_cell_style),
+            Paragraph(
+                str(meta.filing_year) if meta.filing_year else "N/A", table_cell_style
+            ),
             Paragraph("<b>Generated Timestamp</b>", table_cell_style),
             Paragraph(_sanitize(meta.generated_at), table_cell_style),
         ],
@@ -256,9 +258,11 @@ def render_audit_report_pdf(dataset: CompiledAuditDataset) -> bytes:
         [
             Paragraph("<b>Manual Overrides</b>", table_cell_style),
             Paragraph(
-                f"<b>{meta.override_count}</b> override(s) recorded"
-                if meta.override_count > 0
-                else "<b>0</b> (100% automated extraction)",
+                (
+                    f"<b>{meta.override_count}</b> override(s) recorded"
+                    if meta.override_count > 0
+                    else "<b>0</b> (100% automated extraction)"
+                ),
                 table_cell_style,
             ),
             Paragraph("<b>Verification Integrity</b>", table_cell_style),
@@ -290,7 +294,9 @@ def render_audit_report_pdf(dataset: CompiledAuditDataset) -> bytes:
     # ──────────────────────────────────────────────────────────────────────────
     # 3. Model & Reconciliation Summary (spec §2)
     # ──────────────────────────────────────────────────────────────────────────
-    elements.append(Paragraph("2. Financial Model & Reconciliation Summary", section_heading_style))
+    elements.append(
+        Paragraph("2. Financial Model & Reconciliation Summary", section_heading_style)
+    )
 
     if dataset.reconciliation_summary:
         recon_headers = [
@@ -314,9 +320,14 @@ def render_audit_report_pdf(dataset: CompiledAuditDataset) -> bytes:
                     Paragraph(_sanitize(recon_item.sheet_name), table_cell_style),
                     Paragraph(_sanitize(recon_item.cell_coord), table_cell_bold),
                     Paragraph(_sanitize(recon_item.label), table_cell_style),
-                    Paragraph(_sanitize(recon_item.normalized_label or "—"), table_cell_style),
+                    Paragraph(
+                        _sanitize(recon_item.normalized_label or "—"), table_cell_style
+                    ),
                     Paragraph(formula_display, table_cell_style),
-                    Paragraph(f"<b>{_sanitize(recon_item.computed_value)}</b>", table_cell_style),
+                    Paragraph(
+                        f"<b>{_sanitize(recon_item.computed_value)}</b>",
+                        table_cell_style,
+                    ),
                 ]
             )
 
@@ -328,7 +339,12 @@ def render_audit_report_pdf(dataset: CompiledAuditDataset) -> bytes:
                 [
                     ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1E293B")),
                     ("BOX", (0, 0), (-1, -1), 1.0, colors.HexColor("#CBD5E1")),
-                    ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F8FAFC")]),
+                    (
+                        "ROWBACKGROUNDS",
+                        (0, 1),
+                        (-1, -1),
+                        [colors.white, colors.HexColor("#F8FAFC")],
+                    ),
                     ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#E2E8F0")),
                     ("TOPPADDING", (0, 0), (-1, -1), 4),
                     ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
@@ -340,21 +356,28 @@ def render_audit_report_pdf(dataset: CompiledAuditDataset) -> bytes:
         elements.append(recon_table)
     else:
         elements.append(
-            Paragraph("<i>No reconciliation summary items recorded.</i>", table_cell_style)
+            Paragraph(
+                "<i>No reconciliation summary items recorded.</i>", table_cell_style
+            )
         )
     elements.append(Spacer(1, 10))
 
     # ──────────────────────────────────────────────────────────────────────────
     # 4. Comprehensive Provenance Matrix (spec §2, AC-2, EC-3, EC-4, EC-5)
     # ──────────────────────────────────────────────────────────────────────────
-    elements.append(Paragraph("3. Comprehensive Cell Provenance Matrix", section_heading_style))
+    elements.append(
+        Paragraph("3. Comprehensive Cell Provenance Matrix", section_heading_style)
+    )
 
     prov_headers = [
         Paragraph("Cell Ref", table_header_style),
         Paragraph("Line Item Label", table_header_style),
         Paragraph("Normalized Label", table_header_style),
         Paragraph("Value", table_header_style),
-        Paragraph("Contributing Source Components (File, Page, Normalized BBox, Status)", table_header_style),
+        Paragraph(
+            "Contributing Source Components (File, Page, Normalized BBox, Status)",
+            table_header_style,
+        ),
     ]
     prov_rows = [prov_headers]
 
@@ -365,7 +388,9 @@ def render_audit_report_pdf(dataset: CompiledAuditDataset) -> bytes:
             for c in prov_item.components:
                 bbox_str = f"[{c.bbox.get('x0', 0):.0f}, {c.bbox.get('y0', 0):.0f}, {c.bbox.get('x1', 0):.0f}, {c.bbox.get('y1', 0):.0f}]"
                 status_color = (
-                    "#15803D" if c.review_status == "locked" else ("#B91C1C" if c.review_status == "flagged" else "#475569")
+                    "#15803D"
+                    if c.review_status == "locked"
+                    else ("#B91C1C" if c.review_status == "flagged" else "#475569")
                 )
                 comp_paragraphs.append(
                     f"&bull; <b>{_sanitize(c.source_file)}</b> (p. {c.page}, bbox: {bbox_str}) &mdash; "
@@ -379,9 +404,14 @@ def render_audit_report_pdf(dataset: CompiledAuditDataset) -> bytes:
 
         prov_rows.append(
             [
-                Paragraph(f"<b>{_sanitize(prov_item.sheet_name)}!{_sanitize(prov_item.cell_coord)}</b>", table_cell_style),
+                Paragraph(
+                    f"<b>{_sanitize(prov_item.sheet_name)}!{_sanitize(prov_item.cell_coord)}</b>",
+                    table_cell_style,
+                ),
                 Paragraph(_sanitize(prov_item.label), table_cell_style),
-                Paragraph(_sanitize(prov_item.normalized_label or "—"), table_cell_style),
+                Paragraph(
+                    _sanitize(prov_item.normalized_label or "—"), table_cell_style
+                ),
                 Paragraph(_sanitize(prov_item.computed_value), table_cell_bold),
                 Paragraph(comp_cell_content, table_cell_style),
             ]
@@ -395,7 +425,12 @@ def render_audit_report_pdf(dataset: CompiledAuditDataset) -> bytes:
             [
                 ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1E293B")),
                 ("BOX", (0, 0), (-1, -1), 1.0, colors.HexColor("#CBD5E1")),
-                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F8FAFC")]),
+                (
+                    "ROWBACKGROUNDS",
+                    (0, 1),
+                    (-1, -1),
+                    [colors.white, colors.HexColor("#F8FAFC")],
+                ),
                 ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#E2E8F0")),
                 ("TOPPADDING", (0, 0), (-1, -1), 4),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
@@ -410,7 +445,9 @@ def render_audit_report_pdf(dataset: CompiledAuditDataset) -> bytes:
     # ──────────────────────────────────────────────────────────────────────────
     # 5. Manual Override & Exception Ledger (spec §3, AC-3, EC-1, EC-2)
     # ──────────────────────────────────────────────────────────────────────────
-    elements.append(Paragraph("4. Manual Override & Exception Ledger", section_heading_style))
+    elements.append(
+        Paragraph("4. Manual Override & Exception Ledger", section_heading_style)
+    )
 
     if dataset.has_manual_overrides and dataset.manual_overrides:
         override_summary_text = (
@@ -455,14 +492,25 @@ def render_audit_report_pdf(dataset: CompiledAuditDataset) -> bytes:
                 f"lbl: <b>{_sanitize(ov.final_label)}</b>"
             )
             type_label = ov.override_type.replace("_", " ").upper()
-            flag_str = f"<br/>flags: <i>{', '.join(_sanitize(f) for f in ov.flags)}</i>" if ov.flags else ""
-            err_desc = _sanitize(ov.error_detail) if ov.error_detail else "Human edit during review"
+            flag_str = (
+                f"<br/>flags: <i>{', '.join(_sanitize(f) for f in ov.flags)}</i>"
+                if ov.flags
+                else ""
+            )
+            err_desc = (
+                _sanitize(ov.error_detail)
+                if ov.error_detail
+                else "Human edit during review"
+            )
 
             override_rows.append(
                 [
                     Paragraph(f"<b>{_sanitize(ov.item_id)}</b>", table_cell_style),
                     Paragraph(f"<b>[{_sanitize(type_label)}]</b>", badge_style),
-                    Paragraph(f"{_sanitize(ov.source_file)}<br/>(p. {ov.page})", table_cell_style),
+                    Paragraph(
+                        f"{_sanitize(ov.source_file)}<br/>(p. {ov.page})",
+                        table_cell_style,
+                    ),
                     Paragraph(orig_desc, table_cell_style),
                     Paragraph(final_desc, table_cell_style),
                     Paragraph(
@@ -480,7 +528,12 @@ def render_audit_report_pdf(dataset: CompiledAuditDataset) -> bytes:
                 [
                     ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#B91C1C")),
                     ("BOX", (0, 0), (-1, -1), 1.0, colors.HexColor("#CBD5E1")),
-                    ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#FEF2F2")]),
+                    (
+                        "ROWBACKGROUNDS",
+                        (0, 1),
+                        (-1, -1),
+                        [colors.white, colors.HexColor("#FEF2F2")],
+                    ),
                     ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#E2E8F0")),
                     ("TOPPADDING", (0, 0), (-1, -1), 4),
                     ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
@@ -522,7 +575,9 @@ def render_audit_report_pdf(dataset: CompiledAuditDataset) -> bytes:
     # 6. Classifier Governance Proof (spec §2, AC-7)
     # ──────────────────────────────────────────────────────────────────────────
     gov = dataset.classifier_governance
-    elements.append(Paragraph("5. AI Classifier Governance Proof", section_heading_style))
+    elements.append(
+        Paragraph("5. AI Classifier Governance Proof", section_heading_style)
+    )
 
     gov_box_text = (
         f"<b>Audit Finding:</b> The Groq LLM classifier executed <b>{gov.total_calls}</b> taxonomic "
@@ -579,7 +634,12 @@ def render_audit_report_pdf(dataset: CompiledAuditDataset) -> bytes:
                 [
                     ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#0F766E")),
                     ("BOX", (0, 0), (-1, -1), 1.0, colors.HexColor("#CBD5E1")),
-                    ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F8FAFC")]),
+                    (
+                        "ROWBACKGROUNDS",
+                        (0, 1),
+                        (-1, -1),
+                        [colors.white, colors.HexColor("#F8FAFC")],
+                    ),
                     ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#E2E8F0")),
                     ("TOPPADDING", (0, 0), (-1, -1), 3),
                     ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
@@ -600,7 +660,10 @@ def render_audit_report_pdf(dataset: CompiledAuditDataset) -> bytes:
     elements.append(
         KeepTogether(
             [
-                Paragraph("6. Cross-Year Definitional Consistency & Drift", section_heading_style),
+                Paragraph(
+                    "6. Cross-Year Definitional Consistency & Drift",
+                    section_heading_style,
+                ),
                 Table(
                     [
                         [
@@ -617,18 +680,22 @@ def render_audit_report_pdf(dataset: CompiledAuditDataset) -> bytes:
                                 "BACKGROUND",
                                 (0, 0),
                                 (-1, -1),
-                                colors.HexColor("#FEF3C7")
-                                if drift.has_discrepancy
-                                else colors.HexColor("#F8FAFC"),
+                                (
+                                    colors.HexColor("#FEF3C7")
+                                    if drift.has_discrepancy
+                                    else colors.HexColor("#F8FAFC")
+                                ),
                             ),
                             (
                                 "BOX",
                                 (0, 0),
                                 (-1, -1),
                                 1.0,
-                                colors.HexColor("#FCD34D")
-                                if drift.has_discrepancy
-                                else colors.HexColor("#CBD5E1"),
+                                (
+                                    colors.HexColor("#FCD34D")
+                                    if drift.has_discrepancy
+                                    else colors.HexColor("#CBD5E1")
+                                ),
                             ),
                             ("TOPPADDING", (0, 0), (-1, -1), 6),
                             ("BOTTOMPADDING", (0, 0), (-1, -1), 6),

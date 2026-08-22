@@ -19,7 +19,6 @@ from app.classification.taxonomy import (
 )
 from app.extraction.models import ScoredRecord
 
-
 # Reconciliation bridge keywords (case-insensitive)
 _RECONCILIATION_KEYWORDS: list[str] = [
     "reconciliation",
@@ -91,7 +90,7 @@ def is_target_metric_candidate_item(
         if kw in norm_label or kw in raw_label:
             if is_unrelated_table:
                 # In unrelated tables, only keep if strongly non-GAAP
-                if any(
+                return any(
                     strong in norm_label or strong in raw_label
                     for strong in [
                         "adjusted ebitda",
@@ -101,9 +100,7 @@ def is_target_metric_candidate_item(
                         "reconciliation",
                         "non-gaap",
                     ]
-                ):
-                    return True
-                return False
+                )
             return True
 
     # 4. If table is clearly an unrelated table and didn't match reconciliation keywords
@@ -111,7 +108,7 @@ def is_target_metric_candidate_item(
         return False
 
     # Default to True if table is a general or ambiguous table
-    return False if table_name and not table_lower.startswith("table") else True
+    return not (table_name and not table_lower.startswith("table"))
 
 
 def normalize_records(
@@ -144,8 +141,14 @@ def normalize_records(
     for idx, record in enumerate(records):
         item_res = result_map.get(idx)
 
-        if item_res is not None and not item_res.is_error and item_res.raw_response is not None:
-            match_res = check_label_against_taxonomy(item_res.raw_response.label, active_taxonomy)
+        if (
+            item_res is not None
+            and not item_res.is_error
+            and item_res.raw_response is not None
+        ):
+            match_res = check_label_against_taxonomy(
+                item_res.raw_response.label, active_taxonomy
+            )
             if match_res.is_matched and match_res.matched_entry is not None:
                 is_candidate = is_target_metric_candidate_item(
                     record, match_res.matched_entry, target_metric=target_metric
@@ -196,7 +199,9 @@ def normalize_records(
                     )
         else:
             # Skipped (e.g. manual_required, extraction_error) or classifier failure
-            canonical_entry = match_canonical_taxonomy(record.record.label, active_taxonomy)
+            canonical_entry = match_canonical_taxonomy(
+                record.record.label, active_taxonomy
+            )
             if (
                 canonical_entry is not None
                 and record.confidence_band in ELIGIBLE_BANDS

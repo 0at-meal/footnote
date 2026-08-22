@@ -23,7 +23,9 @@ class ClassifierInputPayload(BaseModel):
     Strictly excludes the extracted numeric value, page, bbox, and filename (CONSTITUTION §6.5).
     """
 
-    label: str = Field(..., min_length=1, description="Raw structural label from extraction")
+    label: str = Field(
+        ..., min_length=1, description="Raw structural label from extraction"
+    )
     structural_context: str | None = Field(
         default=None,
         description="Surrounding structural context (e.g. adjacent headers)",
@@ -37,7 +39,9 @@ class ClassifierRawResponse(BaseModel):
     Structurally cannot carry a numeric return field (CONSTITUTION §1.2, §6.2).
     """
 
-    label: str = Field(..., min_length=1, description="Taxonomy classification candidate label")
+    label: str = Field(
+        ..., min_length=1, description="Taxonomy classification candidate label"
+    )
     confidence: float = Field(
         ...,
         ge=0.0,
@@ -51,13 +55,19 @@ class ClassificationItemResult(BaseModel):
     Per-item result of classifier dispatch.
     """
 
-    record_index: int = Field(..., description="Index of the record in the original batch")
-    payload: ClassifierInputPayload = Field(..., description="Sanitized input sent to classifier")
+    record_index: int = Field(
+        ..., description="Index of the record in the original batch"
+    )
+    payload: ClassifierInputPayload = Field(
+        ..., description="Sanitized input sent to classifier"
+    )
     raw_response: ClassifierRawResponse | None = Field(
         default=None,
         description="Parsed classifier response if successful",
     )
-    is_error: bool = Field(default=False, description="True if a classification error occurred")
+    is_error: bool = Field(
+        default=False, description="True if a classification error occurred"
+    )
     error_detail: str | None = Field(
         default=None,
         description="Error message or reason for classification failure",
@@ -93,8 +103,12 @@ class TaxonomyCheckResult(BaseModel):
     Result of evaluating a candidate label against the active taxonomy.
     """
 
-    candidate_label: str = Field(..., description="Candidate label returned by classifier")
-    status: TaxonomyStatus = Field(..., description="Match status (matched or pending_taxonomy_confirmation)")
+    candidate_label: str = Field(
+        ..., description="Candidate label returned by classifier"
+    )
+    status: TaxonomyStatus = Field(
+        ..., description="Match status (matched or pending_taxonomy_confirmation)"
+    )
     matched_entry: str | None = Field(
         default=None,
         description="Exact matched taxonomy entry if matched, otherwise None",
@@ -141,9 +155,15 @@ class DecisionLogEntry(BaseModel):
     """
 
     job_id: str = Field(..., description="UUID of the job")
-    record_index: int = Field(..., description="Index of the extraction record in the job")
-    timestamp: str = Field(..., description="ISO 8601 UTC timestamp of the classifier call")
-    input_payload: ClassifierInputPayload = Field(..., description="Sanitized input sent to classifier")
+    record_index: int = Field(
+        ..., description="Index of the extraction record in the job"
+    )
+    timestamp: str = Field(
+        ..., description="ISO 8601 UTC timestamp of the classifier call"
+    )
+    input_payload: ClassifierInputPayload = Field(
+        ..., description="Sanitized input sent to classifier"
+    )
     raw_response: ClassifierRawResponse | None = Field(
         default=None,
         description="Classifier response (label and confidence only, strictly numeric-free)",
@@ -169,4 +189,6 @@ class DecisionLogResponse(BaseModel):
 
     job_id: str = Field(..., description="Job UUID")
     total_calls: int = Field(..., description="Total number of classifier calls logged")
-    entries: list[DecisionLogEntry] = Field(..., description="List of decision log entries")
+    entries: list[DecisionLogEntry] = Field(
+        ..., description="List of decision log entries"
+    )

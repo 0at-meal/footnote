@@ -66,7 +66,9 @@ def evaluate_job_drift(
         raise ValueError(f"Job '{job_id}' not found in repository.")
 
     # Derive entity and filing year from parameters or job filename/metadata
-    resolved_entity = entity or getattr(job, "entity", None) or Path(job.filename).stem.split("_")[0]
+    resolved_entity = (
+        entity or getattr(job, "entity", None) or Path(job.filename).stem.split("_")[0]
+    )
     resolved_metric = job.target_metric or "Adjusted EBITDA"
     resolved_year = filing_year or getattr(job, "filing_year", None) or 2024
 
@@ -75,12 +77,16 @@ def evaluate_job_drift(
 
     # EC-4: Zero locked records -> skip drift detection
     if not locked_labels:
-        logger.info("No confirmed locked records for job %s; skipping drift evaluation", job_id)
+        logger.info(
+            "No confirmed locked records for job %s; skipping drift evaluation", job_id
+        )
         return None, None, None
 
     # Load authoritative graph state from SQLite
     graph = drift_repo.load_graph()
-    prior_node = graph.get_latest_node(entity=resolved_entity, target_metric=resolved_metric)
+    prior_node = graph.get_latest_node(
+        entity=resolved_entity, target_metric=resolved_metric
+    )
 
     # Run pure comparison
     comparison = compare_metric_components(

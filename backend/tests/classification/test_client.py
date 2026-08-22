@@ -132,7 +132,9 @@ def test_classify_invalid_schema_missing_fields_raises_value_error() -> None:
     client = GroqClassifierClient(client=mock_groq)
     payload = ClassifierInputPayload(label="Amortization")
 
-    with pytest.raises(ValueError, match="Classifier response failed schema validation"):
+    with pytest.raises(
+        ValueError, match="Classifier response failed schema validation"
+    ):
         client.classify(payload)
 
 
@@ -145,7 +147,9 @@ def test_classify_invalid_confidence_bounds_raises_value_error() -> None:
     client = GroqClassifierClient(client=mock_groq)
     payload = ClassifierInputPayload(label="Amortization")
 
-    with pytest.raises(ValueError, match="Classifier response failed schema validation"):
+    with pytest.raises(
+        ValueError, match="Classifier response failed schema validation"
+    ):
         client.classify(payload)
 
 
@@ -186,7 +190,9 @@ def test_classify_daily_rpd_cap_enforcement() -> None:
 def test_classify_api_connection_error_propagates() -> None:
     mock_groq = MagicMock()
     mock_request = MagicMock()
-    mock_groq.chat.completions.create.side_effect = APIConnectionError(request=mock_request)
+    mock_groq.chat.completions.create.side_effect = APIConnectionError(
+        request=mock_request
+    )
 
     client = GroqClassifierClient(client=mock_groq)
     payload = ClassifierInputPayload(label="Tax adjustment")
@@ -199,6 +205,9 @@ def test_classifier_system_prompt_contains_seed_taxonomy() -> None:
     for category in SEED_TAXONOMY:
         assert category in CLASSIFIER_SYSTEM_PROMPT
 
-    assert "You MUST select the most accurate category from the following allowed taxonomy list" in CLASSIFIER_SYSTEM_PROMPT
+    assert (
+        "You MUST select the most accurate category from the following allowed taxonomy list"
+        in CLASSIFIER_SYSTEM_PROMPT
+    )
     assert '"label": (string)' in CLASSIFIER_SYSTEM_PROMPT
     assert '"confidence": (float)' in CLASSIFIER_SYSTEM_PROMPT

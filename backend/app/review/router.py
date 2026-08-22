@@ -139,7 +139,9 @@ def edit_review_item(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=err)
 
     if item is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Item not found"
+        )
 
     return item
 
@@ -150,7 +152,9 @@ def edit_review_item(
     summary="Confirm an item and transition to locked state",
     responses={
         200: {"description": "Item confirmed and locked."},
-        400: {"description": "Cannot confirm (e.g. extraction error or taxonomy rejection)."},
+        400: {
+            "description": "Cannot confirm (e.g. extraction error or taxonomy rejection)."
+        },
         404: {"description": "Job or item not found."},
     },
 )
@@ -180,7 +184,9 @@ def confirm_review_item(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=err)
 
     if item is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Item not found"
+        )
 
     return item
 
@@ -219,7 +225,9 @@ def flag_review_item(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=err)
 
     if item is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Item not found"
+        )
 
     return item
 
@@ -258,7 +266,9 @@ def unlock_review_item(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=err)
 
     if item is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Item not found"
+        )
 
     return item
 
@@ -305,4 +315,3 @@ def confirm_batch_review_items(
         locked_item_ids=locked_ids,
         items=items,
     )
-

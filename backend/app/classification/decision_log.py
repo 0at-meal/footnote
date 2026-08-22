@@ -52,8 +52,12 @@ def build_log_entries(
                 )
             )
         else:
-            match_res = check_label_against_taxonomy(item.raw_response.label, active_taxonomy)
-            resulting_state = "confirmed" if match_res.is_matched else "pending_confirmation"
+            match_res = check_label_against_taxonomy(
+                item.raw_response.label, active_taxonomy
+            )
+            resulting_state = (
+                "confirmed" if match_res.is_matched else "pending_confirmation"
+            )
 
             entries.append(
                 DecisionLogEntry(
@@ -105,7 +109,9 @@ class DecisionLogRepository:
             os.replace(tmp_path, dest_path)
             return dest_path
         except (OSError, ValueError) as err:
-            logger.error("Failed to write decision log for job %s: %s (EC-10)", job_id, err)
+            logger.error(
+                "Failed to write decision log for job %s: %s (EC-10)", job_id, err
+            )
             raise
 
     def get_decision_log(self, job_id: str) -> list[DecisionLogEntry] | None:

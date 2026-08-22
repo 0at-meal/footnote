@@ -91,12 +91,16 @@ class ReviewRepository:
                 content = scored_path.read_text(encoding="utf-8")
                 raw_data = json.loads(content)
                 if isinstance(raw_data, list):
-                    scored_records = [ScoredRecord.model_validate(item) for item in raw_data]
+                    scored_records = [
+                        ScoredRecord.model_validate(item) for item in raw_data
+                    ]
                     items = self._from_scored_records(job_id, scored_records)
                     self.save_review_items(job_id, items)
                     return items
             except (json.JSONDecodeError, OSError, ValueError) as err:
-                logger.error("Failed to load scored records for job %s: %s", job_id, err)
+                logger.error(
+                    "Failed to load scored records for job %s: %s", job_id, err
+                )
                 return None
 
         return None
@@ -142,7 +146,10 @@ class ReviewRepository:
             target_item.value = value
 
         # If it was an extraction error and now has content, transition to review status
-        if target_item.status == ReviewStatus.extraction_error and target_item.value.strip() != "":
+        if (
+            target_item.status == ReviewStatus.extraction_error
+            and target_item.value.strip() != ""
+        ):
             if target_item.confidence_band == ConfidenceBand.needs_review:
                 target_item.status = ReviewStatus.needs_review
             else:
@@ -338,13 +345,12 @@ class ReviewRepository:
             if (
                 item.status == ReviewStatus.pending_taxonomy_confirmation
                 or item.taxonomy_status == "pending_taxonomy_confirmation"
-            ):
-                if auto_add_pending_taxonomy:
-                    term_to_add = item.normalized_label or item.label
-                    taxonomy_repo.add_entry(term_to_add)
-                    item.taxonomy_status = "matched"
-                    if item.normalized_label is None:
-                        item.normalized_label = item.label
+            ) and auto_add_pending_taxonomy:
+                term_to_add = item.normalized_label or item.label
+                taxonomy_repo.add_entry(term_to_add)
+                item.taxonomy_status = "matched"
+                if item.normalized_label is None:
+                    item.normalized_label = item.label
 
             # Lock the item and clear flag
             item.status = ReviewStatus.locked
@@ -366,7 +372,9 @@ class ReviewRepository:
             self.save_review_items(job_id, new_items)
             return new_items
 
-        locked_map = {item.id: item for item in existing if item.status == ReviewStatus.locked}
+        locked_map = {
+            item.id: item for item in existing if item.status == ReviewStatus.locked
+        }
         merged: list[ReviewItem] = []
         for new_item in new_items:
             if new_item.id in locked_map:
@@ -383,10 +391,13 @@ class ReviewRepository:
         job_id: str,
         records: list[ClassifiedRecord],
     ) -> list[ReviewItem]:
-        """Convert ClassifiedRecord objects into review items."""
+        """Convert ClassifiedRecord objects into review items (reconciliation candidates only)."""
         items: list[ReviewItem] = []
         for idx, cr in enumerate(records):
             sr = cr.record
+            if not sr.is_reconciliation_candidate:
+                continue
+
             er = sr.record
 
             # Derive review status
@@ -435,9 +446,12 @@ class ReviewRepository:
         job_id: str,
         records: list[ScoredRecord],
     ) -> list[ReviewItem]:
-        """Convert ScoredRecord objects into review items when classification has not run."""
+        """Convert ScoredRecord objects into review items (reconciliation candidates only)."""
         items: list[ReviewItem] = []
         for idx, sr in enumerate(records):
+            if not sr.is_reconciliation_candidate:
+                continue
+
             er = sr.record
 
             if sr.status == "extraction_error":

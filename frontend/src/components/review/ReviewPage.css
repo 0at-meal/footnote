@@ -213,10 +213,98 @@
   gap: 8px;
 }
 
+/* ── Review Tabs (Ticket 3.1) ────────────────────────────── */
+
+.review-tabs {
+  display: flex;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 4px 8px 0;
+  gap: 4px;
+  overflow-x: auto;
+}
+
+.review-tab {
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.review-tab:hover {
+  color: var(--text-h);
+}
+
+.review-tab--active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+.review-tab__badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 10px;
+  background: var(--row-hover-bg);
+  color: var(--text-h);
+}
+
+.review-tab--active .review-tab__badge {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--accent);
+}
+
 .review-sidebar__list {
   flex: 1;
   overflow-y: auto;
   padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ── Table Grouping Headers (Ticket 3.2) ─────────────────── */
+
+.review-table-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.review-table-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border));
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.review-table-header__icon {
+  font-size: 12px;
+}
+
+.review-table-header__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.review-table-group__items {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -233,6 +321,10 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+.review-item-card--candidate {
+  border-left: 3px solid #16a34a;
 }
 
 .review-item-card:hover {

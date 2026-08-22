@@ -94,6 +94,8 @@ class AuditReportRepository:
                 path.unlink()
                 return True
             except OSError as err:
-                logger.error("Failed to delete audit report PDF for job %s: %s", job_id, err)
+                logger.error(
+                    "Failed to delete audit report PDF for job %s: %s", job_id, err
+                )
                 return False
         return False

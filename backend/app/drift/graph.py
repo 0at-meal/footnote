@@ -36,7 +36,9 @@ class HistoricalDriftGraph:
         # Explicit edge registry to preserve multi-edge/continuation records cleanly
         self._edges: list[DriftEdge] = []
 
-    def get_latest_node(self, entity: str, target_metric: str) -> MetricDefinitionNode | None:
+    def get_latest_node(
+        self, entity: str, target_metric: str
+    ) -> MetricDefinitionNode | None:
         """
         Retrieve the most recent definition node for a given (entity, target_metric) pair.
         """
@@ -105,7 +107,9 @@ class HistoricalDriftGraph:
         Add a new definition node and a directed redefinition edge from prior_node_id (spec §3, AC-2, AC-4).
         """
         if not self._graph.has_node(prior_node_id):
-            raise ValueError(f"Prior definition node '{prior_node_id}' does not exist in graph.")
+            raise ValueError(
+                f"Prior definition node '{prior_node_id}' does not exist in graph."
+            )
 
         new_node_id = f"node_{uuid.uuid4().hex[:12]}"
         now_ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -224,12 +228,15 @@ class HistoricalDriftGraph:
         existing_node = self._node_from_id(comparison.prior_node_id)
         if existing_node is None:
             # Fallback to creating baseline if prior node ID is missing from graph
-            return self.add_baseline_node(
-                entity=comparison.entity,
-                target_metric=comparison.target_metric,
-                filing_year=comparison.filing_year,
-                component_labels=comparison.current_labels,
-            ), None
+            return (
+                self.add_baseline_node(
+                    entity=comparison.entity,
+                    target_metric=comparison.target_metric,
+                    filing_year=comparison.filing_year,
+                    component_labels=comparison.current_labels,
+                ),
+                None,
+            )
 
         continuation_edge = self.add_continuation_edge(
             node_id=comparison.prior_node_id,
@@ -276,7 +283,9 @@ class HistoricalDriftGraph:
             edges.append(edge)
         return sorted(edges, key=lambda e: (e.entity, e.target_metric, e.filing_year))
 
-    def get_history(self, entity: str, target_metric: str) -> list[MetricDefinitionNode]:
+    def get_history(
+        self, entity: str, target_metric: str
+    ) -> list[MetricDefinitionNode]:
         """
         Retrieve chronological sequence of distinct definition nodes for an (entity, target_metric) pair.
         """
@@ -326,7 +335,9 @@ class HistoricalDriftGraph:
         for edge_data in data.get("edges", []):
             edge = DriftEdge.model_validate(edge_data)
             graph._edges.append(edge)
-            if graph._graph.has_node(edge.from_node_id) and graph._graph.has_node(edge.to_node_id):
+            if graph._graph.has_node(edge.from_node_id) and graph._graph.has_node(
+                edge.to_node_id
+            ):
                 graph._graph.add_edge(
                     edge.from_node_id,
                     edge.to_node_id,

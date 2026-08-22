@@ -33,7 +33,7 @@ function ReviewStatusBadge({ status }: { status: ReviewStatus }) {
   )
 }
 
-type FilterTab = 'target_metric_bridge' | 'needs_review' | 'locked' | 'all'
+type FilterTab = 'flagged' | 'all'
 
 export default function ReviewPage({ jobId, apiBase, onBack, onAuditTrail }: Props) {
   const [items, setItems] = useState<ReviewItem[]>([])
@@ -41,7 +41,7 @@ export default function ReviewPage({ jobId, apiBase, onBack, onAuditTrail }: Pro
   const [itemsLoading, setItemsLoading] = useState(true)
   const [itemsError, setItemsError] = useState<string | null>(null)
 
-  const [activeTab, setActiveTab] = useState<FilterTab>('target_metric_bridge')
+  const [activeTab, setActiveTab] = useState<FilterTab>('flagged')
 
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null)
   const [pdfLoading, setPdfLoading] = useState(true)
@@ -66,19 +66,20 @@ export default function ReviewPage({ jobId, apiBase, onBack, onAuditTrail }: Pro
 
   const lockedCount = items.filter((i) => i.status === 'locked').length
 
+  const isFlagged = (item: ReviewItem) =>
+    item.status === 'needs_review' ||
+    item.status === 'manual_required' ||
+    item.status === 'extraction_error' ||
+    item.status === 'pending_taxonomy_confirmation' ||
+    item.status === 'flagged' ||
+    item.confidence_score < 0.95
+
+  const flaggedCount = items.filter(isFlagged).length
+  const totalCount = items.length
+
   const filteredItems = items.filter((item) => {
-    if (activeTab === 'target_metric_bridge') {
-      return item.is_target_metric_candidate !== false
-    }
-    if (activeTab === 'needs_review') {
-      return (
-        item.status === 'needs_review' ||
-        item.status === 'manual_required' ||
-        item.status === 'pending_taxonomy_confirmation'
-      )
-    }
-    if (activeTab === 'locked') {
-      return item.status === 'locked'
+    if (activeTab === 'flagged') {
+      return isFlagged(item)
     }
     return true // 'all'
   })
@@ -397,7 +398,7 @@ export default function ReviewPage({ jobId, apiBase, onBack, onAuditTrail }: Pro
       const totalCells = genData.total_cells_generated ?? (batchData.total_locked || 1)
       setGenerateModelSuccess({
         totalCells,
-        message: `Reconciliation bridge approved and model generated (${batchData.total_locked || totalCells} items)`,
+        message: `Reconciliation items approved and Excel model generated (${batchData.total_locked || totalCells} items)`,
       })
     } catch (err) {
       setGenerateModelError(err instanceof Error ? err.message : 'Batch approval & generation failed')
@@ -447,10 +448,10 @@ export default function ReviewPage({ jobId, apiBase, onBack, onAuditTrail }: Pro
             className="review-btn review-btn--generate"
             disabled={items.length === 0 || isGeneratingModel}
             onClick={() => void handleApproveBridgeAndGenerateModel()}
-            aria-label="Approve Bridge & Generate Model"
-            title="Batch approve target reconciliation bridge and compile Excel model (1-Click)"
+            aria-label="Approve All & Generate Model"
+            title="Batch approve all reconciliation items and compile Excel model (1-Click)"
           >
-            {isGeneratingModel ? 'Processing...' : 'Approve Bridge & Generate Model'}
+            {isGeneratingModel ? 'Approving & Generating Model...' : 'Approve All & Generate Model'}
           </button>
         </div>
       </header>
@@ -543,34 +544,17 @@ export default function ReviewPage({ jobId, apiBase, onBack, onAuditTrail }: Pro
             <h2 className="review-sidebar__heading">Extracted Items</h2>
           </div>
 
-          {/* ── Scoped Filter Tabs (Ticket 3.1) ── */}
+          {/* ── Scoped Filter Tabs (Ticket 1.2.2) ── */}
           <div className="review-tabs" role="tablist" aria-label="Filter extracted items">
             <button
               type="button"
               role="tab"
-              aria-selected={activeTab === 'target_metric_bridge'}
-              className={`review-tab ${activeTab === 'target_metric_bridge' ? 'review-tab--active' : ''}`}
-              onClick={() => setActiveTab('target_metric_bridge')}
+              aria-selected={activeTab === 'flagged'}
+              className={`review-tab ${activeTab === 'flagged' ? 'review-tab--active' : ''}`}
+              onClick={() => setActiveTab('flagged')}
             >
-              Target Metric Bridge
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === 'needs_review'}
-              className={`review-tab ${activeTab === 'needs_review' ? 'review-tab--active' : ''}`}
-              onClick={() => setActiveTab('needs_review')}
-            >
-              Needs Review
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === 'locked'}
-              className={`review-tab ${activeTab === 'locked' ? 'review-tab--active' : ''}`}
-              onClick={() => setActiveTab('locked')}
-            >
-              Confirmed / Locked
+              Flagged Items
+              <span className="review-tab__badge">{flaggedCount}</span>
             </button>
             <button
               type="button"
@@ -579,7 +563,8 @@ export default function ReviewPage({ jobId, apiBase, onBack, onAuditTrail }: Pro
               className={`review-tab ${activeTab === 'all' ? 'review-tab--active' : ''}`}
               onClick={() => setActiveTab('all')}
             >
-              All Filing Tables
+              All Reconciliation Items
+              <span className="review-tab__badge">{totalCount}</span>
             </button>
           </div>
 
@@ -602,7 +587,11 @@ export default function ReviewPage({ jobId, apiBase, onBack, onAuditTrail }: Pro
 
           {!itemsLoading && !itemsError && filteredItems.length === 0 && (
             <div className="job-list--empty">
-              <p>No extracted items match the selected view.</p>
+              <p>
+                {activeTab === 'flagged'
+                  ? 'All reconciliation items auto-accepted (confidence >= 95%). Ready to generate model.'
+                  : 'No reconciliation items found.'}
+              </p>
             </div>
           )}
 

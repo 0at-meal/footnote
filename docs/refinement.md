@@ -428,10 +428,10 @@ Phase 1 -- Business Model Alignment
     [x] Ticket 1.1.3 -- Filter before Groq dispatch in job runner
     [x] Ticket 1.1.4 -- Extraction and classification tests
   Step 1.2 -- Scope review UI to flagged reconciliation items
-    [ ] Ticket 1.2.1 -- Filter ReviewRepository to candidates only
-    [ ] Ticket 1.2.2 -- Simplify review UI tabs
-    [ ] Ticket 1.2.3 -- Approve All and Generate Model button
-    [ ] Ticket 1.2.4 -- Review UI frontend tests
+    [x] Ticket 1.2.1 -- Filter ReviewRepository to candidates only
+    [x] Ticket 1.2.2 -- Simplify review UI tabs
+    [x] Ticket 1.2.3 -- Approve All and Generate Model button
+    [x] Ticket 1.2.4 -- Review UI frontend tests
   Step 1.3 -- Redesign Excel output to banker-editable format
     [ ] Ticket 1.3.1 -- Source_Inputs: plain values + comments
     [ ] Ticket 1.3.2 -- Reconciliation: cross-sheet refs + SUM

@@ -42,7 +42,9 @@ app.add_middleware(
 )
 
 app.include_router(ingestion_router, prefix="/upload", tags=["upload"])
-app.include_router(classification_router, prefix="/classification", tags=["classification"])
+app.include_router(
+    classification_router, prefix="/classification", tags=["classification"]
+)
 app.include_router(excel_export_router)
 app.include_router(review_router)
 app.include_router(audit_trail_router)
@@ -75,7 +77,11 @@ def custom_openapi() -> dict[str, Any]:
     # renders file input pickers instead of text input fields.
     for schema in openapi_schema.get("components", {}).get("schemas", {}).values():
         for prop in schema.get("properties", {}).values():
-            if prop.get("type") == "array" and "items" in prop and prop["items"].get("contentMediaType") == "application/octet-stream":
+            if (
+                prop.get("type") == "array"
+                and "items" in prop
+                and prop["items"].get("contentMediaType") == "application/octet-stream"
+            ):
                 prop["items"]["format"] = "binary"
     app.openapi_schema = openapi_schema
     return app.openapi_schema

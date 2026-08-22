@@ -77,11 +77,27 @@ def dispatch_records_to_classifier(
                 )
             )
             success_count += 1
-        except (ValueError, TypeError, RateLimitError, APIConnectionError, APIError, RuntimeError) as err:
-            logger.warning("Classification failed for record index %d ('%s'): %s", idx, raw_label, err)
+        except (
+            ValueError,
+            TypeError,
+            RateLimitError,
+            APIConnectionError,
+            APIError,
+            RuntimeError,
+        ) as err:
+            logger.warning(
+                "Classification failed for record index %d ('%s'): %s",
+                idx,
+                raw_label,
+                err,
+            )
             fallback_match = match_canonical_taxonomy(raw_label)
             if fallback_match is not None:
-                logger.info("Direct taxonomy fallback matched '%s' -> '%s'", raw_label, fallback_match)
+                logger.info(
+                    "Direct taxonomy fallback matched '%s' -> '%s'",
+                    raw_label,
+                    fallback_match,
+                )
                 item_results.append(
                     ClassificationItemResult(
                         record_index=idx,
