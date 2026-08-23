@@ -37,10 +37,14 @@ from app.extraction.coordinate_normalizer import (
 from app.extraction.docling_parser import parse_pdf
 from app.extraction.flagger import create_extraction_summary
 from app.extraction.repository import ExtractionRepository
-from app.formula_engine.reader import read_formula_inputs
+from app.formula_engine.reader import (
+    read_formula_inputs,
+    read_formula_inputs_from_review,
+)
 from app.formula_engine.tree import build_formula_tree
 from app.ingestion.models import JobStatus
 from app.ingestion.repository import JobRepository
+from app.review.repository import ReviewRepository
 
 from eval.corpus_loader import DEFAULT_CORPUS_DIR, load_corpus
 from eval.models import (
@@ -246,9 +250,10 @@ def run_benchmark_filing(
         client = classifier_client or get_default_classifier_client()
         active_taxonomy = taxonomy_repo.load_taxonomy()
 
+        target_metric = filing.metadata.target_metric or "Adjusted EBITDA"
         batch_result = dispatch_records_to_classifier(scored_records, client)
         classified_records = normalize_records(
-            scored_records, batch_result, active_taxonomy
+            scored_records, batch_result, active_taxonomy, target_metric=target_metric
         )
         classification_repo.save_classified_records(job_id, classified_records)
 
@@ -257,11 +262,21 @@ def run_benchmark_filing(
         classif_t1 = time.perf_counter()
         runtimes.classification_time_seconds = round(classif_t1 - classif_t0, 4)
 
-        # Stage 7: Formula Engine
+        # Stage 7: Formula Engine (with Step 4 batch confirmation for benchmark evaluation)
         current_stage = "formula_engine"
         formula_t0 = time.perf_counter()
-        formula_inputs = read_formula_inputs(classified_records)
-        target_metric = filing.metadata.target_metric or "Adjusted EBITDA"
+        review_repo = ReviewRepository(data_dir=target_data_dir)
+        review_items = review_repo.get_review_items(job_id)
+        if review_items:
+            updated_items, _, _ = review_repo.confirm_batch(
+                job_id=job_id,
+                target_candidates_only=True,
+                auto_add_pending_taxonomy=True,
+            )
+            formula_inputs = read_formula_inputs_from_review(updated_items)
+        else:
+            formula_inputs = read_formula_inputs(classified_records)
+
         formula_tree = build_formula_tree(formula_inputs, target_metric=target_metric)
         formula_t1 = time.perf_counter()
         runtimes.formula_time_seconds = round(formula_t1 - formula_t0, 4)

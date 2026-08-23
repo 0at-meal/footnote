@@ -26,6 +26,8 @@ export type StagedFile = {
   file_size_bytes: number
   /** User-selected target metric; defaults to DEFAULT_METRIC. */
   target_metric: TargetMetric
+  /** Optional user-selected fiscal year for the filing (e.g. 2023). */
+  filing_year?: number | null
 }
 
 /**
@@ -62,5 +64,27 @@ export type JobRecord = {
   submitted_at: string
   /** Whether an Excel model workbook is ready for download (Ticket 0.4.3). */
   model_ready?: boolean
+  /** Fiscal year assigned to this filing. */
+  filing_year?: number | null
+  /** UUIDv4 of the associated company entity. */
+  company_id?: string | null
+}
+
+/**
+ * A company entity record grouping multiple filings.
+ */
+export type CompanyRecord = {
+  company_id: string
+  name: string
+  ticker?: string | null
+  created_at: string
+  job_ids: string[]
+}
+
+/**
+ * A company record bundled with its associated JobRecords.
+ */
+export type CompanyWithJobs = CompanyRecord & {
+  jobs: JobRecord[]
 }
 

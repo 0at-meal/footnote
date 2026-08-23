@@ -17,8 +17,9 @@ from unittest.mock import patch
 
 import pymupdf
 import pytest
+from app.ingestion.company_repository import CompanyRepository
 from app.ingestion.repository import JobRepository
-from app.ingestion.router import get_repository
+from app.ingestion.router import get_company_repository, get_repository
 from app.main import app
 from fastapi.testclient import TestClient
 
@@ -47,7 +48,9 @@ def bad_file(filename: str, content: bytes) -> tuple[str, tuple[str, io.BytesIO,
 def client(tmp_path: Path) -> TestClient:  # type: ignore[misc]
     """TestClient with the repository wired to a fresh tmp_path directory."""
     repo = JobRepository(data_dir=tmp_path)
+    company_repo = CompanyRepository(data_dir=tmp_path)
     app.dependency_overrides[get_repository] = lambda: repo
+    app.dependency_overrides[get_company_repository] = lambda: company_repo
     with patch("app.ingestion.router.process_queued_job"):
         yield TestClient(app)  # type: ignore[misc]
     app.dependency_overrides.clear()
@@ -178,7 +181,14 @@ def test_created_job_has_all_required_fields(client: TestClient) -> None:
         data={"target_metrics": "Free Cash Flow"},
     )
     job = response.json()["created_jobs"][0]
-    required = {"job_id", "filename", "file_size_bytes", "status", "target_metric", "submitted_at"}
+    required = {
+        "job_id",
+        "filename",
+        "file_size_bytes",
+        "status",
+        "target_metric",
+        "submitted_at",
+    }
     assert required.issubset(job.keys())
     assert isinstance(job["job_id"], str) and len(job["job_id"]) > 0
     assert job["filename"] == "report.pdf"
@@ -225,3 +235,115 @@ def test_invalid_target_metric_returns_422(client: TestClient) -> None:
     assert response.status_code == 422
     assert "Invalid target metric" in response.json()["detail"]
 
+
+# ── Company and Filing Year Upload Integration ───────────────────────────────
+
+
+def test_submit_jobs_with_company_name_and_filing_years(
+    tmp_path: Path, client: TestClient
+) -> None:
+    """Test 12: Submitting jobs with company_name and filing_years creates company and assigns company_id."""
+    pdf = make_minimal_pdf()
+    response = client.post(
+        "/upload/jobs",
+        files=[
+            pdf_file("2022_10k.pdf", pdf),
+            pdf_file("2023_10k.pdf", pdf),
+        ],
+        data={
+            "target_metrics": ["Adjusted EBITDA", "Adjusted EBITDA"],
+            "filing_years": ["2022", "2023"],
+            "company_name": "Acme Corporation",
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    jobs = body["created_jobs"]
+    assert len(jobs) == 2
+
+    assert jobs[0]["filing_year"] == 2022
+    assert jobs[1]["filing_year"] == 2023
+    assert jobs[0]["company_id"] is not None
+    assert jobs[0]["company_id"] == jobs[1]["company_id"]
+
+    company_id = jobs[0]["company_id"]
+
+    # Verify company repository record
+    company_repo = CompanyRepository(data_dir=tmp_path)
+    company = company_repo.get_company(company_id)
+    assert company is not None
+    assert company.name == "Acme Corporation"
+    assert company.job_ids == [jobs[0]["job_id"], jobs[1]["job_id"]]
+
+    # Verify GET /upload/jobs includes filing_year and company_id
+    get_res = client.get("/upload/jobs")
+    assert get_res.status_code == 200
+    listed_jobs = get_res.json()["jobs"]
+    assert len(listed_jobs) == 2
+    assert listed_jobs[0]["filing_year"] == 2022
+    assert listed_jobs[0]["company_id"] == company_id
+    assert listed_jobs[1]["filing_year"] == 2023
+    assert listed_jobs[1]["company_id"] == company_id
+
+
+def test_submit_jobs_with_existing_company_reuses_company_record(
+    tmp_path: Path, client: TestClient
+) -> None:
+    """Test 13: Submitting jobs with an existing company name reuses the existing company_id."""
+    company_repo = CompanyRepository(data_dir=tmp_path)
+    existing_company = company_repo.save_company(
+        "Globex Industrial Holdings", ticker="GLBX"
+    )
+
+    pdf = make_minimal_pdf()
+    response = client.post(
+        "/upload/jobs",
+        files=[pdf_file("globex_2023.pdf", pdf)],
+        data={
+            "target_metrics": ["EBITDA"],
+            "filing_years": ["2023"],
+            "company_name": "globex industrial holdings",  # case-insensitive match
+        },
+    )
+    assert response.status_code == 200
+    job = response.json()["created_jobs"][0]
+    assert job["company_id"] == existing_company.company_id
+    assert job["filing_year"] == 2023
+
+    # Check that job was added to existing company
+    updated_company = company_repo.get_company(existing_company.company_id)
+    assert updated_company is not None
+    assert job["job_id"] in updated_company.job_ids
+
+
+def test_submit_jobs_mismatched_filing_years_returns_422(client: TestClient) -> None:
+    """Test 14: Providing mismatched filing_years length returns 422."""
+    pdf = make_minimal_pdf()
+    response = client.post(
+        "/upload/jobs",
+        files=[
+            pdf_file("a.pdf", pdf),
+            pdf_file("b.pdf", pdf),
+        ],
+        data={
+            "target_metrics": ["EBITDA", "EBITDA"],
+            "filing_years": ["2023"],  # 1 year for 2 files
+        },
+    )
+    assert response.status_code == 422
+    assert "filing_years" in response.json()["detail"]
+
+
+def test_submit_jobs_invalid_filing_year_returns_422(client: TestClient) -> None:
+    """Test 15: Invalid non-integer filing_year returns 422."""
+    pdf = make_minimal_pdf()
+    response = client.post(
+        "/upload/jobs",
+        files=[pdf_file("a.pdf", pdf)],
+        data={
+            "target_metrics": ["EBITDA"],
+            "filing_years": ["twenty-twenty-three"],
+        },
+    )
+    assert response.status_code == 422
+    assert "Invalid filing year" in response.json()["detail"]

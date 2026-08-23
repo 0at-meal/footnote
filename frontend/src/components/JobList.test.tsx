@@ -99,5 +99,47 @@ describe('JobList Component', () => {
     expect(html).not.toContain('/models/job-queued-456/download')
     expect(html).not.toContain('/models/job-extracting-789/download')
   })
+
+  it('renders Fiscal Year column header, FY badge for persisted jobs, and input for staged files', () => {
+    const stagedFiles = [
+      {
+        id: 'staged-1',
+        file: new File([''], 'staged_2023.pdf', { type: 'application/pdf' }),
+        filename: 'staged_2023.pdf',
+        file_size_bytes: 1024,
+        target_metric: 'Adjusted EBITDA' as const,
+        filing_year: 2023,
+      },
+    ]
+
+    const persistedJobs: JobRecord[] = [
+      {
+        job_id: 'job-fy-2022',
+        filename: 'report_2022.pdf',
+        file_size_bytes: 2048,
+        target_metric: 'Adjusted EBITDA',
+        status: 'done',
+        submitted_at: '2026-01-01T00:00:00Z',
+        filing_year: 2022,
+        company_id: 'comp-123',
+      },
+    ]
+
+    const html = renderToStaticMarkup(
+      <JobList
+        stagedFiles={stagedFiles}
+        persistedJobs={persistedJobs}
+        apiBase="http://localhost:8000"
+        onMetricChange={vi.fn()}
+        onYearChange={vi.fn()}
+        onRemove={vi.fn()}
+      />
+    )
+
+    expect(html).toContain('Fiscal Year')
+    expect(html).toContain('FY2022')
+    expect(html).toContain('value="2023"')
+    expect(html).toContain('Fiscal year for staged_2023.pdf')
+  })
 })
 

@@ -441,11 +441,11 @@ Phase 1 -- Business Model Alignment
 
 Phase 2 -- Multi-Year Company Architecture
   Step 2.1 -- Company data model
-    [ ] Ticket 2.1.1 -- CompanyRecord + CompanyRepository
-    [ ] Ticket 2.1.2 -- filing_year + company_id on JobRecord
-    [ ] Ticket 2.1.3 -- Company API endpoints
-    [ ] Ticket 2.1.4 -- Frontend Company + Filing Year fields
-    [ ] Ticket 2.1.5 -- Company + filing_year tests
+    [x] Ticket 2.1.1 -- CompanyRecord + CompanyRepository
+    [x] Ticket 2.1.2 -- filing_year + company_id on JobRecord
+    [x] Ticket 2.1.3 -- Company API endpoints
+    [x] Ticket 2.1.4 -- Frontend Company + Filing Year fields
+    [x] Ticket 2.1.5 -- Company + filing_year tests
   Step 2.2 -- Multi-year Excel model
     [ ] Ticket 2.2.1 -- multi_year_generator.py
     [ ] Ticket 2.2.2 -- POST /companies/{id}/multi-year-model

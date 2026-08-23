@@ -25,7 +25,9 @@ def make_minimal_pdf() -> bytes:
     return doc.tobytes()  # type: ignore[no-any-return]
 
 
-def pdf_upload(filename: str, content: bytes) -> tuple[str, tuple[str, io.BytesIO, str]]:
+def pdf_upload(
+    filename: str, content: bytes
+) -> tuple[str, tuple[str, io.BytesIO, str]]:
     """Helper: build a (field_name, (filename, stream, content_type)) tuple."""
     return ("files", (filename, io.BytesIO(content), "application/pdf"))
 

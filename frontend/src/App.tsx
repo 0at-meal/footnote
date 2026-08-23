@@ -4,6 +4,7 @@ import JobList from './components/JobList'
 import SubmitBar from './components/SubmitBar'
 import ReviewPage from './components/review/ReviewPage'
 import AuditTrailView from './components/audit/AuditTrailView'
+import CompanySelector from './components/CompanySelector'
 import type { StagedFile, TargetMetric, JobRecord } from './types/job'
 import { DEFAULT_METRIC } from './types/job'
 import './App.css'
@@ -18,6 +19,7 @@ function App() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [activeReviewJobId, setActiveReviewJobId] = useState<string | null>(null)
   const [activeAuditJobId, setActiveAuditJobId] = useState<string | null>(null)
+  const [selectedCompany, setSelectedCompany] = useState<string>('')
 
   // ── On mount: restore persisted jobs from backend (spec AC-7) ───────────
   useEffect(() => {
@@ -62,6 +64,7 @@ function App() {
       filename: file.name,
       file_size_bytes: file.size,
       target_metric: DEFAULT_METRIC,
+      filing_year: null,
     }))
     setStagedFiles((prev) => [...prev, ...newFiles])
   }
@@ -70,6 +73,14 @@ function App() {
     setStagedFiles((prev) =>
       prev.map((sf) =>
         sf.id === id ? { ...sf, target_metric: metric } : sf,
+      ),
+    )
+  }
+
+  function handleYearChange(id: string, year: number | null) {
+    setStagedFiles((prev) =>
+      prev.map((sf) =>
+        sf.id === id ? { ...sf, filing_year: year } : sf,
       ),
     )
   }
@@ -88,9 +99,14 @@ function App() {
 
     try {
       const form = new FormData()
+      if (selectedCompany.trim().length > 0) {
+        form.append('company_name', selectedCompany.trim())
+      }
+
       for (const sf of stagedFiles) {
         form.append('files', sf.file, sf.filename)
         form.append('target_metrics', sf.target_metric)
+        form.append('filing_years', sf.filing_year ? String(sf.filing_year) : '')
       }
 
       const res = await fetch(`${API_BASE}/upload/jobs`, {
@@ -215,6 +231,13 @@ function App() {
             )}
           </h2>
 
+          {/* Assign to Company selector */}
+          <CompanySelector
+            selectedCompany={selectedCompany}
+            onCompanyChange={setSelectedCompany}
+            apiBase={API_BASE}
+          />
+
           {/* Dismissible rejection banner (spec option b) */}
           {submissionErrors.length > 0 && (
             <div
@@ -250,6 +273,7 @@ function App() {
             persistedJobs={persistedJobs}
             apiBase={API_BASE}
             onMetricChange={handleMetricChange}
+            onYearChange={handleYearChange}
             onRemove={handleRemove}
             onReview={(jobId) => setActiveReviewJobId(jobId)}
             onAuditTrail={(jobId) => setActiveAuditJobId(jobId)}

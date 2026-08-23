@@ -22,6 +22,7 @@ from fastapi import (
     UploadFile,
 )
 
+from app.ingestion.company_repository import CompanyRepository
 from app.ingestion.models import (
     ALLOWED_TARGET_METRICS,
     GetJobsResponse,
@@ -36,7 +37,7 @@ from app.job_runner import process_queued_job
 router = APIRouter()
 
 
-# ── Dependency ────────────────────────────────────────────────────────────────
+# ── Dependencies ──────────────────────────────────────────────────────────────
 
 
 def get_repository() -> JobRepository:
@@ -47,6 +48,16 @@ def get_repository() -> JobRepository:
     point at a tmp_path-backed repository without touching data/.
     """
     return JobRepository()
+
+
+def get_company_repository() -> CompanyRepository:
+    """
+    Provide the default CompanyRepository instance.
+
+    Tests override this via app.dependency_overrides[get_company_repository] to
+    point at a tmp_path-backed repository without touching data/.
+    """
+    return CompanyRepository()
 
 
 # ── POST /upload/validate (Step 2 — unchanged) ────────────────────────────────
@@ -110,7 +121,16 @@ async def submit_jobs(
         Form(description="Target metric per file, parallel-indexed to files[]"),
     ],
     repo: Annotated[JobRepository, Depends(get_repository)],
+    company_repo: Annotated[CompanyRepository, Depends(get_company_repository)],
     background_tasks: BackgroundTasks,
+    filing_years: Annotated[
+        list[str] | None,
+        Form(description="Optional fiscal year per file, parallel-indexed to files[]"),
+    ] = None,
+    company_name: Annotated[
+        str | None,
+        Form(description="Optional company name to assign uploaded filings to"),
+    ] = None,
 ) -> SubmitResponse:
     """
     Submit one or more PDF files for processing.
@@ -143,10 +163,46 @@ async def submit_jobs(
                 ),
             )
 
+    parsed_years: list[int | None] = []
+    if filing_years is not None and len(filing_years) > 0:
+        if len(filing_years) != len(files):
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    f"'files' and 'filing_years' must have the same length "
+                    f"(got {len(files)} files and {len(filing_years)} filing_years)"
+                ),
+            )
+        for yr_str in filing_years:
+            if (
+                yr_str is None
+                or yr_str.strip() == ""
+                or yr_str.strip().lower() in ("null", "none")
+            ):
+                parsed_years.append(None)
+            else:
+                try:
+                    parsed_years.append(int(yr_str.strip()))
+                except ValueError:
+                    raise HTTPException(
+                        status_code=422,
+                        detail=f"Invalid filing year '{yr_str}'. Must be an integer or omitted.",
+                    )
+    else:
+        parsed_years = [None] * len(files)
+
+    company_id: str | None = None
+    if company_name is not None and company_name.strip():
+        cleaned_company_name = company_name.strip()
+        company = company_repo.get_company_by_name(cleaned_company_name)
+        if company is None:
+            company = company_repo.save_company(name=cleaned_company_name)
+        company_id = company.company_id
+
     created_jobs: list[JobRecord] = []
     rejections = []
 
-    for upload, metric in zip(files, target_metrics):
+    for upload, metric, year in zip(files, target_metrics, parsed_years):
         content: bytes = await upload.read()
         filename: str = upload.filename or "<unknown>"
         result = validate_pdf_bytes(filename, content)
@@ -158,7 +214,11 @@ async def submit_jobs(
                 filename=filename,
                 content=content,
                 target_metric=metric,
+                filing_year=year,
+                company_id=company_id,
             )
+            if company_id is not None:
+                company_repo.add_job_to_company(company_id, job.job_id)
             created_jobs.append(job)
             background_tasks.add_task(process_queued_job, job.job_id, repo)
 

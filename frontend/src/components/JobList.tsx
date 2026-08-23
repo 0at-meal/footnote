@@ -7,6 +7,7 @@ interface Props {
   persistedJobs: JobRecord[]
   apiBase?: string
   onMetricChange: (id: string, metric: TargetMetric) => void
+  onYearChange?: (id: string, year: number | null) => void
   onRemove: (id: string) => void
   onReview?: (jobId: string) => void
   onAuditTrail?: (jobId: string) => void
@@ -74,6 +75,7 @@ function JobList({
   persistedJobs,
   apiBase = 'http://localhost:8000',
   onMetricChange,
+  onYearChange,
   onRemove,
   onReview,
   onAuditTrail,
@@ -110,6 +112,7 @@ function JobList({
             <th scope="col">File</th>
             <th scope="col">Size</th>
             <th scope="col">Target Metric</th>
+            <th scope="col">Fiscal Year</th>
             <th scope="col">Status</th>
             <th scope="col">
               <span className="sr-only">Actions</span>
@@ -138,6 +141,30 @@ function JobList({
                     </option>
                   ))}
                 </select>
+              </td>
+              <td className="job-table__year">
+                <input
+                  type="number"
+                  min="1900"
+                  max="2100"
+                  placeholder="e.g. 2023"
+                  value={sf.filing_year ?? ''}
+                  onChange={(e) =>
+                    onYearChange?.(
+                      sf.id,
+                      e.target.value.trim() ? parseInt(e.target.value, 10) : null,
+                    )
+                  }
+                  aria-label={`Fiscal year for ${sf.filename}`}
+                  className="job-table__year-input"
+                  style={{
+                    width: '85px',
+                    padding: '0.3rem 0.5rem',
+                    fontSize: '0.8125rem',
+                    borderRadius: '0.25rem',
+                    border: '1px solid #d1d5db',
+                  }}
+                />
               </td>
               <td className="job-table__status">
                 <span className="status-badge status-badge--pending">Pending</span>
@@ -177,6 +204,11 @@ function JobList({
               <td className="job-table__metric">
                 {/* Metric is locked after submission — spec AC-6 */}
                 <span className="job-table__metric-locked">{job.target_metric}</span>
+              </td>
+              <td className="job-table__year">
+                <span className="job-table__year-locked">
+                  {job.filing_year ? `FY${job.filing_year}` : '—'}
+                </span>
               </td>
               <td className="job-table__status">
                 <StatusBadge status={job.status} modelReady={job.model_ready} />

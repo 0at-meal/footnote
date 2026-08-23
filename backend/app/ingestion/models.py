@@ -1,6 +1,6 @@
 from enum import Enum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 ALLOWED_TARGET_METRICS: tuple[str, ...] = (
     "Adjusted EBITDA",
@@ -50,6 +50,45 @@ class JobRecord(BaseModel):
     """ISO 8601 UTC timestamp of job creation, e.g. '2026-08-12T01:00:00Z'."""
     model_ready: bool = False
     """True if an .xlsx model workbook was generated successfully for this job."""
+    filing_year: int | None = None
+    """User-selected fiscal year for the filing (e.g. 2023)."""
+    company_id: str | None = None
+    """UUIDv4 of the associated CompanyRecord, if assigned."""
+
+
+class CompanyRecord(BaseModel):
+    """A persisted company grouping record (Phase 2 Multi-Year Architecture)."""
+
+    company_id: str
+    """UUIDv4 — system-generated company identifier."""
+    name: str
+    """Human-readable company name (e.g. 'Acme Corporation')."""
+    ticker: str | None = None
+    """Optional stock ticker symbol (e.g. 'ACME')."""
+    created_at: str
+    """ISO 8601 UTC timestamp of creation, e.g. '2026-08-23T12:00:00Z'."""
+    job_ids: list[str] = Field(default_factory=list)
+    """List of job UUIDs associated with this company."""
+
+
+class CreateCompanyRequest(BaseModel):
+    """Request payload for POST /companies."""
+
+    name: str
+    """Human-readable company name (required, non-empty)."""
+    ticker: str | None = None
+    """Optional stock ticker symbol."""
+
+
+class CompanyWithJobs(BaseModel):
+    """A company record bundled with its resolved JobRecords for API responses."""
+
+    company_id: str
+    name: str
+    ticker: str | None = None
+    created_at: str
+    job_ids: list[str] = Field(default_factory=list)
+    jobs: list[JobRecord] = Field(default_factory=list)
 
 
 class SubmitResponse(BaseModel):

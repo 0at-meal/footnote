@@ -166,12 +166,10 @@ def test_submitted_at_is_valid_iso8601_utc(tmp_path: Path) -> None:
     repo = make_repo(tmp_path)
     record = repo.save_job("ts.pdf", make_minimal_pdf(), "Adjusted EBITDA")
 
-    iso_utc_pattern = re.compile(
-        r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$"
-    )
-    assert iso_utc_pattern.match(record.submitted_at), (
-        f"submitted_at '{record.submitted_at}' does not match ISO 8601 UTC format"
-    )
+    iso_utc_pattern = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
+    assert iso_utc_pattern.match(
+        record.submitted_at
+    ), f"submitted_at '{record.submitted_at}' does not match ISO 8601 UTC format"
 
 
 # ── Test 10: update_job_status updates and persists status ───────────────────
@@ -200,6 +198,7 @@ def test_update_job_status_returns_none_for_missing_job_id(tmp_path: Path) -> No
 
 # ── Extension: get_pdf_path, get_job ─────────────────────────────────────────
 
+
 def test_get_pdf_path_returns_uploads_subpath(tmp_path: Path) -> None:
     repo = JobRepository(data_dir=tmp_path)
     job_id = "test-uuid-123"
@@ -220,3 +219,41 @@ def test_get_job_returns_record_by_id(tmp_path: Path) -> None:
 def test_get_job_returns_none_for_missing_id(tmp_path: Path) -> None:
     repo = JobRepository(data_dir=tmp_path)
     assert repo.get_job("non-existent-uuid") is None
+
+
+def test_save_job_with_filing_year_and_company_id(tmp_path: Path) -> None:
+    repo = make_repo(tmp_path)
+    pdf = make_minimal_pdf()
+    record = repo.save_job(
+        "filing_2023.pdf",
+        pdf,
+        "Adjusted EBITDA",
+        filing_year=2023,
+        company_id="company-uuid-123",
+    )
+
+    assert record.filing_year == 2023
+    assert record.company_id == "company-uuid-123"
+
+    # Verify retrieval
+    found = repo.get_job(record.job_id)
+    assert found is not None
+    assert found.filing_year == 2023
+    assert found.company_id == "company-uuid-123"
+
+    # Verify update_job_status can also update them
+    updated = repo.update_job_status(
+        record.job_id,
+        JobStatus.done,
+        filing_year=2024,
+        company_id="company-uuid-456",
+    )
+    assert updated is not None
+    assert updated.filing_year == 2024
+    assert updated.company_id == "company-uuid-456"
+
+    # Verify persisted to file
+    persisted = repo.get_job(record.job_id)
+    assert persisted is not None
+    assert persisted.filing_year == 2024
+    assert persisted.company_id == "company-uuid-456"

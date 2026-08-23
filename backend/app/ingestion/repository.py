@@ -80,6 +80,8 @@ class JobRepository:
         filename: str,
         content: bytes,
         target_metric: str,
+        filing_year: int | None = None,
+        company_id: str | None = None,
     ) -> JobRecord:
         """
         Persist a validated PDF and create a JobRecord.
@@ -100,6 +102,8 @@ class JobRepository:
                            Stored as-is (UTF-8) — EC-8.
             content:       Raw validated PDF bytes.
             target_metric: User-selected target metric string.
+            filing_year:   Optional user-selected fiscal year.
+            company_id:    Optional associated company UUIDv4.
 
         Returns:
             The newly created and persisted JobRecord.
@@ -124,6 +128,8 @@ class JobRepository:
             status=JobStatus.queued,
             target_metric=target_metric,
             submitted_at=submitted_at,
+            filing_year=filing_year,
+            company_id=company_id,
         )
 
         # Read-modify-write: safe at MVP (single-user, no concurrent writers).
@@ -158,9 +164,11 @@ class JobRepository:
         job_id: str,
         status: JobStatus,
         model_ready: bool | None = None,
+        filing_year: int | None = None,
+        company_id: str | None = None,
     ) -> JobRecord | None:
         """
-        Update the status (and optionally model_ready flag) of a specific JobRecord and persist to jobs.json.
+        Update the status (and optionally model_ready/filing_year/company_id) of a specific JobRecord and persist to jobs.json.
 
         This is a read-modify-write operation (read all → patch → write all).
         It is intentionally not atomic at the filesystem level — no file lock,
@@ -171,6 +179,8 @@ class JobRepository:
             job_id:      The UUID of the job to update.
             status:      The new JobStatus to set.
             model_ready: Optional boolean indicating whether .xlsx model is ready.
+            filing_year: Optional integer fiscal year to update.
+            company_id:  Optional string company UUID to update.
 
         Returns:
             The updated JobRecord if found, or None if no job with job_id exists.
@@ -183,6 +193,10 @@ class JobRepository:
                 updates: dict[str, Any] = {"status": status}
                 if model_ready is not None:
                     updates["model_ready"] = model_ready
+                if filing_year is not None:
+                    updates["filing_year"] = filing_year
+                if company_id is not None:
+                    updates["company_id"] = company_id
                 updated_record = rec.model_copy(update=updates)
                 records[idx] = updated_record
                 break
