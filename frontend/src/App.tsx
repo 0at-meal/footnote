@@ -5,7 +5,13 @@ import SubmitBar from './components/SubmitBar'
 import ReviewPage from './components/review/ReviewPage'
 import AuditTrailView from './components/audit/AuditTrailView'
 import CompanySelector from './components/CompanySelector'
-import type { StagedFile, TargetMetric, JobRecord } from './types/job'
+import CompanyMultiYearCard from './components/CompanyMultiYearCard'
+import type {
+  StagedFile,
+  TargetMetric,
+  JobRecord,
+  CompanyWithJobs,
+} from './types/job'
 import { DEFAULT_METRIC } from './types/job'
 import './App.css'
 
@@ -20,8 +26,22 @@ function App() {
   const [activeReviewJobId, setActiveReviewJobId] = useState<string | null>(null)
   const [activeAuditJobId, setActiveAuditJobId] = useState<string | null>(null)
   const [selectedCompany, setSelectedCompany] = useState<string>('')
+  const [companies, setCompanies] = useState<CompanyWithJobs[]>([])
 
-  // ── On mount: restore persisted jobs from backend (spec AC-7) ───────────
+  function refreshCompanies() {
+    fetch(`${API_BASE}/companies`)
+      .then((res) => res.json())
+      .then((data: CompanyWithJobs[]) => {
+        if (Array.isArray(data)) {
+          setCompanies(data)
+        }
+      })
+      .catch(() => {
+        // Non-fatal if backend is offline
+      })
+  }
+
+  // ── On mount: restore persisted jobs and companies from backend ─────────
   useEffect(() => {
     fetch(`${API_BASE}/upload/jobs`)
       .then((res) => res.json())
@@ -30,8 +50,9 @@ function App() {
       })
       .catch(() => {
         // Backend unreachable on load — non-fatal; user can still stage files.
-        // Errors during submit are surfaced separately.
       })
+
+    refreshCompanies()
   }, [])
 
   // ── Auto-polling for active jobs status (spec AC-7, AC-8) ───────────────
@@ -50,6 +71,7 @@ function App() {
         .catch(() => {
           // Non-fatal background refresh error
         })
+      refreshCompanies()
     }, 3000)
 
     return () => clearInterval(intervalId)
@@ -185,6 +207,21 @@ function App() {
     )
   }
 
+  // ── Active selected company resolution for Multi-Year Model ─────────────
+  const activeCompany = companies.find(
+    (c) =>
+      c.name.toLowerCase() === selectedCompany.trim().toLowerCase() ||
+      c.company_id === selectedCompany.trim(),
+  )
+  const activeCompanyWithLatestJobs: CompanyWithJobs | null = activeCompany
+    ? {
+        ...activeCompany,
+        jobs: persistedJobs.filter(
+          (j) => j.company_id === activeCompany.company_id,
+        ),
+      }
+    : null
+
   return (
     <div className="app-layout">
       <header className="app-header">
@@ -237,6 +274,14 @@ function App() {
             onCompanyChange={setSelectedCompany}
             apiBase={API_BASE}
           />
+
+          {/* Multi-Year Model Generation Card */}
+          {activeCompanyWithLatestJobs && (
+            <CompanyMultiYearCard
+              company={activeCompanyWithLatestJobs}
+              apiBase={API_BASE}
+            />
+          )}
 
           {/* Dismissible rejection banner (spec option b) */}
           {submissionErrors.length > 0 && (

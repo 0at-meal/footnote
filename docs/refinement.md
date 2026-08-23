@@ -447,11 +447,11 @@ Phase 2 -- Multi-Year Company Architecture
     [x] Ticket 2.1.4 -- Frontend Company + Filing Year fields
     [x] Ticket 2.1.5 -- Company + filing_year tests
   Step 2.2 -- Multi-year Excel model
-    [ ] Ticket 2.2.1 -- multi_year_generator.py
-    [ ] Ticket 2.2.2 -- POST /companies/{id}/multi-year-model
-    [ ] Ticket 2.2.3 -- Build Multi-Year Model UI button
-    [ ] Ticket 2.2.4 -- Connect drift to Company filing history
-    [ ] Ticket 2.2.5 -- Multi-year generator + company endpoint tests
+    [x] Ticket 2.2.1 -- multi_year_generator.py
+    [x] Ticket 2.2.2 -- POST /companies/{id}/multi-year-model
+    [x] Ticket 2.2.3 -- Build Multi-Year Model UI button
+    [x] Ticket 2.2.4 -- Connect drift to Company filing history
+    [x] Ticket 2.2.5 -- Multi-year generator + company endpoint tests
 
 ---
 

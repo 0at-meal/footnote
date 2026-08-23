@@ -79,7 +79,11 @@ def test_evaluate_job_drift_redefinition_and_continuation_flow(tmp_path: Path) -
 
     # 1. 2022 Baseline
     job_2022 = job_repo.save_job("ACME_2022.pdf", b"%PDF-2022", "Adjusted EBITDA")
-    _seed_review_items(review_repo, job_2022.job_id, ["Depreciation", "Stock-Based Comp", "Restructuring"])
+    _seed_review_items(
+        review_repo,
+        job_2022.job_id,
+        ["Depreciation", "Stock-Based Comp", "Restructuring"],
+    )
     comp_1, flag_1, node_1 = evaluate_job_drift(
         job_id=job_2022.job_id,
         repo=drift_repo,
@@ -93,7 +97,11 @@ def test_evaluate_job_drift_redefinition_and_continuation_flow(tmp_path: Path) -
 
     # 2. 2023 Redefinition (remove Restructuring, add Legal Settlement)
     job_2023 = job_repo.save_job("ACME_2023.pdf", b"%PDF-2023", "Adjusted EBITDA")
-    _seed_review_items(review_repo, job_2023.job_id, ["Depreciation", "Stock-Based Comp", "Legal Settlement"])
+    _seed_review_items(
+        review_repo,
+        job_2023.job_id,
+        ["Depreciation", "Stock-Based Comp", "Legal Settlement"],
+    )
     comp_2, flag_2, node_2 = evaluate_job_drift(
         job_id=job_2023.job_id,
         repo=drift_repo,
@@ -112,7 +120,11 @@ def test_evaluate_job_drift_redefinition_and_continuation_flow(tmp_path: Path) -
 
     # 3. 2024 Continuation (identical labels)
     job_2024 = job_repo.save_job("ACME_2024.pdf", b"%PDF-2024", "Adjusted EBITDA")
-    _seed_review_items(review_repo, job_2024.job_id, ["Depreciation", "Stock-Based Comp", "Legal Settlement"])
+    _seed_review_items(
+        review_repo,
+        job_2024.job_id,
+        ["Depreciation", "Stock-Based Comp", "Legal Settlement"],
+    )
     comp_3, flag_3, node_3 = evaluate_job_drift(
         job_id=job_2024.job_id,
         repo=drift_repo,
@@ -163,3 +175,73 @@ def test_evaluate_job_drift_unknown_job_raises_error(tmp_path: Path) -> None:
     drift_repo = DriftRepository(data_dir=tmp_path)
     with pytest.raises(ValueError, match="not found"):
         evaluate_job_drift("non_existent_job_id", repo=drift_repo)
+
+
+def test_evaluate_company_drift_first_and_second_year(tmp_path: Path) -> None:
+    """Drift evaluation uses company prior filings history."""
+    from app.ingestion.company_repository import CompanyRepository
+
+    drift_repo = DriftRepository(data_dir=tmp_path)
+    job_repo = JobRepository(data_dir=tmp_path)
+    review_repo = ReviewRepository(data_dir=tmp_path)
+    company_repo = CompanyRepository(data_dir=tmp_path)
+
+    company = company_repo.save_company("Wayne Enterprises", ticker="WAYN")
+
+    # Year 1 (2022) - First year for Wayne Enterprises -> baseline
+    job_2022 = job_repo.save_job(
+        "wayne_2022.pdf",
+        b"%PDF-2022",
+        "Adjusted EBITDA",
+        filing_year=2022,
+        company_id=company.company_id,
+    )
+    company_repo.add_job_to_company(company.company_id, job_2022.job_id)
+    _seed_review_items(
+        review_repo, job_2022.job_id, ["R&D Expense", "Stock Compensation"]
+    )
+
+    comp_1, flag_1, node_1 = evaluate_job_drift(
+        job_id=job_2022.job_id,
+        repo=drift_repo,
+        job_repo=job_repo,
+        review_repo=review_repo,
+    )
+    assert comp_1 is not None
+    assert comp_1.is_baseline is True
+    assert comp_1.has_discrepancy is False
+    assert flag_1 is None
+    assert node_1 is not None
+    assert node_1.entity == "Wayne Enterprises"
+
+    # Year 2 (2023) - Added Security Consulting expense -> drift redefinition flag
+    job_2023 = job_repo.save_job(
+        "wayne_2023.pdf",
+        b"%PDF-2023",
+        "Adjusted EBITDA",
+        filing_year=2023,
+        company_id=company.company_id,
+    )
+    company_repo.add_job_to_company(company.company_id, job_2023.job_id)
+    _seed_review_items(
+        review_repo,
+        job_2023.job_id,
+        ["R&D Expense", "Stock Compensation", "Security Consulting"],
+    )
+
+    comp_2, flag_2, node_2 = evaluate_job_drift(
+        job_id=job_2023.job_id,
+        repo=drift_repo,
+        job_repo=job_repo,
+        review_repo=review_repo,
+    )
+    assert comp_2 is not None
+    assert comp_2.is_baseline is False
+    assert comp_2.has_discrepancy is True
+    assert comp_2.added_labels == ["Security Consulting"]
+    assert comp_2.removed_labels == []
+    assert flag_2 is not None
+    assert flag_2.entity == "Wayne Enterprises"
+    assert flag_2.added_labels == ["Security Consulting"]
+    assert node_2 is not None
+    assert node_2.entity == "Wayne Enterprises"

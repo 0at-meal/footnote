@@ -88,3 +88,14 @@ export type CompanyWithJobs = CompanyRecord & {
   jobs: JobRecord[]
 }
 
+/**
+ * Response for POST /companies/{company_id}/multi-year-model.
+ */
+export type MultiYearModelResponse = {
+  company_id: string
+  download_url: string
+  years: number[]
+  total_cells_generated: number
+  file_path: string
+}
+

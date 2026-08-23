@@ -19,6 +19,7 @@ from app.drift.models import (
     MetricDefinitionNode,
 )
 from app.drift.repository import DriftRepository
+from app.ingestion.company_repository import CompanyRepository
 from app.ingestion.repository import JobRepository
 from app.review.repository import ReviewRepository
 
@@ -37,13 +38,14 @@ def evaluate_job_drift(
     Execute full cross-year drift evaluation for a confirmed job (spec §1, §2, §3, §4).
 
     Steps:
-    1. Look up job metadata (entity, target_metric, filing_year).
+    1. Look up job metadata (company_id, entity, target_metric, filing_year).
     2. Extract locked normalized labels from confirmed review items (AC-5).
     3. If zero locked records, skip drift comparison gracefully (EC-4).
     4. Load authoritative historical graph from SQLite store.
-    5. Compare against prior-year definition node (if any).
-    6. Generate structured drift flag upon redefinition (AC-2, AC-4, silence on AC-3/AC-9).
-    7. Apply mutation to graph and persist updated graph + flags atomically (AC-1, AC-7, AC-10).
+    5. When job belongs to a company, find the immediate prior filing for the company.
+    6. Compare against prior-year definition node (if any).
+    7. Generate structured drift flag upon redefinition (AC-2, AC-4, silence on AC-3/AC-9).
+    8. Apply mutation to graph and persist updated graph + flags atomically (AC-1, AC-7, AC-10).
 
     Args:
         job_id: Job identifier.
@@ -60,14 +62,23 @@ def evaluate_job_drift(
     drift_repo = repo or DriftRepository()
     j_repo = job_repo or JobRepository(data_dir=drift_repo.data_dir)
     r_repo = review_repo or ReviewRepository(data_dir=drift_repo.data_dir)
+    company_repo = CompanyRepository(data_dir=drift_repo.data_dir)
 
     job = j_repo.get_job(job_id)
     if job is None:
         raise ValueError(f"Job '{job_id}' not found in repository.")
 
-    # Derive entity and filing year from parameters or job filename/metadata
+    # Derive entity and filing year from parameters, company context, or job metadata
+    resolved_entity = entity
+    if not resolved_entity and job.company_id:
+        company = company_repo.get_company(job.company_id)
+        if company is not None:
+            resolved_entity = company.name
+
     resolved_entity = (
-        entity or getattr(job, "entity", None) or Path(job.filename).stem.split("_")[0]
+        resolved_entity
+        or getattr(job, "entity", None)
+        or Path(job.filename).stem.split("_")[0]
     )
     resolved_metric = job.target_metric or "Adjusted EBITDA"
     resolved_year = filing_year or getattr(job, "filing_year", None) or 2024
@@ -84,9 +95,50 @@ def evaluate_job_drift(
 
     # Load authoritative graph state from SQLite
     graph = drift_repo.load_graph()
-    prior_node = graph.get_latest_node(
-        entity=resolved_entity, target_metric=resolved_metric
-    )
+    prior_node: MetricDefinitionNode | None = None
+
+    if job.company_id:
+        company = company_repo.get_company(job.company_id)
+        if company is not None:
+            company_jobs = [
+                j_repo.get_job(jid) for jid in company.job_ids if jid != job_id
+            ]
+            prior_jobs = [
+                pj
+                for pj in company_jobs
+                if pj is not None
+                and pj.filing_year is not None
+                and pj.filing_year < resolved_year
+            ]
+            prior_jobs.sort(
+                key=lambda j: (j.filing_year or 0, j.submitted_at), reverse=True
+            )
+
+            if prior_jobs:
+                immediate_prior = prior_jobs[0]
+                prior_node = graph.get_latest_node(
+                    entity=resolved_entity, target_metric=resolved_metric
+                )
+                if (
+                    prior_node is None
+                    or prior_node.filing_year != immediate_prior.filing_year
+                ):
+                    prior_items = r_repo.get_review_items(immediate_prior.job_id) or []
+                    prior_locked = extract_locked_normalized_labels(prior_items)
+                    if prior_locked:
+                        prior_node = graph.add_baseline_node(
+                            entity=resolved_entity,
+                            target_metric=resolved_metric,
+                            filing_year=immediate_prior.filing_year or 0,
+                            component_labels=prior_locked,
+                        )
+            else:
+                # First filing for this company -> baseline year
+                prior_node = None
+    else:
+        prior_node = graph.get_latest_node(
+            entity=resolved_entity, target_metric=resolved_metric
+        )
 
     # Run pure comparison
     comparison = compare_metric_components(

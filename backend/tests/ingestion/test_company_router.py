@@ -210,3 +210,129 @@ def test_assign_job_to_company_idempotent(tmp_path: Path, client: TestClient) ->
     r2 = client.post(f"/companies/{company.company_id}/jobs/{job.job_id}")
     assert r2.status_code == 200
     assert r2.json()["job_ids"] == [job.job_id]
+
+
+# ── POST /companies/{company_id}/multi-year-model & GET download ──────────────
+
+
+def test_generate_multi_year_model_success_with_two_jobs(
+    tmp_path: Path, client: TestClient
+) -> None:
+    """POST /companies/{company_id}/multi-year-model compiles 2 jobs into multi-year workbook."""
+    from app.extraction.models import ConfidenceBand
+    from app.review.models import ReviewItem, ReviewStatus
+    from app.review.repository import ReviewRepository
+
+    company_repo = CompanyRepository(data_dir=tmp_path)
+    job_repo = JobRepository(data_dir=tmp_path)
+    review_repo = ReviewRepository(data_dir=tmp_path)
+
+    company = company_repo.save_company("Stark Industries", ticker="STARK")
+
+    # Job 1 (2022)
+    job1 = job_repo.save_job(
+        "stark_2022.pdf",
+        b"%PDF-1.4",
+        "Adjusted EBITDA",
+        filing_year=2022,
+        company_id=company.company_id,
+    )
+    company_repo.add_job_to_company(company.company_id, job1.job_id)
+    review_repo.save_review_items(
+        job1.job_id,
+        [
+            ReviewItem(
+                id="item-2022-1",
+                value="250.00",
+                label="R&D Amortization",
+                page=1,
+                bbox={"x0": 0.0, "y0": 0.0, "x1": 100.0, "y1": 100.0},
+                source_file="stark_2022.pdf",
+                confidence_band=ConfidenceBand.auto_accepted,
+                confidence_score=0.95,
+                normalized_label="R&D Amortization",
+                status=ReviewStatus.auto_accepted,
+                is_target_metric_candidate=True,
+            )
+        ],
+    )
+
+    # Job 2 (2023)
+    job2 = job_repo.save_job(
+        "stark_2023.pdf",
+        b"%PDF-1.4",
+        "Adjusted EBITDA",
+        filing_year=2023,
+        company_id=company.company_id,
+    )
+    company_repo.add_job_to_company(company.company_id, job2.job_id)
+    review_repo.save_review_items(
+        job2.job_id,
+        [
+            ReviewItem(
+                id="item-2023-1",
+                value="300.00",
+                label="R&D Amortization",
+                page=1,
+                bbox={"x0": 0.0, "y0": 0.0, "x1": 100.0, "y1": 100.0},
+                source_file="stark_2023.pdf",
+                confidence_band=ConfidenceBand.auto_accepted,
+                confidence_score=0.95,
+                normalized_label="R&D Amortization",
+                status=ReviewStatus.auto_accepted,
+                is_target_metric_candidate=True,
+            )
+        ],
+    )
+
+    response = client.post(f"/companies/{company.company_id}/multi-year-model")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["company_id"] == company.company_id
+    assert (
+        data["download_url"]
+        == f"/companies/{company.company_id}/multi-year-model/download"
+    )
+    assert data["years"] == [2022, 2023]
+    assert data["total_cells_generated"] > 0
+
+    # Test Download endpoint
+    download_res = client.get(data["download_url"])
+    assert download_res.status_code == 200
+    assert (
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        in download_res.headers["content-type"]
+    )
+    assert len(download_res.content) > 0
+
+
+def test_generate_multi_year_model_fewer_than_two_jobs_returns_400(
+    tmp_path: Path, client: TestClient
+) -> None:
+    """POST /companies/{company_id}/multi-year-model returns 400 if fewer than 2 jobs exist."""
+    company_repo = CompanyRepository(data_dir=tmp_path)
+    company = company_repo.save_company("Single Filing LLC")
+
+    response = client.post(f"/companies/{company.company_id}/multi-year-model")
+    assert response.status_code == 400
+    assert "At least 2 completed jobs" in response.json()["detail"]
+
+
+def test_generate_multi_year_model_company_not_found_returns_404(
+    client: TestClient,
+) -> None:
+    """POST /companies/{company_id}/multi-year-model returns 404 for missing company."""
+    response = client.post("/companies/nonexistent-company/multi-year-model")
+    assert response.status_code == 404
+
+
+def test_download_multi_year_model_not_found_returns_404(
+    tmp_path: Path, client: TestClient
+) -> None:
+    """GET /companies/{company_id}/multi-year-model/download returns 404 if file not yet generated."""
+    company_repo = CompanyRepository(data_dir=tmp_path)
+    company = company_repo.save_company("Missing Model Corp")
+
+    response = client.get(f"/companies/{company.company_id}/multi-year-model/download")
+    assert response.status_code == 404
+    assert "not found" in response.json()["detail"]

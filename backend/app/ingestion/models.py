@@ -102,3 +102,13 @@ class GetJobsResponse(BaseModel):
     """Response for GET /upload/jobs: all persisted job records."""
 
     jobs: list[JobRecord]
+
+
+class MultiYearModelResponse(BaseModel):
+    """Response for POST /companies/{company_id}/multi-year-model."""
+
+    company_id: str
+    download_url: str
+    years: list[int]
+    total_cells_generated: int
+    file_path: str
