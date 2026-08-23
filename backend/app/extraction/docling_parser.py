@@ -247,11 +247,13 @@ def parse_pdf(
         )
         result = converter.convert(str(pdf_path))
         doc = result.document
-    except Exception as err:
-        logger.error("Docling failed to convert PDF %s: %s", pdf_path, err)
-        raise DoclingParseError(
-            f"Docling conversion failed for {source_file}: {err}"
-        ) from err
+    except Exception as err:  # noqa: BLE001
+        logger.info(
+            "Docling unavailable or failed for %s (%s). Using PyMuPDF fallback.",
+            pdf_path,
+            err,
+        )
+        return _parse_pdf_with_pymupdf(pdf_path, source_file, target_metric)
 
     items: list[DoclingItem] = []
 
@@ -423,5 +425,110 @@ def parse_pdf(
         ) from err
 
     # Deterministic sorting by page, then bbox y0, x0 (NFR1)
+    items.sort(key=lambda item: (item.page, item.bbox.y0, item.bbox.x0))
+    return items
+
+
+def _parse_pdf_with_pymupdf(
+    pdf_path: Path,
+    source_file: str,
+    target_metric: str = "Adjusted EBITDA",
+) -> list[DoclingItem]:
+    """
+    Fast, robust native PyMuPDF table parser fallback (used when Docling is not installed or errors).
+    """
+    import fitz
+
+    items: list[DoclingItem] = []
+    try:
+        doc = fitz.open(str(pdf_path))
+    except Exception as open_err:
+        raise DoclingParseError(
+            f"Could not open PDF with PyMuPDF: {open_err}"
+        ) from open_err
+
+    for page_idx, page in enumerate(doc):
+        page_num = page_idx + 1
+        try:
+            tabs = page.find_tables()
+        except Exception as tab_err:  # noqa: BLE001
+            logger.warning(
+                "PyMuPDF table detection failed on page %d: %s", page_num, tab_err
+            )
+            continue
+
+        for table_idx, table in enumerate(tabs.tables):
+            try:
+                extracted = table.extract()
+                if not extracted or len(extracted) < 2:
+                    continue
+
+                # Header row
+                raw_headers = [str(c or "").strip() for c in extracted[0]]
+                col_headers = raw_headers
+                table_title = " / ".join([h for h in raw_headers if h])
+                is_reconciliation = _is_reconciliation_table(table_title, target_metric)
+
+                # Process data rows
+                for row_idx in range(1, len(extracted)):
+                    row = extracted[row_idx]
+                    row_label = str(row[0] or "").strip() if len(row) > 0 else ""
+
+                    for col_idx in range(1, len(row)):
+                        cell_text = str(row[col_idx] or "").strip()
+                        if not cell_text:
+                            continue
+
+                        if _is_noise_cell(cell_text, row_idx, col_idx):
+                            continue
+
+                        col_header = (
+                            col_headers[col_idx] if col_idx < len(col_headers) else ""
+                        )
+                        label_parts = [p for p in [row_label, col_header] if p]
+                        label = (
+                            " / ".join(label_parts)
+                            if label_parts
+                            else (row_label or cell_text)
+                        )
+
+                        # Cell bounding box
+                        cell_bbox = DoclingBbox(
+                            x0=float(table.bbox[0]),
+                            y0=float(table.bbox[1]),
+                            x1=float(table.bbox[2]),
+                            y1=float(table.bbox[3]),
+                        )
+                        if hasattr(table, "cells") and table.cells:
+                            flat_idx = row_idx * len(row) + col_idx
+                            if flat_idx < len(table.cells):
+                                cb = table.cells[flat_idx]
+                                cell_bbox = DoclingBbox(
+                                    x0=float(cb[0]),
+                                    y0=float(cb[1]),
+                                    x1=float(cb[2]),
+                                    y1=float(cb[3]),
+                                )
+
+                        items.append(
+                            DoclingItem(
+                                value=cell_text,
+                                label=label,
+                                page=page_num,
+                                bbox=cell_bbox,
+                                source_file=source_file,
+                                table_name=table_title or None,
+                                is_reconciliation_candidate=is_reconciliation,
+                            )
+                        )
+            except Exception as table_err:  # noqa: BLE001
+                logger.warning(
+                    "Error parsing table %d on page %d: %s",
+                    table_idx,
+                    page_num,
+                    table_err,
+                )
+                continue
+
     items.sort(key=lambda item: (item.page, item.bbox.y0, item.bbox.x0))
     return items
