@@ -187,17 +187,21 @@ def _extract_table_title(table: Any, table_idx: int, table_cells: list[Any]) -> 
     return f"Table {table_idx + 1}"
 
 
-def _is_reconciliation_table(table_title: str, target_metric: str = "") -> bool:
+def _is_reconciliation_table(
+    table_title: str,
+    target_metric: str = "",
+    sample_text: str = "",
+) -> bool:
     """
     Deterministically determines if a table is a reconciliation candidate table.
 
-    Returns True if table_title contains target_metric (case-insensitive, when non-empty)
+    Returns True if table_title or sample_text contains target_metric (case-insensitive, when non-empty)
     OR any of: non-gaap, reconciliation, adjusted, non gaap, bridge.
     """
-    if not table_title:
+    combined = f"{table_title} {sample_text}".lower().strip()
+    if not combined:
         return False
-    title_lower = table_title.lower()
-    if target_metric and target_metric.strip().lower() in title_lower:
+    if target_metric and target_metric.strip().lower() in combined:
         return True
     reconciliation_keywords = (
         "non-gaap",
@@ -206,7 +210,7 @@ def _is_reconciliation_table(table_title: str, target_metric: str = "") -> bool:
         "non gaap",
         "bridge",
     )
-    return any(kw in title_lower for kw in reconciliation_keywords)
+    return any(kw in combined for kw in reconciliation_keywords)
 
 
 class DoclingParseError(Exception):
@@ -467,7 +471,12 @@ def _parse_pdf_with_pymupdf(
                 raw_headers = [str(c or "").strip() for c in extracted[0]]
                 col_headers = raw_headers
                 table_title = " / ".join([h for h in raw_headers if h])
-                is_reconciliation = _is_reconciliation_table(table_title, target_metric)
+                sample_text = " ".join(
+                    [str(c or "") for row in extracted[:6] for c in row if c]
+                )
+                is_reconciliation = _is_reconciliation_table(
+                    table_title, target_metric, sample_text=sample_text
+                )
 
                 # Process data rows
                 for row_idx in range(1, len(extracted)):

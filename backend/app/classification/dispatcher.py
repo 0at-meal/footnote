@@ -54,19 +54,83 @@ def dispatch_records_to_classifier(
     error_count = 0
     skipped_count = 0
     total_dispatched = 0
+    label_cache: dict[str, ClassifierRawResponse | None] = {}
+    circuit_breaker_rate_limited = False
 
     for idx, scored_record in enumerate(records):
         if not is_record_eligible_for_classification(scored_record):
             skipped_count += 1
             continue
 
-        # Extract only the label without value or other metadata (CONSTITUTION §6.5)
         raw_label = scored_record.record.label
+        parts = [p.strip() for p in raw_label.split(" / ") if p.strip()]
+        core_label = parts[0] if parts else raw_label
         payload = ClassifierInputPayload(label=raw_label)
         total_dispatched += 1
 
+        normalized_key = core_label.strip().lower()
+
+        # 1. Check in-batch cache first
+        if normalized_key in label_cache:
+            cached_resp = label_cache[normalized_key]
+            if cached_resp is not None:
+                item_results.append(
+                    ClassificationItemResult(
+                        record_index=idx,
+                        payload=payload,
+                        raw_response=cached_resp,
+                        is_error=False,
+                        error_detail=None,
+                    )
+                )
+                success_count += 1
+            else:
+                item_results.append(
+                    ClassificationItemResult(
+                        record_index=idx,
+                        payload=payload,
+                        raw_response=None,
+                        is_error=True,
+                        error_detail="Classification previously failed for label",
+                    )
+                )
+                error_count += 1
+            continue
+
+        # 2. If circuit breaker tripped (e.g. 429 Daily Limit), fast-fallback
+        if circuit_breaker_rate_limited:
+            fallback_match = match_canonical_taxonomy(raw_label) or match_canonical_taxonomy(core_label)
+            if fallback_match is not None:
+                resp = ClassifierRawResponse(label=fallback_match, confidence=0.98)
+                label_cache[normalized_key] = resp
+                item_results.append(
+                    ClassificationItemResult(
+                        record_index=idx,
+                        payload=payload,
+                        raw_response=resp,
+                        is_error=False,
+                        error_detail=None,
+                    )
+                )
+                success_count += 1
+            else:
+                label_cache[normalized_key] = None
+                item_results.append(
+                    ClassificationItemResult(
+                        record_index=idx,
+                        payload=payload,
+                        raw_response=None,
+                        is_error=True,
+                        error_detail="Rate limit circuit breaker active",
+                    )
+                )
+                error_count += 1
+            continue
+
+        # 3. Invoke classifier client
         try:
             raw_response = client.classify(payload)
+            label_cache[normalized_key] = raw_response
             item_results.append(
                 ClassificationItemResult(
                     record_index=idx,
@@ -84,34 +148,36 @@ def dispatch_records_to_classifier(
             APIConnectionError,
             APIError,
             RuntimeError,
+            Exception,
         ) as err:
+            if isinstance(err, RateLimitError) or "429" in str(err) or "rate limit" in str(err).lower():
+                logger.warning(
+                    "Groq daily limit / 429 reached. Tripping circuit breaker to instant local financial classification."
+                )
+                circuit_breaker_rate_limited = True
+
             logger.warning(
                 "Classification failed for record index %d ('%s'): %s",
                 idx,
                 raw_label,
                 err,
             )
-            fallback_match = match_canonical_taxonomy(raw_label)
+            fallback_match = match_canonical_taxonomy(raw_label) or match_canonical_taxonomy(core_label)
             if fallback_match is not None:
-                logger.info(
-                    "Direct taxonomy fallback matched '%s' -> '%s'",
-                    raw_label,
-                    fallback_match,
-                )
+                resp = ClassifierRawResponse(label=fallback_match, confidence=0.95)
+                label_cache[normalized_key] = resp
                 item_results.append(
                     ClassificationItemResult(
                         record_index=idx,
                         payload=payload,
-                        raw_response=ClassifierRawResponse(
-                            label=fallback_match,
-                            confidence=0.95,
-                        ),
+                        raw_response=resp,
                         is_error=False,
                         error_detail=None,
                     )
                 )
                 success_count += 1
             else:
+                label_cache[normalized_key] = None
                 item_results.append(
                     ClassificationItemResult(
                         record_index=idx,

@@ -58,9 +58,38 @@ def match_canonical_taxonomy(
     canonical_cand = canonicalize_label(candidate_label)
     if not canonical_cand:
         return None
+
+    # 1. Exact match on full candidate label
     for entry in taxonomy:
         if canonicalize_label(entry) == canonical_cand:
             return entry
+
+    # 2. Match on leaf component label (after last '/')
+    leaf_label = candidate_label.split(" / ")[-1].strip()
+    canonical_leaf = canonicalize_label(leaf_label)
+    if canonical_leaf:
+        for entry in taxonomy:
+            if canonicalize_label(entry) == canonical_leaf:
+                return entry
+
+    # 3. Standard financial synonym mapping
+    synonym_rules: list[tuple[tuple[str, ...], str]] = [
+        (("stock based compensation", "share based compensation", "stock compensation", "sbc"), "Stock-Based Compensation"),
+        (("restructuring", "severance", "workforce reduction"), "Restructuring Charges"),
+        (("litigation", "legal settlement", "legal charges"), "Litigation Charges"),
+        (("lease adjustment", "lease termination", "right of use"), "Lease Adjustments"),
+        (("amortization of intangible", "amortization of acquired", "intangible amortization"), "Amortization of Intangibles"),
+        (("acquisition related", "transaction costs", "merger related"), "Acquisition-Related Expenses"),
+        (("impairment of asset", "goodwill impairment", "asset impairment"), "Impairment of Assets"),
+        (("gain loss on divestiture", "gain on sale", "loss on sale", "divestiture"), "Gain/Loss on Divestitures"),
+        (("foreign currency", "foreign exchange", "fx translation"), "Foreign Currency Adjustments"),
+        (("other non operating", "other income expense net", "other income net", "other expense net"), "Other Non-Operating Expenses"),
+    ]
+    for keywords, target in synonym_rules:
+        if any(kw in canonical_cand or kw in canonical_leaf for kw in keywords):
+            if target in taxonomy:
+                return target
+
     return None
 
 

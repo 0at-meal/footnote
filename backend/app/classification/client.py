@@ -66,11 +66,18 @@ class GroqClassifierClient:
         self.max_retries = max_retries
         self.initial_retry_delay = initial_retry_delay
 
+        resolved_key = api_key or os.environ.get("GROQ_API_KEY", "")
+        self.is_configured = bool(
+            resolved_key and not resolved_key.startswith("mock") and len(resolved_key) > 10
+        )
+
         if client is not None:
             self._client: Groq = client
         else:
-            resolved_key = api_key or os.environ.get("GROQ_API_KEY", "")
-            self._client = Groq(api_key=resolved_key)
+            self._client = Groq(
+                api_key=resolved_key or "gsk_unconfigured_placeholder",
+                timeout=5.0,
+            )
 
         # Rate tracking
         self._request_timestamps: list[float] = []
@@ -81,6 +88,9 @@ class GroqClassifierClient:
         """
         Throttles outbound calls to remain within 30 RPM and tracks daily count.
         """
+        if not self.is_configured:
+            return
+
         now = time.time()
 
         # Reset daily counter every 24 hours (86400 seconds)
@@ -115,7 +125,7 @@ class GroqClassifierClient:
         self, payload: ClassifierInputPayload
     ) -> ClassifierInputPayload:
         """
-        Truncate oversized label or context to prevent breaching the 8,000 TPM limit (EC-7).
+        Clamps label and context character lengths to prevent TPM/token overflow (EC-7).
         """
         truncated_label = payload.label
         if len(truncated_label) > MAX_LABEL_CHARS:
@@ -140,6 +150,12 @@ class GroqClassifierClient:
         - Payload truncation (EC-7)
         - Strict numeric-free JSON parsing (AC-2, AC-3, EC-1, EC-2)
         """
+        if not self.is_configured:
+            raise APIConnectionError(
+                request=None,  # type: ignore[arg-type]
+                message="Groq API key is not configured; using local financial taxonomy matcher.",
+            )
+
         sanitized_payload = self._truncate_payload_if_oversized(payload)
 
         prompt_user_content = f"Item Label: {sanitized_payload.label}"
@@ -170,6 +186,11 @@ class GroqClassifierClient:
                 return self._parse_and_validate_response(content)
 
             except RateLimitError as err:
+                err_str = str(err).lower()
+                if "daily" in err_str or "tokens per day" in err_str or "tpd" in err_str:
+                    logger.warning("Groq daily token limit reached (TPD). Bypassing further API retries.")
+                    raise
+
                 attempt += 1
                 if attempt > self.max_retries:
                     logger.error(

@@ -391,11 +391,14 @@ class ReviewRepository:
         job_id: str,
         records: list[ClassifiedRecord],
     ) -> list[ReviewItem]:
-        """Convert ClassifiedRecord objects into review items (reconciliation candidates only)."""
+        """Convert ClassifiedRecord objects into review items."""
         items: list[ReviewItem] = []
+        has_reconciliation_candidates = any(
+            cr.record.is_reconciliation_candidate for cr in records
+        )
         for idx, cr in enumerate(records):
             sr = cr.record
-            if not sr.is_reconciliation_candidate:
+            if has_reconciliation_candidates and not sr.is_reconciliation_candidate:
                 continue
 
             er = sr.record
@@ -446,10 +449,13 @@ class ReviewRepository:
         job_id: str,
         records: list[ScoredRecord],
     ) -> list[ReviewItem]:
-        """Convert ScoredRecord objects into review items (reconciliation candidates only)."""
+        """Convert ScoredRecord objects into review items."""
         items: list[ReviewItem] = []
+        has_reconciliation_candidates = any(
+            sr.is_reconciliation_candidate for sr in records
+        )
         for idx, sr in enumerate(records):
-            if not sr.is_reconciliation_candidate:
+            if has_reconciliation_candidates and not sr.is_reconciliation_candidate:
                 continue
 
             er = sr.record

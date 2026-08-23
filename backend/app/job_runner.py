@@ -111,6 +111,9 @@ def process_queued_job(
         reconciliation_candidates = [
             r for r in scored_records if r.is_reconciliation_candidate
         ]
+        if not reconciliation_candidates and scored_records:
+            reconciliation_candidates = list(scored_records)
+
         filtered_out_count = len(scored_records) - len(reconciliation_candidates)
         logger.info(
             "Job %s: %d total scored records, %d reconciliation candidates, %d filtered out before classification",
