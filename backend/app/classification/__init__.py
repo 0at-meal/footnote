@@ -19,19 +19,25 @@ from app.classification.models import (
     ClassifierRawResponse,
     DecisionLogEntry,
     DecisionLogResponse,
+    MasterTaxonomy,
+    StatementType,
     TaxonomyCheckResult,
+    TaxonomyItem,
     TaxonomyStatus,
 )
 from app.classification.normalizer import normalize_records
 from app.classification.repository import ClassificationRepository
 from app.classification.router import router as classification_router
 from app.classification.taxonomy import (
+    SEED_MASTER_TAXONOMY,
     SEED_TAXONOMY,
     TaxonomyRepository,
     check_label_against_taxonomy,
+    match_master_taxonomy,
 )
 
 __all__ = [
+    "SEED_MASTER_TAXONOMY",
     "SEED_TAXONOMY",
     "ClassificationBatchResult",
     "ClassificationItemResult",
@@ -43,7 +49,10 @@ __all__ = [
     "DecisionLogRepository",
     "DecisionLogResponse",
     "GroqClassifierClient",
+    "MasterTaxonomy",
+    "StatementType",
     "TaxonomyCheckResult",
+    "TaxonomyItem",
     "TaxonomyRepository",
     "TaxonomyStatus",
     "build_log_entries",
@@ -51,5 +60,6 @@ __all__ = [
     "classification_router",
     "dispatch_records_to_classifier",
     "is_record_eligible_for_classification",
+    "match_master_taxonomy",
     "normalize_records",
 ]

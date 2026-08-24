@@ -434,6 +434,7 @@ class ReviewRepository:
                     confidence_band=sr.confidence_band,
                     confidence_score=sr.confidence_score,
                     normalized_label=cr.normalized_label,
+                    statement_type=cr.statement_type,
                     taxonomy_status=taxonomy_status_val,
                     status=status,
                     flags=sr.flags,

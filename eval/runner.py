@@ -181,7 +181,6 @@ def run_benchmark_filing(
         model_repo = ModelRepository(data_dir=target_data_dir)
 
         # Seed isolated taxonomy with benchmark base entries
-        active_tax = taxonomy_repo.load_taxonomy()
         for base_entry in [
             "Net Income",
             "Interest Expense",
@@ -201,9 +200,7 @@ def run_benchmark_filing(
             "Gain/Loss on Divestitures",
             "Adjusted EBITDA",
         ]:
-            if base_entry not in active_tax:
-                active_tax.append(base_entry)
-        taxonomy_repo.save_taxonomy(active_tax)
+            taxonomy_repo.add_entry(base_entry)
 
         isolated_pdf_path = repo.get_pdf_path(job_id)
 

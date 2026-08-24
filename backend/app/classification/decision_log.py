@@ -17,6 +17,7 @@ from pathlib import Path
 from app.classification.models import (
     ClassificationBatchResult,
     DecisionLogEntry,
+    MasterTaxonomy,
     TaxonomyStatus,
 )
 from app.classification.taxonomy import check_label_against_taxonomy
@@ -29,7 +30,7 @@ _DEFAULT_DATA_DIR: Path = Path(__file__).parent.parent.parent / "data"
 def build_log_entries(
     job_id: str,
     batch_result: ClassificationBatchResult,
-    active_taxonomy: list[str],
+    active_taxonomy: list[str] | MasterTaxonomy,
 ) -> list[DecisionLogEntry]:
     """
     Constructs DecisionLogEntry objects for all items dispatched in a classification batch.

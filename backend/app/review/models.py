@@ -8,6 +8,7 @@ from enum import Enum
 
 from pydantic import BaseModel, Field
 
+from app.classification.models import StatementType
 from app.extraction.models import ConfidenceBand
 
 
@@ -61,6 +62,10 @@ class ReviewItem(BaseModel):
     taxonomy_status: str | None = Field(
         default=None,
         description="Taxonomy match status from Feature 3 if classified",
+    )
+    statement_type: StatementType | None = Field(
+        default=None,
+        description="Target financial statement category if classified",
     )
     status: ReviewStatus = Field(
         ...,

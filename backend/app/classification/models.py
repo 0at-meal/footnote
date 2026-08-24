@@ -86,6 +86,53 @@ class ClassificationBatchResult(BaseModel):
     skipped_count: int
 
 
+class StatementType(str, Enum):
+    """
+    Financial statement classification categories.
+    """
+
+    income_statement = "income_statement"
+    balance_sheet = "balance_sheet"
+    cash_flow = "cash_flow"
+    non_gaap_bridge = "non_gaap_bridge"
+    kpi = "kpi"
+
+
+class TaxonomyItem(BaseModel):
+    """
+    A single canonical financial line item in the Master Financial Taxonomy.
+    """
+
+    canonical_name: str = Field(
+        ..., min_length=1, description="Standardized GAAP/IFRS canonical line item name"
+    )
+    statement_type: StatementType = Field(
+        ..., description="Financial statement type to which this line item belongs"
+    )
+    display_order: int = Field(
+        default=0, description="Standard presentation order within the statement"
+    )
+    is_debit: bool = Field(
+        default=False,
+        description="True for debit normal balance (assets, expenses), False for credit (liabilities, equity, revenue)",
+    )
+    aliases: list[str] = Field(
+        default_factory=list,
+        description="List of recognized filing text aliases for deterministic matching",
+    )
+
+
+class MasterTaxonomy(BaseModel):
+    """
+    Structured Master Financial Taxonomy containing all canonical line items.
+    """
+
+    items: list[TaxonomyItem] = Field(
+        default_factory=list,
+        description="List of canonical taxonomy items",
+    )
+
+
 class TaxonomyStatus(str, Enum):
     """
     Taxonomy verification status for a classified label (spec.md §3, §4).
@@ -113,6 +160,10 @@ class TaxonomyCheckResult(BaseModel):
         default=None,
         description="Exact matched taxonomy entry if matched, otherwise None",
     )
+    matched_item: TaxonomyItem | None = Field(
+        default=None,
+        description="Matched TaxonomyItem if matched against MasterTaxonomy",
+    )
     is_matched: bool = Field(
         default=False,
         description="Convenience boolean indicating whether exact match was found",
@@ -130,6 +181,10 @@ class ClassifiedRecord(BaseModel):
     normalized_label: str | None = Field(
         default=None,
         description="Confirmed standardized taxonomy label if matched/confirmed; None if pending (AC-6)",
+    )
+    statement_type: StatementType | None = Field(
+        default=None,
+        description="Financial statement type category (e.g. income_statement, balance_sheet)",
     )
     taxonomy_status: TaxonomyStatus = Field(
         default=TaxonomyStatus.pending_taxonomy_confirmation,

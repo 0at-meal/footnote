@@ -68,7 +68,9 @@ class GroqClassifierClient:
 
         resolved_key = api_key or os.environ.get("GROQ_API_KEY", "")
         self.is_configured = bool(
-            resolved_key and not resolved_key.startswith("mock") and len(resolved_key) > 10
+            resolved_key
+            and not resolved_key.startswith("mock")
+            and len(resolved_key) > 10
         )
 
         if client is not None:
@@ -187,8 +189,14 @@ class GroqClassifierClient:
 
             except RateLimitError as err:
                 err_str = str(err).lower()
-                if "daily" in err_str or "tokens per day" in err_str or "tpd" in err_str:
-                    logger.warning("Groq daily token limit reached (TPD). Bypassing further API retries.")
+                if (
+                    "daily" in err_str
+                    or "tokens per day" in err_str
+                    or "tpd" in err_str
+                ):
+                    logger.warning(
+                        "Groq daily token limit reached (TPD). Bypassing further API retries."
+                    )
                     raise
 
                 attempt += 1
