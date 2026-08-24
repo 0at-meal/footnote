@@ -481,13 +481,13 @@ def test_e2e_reconciliation_batch_approval_and_regeneration(tmp_path: Path) -> N
     rec_bs = ScoredRecord(
         record=ExtractedRecord(
             value="500,000",
-            label="Total assets",
+            label="Total other miscellaneous unclassified assets",
             page=4,
             bbox={"x0": 100, "y0": 100, "x1": 400, "y1": 120},
             source_file="TechCorp_Q3_2024.pdf",
         ),
-        confidence_score=0.97,
-        confidence_band=ConfidenceBand.auto_accepted,
+        confidence_score=0.75,
+        confidence_band=ConfidenceBand.needs_review,
         flags=[],
         table_name="Consolidated Balance Sheets",
     )
