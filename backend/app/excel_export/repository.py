@@ -40,9 +40,10 @@ class ModelRepository:
 
     def get_workbook_path(self, job_id: str) -> Path | None:
         """Returns path to generated .xlsx workbook for job_id if it exists."""
-        target = self._models_dir / f"{job_id}_model.xlsx"
-        if target.exists():
-            return target
+        for name in [f"{job_id}_multi_statement.xlsx", f"{job_id}_model.xlsx"]:
+            target = self._models_dir / name
+            if target.exists():
+                return target
         return None
 
     def save_provenance_records(

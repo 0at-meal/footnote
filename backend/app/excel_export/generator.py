@@ -1,4 +1,6 @@
 """
+[DEPRECATED: Use multi_statement_generator.py instead for 6-tab multi-statement model generation]
+
 Excel workbook generator using xlsxwriter with exact provenance tagging (Feature 4 Step 4).
 
 Enforces:

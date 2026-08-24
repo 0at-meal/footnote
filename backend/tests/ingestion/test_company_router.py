@@ -336,3 +336,58 @@ def test_download_multi_year_model_not_found_returns_404(
     response = client.get(f"/companies/{company.company_id}/multi-year-model/download")
     assert response.status_code == 404
     assert "not found" in response.json()["detail"]
+
+
+def test_generate_full_model_success_and_download(
+    tmp_path: Path, client: TestClient
+) -> None:
+    """POST /companies/{id}/full-model generates 6-tab model and GET /download retrieves it."""
+    from app.extraction.models import ConfidenceBand
+    from app.review.models import ReviewItem, ReviewStatus
+    from app.review.repository import ReviewRepository
+
+    company_repo = CompanyRepository(data_dir=tmp_path)
+    job_repo = JobRepository(data_dir=tmp_path)
+    review_repo = ReviewRepository(data_dir=tmp_path)
+
+    company = company_repo.save_company("Acme Holdings", ticker="ACME")
+
+    job_2023 = job_repo.save_job(
+        "2023.pdf",
+        b"%PDF-1.4 mock",
+        "Adjusted EBITDA",
+        filing_year=2023,
+        company_id=company.company_id,
+    )
+    company_repo.add_job_to_company(company.company_id, job_2023.job_id)
+
+    review_repo.save_review_items(
+        job_2023.job_id,
+        [
+            ReviewItem(
+                id=f"{job_2023.job_id}_0",
+                value="1,000",
+                label="Revenue",
+                page=1,
+                bbox={"x0": 10.0, "y0": 10.0, "x1": 100.0, "y1": 50.0},
+                source_file="2023.pdf",
+                confidence_band=ConfidenceBand.auto_accepted,
+                confidence_score=0.99,
+                normalized_label="Revenue",
+                status=ReviewStatus.locked,
+            )
+        ],
+    )
+
+    res = client.post(f"/companies/{company.company_id}/full-model")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["company_id"] == company.company_id
+    assert data["total_cells_generated"] > 0
+    assert "download_url" in data
+
+    # Test download
+    dl_res = client.get(f"/companies/{company.company_id}/full-model/download")
+    assert dl_res.status_code == 200
+    assert "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" in dl_res.headers["content-type"]
+    assert len(dl_res.content) > 0

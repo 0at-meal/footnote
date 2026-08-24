@@ -34,7 +34,7 @@ def test_job_runner_auto_accepted_generates_draft_model(tmp_path: Path) -> None:
     sample_docling = [
         DoclingItem(
             value="500.0",
-            label="Operating Expenses / Stock-based comp",
+            label="Operating Expenses / Novel Unclassified Reserve",
             page=1,
             bbox=DoclingBbox(x0=10.0, y0=20.0, x1=30.0, y1=40.0),
             source_file="apple_report.pdf",
@@ -45,7 +45,7 @@ def test_job_runner_auto_accepted_generates_draft_model(tmp_path: Path) -> None:
     sample_normalized = [
         NormalizedItem(
             value="500.0",
-            label="Operating Expenses / Stock-based comp",
+            label="Operating Expenses / Novel Unclassified Reserve",
             page=1,
             bbox=NormalizedBbox(x0=100.0, y0=200.0, x1=300.0, y1=400.0),
             source_file="apple_report.pdf",
@@ -56,7 +56,7 @@ def test_job_runner_auto_accepted_generates_draft_model(tmp_path: Path) -> None:
     sample_records = [
         ExtractedRecord(
             value="500.0",
-            label="Operating Expenses / Stock-based comp",
+            label="Operating Expenses / Novel Unclassified Reserve",
             page=1,
             bbox={"x0": 100.0, "y0": 200.0, "x1": 300.0, "y1": 400.0},
             source_file="apple_report.pdf",
@@ -234,7 +234,7 @@ def test_job_runner_filters_non_reconciliation_candidates_before_classification(
     # Item 1: Reconciliation item
     rec1 = ExtractedRecord(
         value="50.0",
-        label="Operating Expenses / Stock-based comp",
+        label="Operating Expenses / Novel Unclassified Reserve",
         page=1,
         bbox={"x0": 0.0, "y0": 0.0, "x1": 10.0, "y1": 10.0},
         source_file="filing_2023.pdf",
@@ -276,7 +276,7 @@ def test_job_runner_filters_non_reconciliation_candidates_before_classification(
     sample_docling = [
         DoclingItem(
             value="50.0",
-            label="Operating Expenses / Stock-based comp",
+            label="Operating Expenses / Novel Unclassified Reserve",
             page=1,
             bbox=DoclingBbox(x0=0.0, y0=0.0, x1=10.0, y1=10.0),
             source_file="filing_2023.pdf",
@@ -297,7 +297,7 @@ def test_job_runner_filters_non_reconciliation_candidates_before_classification(
     sample_normalized = [
         NormalizedItem(
             value="50.0",
-            label="Operating Expenses / Stock-based comp",
+            label="Operating Expenses / Novel Unclassified Reserve",
             page=1,
             bbox=NormalizedBbox(x0=0.0, y0=0.0, x1=10.0, y1=10.0),
             source_file="filing_2023.pdf",
@@ -327,4 +327,4 @@ def test_job_runner_filters_non_reconciliation_candidates_before_classification(
     # Verify classifier called exactly once (for the reconciliation item only)
     assert mock_classifier.classify.call_count == 1
     call_args = mock_classifier.classify.call_args[0][0]
-    assert call_args.label == "Operating Expenses / Stock-based comp"
+    assert call_args.label == "Operating Expenses / Novel Unclassified Reserve"

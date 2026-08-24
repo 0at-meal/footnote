@@ -195,7 +195,8 @@ def test_generate_model_from_review_items_success(tmp_path: Path) -> None:
         # Assert provenance records saved to disk
         prov_records = model_repo.get_provenance_records(real_job_id)
         assert prov_records is not None
-        assert len(prov_records) == result.total_cells_generated
+        assert len(prov_records) == len(result.provenance_records)
+        assert len(prov_records) > 0
 
     finally:
         set_model_repository(original_repo)
@@ -330,6 +331,7 @@ def test_generate_then_download_e2e(tmp_path: Path) -> None:
         prov_resp = client.get(f"/models/{job_id}/provenance")
         assert prov_resp.status_code == 200
         prov_data = ProvenanceQueryResponse.model_validate(prov_resp.json())
-        assert prov_data.total_records == gen_data.total_cells_generated
+        assert prov_data.total_records == len(gen_data.provenance_records)
+        assert prov_data.total_records > 0
     finally:
         set_model_repository(original_repo)

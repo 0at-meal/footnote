@@ -42,7 +42,7 @@ def test_process_queued_job_runs_full_pipeline(
     sample_docling = [
         DoclingItem(
             value="100",
-            label="Revenue",
+            label="Novel Custom Adjustment",
             page=1,
             bbox=DoclingBbox(x0=10.0, y0=20.0, x1=30.0, y1=40.0),
             source_file="filing.pdf",
@@ -53,7 +53,7 @@ def test_process_queued_job_runs_full_pipeline(
     sample_normalized = [
         NormalizedItem(
             value="100",
-            label="Revenue",
+            label="Novel Custom Adjustment",
             page=1,
             bbox=NormalizedBbox(x0=100.0, y0=200.0, x1=300.0, y1=400.0),
             source_file="filing.pdf",
@@ -64,7 +64,7 @@ def test_process_queued_job_runs_full_pipeline(
     sample_records = [
         ExtractedRecord(
             value="100",
-            label="Revenue",
+            label="Novel Custom Adjustment",
             page=1,
             bbox={"x0": 100.0, "y0": 200.0, "x1": 300.0, "y1": 400.0},
             source_file="filing.pdf",

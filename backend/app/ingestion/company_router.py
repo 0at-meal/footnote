@@ -15,13 +15,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 
 from app.classification.repository import ClassificationRepository
+from app.excel_export.multi_statement_generator import generate_multi_statement_workbook
 from app.excel_export.multi_year_generator import generate_multi_year_workbook
-from app.formula_engine.models import FormulaTree
+from app.formula_engine.models import ComprehensiveModelTree, FormulaTree
 from app.formula_engine.reader import (
     read_formula_inputs,
     read_formula_inputs_from_review,
 )
-from app.formula_engine.tree import build_formula_tree
+from app.formula_engine.tree import build_comprehensive_model_tree, build_formula_tree
 from app.ingestion.company_repository import CompanyRepository
 from app.ingestion.models import (
     CompanyRecord,
@@ -291,5 +292,127 @@ def download_company_multi_year_model(
     return FileResponse(
         path=str(file_path),
         filename=f"{company_id}_multi_year.xlsx",
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+
+
+@router.post(
+    "/{company_id}/full-model",
+    response_model=MultiYearModelResponse,
+    summary="Generate 6-tab comprehensive financial model for a company",
+    description="Builds multi-statement formula trees for all completed jobs of the company and generates a 6-tab model workbook.",
+)
+def generate_company_full_model(
+    company_id: str,
+    company_repo: Annotated[CompanyRepository, Depends(get_company_repository)],
+    job_repo: Annotated[JobRepository, Depends(get_repository)],
+    review_repo: Annotated[ReviewRepository, Depends(get_review_repository)],
+    classification_repo: Annotated[
+        ClassificationRepository, Depends(get_classification_repository)
+    ],
+) -> MultiYearModelResponse:
+    """Orchestrate compilation and export of a 6-tab multi-statement model workbook."""
+    company: CompanyRecord | None = company_repo.get_company(company_id)
+    if company is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Company '{company_id}' not found",
+        )
+
+    valid_jobs: list[tuple[JobRecord, ComprehensiveModelTree]] = []
+    for j_id in company.job_ids:
+        job: JobRecord | None = job_repo.get_job(j_id)
+        if job is None:
+            continue
+
+        review_items = review_repo.get_review_items(j_id)
+        if review_items is not None and len(review_items) > 0:
+            batch = read_formula_inputs_from_review(review_items)
+        else:
+            classified_records = classification_repo.get_classified_records(j_id)
+            if classified_records is not None and len(classified_records) > 0:
+                batch = read_formula_inputs(classified_records)
+            else:
+                continue
+
+        if batch.nodes and len(batch.nodes) > 0:
+            comp_tree = build_comprehensive_model_tree(batch)
+            if comp_tree.is_valid:
+                valid_jobs.append((job, comp_tree))
+
+    if len(valid_jobs) < 1:
+        raise HTTPException(
+            status_code=400,
+            detail="At least 1 completed job with confirmed line items is required to generate a full model.",
+        )
+
+    result = generate_multi_statement_workbook(
+        company=company,
+        year_trees=valid_jobs,
+        output_dir=company_repo.data_dir,
+    )
+    if not result.is_success:
+        raise HTTPException(
+            status_code=400,
+            detail=result.error_detail or "Failed to generate full model workbook.",
+        )
+
+    sorted_pairs = sorted(
+        valid_jobs,
+        key=lambda pair: (
+            pair[0].filing_year if pair[0].filing_year is not None else 0,
+            pair[0].submitted_at,
+        ),
+    )
+    years: list[int] = [
+        pair[0].filing_year for pair in sorted_pairs if pair[0].filing_year is not None
+    ]
+
+    return MultiYearModelResponse(
+        company_id=company_id,
+        download_url=f"/companies/{company_id}/full-model/download",
+        years=years,
+        total_cells_generated=result.total_cells_generated,
+        file_path=result.file_path,
+    )
+
+
+@router.get(
+    "/{company_id}/full-model/download",
+    response_class=FileResponse,
+    summary="Download generated 6-tab comprehensive financial model",
+)
+def download_company_full_model(
+    company_id: str,
+    company_repo: Annotated[CompanyRepository, Depends(get_company_repository)],
+) -> FileResponse:
+    """Download the generated 6-tab comprehensive .xlsx workbook."""
+    company: CompanyRecord | None = company_repo.get_company(company_id)
+    if company is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Company '{company_id}' not found",
+        )
+
+    file_path: Path = (
+        company_repo.data_dir / "models" / f"company_{company_id}_full_model.xlsx"
+    )
+    if not file_path.exists():
+        # Fallback to single job multi-statement if only one job
+        for j_id in company.job_ids:
+            alt_path = company_repo.data_dir / "models" / f"{j_id}_multi_statement.xlsx"
+            if alt_path.exists():
+                file_path = alt_path
+                break
+
+    if not file_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail=f"Full model for company '{company_id}' not found. Generate it first.",
+        )
+
+    return FileResponse(
+        path=str(file_path),
+        filename=f"company_{company_id}_full_model.xlsx",
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )

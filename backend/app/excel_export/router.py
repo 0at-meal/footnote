@@ -11,18 +11,18 @@ from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import FileResponse
 
 from app.classification.repository import ClassificationRepository
-from app.excel_export.generator import generate_workbook
 from app.excel_export.models import (
     ProvenanceQueryResponse,
     W3CAnnotationRecord,
     WorkbookGenerationResult,
 )
+from app.excel_export.multi_statement_generator import generate_multi_statement_workbook
 from app.excel_export.repository import ModelRepository
 from app.formula_engine.reader import (
     read_formula_inputs,
     read_formula_inputs_from_review,
 )
-from app.formula_engine.tree import build_formula_tree
+from app.formula_engine.tree import build_comprehensive_model_tree
 from app.ingestion.repository import JobRepository
 from app.review.repository import ReviewRepository
 
@@ -59,8 +59,6 @@ def generate_model_workbook(job_id: str) -> WorkbookGenerationResult:
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Job '{job_id}' not found.",
         )
-    target_metric = job.target_metric or "Adjusted EBITDA"
-
     review_repo = ReviewRepository(data_dir=_model_repo.data_dir)
     review_items = review_repo.get_review_items(job_id)
 
@@ -84,17 +82,17 @@ def generate_model_workbook(job_id: str) -> WorkbookGenerationResult:
             or "No confirmed records available for formula generation.",
         )
 
-    formula_tree = build_formula_tree(batch, target_metric=target_metric)
-    if not formula_tree.is_valid:
+    comp_tree = build_comprehensive_model_tree(batch)
+    if not comp_tree.is_valid:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=formula_tree.error_message
-            or "Formula tree is invalid (no confirmed line items).",
+            detail=comp_tree.error_message
+            or "Comprehensive model tree is invalid (no confirmed line items).",
         )
 
-    generation_result = generate_workbook(
-        formula_tree,
-        job_id=job_id,
+    generation_result = generate_multi_statement_workbook(
+        company=None,
+        year_trees=[(job, comp_tree)],
         output_dir=_model_repo.data_dir,
     )
     _model_repo.save_generation_result(job_id, generation_result)

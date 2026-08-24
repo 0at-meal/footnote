@@ -14,11 +14,15 @@ from app.classification.decision_log import (
     DecisionLogRepository,
     build_log_entries,
 )
-from app.classification.dispatcher import dispatch_records_to_classifier
+from app.classification.dispatcher import (
+    dispatch_records_to_classifier,
+    pre_classify_records,
+)
+from app.classification.models import ClassificationBatchResult
 from app.classification.normalizer import normalize_records
 from app.classification.repository import ClassificationRepository
 from app.classification.taxonomy import TaxonomyRepository
-from app.excel_export.generator import generate_workbook
+from app.excel_export.multi_statement_generator import generate_multi_statement_workbook
 from app.excel_export.repository import ModelRepository
 from app.extraction.assembler import assemble_records
 from app.extraction.confidence import score_records
@@ -30,7 +34,7 @@ from app.extraction.docling_parser import parse_pdf
 from app.extraction.flagger import create_extraction_summary
 from app.extraction.repository import ExtractionRepository
 from app.formula_engine.reader import read_formula_inputs
-from app.formula_engine.tree import build_formula_tree
+from app.formula_engine.tree import build_comprehensive_model_tree
 from app.ingestion.models import JobStatus
 from app.ingestion.repository import JobRepository
 
@@ -103,7 +107,7 @@ def process_queued_job(
         )
         extraction_repo.save_extraction_summary(job_id, summary)
 
-        # Stage 6: Classification & Taxonomy Normalization (Feature 3)
+        # Stage 6: Two-Level Classification & Taxonomy Normalization (Feature 3)
         client = classifier_client or GroqClassifierClient()
         active_taxonomy = taxonomy_repo.load_taxonomy()
 
@@ -116,40 +120,60 @@ def process_queued_job(
 
         filtered_out_count = len(scored_records) - len(reconciliation_candidates)
         logger.info(
-            "Job %s: %d total scored records, %d reconciliation candidates, %d filtered out before classification",
-            job_id,
-            len(scored_records),
-            len(reconciliation_candidates),
+            "Filtered out %d non-candidate records before classification",
             filtered_out_count,
         )
 
-        batch_result = dispatch_records_to_classifier(reconciliation_candidates, client)
+        # 1. Deterministic alias pre-classification stage (Ticket A.3.1)
+        pre_classified, unmatched = pre_classify_records(
+            reconciliation_candidates, active_taxonomy
+        )
+
+        # 2. Dispatch only genuine unmatched unknowns to Groq (Ticket A.3.3)
+        if unmatched:
+            batch_result = dispatch_records_to_classifier(unmatched, client)
+        else:
+            batch_result = ClassificationBatchResult(
+                results=[],
+                total_dispatched=0,
+                success_count=0,
+                error_count=0,
+                skipped_count=0,
+            )
+
         classified_records = normalize_records(
             reconciliation_candidates,
             batch_result,
             active_taxonomy,
             target_metric=target_metric,
+            pre_classified=pre_classified,
         )
         classification_repo.save_classified_records(job_id, classified_records)
 
-        # Append-only machine-readable decision log (spec.md §6, AC-2, AC-7)
+        logger.info(
+            "Job %s classification: %d pre-classified deterministically, %d dispatched to Groq, %d total classified",
+            job_id,
+            len(pre_classified),
+            len(unmatched),
+            len(classified_records),
+        )
+
+        # Append-only machine-readable decision log (spec.md AC-2, AC-7)
         log_entries = build_log_entries(job_id, batch_result, active_taxonomy)
         decision_log_repo.log_batch_calls(job_id, log_entries)
 
-        # Stage 7: Formula Engine Input & Tree Construction (Feature 4 Steps 1-2)
+        # Stage 7: Formula Engine Input & Comprehensive Model Construction (Phase B & C)
         formula_inputs = read_formula_inputs(classified_records)
         model_ready = False
 
         if len(formula_inputs.nodes) > 0:
-            formula_tree = build_formula_tree(
-                formula_inputs, target_metric=target_metric
-            )
+            comp_tree = build_comprehensive_model_tree(formula_inputs)
 
-            # Stage 8: Excel Export & Provenance Tagging (Feature 4 Steps 3-4)
-            if formula_tree.is_valid:
-                generation_result = generate_workbook(
-                    formula_tree,
-                    job_id=job_id,
+            # Stage 8: Excel Export & Provenance Tagging (6-Tab Model)
+            if comp_tree.is_valid:
+                generation_result = generate_multi_statement_workbook(
+                    company=None,
+                    year_trees=[(job, comp_tree)],
                     output_dir=repo.data_dir,
                 )
                 model_repo.save_generation_result(job_id, generation_result)
@@ -177,7 +201,7 @@ def process_queued_job(
                 logger.warning(
                     "Formula tree invalid for draft generation in job %s: %s",
                     job_id,
-                    formula_tree.error_message,
+                    comp_tree.error_message,
                 )
         else:
             logger.warning(

@@ -1,4 +1,6 @@
 """
+[DEPRECATED: Use multi_statement_generator.py instead for 6-tab multi-statement model generation]
+
 Multi-year Excel workbook generator using xlsxwriter (Feature 4 / Phase 2 Multi-Year Architecture).
 
 Enforces:
