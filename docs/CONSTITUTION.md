@@ -9,10 +9,9 @@ with a rule here, the rule wins — stop and ask, do not improvise around it.
 ## 1. Coding Standards
 
 1. Every module in `extraction/`, `ingestion/`, `review/`, `formula_engine/`,
-   `excel_export/`, `audit_trail/`, `drift/`, and `audit_report/` must be fully typed. Run
+   `excel_export/`, `audit_trail/`, `drift/`, `audit_report/`, and `classification/models.py` must be fully typed. Run
    `mypy --strict` on these before any commit touching them.
-2. `classification/` (the LLM boundary) may be typed more loosely, but its
-   public interface must never expose a numeric return field.
+2. `classification/` (the LLM boundary) may be typed more loosely for execution clients/prompts, but `classification/models.py` is strictly typed, and the public interface of `classification/` must never expose a numeric return field.
 3. No `dict`/`Any` payloads crossing a pipeline-stage boundary. Use a
    Pydantic model. If no model exists for the data, create one first.
 4. `formula_engine/` functions must be pure: no I/O, no clock, no random,
@@ -90,6 +89,8 @@ with a rule here, the rule wins — stop and ask, do not improvise around it.
     `drift/` must not import from `classification/`, `extraction/`, or
     `excel_export/`. Modules in `drift/` are subject to the same `mypy --strict`
     requirement as §1.1.
+
+12. `classification/models.py` (Pydantic data models only: `StatementType`, `TaxonomyItem`, `MasterTaxonomy`, `ClassifiedRecord`, `TaxonomyStatus`) may be imported by `review/`, `formula_engine/`, and `excel_export/` for the purpose of reading `StatementType` and `TaxonomyItem` types and classification data contracts. The LLM client (`classification/client.py`) and dispatcher (`classification/dispatcher.py`) remain fully isolated from all downstream modules and must never be imported by `formula_engine/`, `excel_export/`, or other pipeline stages.
 
 ## 4. Tech Stack
 
