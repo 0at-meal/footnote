@@ -1,15 +1,18 @@
 """
 Data models for the formula engine (Feature 4).
 
-Enforces CONSTITUTION §1.1, §1.3, §1.4, §2.3:
+Enforces CONSTITUTION ? 1.1, ? 1.3, ? 1.4, ? 2.3, ? 3.12:
 - Fully typed Pydantic models for pipeline stage boundary.
 - Pure in-memory representations (no I/O, no random, no clock).
 - Preserves frozen schema field names (value, label, page, bbox, source_file).
+- Multi-statement formula tree architecture supporting ComprehensiveModelTree (Phase B).
 """
 
 from enum import Enum
 
 from pydantic import BaseModel, Field
+
+from app.classification.models import StatementType
 
 
 class FormulaInputNode(BaseModel):
@@ -59,6 +62,10 @@ class FormulaInputNode(BaseModel):
     is_hardcode: bool = Field(
         default=False,
         description="Explicit flag for manual hardcode overrides per NFR2",
+    )
+    statement_type: StatementType | None = Field(
+        default=None,
+        description="Financial statement type category from taxonomy",
     )
 
 
@@ -135,6 +142,12 @@ class FormulaNodeType(str, Enum):
     calculated_root = "calculated_root"
     """Root target metric formula node (e.g. Adjusted EBITDA)."""
 
+    cross_reference = "cross_reference"
+    """Reference pointing across statement sheets (e.g. ='Income_Statement'!B{row})."""
+
+    blank_cell = "blank_cell"
+    """Marker indicating a missing canonical item that produces a blank cell rather than zero."""
+
 
 class FormulaNode(BaseModel):
     """
@@ -151,7 +164,7 @@ class FormulaNode(BaseModel):
     )
     node_type: FormulaNodeType = Field(
         ...,
-        description="Type of formula node (leaf, aggregate, or calculated_root)",
+        description="Type of formula node (leaf, aggregate, calculated_root, cross_reference, blank_cell)",
     )
     operator: str = Field(
         default="+",
@@ -169,20 +182,36 @@ class FormulaNode(BaseModel):
         default_factory=list,
         description="Child operand nodes contributing to this formula node",
     )
+    statement_type: StatementType | None = Field(
+        default=None,
+        description="Financial statement type category",
+    )
+    cross_reference_sheet: str | None = Field(
+        default=None,
+        description="Target sheet name when node_type is cross_reference",
+    )
+    cross_reference_target: str | None = Field(
+        default=None,
+        description="Target canonical item or label when node_type is cross_reference",
+    )
 
 
 class FormulaTree(BaseModel):
     """
-    Complete in-memory formula tree for a target metric (FR5, FR6).
+    Complete in-memory formula tree for a target metric or financial statement (FR5, FR6).
     """
 
     target_metric: str = Field(
         ...,
-        description="Target metric name (e.g. Adjusted EBITDA)",
+        description="Target metric or statement name (e.g. Income Statement, Adjusted EBITDA)",
+    )
+    statement_type: StatementType | None = Field(
+        default=None,
+        description="Statement type if this tree represents a specific statement",
     )
     root: FormulaNode | None = Field(
         default=None,
-        description="Root formula node representing the reconciled target metric",
+        description="Root formula node representing the reconciled target metric or summary row",
     )
     nodes_by_id: dict[str, FormulaNode] = Field(
         default_factory=dict,
@@ -204,3 +233,64 @@ class FormulaTree(BaseModel):
         default=None,
         description="Error description if tree construction failed (e.g. EC-4, EC-5)",
     )
+
+
+class StatementTree(BaseModel):
+    """
+    Formula tree representation for a specific financial statement (Phase B).
+    """
+
+    statement_type: StatementType = Field(
+        ...,
+        description="Target financial statement category",
+    )
+    tree: FormulaTree = Field(
+        ...,
+        description="Underlying FormulaTree DAG for this statement",
+    )
+
+
+class ComprehensiveModelTree(BaseModel):
+    """
+    Unified multi-statement formula tree collection for a filing year (Phase B).
+    """
+
+    statement_trees: list[StatementTree] = Field(
+        default_factory=list,
+        description="Collection of per-statement formula trees",
+    )
+    is_valid: bool = Field(
+        default=True,
+        description="True if all component statement trees are valid",
+    )
+    error_message: str | None = Field(
+        default=None,
+        description="Error description if comprehensive model construction failed",
+    )
+
+    def get_tree(self, statement_type: StatementType) -> FormulaTree | None:
+        """Returns the FormulaTree for a specific statement type if present."""
+        for st in self.statement_trees:
+            if st.statement_type == statement_type:
+                return st.tree
+        return None
+
+    @property
+    def income_statement_tree(self) -> FormulaTree | None:
+        return self.get_tree(StatementType.income_statement)
+
+    @property
+    def ebitda_bridge_tree(self) -> FormulaTree | None:
+        return self.get_tree(StatementType.non_gaap_bridge)
+
+    @property
+    def cash_flow_tree(self) -> FormulaTree | None:
+        return self.get_tree(StatementType.cash_flow)
+
+    @property
+    def balance_sheet_tree(self) -> FormulaTree | None:
+        return self.get_tree(StatementType.balance_sheet)
+
+    @property
+    def kpi_tree(self) -> FormulaTree | None:
+        return self.get_tree(StatementType.kpi)

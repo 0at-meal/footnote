@@ -132,6 +132,7 @@ def read_formula_inputs(records: list[ClassifiedRecord]) -> FormulaInputBatch:
             source_file=raw_record.source_file,
             record_index=idx,
             is_hardcode=False,
+            statement_type=classified_record.statement_type,
         )
         nodes.append(node)
 
@@ -225,6 +226,7 @@ def read_formula_inputs_from_review(items: list[ReviewItem]) -> FormulaInputBatc
             source_file=item.source_file,
             record_index=idx,
             is_hardcode=(item.confidence_band == ConfidenceBand.manual_required),
+            statement_type=item.statement_type,
         )
         nodes.append(node)
 
