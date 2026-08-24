@@ -1,6 +1,13 @@
-// Frozen field names per CONSTITUTION §2.3 — do not rename.
+// Frozen field names per CONSTITUTION ? 2.3 ? do not rename.
 
 export type ConfidenceBand = 'auto_accepted' | 'needs_review' | 'manual_required'
+
+export type StatementType =
+  | 'income_statement'
+  | 'balance_sheet'
+  | 'cash_flow'
+  | 'non_gaap_bridge'
+  | 'kpi'
 
 export type ReviewStatus =
   | 'auto_accepted'
@@ -34,6 +41,7 @@ export type ReviewItem = {
   is_target_metric_candidate?: boolean
   table_name?: string | null
   error_detail: string | null
+  statement_type?: StatementType | null
 }
 
 export type ReviewItemsResponse = {

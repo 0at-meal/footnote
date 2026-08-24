@@ -721,3 +721,47 @@
     transform: rotate(360deg);
   }
 }
+
+/* ?? Statement Badges (Ticket D.1.2) ?????????????????????????? */
+
+.statement-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+
+.statement-badge--income_statement {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+.statement-badge--balance_sheet {
+  background: #d1fae5;
+  color: #065f46;
+  border-color: #a7f3d0;
+}
+
+.statement-badge--cash_flow {
+  background: #ede9fe;
+  color: #6d28d9;
+  border-color: #ddd6fe;
+}
+
+.statement-badge--non_gaap_bridge {
+  background: #fef3c7;
+  color: #92400e;
+  border-color: #fde68a;
+}
+
+.statement-badge--kpi {
+  background: #cffafe;
+  color: #0e7490;
+  border-color: #a5f3fc;
+}

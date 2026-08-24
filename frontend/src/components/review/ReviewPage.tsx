@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import type { ReviewItem, ReviewItemsResponse, ReviewStatus } from '../../types/review'
+import type { ReviewItem, ReviewItemsResponse, ReviewStatus, StatementType } from '../../types/review'
 import { loadPdf, renderPage } from '../../lib/pdf/renderer'
 import type { PDFDocumentProxy } from '../../lib/pdf/renderer'
 import { normalizeBboxToPixels } from '../../lib/pdf/coordinates'
@@ -33,7 +33,35 @@ function ReviewStatusBadge({ status }: { status: ReviewStatus }) {
   )
 }
 
-type FilterTab = 'flagged' | 'all'
+const STATEMENT_LABELS: Record<StatementType, string> = {
+  income_statement: 'IS',
+  balance_sheet: 'BS',
+  cash_flow: 'CF',
+  non_gaap_bridge: 'Bridge',
+  kpi: 'KPI',
+}
+
+function StatementBadge({ type }: { type?: StatementType | null }) {
+  if (!type) return null
+  return (
+    <span
+      className={`statement-badge statement-badge--${type}`}
+      title={`Statement: ${STATEMENT_LABELS[type]}`}
+      aria-label={`Statement: ${STATEMENT_LABELS[type]}`}
+    >
+      {STATEMENT_LABELS[type]}
+    </span>
+  )
+}
+
+type FilterTab =
+  | 'flagged'
+  | 'all'
+  | 'income_statement'
+  | 'non_gaap_bridge'
+  | 'cash_flow'
+  | 'balance_sheet'
+  | 'kpi'
 
 export default function ReviewPage({ jobId, apiBase, onBack, onAuditTrail }: Props) {
   const [items, setItems] = useState<ReviewItem[]>([])
@@ -76,10 +104,34 @@ export default function ReviewPage({ jobId, apiBase, onBack, onAuditTrail }: Pro
 
   const flaggedCount = items.filter(isFlagged).length
   const totalCount = items.length
+  const isNeedsReview = items.some(i => i.statement_type === 'income_statement' && (i.status === 'needs_review' || i.status === 'manual_required' || i.status === 'extraction_error'))
+  const bridgeNeedsReview = items.some(i => i.statement_type === 'non_gaap_bridge' && (i.status === 'needs_review' || i.status === 'manual_required' || i.status === 'extraction_error'))
+  const cfNeedsReview = items.some(i => i.statement_type === 'cash_flow' && (i.status === 'needs_review' || i.status === 'manual_required' || i.status === 'extraction_error'))
+  const bsNeedsReview = items.some(i => i.statement_type === 'balance_sheet' && (i.status === 'needs_review' || i.status === 'manual_required' || i.status === 'extraction_error'))
+  const isCount = items.filter((i) => i.statement_type === 'income_statement').length
+  const bridgeCount = items.filter((i) => i.statement_type === 'non_gaap_bridge').length
+  const cfCount = items.filter((i) => i.statement_type === 'cash_flow').length
+  const bsCount = items.filter((i) => i.statement_type === 'balance_sheet').length
+  const kpiCount = items.filter((i) => i.statement_type === 'kpi').length
 
   const filteredItems = items.filter((item) => {
     if (activeTab === 'flagged') {
       return isFlagged(item)
+    }
+    if (activeTab === 'income_statement') {
+      return item.statement_type === 'income_statement'
+    }
+    if (activeTab === 'non_gaap_bridge') {
+      return item.statement_type === 'non_gaap_bridge'
+    }
+    if (activeTab === 'cash_flow') {
+      return item.statement_type === 'cash_flow'
+    }
+    if (activeTab === 'balance_sheet') {
+      return item.statement_type === 'balance_sheet'
+    }
+    if (activeTab === 'kpi') {
+      return item.statement_type === 'kpi'
     }
     return true // 'all'
   })
@@ -448,10 +500,10 @@ export default function ReviewPage({ jobId, apiBase, onBack, onAuditTrail }: Pro
             className="review-btn review-btn--generate"
             disabled={items.length === 0 || isGeneratingModel}
             onClick={() => void handleApproveBridgeAndGenerateModel()}
-            aria-label="Approve All & Generate Model"
+            aria-label="Approve & Generate Complete Financial Model (6 Tabs)"
             title="Batch approve all reconciliation items and compile Excel model (1-Click)"
           >
-            {isGeneratingModel ? 'Approving & Generating Model...' : 'Approve All & Generate Model'}
+            {isGeneratingModel ? 'Approving & Generating Model...' : 'Approve & Generate Complete Financial Model (6 Tabs)'}
           </button>
         </div>
       </header>
@@ -553,7 +605,7 @@ export default function ReviewPage({ jobId, apiBase, onBack, onAuditTrail }: Pro
               className={`review-tab ${activeTab === 'flagged' ? 'review-tab--active' : ''}`}
               onClick={() => setActiveTab('flagged')}
             >
-              Flagged Items
+              Flagged
               <span className="review-tab__badge">{flaggedCount}</span>
             </button>
             <button
@@ -563,10 +615,79 @@ export default function ReviewPage({ jobId, apiBase, onBack, onAuditTrail }: Pro
               className={`review-tab ${activeTab === 'all' ? 'review-tab--active' : ''}`}
               onClick={() => setActiveTab('all')}
             >
-              All Reconciliation Items
+              All
               <span className="review-tab__badge">{totalCount}</span>
             </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'income_statement'}
+              className={`review-tab ${activeTab === 'income_statement' ? 'review-tab--active' : ''}`}
+              onClick={() => setActiveTab('income_statement')}
+            >
+              IS
+              <span className="review-tab__badge">{isCount}</span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'non_gaap_bridge'}
+              className={`review-tab ${activeTab === 'non_gaap_bridge' ? 'review-tab--active' : ''}`}
+              onClick={() => setActiveTab('non_gaap_bridge')}
+            >
+              Bridge
+              <span className="review-tab__badge">{bridgeCount}</span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'cash_flow'}
+              className={`review-tab ${activeTab === 'cash_flow' ? 'review-tab--active' : ''}`}
+              onClick={() => setActiveTab('cash_flow')}
+            >
+              CF
+              <span className="review-tab__badge">{cfCount}</span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'balance_sheet'}
+              className={`review-tab ${activeTab === 'balance_sheet' ? 'review-tab--active' : ''}`}
+              onClick={() => setActiveTab('balance_sheet')}
+            >
+              BS
+              <span className="review-tab__badge">{bsCount}</span>
+            </button>
+            {kpiCount > 0 && (
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'kpi'}
+                className={`review-tab ${activeTab === 'kpi' ? 'review-tab--active' : ''}`}
+                onClick={() => setActiveTab('kpi')}
+              >
+                KPI
+                <span className="review-tab__badge">{kpiCount}</span>
+              </button>
+            )}
           </div>
+          {/* ?? Statement Readiness Indicators (Ticket D.2.2) ?? */}
+          {items.length > 0 && (
+            <div className="review-readiness-chips" style={{ display: 'flex', gap: '8px', padding: '6px 12px', flexWrap: 'wrap', fontSize: '11px', background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
+              <span style={{ color: isNeedsReview ? '#d97706' : '#15803d', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 500 }}>
+                {isNeedsReview ? '?' : '?'} IS: {isNeedsReview ? 'Review needed' : 'Ready'}
+              </span>
+              <span style={{ color: bridgeNeedsReview ? '#d97706' : '#15803d', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 500 }}>
+                {bridgeNeedsReview ? '?' : '?'} Bridge: {bridgeNeedsReview ? 'Review needed' : 'Ready'}
+              </span>
+              <span style={{ color: cfNeedsReview ? '#d97706' : '#15803d', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 500 }}>
+                {cfNeedsReview ? '?' : '?'} CF: {cfNeedsReview ? 'Review needed' : 'Ready'}
+              </span>
+              <span style={{ color: bsNeedsReview ? '#d97706' : '#15803d', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 500 }}>
+                {bsNeedsReview ? '?' : '?'} BS: {bsNeedsReview ? 'Review needed' : 'Ready'}
+              </span>
+            </div>
+          )}
 
           {itemsLoading && (
             <div className="job-list--empty">
@@ -630,7 +751,10 @@ export default function ReviewPage({ jobId, apiBase, onBack, onAuditTrail }: Pro
                         >
                     <div className="review-item-card__top">
                       <span className="review-item-card__label">{item.label}</span>
-                      <ReviewStatusBadge status={item.status} />
+                      <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                        <StatementBadge type={item.statement_type} />
+                        <ReviewStatusBadge status={item.status} />
+                      </div>
                     </div>
 
                     {item.normalized_label && (

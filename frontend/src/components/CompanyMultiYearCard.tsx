@@ -11,13 +11,16 @@ export default function CompanyMultiYearCard({
   apiBase = 'http://localhost:8000',
 }: Props) {
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isGeneratingFull, setIsGeneratingFull] = useState(false)
   const [generationResult, setGenerationResult] =
+    useState<MultiYearModelResponse | null>(null)
+  const [fullModelResult, setFullModelResult] =
     useState<MultiYearModelResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const completedJobs = company.jobs.filter((j) => j.status === 'done')
 
-  if (completedJobs.length < 2) {
+  if (completedJobs.length < 1) {
     return null
   }
 
@@ -27,6 +30,42 @@ export default function CompanyMultiYearCard({
   const yearsList = sortedJobs
     .map((j) => (j.filing_year ? `FY${j.filing_year}` : `FY(${j.filename})`))
     .join(', ')
+
+  async function handleBuildFullModel() {
+    setIsGeneratingFull(true)
+    setError(null)
+
+    try {
+      const res = await fetch(
+        `${apiBase}/companies/${company.company_id}/full-model`,
+        {
+          method: 'POST',
+        },
+      )
+
+      if (!res.ok) {
+        const detail = await res.text()
+        let parsedDetail = detail
+        try {
+          const jsonErr = JSON.parse(detail)
+          if (jsonErr.detail) parsedDetail = jsonErr.detail
+        } catch {
+          // Keep raw detail string
+        }
+        setError(`Failed to build full model: ${parsedDetail}`)
+        return
+      }
+
+      const data: MultiYearModelResponse = await res.json()
+      setFullModelResult(data)
+    } catch {
+      setError(
+        'Network error ? could not reach server. Is the backend running?',
+      )
+    } finally {
+      setIsGeneratingFull(false)
+    }
+  }
 
   async function handleBuildMultiYearModel() {
     setIsGenerating(true)
@@ -57,7 +96,7 @@ export default function CompanyMultiYearCard({
       setGenerationResult(data)
     } catch {
       setError(
-        'Network error — could not reach server. Is the backend running?',
+        'Network error ? could not reach server. Is the backend running?',
       )
     } finally {
       setIsGenerating(false)
@@ -95,7 +134,7 @@ export default function CompanyMultiYearCard({
                 color: '#0f172a',
               }}
             >
-              Multi-Year Model: {company.name}{' '}
+              Company Financial Models: {company.name}{' '}
               {company.ticker ? `(${company.ticker})` : ''}
             </h3>
             <span
@@ -122,26 +161,70 @@ export default function CompanyMultiYearCard({
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
           <button
             type="button"
-            onClick={() => void handleBuildMultiYearModel()}
-            disabled={isGenerating}
+            onClick={() => void handleBuildFullModel()}
+            disabled={isGeneratingFull}
             style={{
-              backgroundColor: '#2563eb',
-              borderColor: '#2563eb',
+              backgroundColor: '#16a34a',
+              borderColor: '#16a34a',
               color: '#ffffff',
               padding: '0.45rem 0.85rem',
               fontSize: '0.8125rem',
-              fontWeight: 500,
+              fontWeight: 600,
               borderRadius: '0.375rem',
-              cursor: isGenerating ? 'not-allowed' : 'pointer',
-              opacity: isGenerating ? 0.7 : 1,
+              cursor: isGeneratingFull ? 'not-allowed' : 'pointer',
+              opacity: isGeneratingFull ? 0.7 : 1,
             }}
-            aria-label="Build Multi-Year Model"
+            aria-label="Generate 6-Tab Model"
           >
-            {isGenerating ? 'Building Model...' : 'Build Multi-Year Model'}
+            {isGeneratingFull ? 'Generating 6-Tab Model...' : 'Generate 6-Tab Model'}
           </button>
+
+          {completedJobs.length >= 2 && (
+            <button
+              type="button"
+              onClick={() => void handleBuildMultiYearModel()}
+              disabled={isGenerating}
+              style={{
+                backgroundColor: '#2563eb',
+                borderColor: '#2563eb',
+                color: '#ffffff',
+                padding: '0.45rem 0.85rem',
+                fontSize: '0.8125rem',
+                fontWeight: 500,
+                borderRadius: '0.375rem',
+                cursor: isGenerating ? 'not-allowed' : 'pointer',
+                opacity: isGenerating ? 0.7 : 1,
+              }}
+              aria-label="Build Multi-Year Model"
+            >
+              {isGenerating ? 'Building Model...' : 'Build Multi-Year Model'}
+            </button>
+          )}
+
+          {fullModelResult && (
+            <a
+              href={`${apiBase}${fullModelResult.download_url}`}
+              download={`company_${company.company_id}_full_model.xlsx`}
+              style={{
+                backgroundColor: '#059669',
+                borderColor: '#059669',
+                color: '#ffffff',
+                textDecoration: 'none',
+                padding: '0.45rem 0.85rem',
+                fontSize: '0.8125rem',
+                fontWeight: 600,
+                borderRadius: '0.375rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+              }}
+              aria-label="Download Full Model (.xlsx)"
+            >
+              Download Full Model (.xlsx)
+            </a>
+          )}
 
           {generationResult && (
             <a
@@ -167,6 +250,22 @@ export default function CompanyMultiYearCard({
         </div>
       </div>
 
+      {fullModelResult && (
+        <div
+          style={{
+            marginTop: '0.75rem',
+            paddingTop: '0.75rem',
+            borderTop: '1px solid #e2e8f0',
+            fontSize: '0.8125rem',
+            color: '#15803d',
+          }}
+        >
+          ? 6-Tab comprehensive financial model generated with{' '}
+          {fullModelResult.total_cells_generated} total cells across{' '}
+          {fullModelResult.years.length} fiscal years.
+        </div>
+      )}
+
       {generationResult && (
         <div
           style={{
@@ -177,7 +276,7 @@ export default function CompanyMultiYearCard({
             color: '#15803d',
           }}
         >
-          ✓ Multi-year workbook generated with{' '}
+          ? Multi-year workbook generated with{' '}
           {generationResult.total_cells_generated} total cells across{' '}
           {generationResult.years.length} fiscal years.
         </div>

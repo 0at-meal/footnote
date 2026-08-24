@@ -30,7 +30,7 @@ describe('ReviewPage Component', () => {
 
     expect(html).toContain('Extraction Review')
     expect(html).toContain('job-test-123')
-    expect(html).toContain('Approve All &amp; Generate Model')
+    expect(html).toContain('Approve &amp; Generate Complete Financial Model (6 Tabs)')
     expect(html).toContain('disabled=""')
   })
 
@@ -65,7 +65,7 @@ describe('ReviewPage Component', () => {
     expect(data.total_cells_generated).toBe(15)
   })
 
-  it('renders 2 scoped filter tabs with Flagged Items active by default (Ticket 1.2.2)', () => {
+  it('renders scoped filter tabs with Flagged active by default (Ticket D.1.1)', () => {
     vi.mocked(fetch).mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -83,17 +83,20 @@ describe('ReviewPage Component', () => {
       />
     )
 
-    // Verify 2 filter tabs exist
-    expect(html).toContain('Flagged Items')
-    expect(html).toContain('All Reconciliation Items')
+    // Verify statement filter tabs exist
+    expect(html).toContain('Flagged')
+    expect(html).toContain('All')
+    expect(html).toContain('IS')
+    expect(html).toContain('Bridge')
+    expect(html).toContain('CF')
+    expect(html).toContain('BS')
 
-    // Verify Flagged Items is active by default
+    // Verify Flagged is active by default
     expect(html).toContain('review-tab--active')
     expect(html).toContain('aria-selected="true"')
   })
 
-  it('renders Generate Excel Model button when lockedCount > 0 and omits it when 0', () => {
-    // 1. With 0 locked items: button should be absent
+  it('renders CTA button disabled when items list is empty (Ticket D.2.3)', () => {
     const htmlWithoutLocked = renderToStaticMarkup(
       <ReviewPage
         jobId="job-test-123"
@@ -101,7 +104,46 @@ describe('ReviewPage Component', () => {
         onBack={vi.fn()}
       />
     )
-    expect(htmlWithoutLocked).not.toContain('Generate Excel Model')
+    expect(htmlWithoutLocked).toContain('disabled=""')
+    expect(htmlWithoutLocked).toContain('Approve &amp; Generate Complete Financial Model (6 Tabs)')
+  })
+
+  it('renders statement readiness chips when items are present (Ticket D.2.2)', () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        job_id: 'job-test-123',
+        total_items: 2,
+        items: [
+          {
+            id: '1',
+            value: '100',
+            label: 'Revenue',
+            page: 1,
+            bbox: { x0: 0, y0: 0, x1: 10, y1: 10 },
+            source_file: 'file.pdf',
+            confidence_band: 'auto_accepted',
+            confidence_score: 0.99,
+            normalized_label: 'Revenue',
+            taxonomy_status: 'matched',
+            status: 'locked',
+            flags: [],
+            statement_type: 'income_statement',
+            error_detail: null,
+          },
+        ],
+      }),
+    } as Response)
+
+    const html = renderToStaticMarkup(
+      <ReviewPage
+        jobId="job-test-123"
+        apiBase="http://localhost:8000"
+        onBack={vi.fn()}
+      />
+    )
+
+    expect(html).toContain('Approve &amp; Generate Complete Financial Model (6 Tabs)')
   })
 
   it('correctly filters flagged items vs all reconciliation items (Ticket 1.2.4)', () => {
