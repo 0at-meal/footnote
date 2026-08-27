@@ -113,3 +113,33 @@ def test_score_record_propagates_reconciliation_candidate_from_record() -> None:
     )
     scored_false = score_record(rec_false)
     assert scored_false.is_reconciliation_candidate is False
+
+
+def test_reconciliation_candidate_flat_label_receives_bonus() -> None:
+    """Ticket 3.3: Flat label in reconciliation candidate table scores >= 0.95 (auto_accepted)."""
+    rec = ExtractedRecord(
+        value="500",
+        label="Stock-based compensation",  # Flat label without ' / '
+        page=1,
+        bbox={"x0": 0.0, "y0": 0.0, "x1": 10.0, "y1": 10.0},
+        source_file="test.pdf",
+        is_reconciliation_candidate=True,
+    )
+    score, _ = compute_confidence_score(rec)
+    assert score >= 0.95
+    scored = score_record(rec)
+    assert scored.confidence_band == ConfidenceBand.auto_accepted
+
+    # Non-reconciliation table flat label should remain 0.85 (needs_review)
+    rec_non_rec = ExtractedRecord(
+        value="500",
+        label="Stock-based compensation",
+        page=1,
+        bbox={"x0": 0.0, "y0": 0.0, "x1": 10.0, "y1": 10.0},
+        source_file="test.pdf",
+        is_reconciliation_candidate=False,
+    )
+    score_non_rec, _ = compute_confidence_score(rec_non_rec)
+    assert score_non_rec == 0.85
+    scored_non_rec = score_record(rec_non_rec)
+    assert scored_non_rec.confidence_band == ConfidenceBand.needs_review

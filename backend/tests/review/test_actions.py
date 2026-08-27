@@ -42,7 +42,7 @@ def _setup_job_with_records(
 
     class_repo = ClassificationRepository(data_dir=tmp_path)
 
-    # Record 1: Auto accepted + matched
+    # Record 1: Needs review + matched (unlocked candidate for action tests)
     sr1 = ScoredRecord(
         record=ExtractedRecord(
             value="1,000",
@@ -52,8 +52,8 @@ def _setup_job_with_records(
             source_file="test_filing.pdf",
             is_reconciliation_candidate=True,
         ),
-        confidence_score=0.98,
-        confidence_band=ConfidenceBand.auto_accepted,
+        confidence_score=0.88,
+        confidence_band=ConfidenceBand.needs_review,
         flags=[],
         status="ok",
         is_reconciliation_candidate=True,
@@ -137,7 +137,7 @@ def test_edit_item_success(tmp_path: Path) -> None:
     assert data["value"] == "1,050"
     assert data["label"] == "Operating Expenses / SBC Adjusted"
     # Ensure status did NOT auto-confirm (AC-8)
-    assert data["status"] == ReviewStatus.auto_accepted.value
+    assert data["status"] == ReviewStatus.needs_review.value
     # Frozen fields remain untouched (AC-9)
     assert data["page"] == 1
     assert data["source_file"] == "test_filing.pdf"
@@ -288,10 +288,10 @@ def test_unlock_item_success_and_rejection_when_not_locked(tmp_path: Path) -> No
         assert res_confirm.status_code == 200
         assert res_confirm.json()["status"] == ReviewStatus.locked.value
 
-        # 3. Explicit unlock -> 200, status returns to auto_accepted
+        # 3. Explicit unlock -> 200, status returns to baseline review status (needs_review)
         res_unlock = client.post(f"/review/{job_id}/items/{item_id}/unlock")
         assert res_unlock.status_code == 200
-        assert res_unlock.json()["status"] == ReviewStatus.auto_accepted.value
+        assert res_unlock.json()["status"] == ReviewStatus.needs_review.value
 
 
 def test_locked_status_persists_across_restart(tmp_path: Path) -> None:
@@ -473,3 +473,42 @@ def test_confirm_batch_router_endpoint(tmp_path: Path) -> None:
     assert f"{job_id}_0" in data["locked_item_ids"]
     assert f"{job_id}_1" in data["locked_item_ids"]
     assert f"{job_id}_2" not in data["locked_item_ids"]
+
+
+def test_auto_accepted_and_matched_item_is_pre_locked(tmp_path: Path) -> None:
+    """Ticket 3.1: High-confidence taxonomy-matched items are initialized as locked."""
+    job_repo = JobRepository(data_dir=tmp_path)
+    job = job_repo.save_job(
+        filename="test_filing.pdf",
+        content=b"%PDF-1.4 sample",
+        target_metric="Adjusted EBITDA",
+    )
+    class_repo = ClassificationRepository(data_dir=tmp_path)
+    sr = ScoredRecord(
+        record=ExtractedRecord(
+            value="1,000",
+            label="Operating Expenses / SBC",
+            page=1,
+            bbox={"x0": 100, "y0": 100, "x1": 200, "y1": 200},
+            source_file="test_filing.pdf",
+            is_reconciliation_candidate=True,
+        ),
+        confidence_score=0.98,
+        confidence_band=ConfidenceBand.auto_accepted,
+        flags=[],
+        status="ok",
+        is_reconciliation_candidate=True,
+    )
+    cr = ClassifiedRecord(
+        record=sr,
+        normalized_label="Stock-Based Compensation",
+        taxonomy_status=TaxonomyStatus.matched,
+        classifier_confidence=0.99,
+        is_confirmed=True,
+    )
+    class_repo.save_classified_records(job.job_id, [cr])
+    review_repo = ReviewRepository(data_dir=tmp_path)
+    items = review_repo.get_review_items(job.job_id)
+    assert items is not None
+    assert len(items) == 1
+    assert items[0].status == ReviewStatus.locked

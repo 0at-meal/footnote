@@ -99,8 +99,7 @@ export default function ReviewPage({ jobId, apiBase, onBack, onAuditTrail }: Pro
     item.status === 'manual_required' ||
     item.status === 'extraction_error' ||
     item.status === 'pending_taxonomy_confirmation' ||
-    item.status === 'flagged' ||
-    item.confidence_score < 0.95
+    item.status === 'flagged'
 
   const flaggedCount = items.filter(isFlagged).length
   const totalCount = items.length

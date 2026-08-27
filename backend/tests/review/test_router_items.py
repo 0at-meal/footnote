@@ -122,13 +122,13 @@ def test_get_review_items_from_classified_records_200(tmp_path: Path) -> None:
     assert data["total_items"] == 3
 
     items = data["items"]
-    # Item 1: Auto accepted + matched
+    # Item 1: Auto accepted + matched is pre-locked (Ticket 3.1)
     assert items[0]["id"] == f"{job.job_id}_0"
     assert items[0]["value"] == "1,250"
     assert items[0]["page"] == 12
     assert items[0]["normalized_label"] == "Stock-Based Compensation"
     assert items[0]["taxonomy_status"] == "matched"
-    assert items[0]["status"] == ReviewStatus.auto_accepted.value
+    assert items[0]["status"] == ReviewStatus.locked.value
 
     # Item 2: Pending taxonomy confirmation
     assert items[1]["id"] == f"{job.job_id}_1"

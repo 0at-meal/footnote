@@ -47,12 +47,17 @@ def assign_confidence_band(score: float) -> ConfidenceBand:
     return ConfidenceBand.manual_required
 
 
-def compute_confidence_score(record: ExtractedRecord) -> tuple[float, list[str]]:
+def compute_confidence_score(
+    record: ExtractedRecord,
+    is_reconciliation_candidate: bool | None = None,
+) -> tuple[float, list[str]]:
     """
     Compute a deterministic structural confidence score and list of diagnostic flags.
 
     Args:
         record: The ExtractedRecord to evaluate.
+        is_reconciliation_candidate: Optional flag indicating if item is from a reconciliation table.
+                                      If None, uses record.is_reconciliation_candidate.
 
     Returns:
         A tuple of (confidence_score, list_of_flag_strings).
@@ -80,6 +85,16 @@ def compute_confidence_score(record: ExtractedRecord) -> tuple[float, list[str]]
     ):
         score -= 0.10
         flags.append("footnote_marker_present")
+
+    # Signal 4: Reconciliation candidate table bonus (Ticket 3.3)
+    # Offsets the -0.15 missing_header_hierarchy deduction for flat labels in reconciliation tables
+    is_rec = (
+        is_reconciliation_candidate
+        if is_reconciliation_candidate is not None
+        else record.is_reconciliation_candidate
+    )
+    if is_rec:
+        score += 0.15
 
     clamped_score = round(max(0.0, min(1.0, score)), 2)
     return clamped_score, flags
@@ -118,7 +133,9 @@ def score_record(
             is_reconciliation_candidate=is_rec,
         )
 
-    score, flags = compute_confidence_score(record)
+    score, flags = compute_confidence_score(
+        record, is_reconciliation_candidate=is_rec
+    )
     band = assign_confidence_band(score)
     return ScoredRecord(
         record=record,
