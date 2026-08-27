@@ -64,6 +64,10 @@ class DoclingItem(BaseModel):
     is_reconciliation_candidate: bool = False
     """Flag indicating whether this item belongs to a reconciliation candidate table."""
 
+    parser_used: Literal["docling", "pymupdf"] = "docling"
+    """Which parser produced this item. Controls Y-axis coordinate space in the normalizer."""
+
+
 
 class NormalizedBbox(BaseModel):
     """

@@ -6,6 +6,16 @@ Scope:
     their bounding boxes into 0-1000 coordinate space relative to page dimensions
     using PyMuPDF.
 
+Coordinate Space Notes:
+    - Docling uses **bottom-left origin** (y=0 at bottom of page, y increases upward).
+      Raw `bbox.y0` = top of cell, `bbox.y1` = bottom of cell in Docling's coordinate space.
+      After scaling to 0-1000, we must invert: y0_screen = 1000 - y1_scaled,
+      y1_screen = 1000 - y0_scaled. This converts Docling's bottom-left space to the
+      top-left origin (y=0 at top) used by the canvas rendering layer.
+    - PyMuPDF fallback uses **top-left origin** (y=0 at top of page, y increases downward).
+      No Y-axis inversion is needed for PyMuPDF items.
+    - The `item.parser_used` field on DoclingItem determines which path is taken.
+
 Isolation (CONSTITUTION §3.8, §3.2):
     This module must NEVER import from classification/, formula_engine/, excel_export/,
     or audit_report/.
@@ -33,6 +43,12 @@ def normalize_item_bbox(
     """
     Normalize a single DoclingItem's bounding box into 0-1000 coordinate space.
 
+    Handles two coordinate systems based on item.parser_used:
+    - "docling": Bottom-left origin. Y-axis is inverted after scaling so that
+      items near the bottom of the page map to y-values near 1000 (as expected
+      by the top-left canvas rendering layer).
+    - "pymupdf": Top-left origin. No Y-axis inversion needed; scale directly.
+
     Args:
         item: The intermediate DoclingItem with point coordinates.
         page_width: Total page width in points.
@@ -55,11 +71,33 @@ def normalize_item_bbox(
     x1_raw = (item.bbox.x1 / page_width) * 1000.0
     y1_raw = (item.bbox.y1 / page_height) * 1000.0
 
+    if item.parser_used == "docling":
+        # Docling uses bottom-left origin. After scaling:
+        #   y0_raw corresponds to the top of the cell in Docling space (smaller y = higher up),
+        #   y1_raw corresponds to the bottom of the cell in Docling space (larger y = lower down).
+        # Invert to convert to top-left screen space:
+        #   y0_screen = 1000 - y1_raw  (top of cell in screen coords)
+        #   y1_screen = 1000 - y0_raw  (bottom of cell in screen coords)
+        logger.debug(
+            "Docling Y-inversion applied for item '%s': y0_raw=%.2f y1_raw=%.2f -> y0_screen=%.2f y1_screen=%.2f",
+            item.value,
+            y0_raw,
+            y1_raw,
+            1000.0 - y1_raw,
+            1000.0 - y0_raw,
+        )
+        y0_screen = 1000.0 - y1_raw
+        y1_screen = 1000.0 - y0_raw
+    else:
+        # PyMuPDF uses top-left origin — no inversion needed.
+        y0_screen = y0_raw
+        y1_screen = y1_raw
+
     # Ensure min <= max ordering
     x_min = min(x0_raw, x1_raw)
     x_max = max(x0_raw, x1_raw)
-    y_min = min(y0_raw, y1_raw)
-    y_max = max(y0_raw, y1_raw)
+    y_min = min(y0_screen, y1_screen)
+    y_max = max(y0_screen, y1_screen)
 
     # Clamp to [0.0, 1000.0] interval
     x0_clamped = round(max(0.0, min(1000.0, x_min)), 2)

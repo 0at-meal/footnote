@@ -509,7 +509,10 @@ def _parse_pdf_with_pymupdf(
                             y1=float(table.bbox[3]),
                         )
                         if hasattr(table, "cells") and table.cells:
-                            flat_idx = row_idx * len(row) + col_idx
+                            # row_idx and col_idx start at 1 (data rows/cols), so
+                            # we must subtract 1 from each to get the 0-based flat index
+                            # into the table.cells list.
+                            flat_idx = (row_idx - 1) * len(row) + (col_idx - 1)
                             if flat_idx < len(table.cells):
                                 cb = table.cells[flat_idx]
                                 cell_bbox = DoclingBbox(
@@ -528,6 +531,7 @@ def _parse_pdf_with_pymupdf(
                                 source_file=source_file,
                                 table_name=table_title or None,
                                 is_reconciliation_candidate=is_reconciliation,
+                                parser_used="pymupdf",
                             )
                         )
             except Exception as table_err:  # noqa: BLE001
