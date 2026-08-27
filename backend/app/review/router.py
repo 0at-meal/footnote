@@ -9,6 +9,7 @@ Endpoints:
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import FileResponse
 
+from app.extraction.repository import ExtractionRepository
 from app.ingestion.repository import JobRepository
 from app.review.models import (
     ReviewBatchConfirmRequest,
@@ -95,10 +96,15 @@ def get_review_items(job_id: str) -> ReviewItemsResponse:
             detail="No extraction records found for job",
         )
 
+    extraction_repo = ExtractionRepository(data_dir=_job_repo.data_dir)
+    summary = extraction_repo.get_extraction_summary(job_id)
+    parser_used = summary.parser_used if summary is not None else None
+
     return ReviewItemsResponse(
         job_id=job_id,
         items=items,
         total_items=len(items),
+        parser_used=parser_used,
     )
 
 

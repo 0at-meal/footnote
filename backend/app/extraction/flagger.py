@@ -10,6 +10,8 @@ Isolation (CONSTITUTION §3.8, §3.2):
     or audit_report/.
 """
 
+from typing import Literal
+
 from app.extraction.models import ConfidenceBand, ExtractionSummary, ScoredRecord
 
 
@@ -32,6 +34,7 @@ def filter_flagged_records(records: list[ScoredRecord]) -> list[ScoredRecord]:
 def create_extraction_summary(
     records: list[ScoredRecord],
     image_only_page_count: int = 0,
+    parser_used: Literal["docling", "pymupdf", "mixed"] = "docling",
 ) -> ExtractionSummary:
     """
     Compute aggregate summary statistics and threshold evaluation for an extraction job.
@@ -81,4 +84,5 @@ def create_extraction_summary(
         flagged_percentage=flagged_percentage,
         passed_threshold=passed_threshold,
         filtered_non_reconciliation_count=filtered_non_reconciliation_count,
+        parser_used=parser_used,
     )

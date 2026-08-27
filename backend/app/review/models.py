@@ -97,6 +97,7 @@ class ReviewItemsResponse(BaseModel):
     job_id: str
     items: list[ReviewItem]
     total_items: int
+    parser_used: str | None = None
 
 
 class ReviewItemEditRequest(BaseModel):

@@ -254,3 +254,46 @@ def test_get_review_items_filters_out_non_reconciliation_items(tmp_path: Path) -
     assert len(items) == 1
     assert items[0].value == "500"
     assert items[0].label == "Adjusted EBITDA / SBC"
+
+
+def test_get_review_items_returns_parser_used(tmp_path: Path) -> None:
+    """Ticket 5.1 & 5.2: ReviewItemsResponse surfaces parser_used from extraction summary."""
+    from app.extraction.flagger import create_extraction_summary
+    from app.extraction.repository import ExtractionRepository
+
+    job_repo = JobRepository(data_dir=tmp_path)
+    job = job_repo.save_job(
+        filename="test_fallback.pdf",
+        content=b"%PDF-1.4 sample",
+        target_metric="Adjusted EBITDA",
+    )
+
+    class_repo = ClassificationRepository(data_dir=tmp_path)
+    sr = _create_sample_scored_record(
+        value="500",
+        label="Adjusted EBITDA / SBC",
+        is_reconciliation_candidate=True,
+    )
+    cr = ClassifiedRecord(
+        record=sr,
+        normalized_label="Stock-Based Compensation",
+        taxonomy_status=TaxonomyStatus.matched,
+        classifier_confidence=0.99,
+        is_confirmed=True,
+    )
+    class_repo.save_classified_records(job.job_id, [cr])
+
+    extraction_repo = ExtractionRepository(data_dir=tmp_path)
+    summary = create_extraction_summary([sr], parser_used="pymupdf")
+    extraction_repo.save_extraction_summary(job.job_id, summary)
+
+    review_repo = ReviewRepository(data_dir=tmp_path)
+
+    with patch("app.review.router._job_repo", job_repo), patch(
+        "app.review.router._review_repo", review_repo
+    ):
+        response = client.get(f"/review/{job.job_id}/items")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["parser_used"] == "pymupdf"

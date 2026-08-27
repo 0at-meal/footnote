@@ -10,6 +10,7 @@ interface Props {
   apiBase: string
   onBack: () => void
   onAuditTrail?: (jobId: string) => void
+  initialParserUsed?: 'docling' | 'pymupdf' | 'mixed' | null
 }
 
 const REVIEW_STATUS_LABELS: Record<ReviewStatus, string> = {
@@ -63,7 +64,7 @@ type FilterTab =
   | 'balance_sheet'
   | 'kpi'
 
-export default function ReviewPage({ jobId, apiBase, onBack, onAuditTrail }: Props) {
+export default function ReviewPage({ jobId, apiBase, onBack, onAuditTrail, initialParserUsed = null }: Props) {
   const [items, setItems] = useState<ReviewItem[]>([])
   const [selectedItem, setSelectedItem] = useState<ReviewItem | null>(null)
   const [itemsLoading, setItemsLoading] = useState(true)
@@ -91,6 +92,8 @@ export default function ReviewPage({ jobId, apiBase, onBack, onAuditTrail }: Pro
   const [isGeneratingModel, setIsGeneratingModel] = useState<boolean>(false)
   const [generateModelSuccess, setGenerateModelSuccess] = useState<{ totalCells: number; message: string } | null>(null)
   const [generateModelError, setGenerateModelError] = useState<string | null>(null)
+  const [parserUsed, setParserUsed] = useState<string | null>(initialParserUsed)
+  const [isParserBannerDismissed, setIsParserBannerDismissed] = useState<boolean>(false)
 
   const lockedCount = items.filter((i) => i.status === 'locked').length
 
@@ -168,6 +171,9 @@ export default function ReviewPage({ jobId, apiBase, onBack, onAuditTrail }: Pro
         const data = (await res.json()) as ReviewItemsResponse
         if (cancelled) return
         setItems(data.items)
+        if (data.parser_used) {
+          setParserUsed(data.parser_used)
+        }
         if (data.items.length > 0) {
           setSelectedItem(data.items[0])
           setCurrentPage(data.items[0].page)
@@ -506,6 +512,48 @@ export default function ReviewPage({ jobId, apiBase, onBack, onAuditTrail }: Pro
           </button>
         </div>
       </header>
+
+      {/* ── Degraded Quality Warning Banner (Ticket 5.2) ── */}
+      {(parserUsed === 'pymupdf' || parserUsed === 'mixed') && !isParserBannerDismissed && (
+        <div
+          className="review-banner review-banner--warning"
+          role="alert"
+          style={{
+            backgroundColor: '#451a03',
+            border: '1px solid #d97706',
+            color: '#fef3c7',
+            padding: '0.75rem 1rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '1rem',
+            marginBottom: '0.5rem',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
+            <span style={{ fontSize: '1.1rem' }}>⚠️</span>
+            <span>
+              <strong>Degraded Extraction Quality</strong> — Docling native parsing was unavailable for this filing. Layout was extracted using the PyMuPDF fallback parser. Bounding boxes and confidence scores may be less precise. Please review highlighted items carefully.
+            </span>
+          </div>
+          <button
+            type="button"
+            className="review-banner__close-btn"
+            onClick={() => setIsParserBannerDismissed(true)}
+            aria-label="Dismiss warning"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#fef3c7',
+              cursor: 'pointer',
+              fontSize: '1rem',
+              padding: '0.25rem 0.5rem',
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* ── Model Generation Status Banners (Ticket 4.1) ── */}
       {generateModelSuccess && (

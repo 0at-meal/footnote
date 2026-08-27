@@ -175,3 +175,22 @@ class ExtractionRepository:
         )
         os.replace(tmp_path, dest_path)
         return dest_path
+
+    def get_extraction_summary(self, job_id: str) -> ExtractionSummary | None:
+        """
+        Load persisted ExtractionSummary for job_id from data/results/<job_id>_summary.json.
+
+        Args:
+            job_id: UUID of the job whose summary is to be loaded.
+
+        Returns:
+            ExtractionSummary if file exists and parses validly; None otherwise.
+        """
+        path = self._results_dir / f"{job_id}_summary.json"
+        if not path.exists():
+            return None
+        try:
+            raw = json.loads(path.read_text(encoding="utf-8"))
+            return ExtractionSummary.model_validate(raw)
+        except (json.JSONDecodeError, OSError, ValueError):
+            return None

@@ -8,6 +8,7 @@ Located at app/job_runner.py to satisfy CONSTITUTION §3.8 isolation rules:
 """
 
 import logging
+from typing import Literal
 
 from app.classification.client import GroqClassifierClient
 from app.classification.decision_log import (
@@ -88,6 +89,17 @@ def process_queued_job(
         docling_items = parse_pdf(pdf_path, job.filename, target_metric=target_metric)
         extraction_repo.save_docling_items(job_id, docling_items)
 
+        parsers_in_items = {
+            getattr(it, "parser_used", "docling") for it in docling_items
+        }
+        parser_used: Literal["docling", "pymupdf", "mixed"] = "docling"
+        if len(parsers_in_items) > 1:
+            parser_used = "mixed"
+        elif "pymupdf" in parsers_in_items:
+            parser_used = "pymupdf"
+        else:
+            parser_used = "docling"
+
         # Stage 2: PyMuPDF 0-1000 coordinate normalization
         normalized_items = normalize_coordinates(pdf_path, docling_items)
         extraction_repo.save_normalized_items(job_id, normalized_items)
@@ -103,7 +115,9 @@ def process_queued_job(
         # Stage 5: Extraction summary & threshold evaluation
         image_only_page_count = count_image_only_pages(pdf_path)
         summary = create_extraction_summary(
-            scored_records, image_only_page_count=image_only_page_count
+            scored_records,
+            image_only_page_count=image_only_page_count,
+            parser_used=parser_used,
         )
         extraction_repo.save_extraction_summary(job_id, summary)
 

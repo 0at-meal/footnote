@@ -146,23 +146,22 @@ describe('ReviewPage Component', () => {
     expect(html).toContain('Approve &amp; Generate Complete Financial Model (6 Tabs)')
   })
 
-  it('correctly filters flagged items vs all reconciliation items (Ticket 1.2.4)', () => {
+  it('correctly filters flagged items vs all reconciliation items (Ticket 3.4)', () => {
     const isFlagged = (item: {
       status: string
-      confidence_score: number
     }) =>
       item.status === 'needs_review' ||
       item.status === 'manual_required' ||
       item.status === 'extraction_error' ||
       item.status === 'pending_taxonomy_confirmation' ||
-      item.status === 'flagged' ||
-      item.confidence_score < 0.95
+      item.status === 'flagged'
 
     const sampleItems = [
-      { id: '1', label: 'SBC', confidence_score: 0.99, status: 'auto_accepted' },
-      { id: '2', label: 'Restructuring', confidence_score: 0.85, status: 'needs_review' },
-      { id: '3', label: 'Litigation', confidence_score: 0.50, status: 'manual_required' },
-      { id: '4', label: 'Unparsed Row', confidence_score: 0.10, status: 'extraction_error' },
+      { id: '1', label: 'SBC', status: 'auto_accepted' },
+      { id: '2', label: 'Restructuring', status: 'needs_review' },
+      { id: '3', label: 'Litigation', status: 'manual_required' },
+      { id: '4', label: 'Unparsed Row', status: 'extraction_error' },
+      { id: '5', label: 'Locked Item', status: 'locked' },
     ]
 
     const flagged = sampleItems.filter(isFlagged)
@@ -170,7 +169,7 @@ describe('ReviewPage Component', () => {
     expect(flagged.map((i) => i.id)).toEqual(['2', '3', '4'])
 
     const all = sampleItems
-    expect(all.length).toBe(4)
+    expect(all.length).toBe(5)
   })
 
   it('dispatches batch confirm and model generate in sequence on Approve All trigger (Ticket 1.2.4)', async () => {
@@ -234,6 +233,49 @@ describe('ReviewPage Component', () => {
     })
     expect(genData.is_success).toBe(true)
     expect(genData.total_cells_generated).toBe(12)
+  })
+
+  it('renders Degraded Extraction Quality warning banner when parser_used is pymupdf (Ticket 5.2)', () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        job_id: 'job-fallback-123',
+        total_items: 1,
+        parser_used: 'pymupdf',
+        items: [
+          {
+            id: '1',
+            value: '100',
+            label: 'Revenue',
+            page: 1,
+            bbox: { x0: 0, y0: 0, x1: 10, y1: 10 },
+            source_file: 'file.pdf',
+            confidence_band: 'needs_review',
+            confidence_score: 0.85,
+            normalized_label: null,
+            taxonomy_status: null,
+            status: 'needs_review',
+            flags: [],
+            statement_type: 'income_statement',
+            error_detail: null,
+          },
+        ],
+      }),
+    } as Response)
+
+    const html = renderToStaticMarkup(
+      <ReviewPage
+        jobId="job-fallback-123"
+        apiBase="http://localhost:8000"
+        onBack={vi.fn()}
+        initialParserUsed="pymupdf"
+      />
+    )
+
+    // Verify degraded quality banner is rendered with warning text
+    expect(html).toContain('Degraded Extraction Quality')
+    expect(html).toContain('Docling native parsing was unavailable for this filing')
+    expect(html).toContain('PyMuPDF fallback parser')
   })
 })
 

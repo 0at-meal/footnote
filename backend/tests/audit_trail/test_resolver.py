@@ -63,8 +63,8 @@ def _create_sample_classified_records(job_id: str) -> list[ClassifiedRecord]:
                     source_file="filing_2023.pdf",
                     is_reconciliation_candidate=True,
                 ),
-                confidence_score=0.96,
-                confidence_band=ConfidenceBand.auto_accepted,
+                confidence_score=0.85,
+                confidence_band=ConfidenceBand.needs_review,
                 flags=[],
                 status="ok",
                 error_detail=None,
@@ -86,8 +86,8 @@ def _create_sample_classified_records(job_id: str) -> list[ClassifiedRecord]:
                     source_file="filing_2023.pdf",
                     is_reconciliation_candidate=True,
                 ),
-                confidence_score=0.95,
-                confidence_band=ConfidenceBand.auto_accepted,
+                confidence_score=0.80,
+                confidence_band=ConfidenceBand.needs_review,
                 flags=[],
                 status="ok",
                 error_detail=None,
@@ -179,7 +179,7 @@ def test_resolve_aggregated_formula_cell(populated_job_env: tuple[str, Path]) ->
         comp1.review_status == ReviewStatus.flagged.value
     )  # Current live status (AC-4)
     assert comp2.page == 18
-    assert comp2.review_status == ReviewStatus.auto_accepted.value
+    assert comp2.review_status == ReviewStatus.needs_review.value
 
 
 def test_resolve_root_total_cell(populated_job_env: tuple[str, Path]) -> None:
@@ -296,7 +296,7 @@ def test_missing_review_record_gap_handling(
 
     comp_present = resp.components[1]
     assert not comp_present.is_missing
-    assert comp_present.review_status == ReviewStatus.auto_accepted.value
+    assert comp_present.review_status == ReviewStatus.needs_review.value
 
 
 def test_flagged_item_pdf_lookup_does_not_modify_flag(
@@ -334,10 +334,10 @@ def test_status_change_reflected_on_next_lookup(
     resolver = AuditTrailResolver(data_dir=data_dir)
     review_repo = ReviewRepository(data_dir=data_dir)
 
-    # Item 2 is currently auto_accepted
+    # Item 2 is currently needs_review
     resp1 = resolver.resolve_by_cell(job_id, "Reconciliation", "B7")
     comp2_initial = next(c for c in resp1.components if c.component_id == f"{job_id}_2")
-    assert comp2_initial.review_status == ReviewStatus.auto_accepted.value
+    assert comp2_initial.review_status == ReviewStatus.needs_review.value
 
     # Analyst confirms and locks item 2 in review UI
     review_repo.confirm_item(job_id, f"{job_id}_2")

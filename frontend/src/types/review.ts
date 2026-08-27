@@ -48,4 +48,5 @@ export type ReviewItemsResponse = {
   job_id: string
   items: ReviewItem[]
   total_items: number
+  parser_used?: 'docling' | 'pymupdf' | 'mixed' | null
 }

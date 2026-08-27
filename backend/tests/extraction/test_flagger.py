@@ -100,3 +100,10 @@ def test_create_extraction_summary_computes_filtered_non_reconciliation_count() 
     summary = create_extraction_summary([rec1, rec2, rec3])
     assert summary.total_items == 3
     assert summary.filtered_non_reconciliation_count == 2
+    assert summary.parser_used == "docling"
+
+    summary_pymupdf = create_extraction_summary([rec1], parser_used="pymupdf")
+    assert summary_pymupdf.parser_used == "pymupdf"
+
+    summary_mixed = create_extraction_summary([rec1], parser_used="mixed")
+    assert summary_mixed.parser_used == "mixed"

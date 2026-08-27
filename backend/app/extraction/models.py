@@ -171,3 +171,4 @@ class ExtractionSummary(BaseModel):
     flagged_percentage: float
     passed_threshold: bool
     filtered_non_reconciliation_count: int = 0
+    parser_used: Literal["docling", "pymupdf", "mixed"] = "docling"
