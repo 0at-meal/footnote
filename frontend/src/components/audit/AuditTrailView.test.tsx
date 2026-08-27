@@ -68,4 +68,36 @@ describe('AuditTrailView Component', () => {
     expect(html).toContain('href="http://localhost:8000/api/jobs/job-123/audit-report"')
     expect(html).toContain('download="audit_report_job-123.pdf"')
   })
+
+  it('renders rich empty state guide card with numbered checklist and actions (Ticket 4.1)', () => {
+    const onReviewMock = vi.fn()
+    const html = renderToStaticMarkup(
+      <AuditTrailView
+        jobId="job-456"
+        apiBase="http://localhost:8000"
+        onBack={vi.fn()}
+        onReview={onReviewMock}
+      />
+    )
+
+    expect(html).toContain('Model Provenance Not Available')
+    expect(html).toContain('Upload and extract a 10-K filing.')
+    expect(html).toContain('Review and approve line items in the Review tab.')
+    expect(html).toContain('Approve &amp; Generate Complete Financial Model')
+    expect(html).toContain('Go to Review Tab →')
+    expect(html).toContain('Check again')
+  })
+
+  it('renders Refresh button in header for reloading provenance (Ticket 4.2)', () => {
+    const html = renderToStaticMarkup(
+      <AuditTrailView
+        jobId="job-456"
+        apiBase="http://localhost:8000"
+        onBack={vi.fn()}
+      />
+    )
+
+    expect(html).toContain('Refresh')
+    expect(html).toContain('audit-header__refresh-btn')
+  })
 })

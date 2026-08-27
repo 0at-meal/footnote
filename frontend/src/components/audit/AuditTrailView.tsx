@@ -54,7 +54,7 @@ function StatusBadge({ status, isMissing }: { status: string; isMissing: boolean
 
 export default function AuditTrailView({ jobId, apiBase, onBack, onReview, jobRecord, modelReady }: Props) {
   const [provenanceRecords, setProvenanceRecords] = useState<ProvenanceSummaryRecord[]>([])
-  const [isLoadingProvenance, setIsLoadingProvenance] = useState<boolean>(true)
+  const [isLoadingProvenance, setIsLoadingProvenance] = useState<boolean>(false)
   const [isReportReady, setIsReportReady] = useState<boolean>(false)
   const [selectedSheet, setSelectedSheet] = useState<string>('Reconciliation')
   const [cellCoordInput, setCellCoordInput] = useState<string>('C4')
@@ -146,14 +146,60 @@ export default function AuditTrailView({ jobId, apiBase, onBack, onReview, jobRe
     }
   }
 
-  // ── 1. Load available provenance records on mount ────────────────────────
+  // ── 1. Load available provenance records & report status (Ticket 4.2) ──
+  async function loadProvenance() {
+    setIsLoadingProvenance(true)
+    try {
+      // Fetch audit report status (Ticket 2.3)
+      try {
+        const statusRes = await fetch(`${apiBase}/api/jobs/${jobId}/audit-report/status`)
+        if (statusRes.ok) {
+          const statusData = (await statusRes.json()) as { is_ready?: boolean }
+          setIsReportReady(Boolean(statusData.is_ready))
+        }
+      } catch {
+        // Non-fatal status check error
+      }
+
+      const res = await fetch(`${apiBase}/models/${jobId}/provenance`)
+      if (!res.ok) {
+        setProvenanceRecords([])
+        return
+      }
+      const data = (await res.json()) as ProvenanceQueryResponse
+      setProvenanceRecords(data.records || [])
+
+      const firstRecon = data.records?.find((r) => r.sheet_name === 'Reconciliation')
+      if (firstRecon) {
+        setSelectedSheet(firstRecon.sheet_name)
+        setCellCoordInput(firstRecon.cell_coord)
+
+        // Fetch initial chain
+        const chainRes = await fetch(
+          `${apiBase}/audit-trail/${jobId}/cell/${firstRecon.sheet_name}/${firstRecon.cell_coord}`,
+        )
+        if (!chainRes.ok) return
+        const chainData = (await chainRes.json()) as SourceChainResponse
+        setChain(chainData)
+        if (chainData.components.length > 0) {
+          setSelectedComponent(chainData.components[0])
+          setActivePage(chainData.components[0].page)
+        }
+      }
+    } catch {
+      // Non-fatal fallback
+      setProvenanceRecords([])
+    } finally {
+      setIsLoadingProvenance(false)
+    }
+  }
+
   useEffect(() => {
     let cancelled = false
 
-    async function fetchMetadataAndInitialChain() {
+    async function init() {
       setIsLoadingProvenance(true)
       try {
-        // Fetch audit report status (Ticket 2.3)
         try {
           const statusRes = await fetch(`${apiBase}/api/jobs/${jobId}/audit-report/status`)
           if (statusRes.ok && !cancelled) {
@@ -161,7 +207,7 @@ export default function AuditTrailView({ jobId, apiBase, onBack, onReview, jobRe
             setIsReportReady(Boolean(statusData.is_ready))
           }
         } catch {
-          // Non-fatal status check error
+          // Non-fatal
         }
 
         const res = await fetch(`${apiBase}/models/${jobId}/provenance`)
@@ -178,7 +224,6 @@ export default function AuditTrailView({ jobId, apiBase, onBack, onReview, jobRe
           setSelectedSheet(firstRecon.sheet_name)
           setCellCoordInput(firstRecon.cell_coord)
 
-          // Fetch initial chain
           const chainRes = await fetch(
             `${apiBase}/audit-trail/${jobId}/cell/${firstRecon.sheet_name}/${firstRecon.cell_coord}`,
           )
@@ -192,14 +237,13 @@ export default function AuditTrailView({ jobId, apiBase, onBack, onReview, jobRe
           }
         }
       } catch {
-        // Non-fatal fallback
         if (!cancelled) setProvenanceRecords([])
       } finally {
         if (!cancelled) setIsLoadingProvenance(false)
       }
     }
 
-    void fetchMetadataAndInitialChain()
+    void init()
 
     return () => {
       cancelled = true
@@ -298,53 +342,93 @@ export default function AuditTrailView({ jobId, apiBase, onBack, onReview, jobRe
           </div>
         </div>
         <div className="audit-header__right" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-          {canDownload ? (
-            <a
-              href={buildAuditReportDownloadUrl(apiBase, jobId)}
-              download={buildAuditReportFilename(jobId)}
-              className="audit-header__export-btn"
-              style={{
-                backgroundColor: '#0f766e',
-                borderColor: '#0f766e',
-                color: '#ffffff',
-                padding: '0.4rem 0.8rem',
-                borderRadius: '4px',
-                fontSize: '0.85rem',
-                fontWeight: 500,
-                textDecoration: 'none',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.375rem',
-              }}
-              aria-label={`Export Audit Report PDF for ${jobId}`}
-            >
-              Export Audit PDF
-            </a>
-          ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <button
               type="button"
-              disabled
-              className="audit-header__export-btn audit-header__export-btn--disabled"
+              className="audit-header__refresh-btn"
+              onClick={() => void loadProvenance()}
+              disabled={isLoadingProvenance}
               style={{
-                backgroundColor: '#334155',
+                backgroundColor: 'transparent',
                 borderColor: '#475569',
                 color: '#94a3b8',
-                padding: '0.4rem 0.8rem',
+                padding: '0.4rem 0.6rem',
                 borderRadius: '4px',
                 fontSize: '0.85rem',
-                fontWeight: 500,
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '0.375rem',
-                cursor: 'not-allowed',
-                opacity: 0.7,
+                gap: '0.25rem',
+                cursor: isLoadingProvenance ? 'wait' : 'pointer',
               }}
-              title="Generate a model first: go to Review and click 'Approve & Generate'"
-              aria-label="Export Audit PDF (disabled: generate a model first)"
+              title="Refresh audit trail & provenance data"
+              aria-label="Refresh audit trail data"
             >
-              Export Audit PDF
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{
+                  animation: isLoadingProvenance ? 'spin 1s linear infinite' : 'none',
+                }}
+                aria-hidden="true"
+              >
+                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
+              </svg>
+              {isLoadingProvenance ? 'Refreshing...' : 'Refresh'}
             </button>
-          )}
+            {canDownload ? (
+              <a
+                href={buildAuditReportDownloadUrl(apiBase, jobId)}
+                download={buildAuditReportFilename(jobId)}
+                className="audit-header__export-btn"
+                style={{
+                  backgroundColor: '#0f766e',
+                  borderColor: '#0f766e',
+                  color: '#ffffff',
+                  padding: '0.4rem 0.8rem',
+                  borderRadius: '4px',
+                  fontSize: '0.85rem',
+                  fontWeight: 500,
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.375rem',
+                }}
+                aria-label={`Export Audit Report PDF for ${jobId}`}
+              >
+                Export Audit PDF
+              </a>
+            ) : (
+              <button
+                type="button"
+                disabled
+                className="audit-header__export-btn audit-header__export-btn--disabled"
+                style={{
+                  backgroundColor: '#334155',
+                  borderColor: '#475569',
+                  color: '#94a3b8',
+                  padding: '0.4rem 0.8rem',
+                  borderRadius: '4px',
+                  fontSize: '0.85rem',
+                  fontWeight: 500,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.375rem',
+                  cursor: 'not-allowed',
+                  opacity: 0.7,
+                }}
+                title="Generate a model first: go to Review and click 'Approve & Generate'"
+                aria-label="Export Audit PDF (disabled: generate a model first)"
+              >
+                Export Audit PDF
+              </button>
+            )}
+          </div>
           {!isReportReady && isModelReady && (
             <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
               Report will be generated on first download request
@@ -496,21 +580,99 @@ export default function AuditTrailView({ jobId, apiBase, onBack, onReview, jobRe
           </section>
 
           {!isLoadingProvenance && provenanceRecords.length === 0 && (
-            <div className="audit-empty-guide-card">
-              <h3>No Model Generated</h3>
-              <p>
-                Provenance records are generated when the Excel model is compiled from confirmed line items.
+            <div
+              className="audit-empty-guide-card"
+              style={{
+                padding: '1.25rem',
+                borderRadius: '8px',
+                background: 'var(--surface, #1e293b)',
+                border: '1px solid #334155',
+                marginTop: '1rem',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#f59e0b"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                <h3 style={{ margin: 0, fontSize: '1rem', color: '#f8fafc' }}>
+                  Model Provenance Not Available
+                </h3>
+              </div>
+              <p style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.875rem' }}>
+                Provenance records are generated when the Excel model is compiled from confirmed line items. Follow these prerequisites:
               </p>
-              {onReview && (
+              <ol
+                style={{
+                  fontSize: '0.85rem',
+                  color: '#cbd5e1',
+                  paddingLeft: '1.25rem',
+                  margin: '0 0 1.25rem 0',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.5rem',
+                }}
+              >
+                <li>
+                  <span style={{ color: '#22c55e', fontWeight: 600 }}>✓</span> Upload and extract a 10-K filing.
+                </li>
+                <li>
+                  <span>②</span> Review and approve line items in the Review tab.
+                </li>
+                <li>
+                  <span>③</span> Click &ldquo;Approve &amp; Generate Complete Financial Model&rdquo; in the Review tab.
+                </li>
+              </ol>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                {onReview && (
+                  <button
+                    type="button"
+                    className="audit-empty-banner__action-btn"
+                    onClick={() => onReview(jobId)}
+                    aria-label="Go to Review Tab →"
+                    style={{
+                      backgroundColor: '#2563eb',
+                      borderColor: '#2563eb',
+                      color: '#ffffff',
+                      padding: '0.4rem 0.8rem',
+                      borderRadius: '4px',
+                      fontSize: '0.85rem',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Go to Review Tab →
+                  </button>
+                )}
                 <button
                   type="button"
-                  className="audit-empty-banner__action-btn"
-                  onClick={() => onReview(jobId)}
-                  aria-label="Go to Review UI"
+                  onClick={() => void loadProvenance()}
+                  disabled={isLoadingProvenance}
+                  style={{
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    color: '#38bdf8',
+                    textDecoration: 'underline',
+                    fontSize: '0.85rem',
+                    cursor: 'pointer',
+                    padding: '0.4rem 0',
+                  }}
+                  aria-label="Check again"
                 >
-                  Go to Review UI →
+                  Check again
                 </button>
-              )}
+              </div>
             </div>
           )}
 
