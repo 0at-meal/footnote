@@ -194,6 +194,7 @@ function App() {
   }
 
   if (activeAuditJobId) {
+    const activeAuditJob = persistedJobs.find((j) => j.job_id === activeAuditJobId)
     return (
       <AuditTrailView
         jobId={activeAuditJobId}
@@ -203,6 +204,8 @@ function App() {
           setActiveAuditJobId(null)
           setActiveReviewJobId(jobId)
         }}
+        jobRecord={activeAuditJob}
+        modelReady={activeAuditJob?.model_ready}
       />
     )
   }

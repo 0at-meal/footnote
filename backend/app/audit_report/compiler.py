@@ -115,8 +115,23 @@ class AuditReportCompiler:
                             job_id, generation_result.provenance_records
                         )
                         provenance_records = generation_result.provenance_records
+                else:
+                    logger.warning(
+                        "Audit report compilation failed for job %s: formula tree invalid (%s)",
+                        job_id,
+                        formula_tree.error_message,
+                    )
+            else:
+                logger.warning(
+                    "Audit report compilation failed for job %s: no confirmed or auto-accepted line items found",
+                    job_id,
+                )
 
         if not provenance_records:
+            logger.warning(
+                "Audit report generation failed for job %s: no provenance records available",
+                job_id,
+            )
             raise ModelNotCompleteError(
                 f"Audit report unavailable: model generation not complete. At least one line item must be confirmed before generating an audit report for job '{job_id}' (EC-6)."
             )

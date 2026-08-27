@@ -19,7 +19,7 @@ import logging
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, status
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from pydantic import BaseModel, Field
 
 from app.audit_report.compiler import JobNotFoundError, ModelNotCompleteError
@@ -66,7 +66,7 @@ class ReportStatusResponse(BaseModel):
     response_class=FileResponse,
     include_in_schema=False,
 )
-def download_audit_report(job_id: str) -> FileResponse:
+def download_audit_report(job_id: str) -> Response:
     """
     Serves the compliance audit report PDF as a downloadable binary attachment (spec §4, AC-6).
     If the report has not yet been rendered to disk, generates it on the fly.
@@ -84,10 +84,18 @@ def download_audit_report(job_id: str) -> FileResponse:
                 detail=f"Job '{job_id}' not found.",
             ) from None
         except ModelNotCompleteError as err:
-            raise HTTPException(
+            logger.warning(
+                "Audit report generation failed for job %s: %s",
+                job_id,
+                err,
+            )
+            return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=str(err),
-            ) from None
+                content={
+                    "detail": str(err),
+                    "hint": "Confirm at least one line item in the Review tab, then click Generate Model.",
+                },
+            )
         except (OSError, ValueError, RuntimeError) as err:
             logger.error("Failed to generate audit report for job %s: %s", job_id, err)
             raise HTTPException(

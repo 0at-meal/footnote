@@ -5,6 +5,7 @@ import type {
   ProvenanceQueryResponse,
   ProvenanceSummaryRecord,
 } from '../../types/audit'
+import type { JobRecord } from '../../types/job'
 import { loadPdf, renderPage, type PDFDocumentProxy } from '../../lib/pdf/renderer'
 import { normalizeBboxToPixels, type PixelBoundingBox } from '../../lib/pdf/coordinates'
 import { computeChainRollup } from '../../lib/pdf/audit_status'
@@ -16,6 +17,8 @@ interface Props {
   apiBase: string
   onBack: () => void
   onReview?: (jobId: string) => void
+  jobRecord?: JobRecord
+  modelReady?: boolean
 }
 
 const STATUS_TOOLTIPS: Record<string, string> = {
@@ -49,9 +52,10 @@ function StatusBadge({ status, isMissing }: { status: string; isMissing: boolean
   )
 }
 
-export default function AuditTrailView({ jobId, apiBase, onBack, onReview }: Props) {
+export default function AuditTrailView({ jobId, apiBase, onBack, onReview, jobRecord, modelReady }: Props) {
   const [provenanceRecords, setProvenanceRecords] = useState<ProvenanceSummaryRecord[]>([])
   const [isLoadingProvenance, setIsLoadingProvenance] = useState<boolean>(true)
+  const [isReportReady, setIsReportReady] = useState<boolean>(false)
   const [selectedSheet, setSelectedSheet] = useState<string>('Reconciliation')
   const [cellCoordInput, setCellCoordInput] = useState<string>('C4')
   const [provIdInput, setProvIdInput] = useState<string>('')
@@ -149,6 +153,17 @@ export default function AuditTrailView({ jobId, apiBase, onBack, onReview }: Pro
     async function fetchMetadataAndInitialChain() {
       setIsLoadingProvenance(true)
       try {
+        // Fetch audit report status (Ticket 2.3)
+        try {
+          const statusRes = await fetch(`${apiBase}/api/jobs/${jobId}/audit-report/status`)
+          if (statusRes.ok && !cancelled) {
+            const statusData = (await statusRes.json()) as { is_ready?: boolean }
+            setIsReportReady(Boolean(statusData.is_ready))
+          }
+        } catch {
+          // Non-fatal status check error
+        }
+
         const res = await fetch(`${apiBase}/models/${jobId}/provenance`)
         if (!res.ok) {
           if (!cancelled) setProvenanceRecords([])
@@ -262,6 +277,9 @@ export default function AuditTrailView({ jobId, apiBase, onBack, onReview }: Pro
 
   const rollup = chain?.is_found ? computeChainRollup(chain.components) : null
 
+  const isModelReady = Boolean(modelReady ?? jobRecord?.model_ready ?? (provenanceRecords.length > 0))
+  const canDownload = isModelReady || isReportReady
+
   return (
     <div className="audit-page">
       <header className="audit-header">
@@ -279,32 +297,63 @@ export default function AuditTrailView({ jobId, apiBase, onBack, onReview }: Pro
             <p className="audit-header__subtitle">Job: {jobId}</p>
           </div>
         </div>
-        <div className="audit-header__right">
-          <a
-            href={buildAuditReportDownloadUrl(apiBase, jobId)}
-            download={buildAuditReportFilename(jobId)}
-            className="audit-header__export-btn"
-            style={{
-              backgroundColor: '#0f766e',
-              borderColor: '#0f766e',
-              color: '#ffffff',
-              padding: '0.4rem 0.8rem',
-              borderRadius: '4px',
-              fontSize: '0.85rem',
-              fontWeight: 500,
-              textDecoration: 'none',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.375rem',
-            }}
-            aria-label={`Export Audit Report PDF for ${jobId}`}
-          >
-            Export Audit PDF
-          </a>
+        <div className="audit-header__right" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+          {canDownload ? (
+            <a
+              href={buildAuditReportDownloadUrl(apiBase, jobId)}
+              download={buildAuditReportFilename(jobId)}
+              className="audit-header__export-btn"
+              style={{
+                backgroundColor: '#0f766e',
+                borderColor: '#0f766e',
+                color: '#ffffff',
+                padding: '0.4rem 0.8rem',
+                borderRadius: '4px',
+                fontSize: '0.85rem',
+                fontWeight: 500,
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.375rem',
+              }}
+              aria-label={`Export Audit Report PDF for ${jobId}`}
+            >
+              Export Audit PDF
+            </a>
+          ) : (
+            <button
+              type="button"
+              disabled
+              className="audit-header__export-btn audit-header__export-btn--disabled"
+              style={{
+                backgroundColor: '#334155',
+                borderColor: '#475569',
+                color: '#94a3b8',
+                padding: '0.4rem 0.8rem',
+                borderRadius: '4px',
+                fontSize: '0.85rem',
+                fontWeight: 500,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.375rem',
+                cursor: 'not-allowed',
+                opacity: 0.7,
+              }}
+              title="Generate a model first: go to Review and click 'Approve & Generate'"
+              aria-label="Export Audit PDF (disabled: generate a model first)"
+            >
+              Export Audit PDF
+            </button>
+          )}
+          {!isReportReady && isModelReady && (
+            <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+              Report will be generated on first download request
+            </span>
+          )}
         </div>
       </header>
 
-      {/* ── Empty State Guidance Banner (Ticket 1.4.1) ── */}
+      {/* ── Empty State Guidance Banner (Ticket 2.2) ── */}
       {provenanceRecords.length === 0 && (
         <div className="audit-empty-banner" role="alert">
           <div className="audit-empty-banner__message">
@@ -323,18 +372,23 @@ export default function AuditTrailView({ jobId, apiBase, onBack, onReview }: Pro
               <line x1="12" y1="8" x2="12" y2="12" />
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
-            <span>
-              Model not yet generated. Approve items and click &apos;Generate Model&apos; to view cell-level audit trail.
-            </span>
+            <div>
+              <span>
+                No model yet — go to Review, approve the reconciliation bridge items, then click &apos;Approve &amp; Generate Complete Financial Model&apos;.
+              </span>
+              <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '2px' }}>
+                1. Go to Review tab · 2. Approve reconciliation bridge items · 3. Click &apos;Approve &amp; Generate&apos;
+              </div>
+            </div>
           </div>
           {onReview && (
             <button
               type="button"
               className="audit-empty-banner__action-btn"
               onClick={() => onReview(jobId)}
-              aria-label="Go to Review Tab"
+              aria-label="Go to Review → Approve & Generate"
             >
-              Go to Review Tab →
+              Go to Review → Approve &amp; Generate
             </button>
           )}
         </div>

@@ -106,7 +106,10 @@ def test_download_audit_report_incomplete_model_400(client: TestClient, tmp_path
 
     response = client.get(f"/api/jobs/{job_id}/audit-report")
     assert response.status_code == 400
-    assert "model generation not complete" in response.json()["detail"].lower()
+    data = response.json()
+    assert "model generation not complete" in data["detail"].lower()
+    assert "hint" in data
+    assert "Confirm at least one line item" in data["hint"]
 
 
 def test_get_audit_report_status(client: TestClient, tmp_path: Path) -> None:
