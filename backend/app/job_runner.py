@@ -179,6 +179,7 @@ def process_queued_job(
         # Stage 7: Formula Engine Input & Comprehensive Model Construction (Phase B & C)
         formula_inputs = read_formula_inputs(classified_records)
         model_ready = False
+        model_skip_reason: str | None = None
 
         if len(formula_inputs.nodes) > 0:
             comp_tree = build_comprehensive_model_tree(formula_inputs)
@@ -200,38 +201,55 @@ def process_queued_job(
                         job_id, generation_result.provenance_records
                     )
                     model_ready = True
+                    model_skip_reason = None
                     logger.info(
                         "Generated draft Excel model workbook for job %s with %d cells",
                         job_id,
                         generation_result.total_cells_generated,
                     )
                 else:
+                    model_skip_reason = (
+                        generation_result.error_detail or "Workbook generation failed"
+                    )
                     logger.warning(
                         "Model workbook generation unsuccessful for job %s: %s",
                         job_id,
-                        generation_result.error_detail or "Generation failed",
+                        model_skip_reason,
                     )
             else:
+                model_skip_reason = (
+                    comp_tree.error_message or "Formula tree validation failed"
+                )
                 logger.warning(
                     "Formula tree invalid for draft generation in job %s: %s",
                     job_id,
                     comp_tree.error_message,
                 )
         else:
+            model_skip_reason = (
+                formula_inputs.error_message
+                or "No auto-accepted or confirmed records available"
+            )
             logger.warning(
                 "No auto-accepted or confirmed records available for draft model in job %s: %s (requires human review/confirmation)",
                 job_id,
-                formula_inputs.error_message or "Batch empty",
+                model_skip_reason,
             )
 
-        # Final status update to 'done' with model_ready flag
-        repo.update_job_status(job_id, JobStatus.done, model_ready=model_ready)
+        # Final status update to 'done' with model_ready flag and model_skip_reason
+        repo.update_job_status(
+            job_id,
+            JobStatus.done,
+            model_ready=model_ready,
+            model_skip_reason=model_skip_reason,
+        )
         logger.info(
-            "Completed pipeline for job %s: %d records assembled, %d classified, model_ready=%s",
+            "Completed pipeline for job %s: %d records assembled, %d classified, model_ready=%s, model_skip_reason=%s",
             job_id,
             summary.total_items,
             len(classified_records),
             model_ready,
+            model_skip_reason,
         )
     except Exception as err:
         logger.error("Error processing job %s: %s", job_id, err)

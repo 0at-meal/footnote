@@ -50,6 +50,8 @@ class JobRecord(BaseModel):
     """ISO 8601 UTC timestamp of job creation, e.g. '2026-08-12T01:00:00Z'."""
     model_ready: bool = False
     """True if an .xlsx model workbook was generated successfully for this job."""
+    model_skip_reason: str | None = None
+    """Explanation if Excel model auto-generation was skipped (e.g. no auto-accepted records)."""
     filing_year: int | None = None
     """User-selected fiscal year for the filing (e.g. 2023)."""
     company_id: str | None = None

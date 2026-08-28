@@ -64,6 +64,8 @@ export type JobRecord = {
   submitted_at: string
   /** Whether an Excel model workbook is ready for download (Ticket 0.4.3). */
   model_ready?: boolean
+  /** Reason why model auto-generation was skipped (e.g. no auto-accepted records). */
+  model_skip_reason?: string | null
   /** Fiscal year assigned to this filing. */
   filing_year?: number | null
   /** UUIDv4 of the associated company entity. */

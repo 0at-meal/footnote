@@ -257,3 +257,34 @@ def test_save_job_with_filing_year_and_company_id(tmp_path: Path) -> None:
     assert persisted is not None
     assert persisted.filing_year == 2024
     assert persisted.company_id == "company-uuid-456"
+
+
+def test_update_job_status_with_model_skip_reason(tmp_path: Path) -> None:
+    repo = make_repo(tmp_path)
+    pdf = make_minimal_pdf()
+    record = repo.save_job("test.pdf", pdf, "Adjusted EBITDA")
+
+    updated = repo.update_job_status(
+        record.job_id,
+        JobStatus.done,
+        model_ready=False,
+        model_skip_reason="No auto-accepted or confirmed records available",
+    )
+    assert updated is not None
+    assert updated.model_ready is False
+    assert updated.model_skip_reason == "No auto-accepted or confirmed records available"
+
+    # Verify persisted in jobs.json
+    found = repo.get_job(record.job_id)
+    assert found is not None
+    assert found.model_skip_reason == "No auto-accepted or confirmed records available"
+
+    # When model becomes ready, skip reason is cleared
+    cleared = repo.update_job_status(
+        record.job_id,
+        JobStatus.done,
+        model_ready=True,
+    )
+    assert cleared is not None
+    assert cleared.model_ready is True
+    assert cleared.model_skip_reason is None

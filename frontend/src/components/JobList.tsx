@@ -27,7 +27,15 @@ const STATUS_LABELS: Record<JobStatus, string> = {
   failed: 'Failed',
 }
 
-function StatusBadge({ status, modelReady }: { status: JobStatus; modelReady?: boolean }) {
+function StatusBadge({
+  status,
+  modelReady,
+  modelSkipReason,
+}: {
+  status: JobStatus
+  modelReady?: boolean
+  modelSkipReason?: string | null
+}) {
   if (status === 'done') {
     if (modelReady) {
       return (
@@ -36,9 +44,16 @@ function StatusBadge({ status, modelReady }: { status: JobStatus; modelReady?: b
         </span>
       )
     }
+    const tooltip = modelSkipReason || 'No auto-accepted records — review and confirm items to generate model.'
     return (
-      <span className="status-badge status-badge--awaiting-review" aria-label="Status: Awaiting Review">
+      <span
+        className="status-badge status-badge--awaiting-review"
+        aria-label="Status: Awaiting Review"
+        title={tooltip}
+        style={{ cursor: 'help', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
+      >
         Awaiting Review
+        <span style={{ fontSize: '0.75rem', opacity: 0.8 }} aria-hidden="true">ⓘ</span>
       </span>
     )
   }
@@ -211,7 +226,11 @@ function JobList({
                 </span>
               </td>
               <td className="job-table__status">
-                <StatusBadge status={job.status} modelReady={job.model_ready} />
+                <StatusBadge
+                  status={job.status}
+                  modelReady={job.model_ready}
+                  modelSkipReason={job.model_skip_reason}
+                />
               </td>
               <td className="job-table__remove">
                 <div style={{ display: 'flex', gap: '0.375rem', justifyContent: 'flex-end', alignItems: 'center' }}>

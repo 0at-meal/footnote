@@ -141,5 +141,34 @@ describe('JobList Component', () => {
     expect(html).toContain('value="2023"')
     expect(html).toContain('Fiscal year for staged_2023.pdf')
   })
+
+  it('renders model_skip_reason in tooltip when model_ready is false (Ticket 11.2)', () => {
+    const persistedJobs: JobRecord[] = [
+      {
+        job_id: 'job-skip-123',
+        filename: 'low_confidence.pdf',
+        file_size_bytes: 2048,
+        target_metric: 'Adjusted EBITDA',
+        status: 'done',
+        submitted_at: '2026-01-01T00:00:00Z',
+        model_ready: false,
+        model_skip_reason: 'No auto-accepted or confirmed records available',
+      },
+    ]
+
+    const html = renderToStaticMarkup(
+      <JobList
+        stagedFiles={[]}
+        persistedJobs={persistedJobs}
+        apiBase="http://localhost:8000"
+        onMetricChange={vi.fn()}
+        onRemove={vi.fn()}
+      />
+    )
+
+    expect(html).toContain('title="No auto-accepted or confirmed records available"')
+    expect(html).toContain('ⓘ')
+    expect(html).toContain('Awaiting Review')
+  })
 })
 
