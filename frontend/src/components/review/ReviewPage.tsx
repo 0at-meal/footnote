@@ -11,6 +11,7 @@ interface Props {
   onBack: () => void
   onAuditTrail?: (jobId: string) => void
   initialParserUsed?: 'docling' | 'pymupdf' | 'mixed' | null
+  initialItems?: ReviewItem[]
 }
 
 const REVIEW_STATUS_LABELS: Record<ReviewStatus, string> = {
@@ -64,10 +65,19 @@ type FilterTab =
   | 'balance_sheet'
   | 'kpi'
 
-export default function ReviewPage({ jobId, apiBase, onBack, onAuditTrail, initialParserUsed = null }: Props) {
-  const [items, setItems] = useState<ReviewItem[]>([])
-  const [selectedItem, setSelectedItem] = useState<ReviewItem | null>(null)
-  const [itemsLoading, setItemsLoading] = useState(true)
+export default function ReviewPage({
+  jobId,
+  apiBase,
+  onBack,
+  onAuditTrail,
+  initialParserUsed = null,
+  initialItems = [],
+}: Props) {
+  const [items, setItems] = useState<ReviewItem[]>(initialItems)
+  const [selectedItem, setSelectedItem] = useState<ReviewItem | null>(
+    initialItems.length > 0 ? initialItems[0] : null,
+  )
+  const [itemsLoading, setItemsLoading] = useState(initialItems.length === 0)
   const [itemsError, setItemsError] = useState<string | null>(null)
 
   const [activeTab, setActiveTab] = useState<FilterTab>('flagged')
@@ -754,12 +764,28 @@ export default function ReviewPage({ jobId, apiBase, onBack, onAuditTrail, initi
           )}
 
           {!itemsLoading && !itemsError && filteredItems.length === 0 && (
-            <div className="job-list--empty">
-              <p>
+            <div className="job-list--empty" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', padding: '1.5rem 1rem', alignItems: 'center', textAlign: 'center' }}>
+              <p style={{ margin: 0, color: 'var(--text-muted, #94a3b8)', fontSize: '0.875rem' }}>
                 {activeTab === 'flagged'
-                  ? 'All reconciliation items auto-accepted (confidence >= 95%). Ready to generate model.'
+                  ? items.length > 0
+                    ? 'All items reviewed. Ready to generate the financial model.'
+                    : 'No extracted items found.'
                   : 'No reconciliation items found.'}
               </p>
+              {activeTab === 'flagged' && items.length > 0 && (
+                <button
+                  type="button"
+                  className="review-btn review-btn--generate"
+                  disabled={isGeneratingModel}
+                  onClick={() => void handleApproveBridgeAndGenerateModel()}
+                  style={{ width: '100%', marginTop: '0.25rem', padding: '0.5rem 0.75rem', fontSize: '0.85rem' }}
+                  aria-label="Approve & Generate Complete Financial Model (6 Tabs) →"
+                >
+                  {isGeneratingModel
+                    ? 'Approving & Generating Model...'
+                    : 'Approve & Generate Complete Financial Model (6 Tabs) →'}
+                </button>
+              )}
             </div>
           )}
 

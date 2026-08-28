@@ -277,5 +277,39 @@ describe('ReviewPage Component', () => {
     expect(html).toContain('Docling native parsing was unavailable for this filing')
     expect(html).toContain('PyMuPDF fallback parser')
   })
+
+  it('renders Generate Model button in empty Flagged tab when all items are reviewed/locked (Ticket 9.1)', () => {
+    const mockItems = [
+      {
+        id: '1',
+        value: '500',
+        label: 'Stock-Based Compensation',
+        page: 1,
+        bbox: { x0: 0, y0: 0, x1: 10, y1: 10 },
+        source_file: 'file.pdf',
+        confidence_band: 'auto_accepted' as const,
+        confidence_score: 0.99,
+        normalized_label: 'Stock-Based Compensation',
+        taxonomy_status: 'matched',
+        status: 'locked' as const,
+        flags: [],
+        statement_type: 'non_gaap_bridge' as const,
+        error_detail: null,
+      },
+    ]
+
+    const html = renderToStaticMarkup(
+      <ReviewPage
+        jobId="job-all-locked"
+        apiBase="http://localhost:8000"
+        onBack={vi.fn()}
+        initialItems={mockItems}
+      />
+    )
+
+    // Verify empty state text and action button
+    expect(html).toContain('All items reviewed. Ready to generate the financial model.')
+    expect(html).toContain('Approve &amp; Generate Complete Financial Model (6 Tabs) →')
+  })
 })
 
