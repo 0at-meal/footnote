@@ -41,7 +41,7 @@ def test_compute_confidence_score_clean_record() -> None:
     )
     score, flags = compute_confidence_score(rec)
     assert score == 1.0
-    assert flags == []
+    assert "value_is_numeric" in flags
 
     scored = score_record(rec)
     assert scored.confidence_band == ConfidenceBand.auto_accepted
@@ -53,8 +53,9 @@ def test_compute_confidence_score_missing_header_hierarchy() -> None:
         label="Net Sales",  # No ' / ' hierarchy separator
     )
     score, flags = compute_confidence_score(rec)
-    assert score == 0.85
+    assert score == 0.90
     assert "missing_header_hierarchy" in flags
+    assert "value_is_numeric" in flags
 
     scored = score_record(rec)
     assert scored.confidence_band == ConfidenceBand.needs_review
@@ -130,9 +131,9 @@ def test_reconciliation_candidate_flat_label_receives_bonus() -> None:
     scored = score_record(rec)
     assert scored.confidence_band == ConfidenceBand.auto_accepted
 
-    # Non-reconciliation table flat label should remain 0.85 (needs_review)
+    # Non-reconciliation table flat label with non-numeric value remains 0.85 (needs_review)
     rec_non_rec = ExtractedRecord(
-        value="500",
+        value="N/A",
         label="Stock-based compensation",
         page=1,
         bbox={"x0": 0.0, "y0": 0.0, "x1": 10.0, "y1": 10.0},
@@ -143,3 +144,99 @@ def test_reconciliation_candidate_flat_label_receives_bonus() -> None:
     assert score_non_rec == 0.85
     scored_non_rec = score_record(rec_non_rec)
     assert scored_non_rec.confidence_band == ConfidenceBand.needs_review
+
+
+def test_numeric_value_signal_parenthetical_negative() -> None:
+    """Ticket 6.1: A cell with parenthetical negative (123,456) scores 0.05 higher than non-numeric."""
+    from app.extraction.confidence import is_well_formed_numeric_value
+
+    assert is_well_formed_numeric_value("(123,456)") is True
+    assert is_well_formed_numeric_value("$1,234.50") is True
+    assert is_well_formed_numeric_value("12.5%") is True
+    assert is_well_formed_numeric_value(" ( 500 ) ") is True
+    assert is_well_formed_numeric_value("N/A") is False
+    assert is_well_formed_numeric_value("Text Label") is False
+    assert is_well_formed_numeric_value("") is False
+
+    rec_num = _make_record(
+        value="(123,456)",
+        label="Miscellaneous Expenses",
+    )
+    score_num, flags_num = compute_confidence_score(rec_num)
+    assert "value_is_numeric" in flags_num
+    assert score_num == 0.90
+
+    rec_non_num = _make_record(
+        value="Unknown",
+        label="Miscellaneous Expenses",
+    )
+    score_non_num, flags_non_num = compute_confidence_score(rec_non_num)
+    assert "value_is_numeric" not in flags_non_num
+    assert score_non_num == 0.85
+
+    assert round(score_num - score_non_num, 2) == 0.05
+
+
+def test_table_consistency_boost() -> None:
+    """Ticket 6.2: If >= 70% of items in table score >= 0.80, remaining items get +0.10 boost."""
+    from app.extraction.models import NormalizedItem
+
+    # Table with 10 items: 7 items have hierarchy (score 1.0), 3 items have ambiguity (score 0.70)
+    records: list[ExtractedRecord] = []
+    normalized: list[NormalizedItem] = []
+
+    for i in range(7):
+        rec = ExtractedRecord(
+            value=f"{100 + i}",
+            label=f"Section / Item {i}",
+            page=1,
+            bbox={"x0": 0.0, "y0": float(i * 10), "x1": 100.0, "y1": float(i * 10 + 8)},
+            source_file="test.pdf",
+        )
+        records.append(rec)
+        normalized.append(
+            NormalizedItem(
+                id=f"item_{i}",
+                value=rec.value,
+                label=rec.label,
+                page=rec.page,
+                bbox={"x0": 0.0, "y0": 0.0, "x1": 100.0, "y1": 100.0},
+                source_file=rec.source_file,
+                table_name="Table_Reconciliation",
+            )
+        )
+
+    for i in range(7, 10):
+        rec = ExtractedRecord(
+            value=f"{100 + i}",
+            label=f"Merged Cell Ambiguity {i}",  # missing hierarchy (-0.15) + ambiguity (-0.35) + numeric (+0.05) = 0.55 (manual_required)
+            page=1,
+            bbox={"x0": 0.0, "y0": float(i * 10), "x1": 100.0, "y1": float(i * 10 + 8)},
+            source_file="test.pdf",
+        )
+        records.append(rec)
+        normalized.append(
+            NormalizedItem(
+                id=f"item_{i}",
+                value=rec.value,
+                label=rec.label,
+                page=rec.page,
+                bbox={"x0": 0.0, "y0": 0.0, "x1": 100.0, "y1": 100.0},
+                source_file=rec.source_file,
+                table_name="Table_Reconciliation",
+            )
+        )
+
+    # 7 out of 10 = 70% >= 0.80
+    scored = score_records(records, normalized)
+
+    # First 7 items should be 1.0 / auto_accepted
+    for i in range(7):
+        assert scored[i].confidence_score == 1.0
+        assert scored[i].confidence_band == ConfidenceBand.auto_accepted
+
+    # Last 3 items initially 0.55, boosted by +0.10 to 0.65 -> needs_review!
+    for i in range(7, 10):
+        assert scored[i].confidence_score == 0.65
+        assert scored[i].confidence_band == ConfidenceBand.needs_review
+        assert "table_consistency_boost" in scored[i].flags
