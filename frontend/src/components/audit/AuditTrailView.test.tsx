@@ -100,4 +100,63 @@ describe('AuditTrailView Component', () => {
     expect(html).toContain('Refresh')
     expect(html).toContain('audit-header__refresh-btn')
   })
+
+  it('renders fallback sheet options when provenance records are empty (Ticket 8.1)', () => {
+    const html = renderToStaticMarkup(
+      <AuditTrailView
+        jobId="job-456"
+        apiBase="http://localhost:8000"
+        onBack={vi.fn()}
+      />
+    )
+
+    expect(html).toContain('value="Reconciliation"')
+    expect(html).toContain('value="Source_Inputs"')
+  })
+
+  it('derives sheet options dynamically from provenance records (Ticket 8.1)', () => {
+    const mockProvenanceRecords = [
+      {
+        id: '1',
+        job_id: 'job-multi-sheet',
+        sheet_name: 'Reconciliation',
+        cell_coord: 'C4',
+        node_id: 'root_adj_ebitda',
+        is_formula: false,
+      },
+      {
+        id: '2',
+        job_id: 'job-multi-sheet',
+        sheet_name: 'Source_Inputs',
+        cell_coord: 'B2',
+        node_id: 'leaf_0_sbc',
+        is_formula: false,
+      },
+      {
+        id: '3',
+        job_id: 'job-multi-sheet',
+        sheet_name: 'Model_Summary',
+        cell_coord: 'D10',
+        node_id: 'agg_ebitda_margin',
+        is_formula: true,
+      },
+    ]
+
+    const html = renderToStaticMarkup(
+      <AuditTrailView
+        jobId="job-multi-sheet"
+        apiBase="http://localhost:8000"
+        onBack={vi.fn()}
+        initialProvenanceRecords={mockProvenanceRecords}
+      />
+    )
+
+    // Verify all 3 unique sheets appear in the dropdown
+    expect(html).toContain('value="Model_Summary"')
+    expect(html).toContain('Model_Summary')
+    expect(html).toContain('value="Reconciliation"')
+    expect(html).toContain('Reconciliation')
+    expect(html).toContain('value="Source_Inputs"')
+    expect(html).toContain('Source_Inputs')
+  })
 })

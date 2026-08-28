@@ -19,6 +19,7 @@ interface Props {
   onReview?: (jobId: string) => void
   jobRecord?: JobRecord
   modelReady?: boolean
+  initialProvenanceRecords?: ProvenanceSummaryRecord[]
 }
 
 const STATUS_TOOLTIPS: Record<string, string> = {
@@ -52,8 +53,16 @@ function StatusBadge({ status, isMissing }: { status: string; isMissing: boolean
   )
 }
 
-export default function AuditTrailView({ jobId, apiBase, onBack, onReview, jobRecord, modelReady }: Props) {
-  const [provenanceRecords, setProvenanceRecords] = useState<ProvenanceSummaryRecord[]>([])
+export default function AuditTrailView({
+  jobId,
+  apiBase,
+  onBack,
+  onReview,
+  jobRecord,
+  modelReady,
+  initialProvenanceRecords = [],
+}: Props) {
+  const [provenanceRecords, setProvenanceRecords] = useState<ProvenanceSummaryRecord[]>(initialProvenanceRecords)
   const [isLoadingProvenance, setIsLoadingProvenance] = useState<boolean>(false)
   const [isReportReady, setIsReportReady] = useState<boolean>(false)
   const [selectedSheet, setSelectedSheet] = useState<string>('Reconciliation')
@@ -169,14 +178,16 @@ export default function AuditTrailView({ jobId, apiBase, onBack, onReview, jobRe
       const data = (await res.json()) as ProvenanceQueryResponse
       setProvenanceRecords(data.records || [])
 
-      const firstRecon = data.records?.find((r) => r.sheet_name === 'Reconciliation')
-      if (firstRecon) {
-        setSelectedSheet(firstRecon.sheet_name)
-        setCellCoordInput(firstRecon.cell_coord)
+      const firstTarget =
+        data.records?.find((r) => r.sheet_name === 'Reconciliation') ||
+        (data.records && data.records.length > 0 ? data.records[0] : null)
+      if (firstTarget) {
+        setSelectedSheet(firstTarget.sheet_name)
+        setCellCoordInput(firstTarget.cell_coord)
 
         // Fetch initial chain
         const chainRes = await fetch(
-          `${apiBase}/audit-trail/${jobId}/cell/${firstRecon.sheet_name}/${firstRecon.cell_coord}`,
+          `${apiBase}/audit-trail/${jobId}/cell/${firstTarget.sheet_name}/${firstTarget.cell_coord}`,
         )
         if (!chainRes.ok) return
         const chainData = (await chainRes.json()) as SourceChainResponse
@@ -219,13 +230,15 @@ export default function AuditTrailView({ jobId, apiBase, onBack, onReview, jobRe
         if (cancelled) return
         setProvenanceRecords(data.records || [])
 
-        const firstRecon = data.records?.find((r) => r.sheet_name === 'Reconciliation')
-        if (firstRecon) {
-          setSelectedSheet(firstRecon.sheet_name)
-          setCellCoordInput(firstRecon.cell_coord)
+        const firstTarget =
+          data.records?.find((r) => r.sheet_name === 'Reconciliation') ||
+          (data.records && data.records.length > 0 ? data.records[0] : null)
+        if (firstTarget) {
+          setSelectedSheet(firstTarget.sheet_name)
+          setCellCoordInput(firstTarget.cell_coord)
 
           const chainRes = await fetch(
-            `${apiBase}/audit-trail/${jobId}/cell/${firstRecon.sheet_name}/${firstRecon.cell_coord}`,
+            `${apiBase}/audit-trail/${jobId}/cell/${firstTarget.sheet_name}/${firstTarget.cell_coord}`,
           )
           if (!chainRes.ok || cancelled) return
           const chainData = (await chainRes.json()) as SourceChainResponse
@@ -323,6 +336,11 @@ export default function AuditTrailView({ jobId, apiBase, onBack, onReview, jobRe
 
   const isModelReady = Boolean(modelReady ?? jobRecord?.model_ready ?? (provenanceRecords.length > 0))
   const canDownload = isModelReady || isReportReady
+
+  const availableSheets =
+    provenanceRecords.length > 0
+      ? [...new Set(provenanceRecords.map((r) => r.sheet_name).filter(Boolean))].sort()
+      : ['Reconciliation', 'Source_Inputs']
 
   return (
     <div className="audit-page">
@@ -500,8 +518,11 @@ export default function AuditTrailView({ jobId, apiBase, onBack, onReview, jobRe
                   onChange={(e) => setSelectedSheet(e.target.value)}
                   aria-label="Worksheet"
                 >
-                  <option value="Reconciliation">Reconciliation</option>
-                  <option value="Source_Inputs">Source_Inputs</option>
+                  {availableSheets.map((sheet) => (
+                    <option key={sheet} value={sheet}>
+                      {sheet}
+                    </option>
+                  ))}
                 </select>
 
                 <input
@@ -540,7 +561,7 @@ export default function AuditTrailView({ jobId, apiBase, onBack, onReview, jobRe
                           void resolveByCell(rec.sheet_name, rec.cell_coord)
                         }}
                       >
-                        {rec.sheet_name === 'Reconciliation' ? 'Recon' : 'Input'}!{rec.cell_coord}
+                        {rec.sheet_name}!{rec.cell_coord}
                       </button>
                     )
                   })}
