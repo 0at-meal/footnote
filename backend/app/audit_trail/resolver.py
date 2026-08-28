@@ -18,7 +18,7 @@ from app.audit_trail.models import SourceChainResponse, SourceComponent
 from app.excel_export.models import W3CAnnotationRecord
 from app.excel_export.repository import ModelRepository
 from app.review.models import ReviewItem
-from app.review.repository import ReviewRepository
+from app.review.repository import ReviewRepository, make_review_id
 
 logger = logging.getLogger(__name__)
 
@@ -178,17 +178,6 @@ class AuditTrailResolver:
         for leaf_id in contributing_leaf_ids:
             leaf_record = leaf_records_by_node_id.get(leaf_id)
 
-            # Extract record index from leaf_id: leaf_{record_index}_{slug}
-            m = re.match(r"^leaf_(\d+)_", leaf_id)
-            record_index = int(m.group(1)) if m else None
-            review_item_id = (
-                f"{job_id}_{record_index}" if record_index is not None else None
-            )
-
-            review_item: ReviewItem | None = None
-            if review_item_id and review_item_id in review_items_by_id:
-                review_item = review_items_by_id[review_item_id]
-
             if leaf_record is None:
                 # Gap entry for missing provenance record (EC-1)
                 components.append(
@@ -222,6 +211,17 @@ class AuditTrailResolver:
                 page = 1
                 bbox_dict = {"x0": 0.0, "y0": 0.0, "x1": 1000.0, "y1": 1000.0}
 
+            # Ticket 12.2: Compute content hash ID to look up matching live review item
+            hash_review_id = make_review_id(job_id, source_file, page, bbox_dict)
+            review_item = review_items_by_id.get(hash_review_id)
+
+            # Fallback for legacy sequential index IDs: leaf_{idx}_{slug}
+            if review_item is None:
+                m = re.match(r"^leaf_(\d+)_", leaf_id)
+                legacy_id = f"{job_id}_{m.group(1)}" if m else None
+                if legacy_id and legacy_id in review_items_by_id:
+                    review_item = review_items_by_id[legacy_id]
+
             value = leaf_record.body.value
             label = leaf_record.body.original_label or leaf_record.body.label
             normalized_label = leaf_record.body.label
@@ -249,9 +249,15 @@ class AuditTrailResolver:
                 review_status = "unreviewed"
                 is_missing = False
 
+            resolved_component_id = (
+                review_item.id
+                if review_item is not None
+                else (hash_review_id or leaf_id)
+            )
+
             components.append(
                 SourceComponent(
-                    component_id=review_item_id or leaf_id,
+                    component_id=resolved_component_id,
                     source_file=source_file,
                     page=page,
                     bbox=bbox_dict,

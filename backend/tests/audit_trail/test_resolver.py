@@ -114,9 +114,9 @@ def populated_job_env(tmp_path: Path) -> tuple[str, Path]:
     # 2. Initialize review state & mark one item as locked, one as flagged
     review_repo = ReviewRepository(data_dir=tmp_path)
     review_items = review_repo.get_review_items(job_id)
-    assert review_items is not None
-    review_repo.confirm_item(job_id, f"{job_id}_0")  # Locked
-    review_repo.flag_item(job_id, f"{job_id}_1")  # Flagged
+    assert review_items is not None and len(review_items) >= 2
+    review_repo.confirm_item(job_id, review_items[0].id)  # Locked
+    review_repo.flag_item(job_id, review_items[1].id)  # Flagged
 
     # 3. Generate formula tree and workbook
     inputs = read_formula_inputs(records)
@@ -135,6 +135,9 @@ def test_resolve_single_leaf_cell(populated_job_env: tuple[str, Path]) -> None:
     """Test resolving a single leaf cell in Source_Inputs (AC-1, AC-4)."""
     job_id, data_dir = populated_job_env
     resolver = AuditTrailResolver(data_dir=data_dir)
+    review_repo = ReviewRepository(data_dir=data_dir)
+    items = review_repo.get_review_items(job_id)
+    assert items is not None
 
     # Source_Inputs!B2 is Operating Income
     resp = resolver.resolve_by_cell(job_id, "Source_Inputs", "B2")
@@ -146,7 +149,7 @@ def test_resolve_single_leaf_cell(populated_job_env: tuple[str, Path]) -> None:
     assert len(resp.components) == 1
 
     comp = resp.components[0]
-    assert comp.component_id == f"{job_id}_0"
+    assert comp.component_id == items[0].id
     assert comp.source_file == "filing_2023.pdf"
     assert comp.page == 10
     assert comp.normalized_label == "Operating Income"
@@ -282,7 +285,7 @@ def test_missing_review_record_gap_handling(
     items = review_repo.get_review_items(job_id)
     assert items is not None
     # Keep only item 0 and item 2 (remove item 1)
-    filtered_items = [it for it in items if it.id != f"{job_id}_1"]
+    filtered_items = [it for it in items if it.id != items[1].id]
     review_repo.save_review_items(job_id, filtered_items)
 
     # Lookup aggregate cell that includes item 1 and item 2
@@ -310,19 +313,19 @@ def test_flagged_item_pdf_lookup_does_not_modify_flag(
     # In populated_job_env, item 1 is flagged
     items_before = review_repo.get_review_items(job_id)
     assert items_before is not None
-    item_before = next(it for it in items_before if it.id == f"{job_id}_1")
+    item_before = items_before[1]
     assert item_before.status == ReviewStatus.flagged
 
     # Perform lookup on Reconciliation!B7 (which aggregates item 1)
     resp = resolver.resolve_by_cell(job_id, "Reconciliation", "B7")
     assert resp.is_found
-    flagged_comp = next(c for c in resp.components if c.component_id == f"{job_id}_1")
+    flagged_comp = next(c for c in resp.components if c.component_id == items_before[1].id)
     assert flagged_comp.review_status == ReviewStatus.flagged.value
 
     # Verify status in store remains strictly flagged (no mutation)
     items_after = review_repo.get_review_items(job_id)
     assert items_after is not None
-    item_after = next(it for it in items_after if it.id == f"{job_id}_1")
+    item_after = items_after[1]
     assert item_after.status == ReviewStatus.flagged
 
 
@@ -333,16 +336,18 @@ def test_status_change_reflected_on_next_lookup(
     job_id, data_dir = populated_job_env
     resolver = AuditTrailResolver(data_dir=data_dir)
     review_repo = ReviewRepository(data_dir=data_dir)
+    items = review_repo.get_review_items(job_id)
+    assert items is not None
 
     # Item 2 is currently needs_review
     resp1 = resolver.resolve_by_cell(job_id, "Reconciliation", "B7")
-    comp2_initial = next(c for c in resp1.components if c.component_id == f"{job_id}_2")
+    comp2_initial = next(c for c in resp1.components if c.component_id == items[2].id)
     assert comp2_initial.review_status == ReviewStatus.needs_review.value
 
     # Analyst confirms and locks item 2 in review UI
-    review_repo.confirm_item(job_id, f"{job_id}_2")
+    review_repo.confirm_item(job_id, items[2].id)
 
     # Next explicit query reflects the newly locked status
     resp2 = resolver.resolve_by_cell(job_id, "Reconciliation", "B7")
-    comp2_updated = next(c for c in resp2.components if c.component_id == f"{job_id}_2")
+    comp2_updated = next(c for c in resp2.components if c.component_id == items[2].id)
     assert comp2_updated.review_status == ReviewStatus.locked.value

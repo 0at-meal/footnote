@@ -57,8 +57,9 @@ def client(tmp_path: Path) -> TestClient:
     class_repo.save_classified_records(job_id, records)
 
     review_repo = ReviewRepository(data_dir=tmp_path)
-    review_repo.get_review_items(job_id)
-    review_repo.confirm_item(job_id, f"{job_id}_0")
+    items = review_repo.get_review_items(job_id)
+    assert items is not None
+    review_repo.confirm_item(job_id, items[0].id)
 
     inputs = read_formula_inputs(records)
     tree = build_formula_tree(inputs, target_metric="Adjusted EBITDA")

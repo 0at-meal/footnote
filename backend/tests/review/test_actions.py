@@ -32,7 +32,7 @@ client = TestClient(app)
 
 def _setup_job_with_records(
     tmp_path: Path,
-) -> tuple[JobRepository, ReviewRepository, str]:
+) -> tuple[JobRepository, ReviewRepository, str, list[str]]:
     job_repo = JobRepository(data_dir=tmp_path)
     job = job_repo.save_job(
         filename="test_filing.pdf",
@@ -117,12 +117,15 @@ def _setup_job_with_records(
 
     class_repo.save_classified_records(job.job_id, [cr1, cr2, cr3])
     review_repo = ReviewRepository(data_dir=tmp_path)
-    return job_repo, review_repo, job.job_id
+    items = review_repo.get_review_items(job.job_id)
+    assert items is not None
+    item_ids = [item.id for item in items]
+    return job_repo, review_repo, job.job_id, item_ids
 
 
 def test_edit_item_success(tmp_path: Path) -> None:
-    job_repo, review_repo, job_id = _setup_job_with_records(tmp_path)
-    item_id = f"{job_id}_0"
+    job_repo, review_repo, job_id, item_ids = _setup_job_with_records(tmp_path)
+    item_id = item_ids[0]
 
     with patch("app.review.router._job_repo", job_repo), patch(
         "app.review.router._review_repo", review_repo
@@ -144,8 +147,8 @@ def test_edit_item_success(tmp_path: Path) -> None:
 
 
 def test_edit_item_rejects_empty_label(tmp_path: Path) -> None:
-    job_repo, review_repo, job_id = _setup_job_with_records(tmp_path)
-    item_id = f"{job_id}_0"
+    job_repo, review_repo, job_id, item_ids = _setup_job_with_records(tmp_path)
+    item_id = item_ids[0]
 
     with patch("app.review.router._job_repo", job_repo), patch(
         "app.review.router._review_repo", review_repo
@@ -160,8 +163,8 @@ def test_edit_item_rejects_empty_label(tmp_path: Path) -> None:
 
 
 def test_edit_recovers_extraction_error(tmp_path: Path) -> None:
-    job_repo, review_repo, job_id = _setup_job_with_records(tmp_path)
-    item_id = f"{job_id}_2"  # Extraction error item
+    job_repo, review_repo, job_id, item_ids = _setup_job_with_records(tmp_path)
+    item_id = item_ids[2]  # Extraction error item
 
     with patch("app.review.router._job_repo", job_repo), patch(
         "app.review.router._review_repo", review_repo
@@ -179,8 +182,8 @@ def test_edit_recovers_extraction_error(tmp_path: Path) -> None:
 
 
 def test_confirm_item_locks_record(tmp_path: Path) -> None:
-    job_repo, review_repo, job_id = _setup_job_with_records(tmp_path)
-    item_id = f"{job_id}_0"
+    job_repo, review_repo, job_id, item_ids = _setup_job_with_records(tmp_path)
+    item_id = item_ids[0]
 
     with patch("app.review.router._job_repo", job_repo), patch(
         "app.review.router._review_repo", review_repo
@@ -201,8 +204,8 @@ def test_confirm_item_locks_record(tmp_path: Path) -> None:
 
 
 def test_confirm_rejects_extraction_error_item(tmp_path: Path) -> None:
-    job_repo, review_repo, job_id = _setup_job_with_records(tmp_path)
-    item_id = f"{job_id}_2"  # extraction_error
+    job_repo, review_repo, job_id, item_ids = _setup_job_with_records(tmp_path)
+    item_id = item_ids[2]  # extraction_error
 
     with patch("app.review.router._job_repo", job_repo), patch(
         "app.review.router._review_repo", review_repo
@@ -217,8 +220,8 @@ def test_confirm_rejects_extraction_error_item(tmp_path: Path) -> None:
 
 
 def test_confirm_pending_taxonomy_requires_acceptance(tmp_path: Path) -> None:
-    job_repo, review_repo, job_id = _setup_job_with_records(tmp_path)
-    item_id = f"{job_id}_1"  # pending_taxonomy_confirmation
+    job_repo, review_repo, job_id, item_ids = _setup_job_with_records(tmp_path)
+    item_id = item_ids[1]  # pending_taxonomy_confirmation
 
     with patch("app.review.router._job_repo", job_repo), patch(
         "app.review.router._review_repo", review_repo
@@ -243,8 +246,8 @@ def test_confirm_pending_taxonomy_requires_acceptance(tmp_path: Path) -> None:
 
 
 def test_flag_item_and_rejection_when_locked(tmp_path: Path) -> None:
-    job_repo, review_repo, job_id = _setup_job_with_records(tmp_path)
-    item_id = f"{job_id}_0"
+    job_repo, review_repo, job_id, item_ids = _setup_job_with_records(tmp_path)
+    item_id = item_ids[0]
 
     with patch("app.review.router._job_repo", job_repo), patch(
         "app.review.router._review_repo", review_repo
@@ -269,8 +272,8 @@ def test_flag_item_and_rejection_when_locked(tmp_path: Path) -> None:
 
 
 def test_unlock_item_success_and_rejection_when_not_locked(tmp_path: Path) -> None:
-    job_repo, review_repo, job_id = _setup_job_with_records(tmp_path)
-    item_id = f"{job_id}_0"
+    job_repo, review_repo, job_id, item_ids = _setup_job_with_records(tmp_path)
+    item_id = item_ids[0]
 
     with patch("app.review.router._job_repo", job_repo), patch(
         "app.review.router._review_repo", review_repo
@@ -295,8 +298,8 @@ def test_unlock_item_success_and_rejection_when_not_locked(tmp_path: Path) -> No
 
 
 def test_locked_status_persists_across_restart(tmp_path: Path) -> None:
-    job_repo, review_repo_1, job_id = _setup_job_with_records(tmp_path)
-    item_id = f"{job_id}_0"
+    job_repo, review_repo_1, job_id, item_ids = _setup_job_with_records(tmp_path)
+    item_id = item_ids[0]
 
     with patch("app.review.router._job_repo", job_repo), patch(
         "app.review.router._review_repo", review_repo_1
@@ -322,8 +325,8 @@ def test_locked_status_persists_across_restart(tmp_path: Path) -> None:
 
 
 def test_protect_locked_items_against_extraction_rerun(tmp_path: Path) -> None:
-    job_repo, review_repo, job_id = _setup_job_with_records(tmp_path)
-    item_id = f"{job_id}_0"
+    job_repo, review_repo, job_id, item_ids = _setup_job_with_records(tmp_path)
+    item_id = item_ids[0]
 
     with patch("app.review.router._job_repo", job_repo), patch(
         "app.review.router._review_repo", review_repo
@@ -411,7 +414,7 @@ def test_review_repository_propagates_target_metric_and_table_name(
     # cr2 is excluded because is_reconciliation_candidate is False
     assert len(items) == 1
 
-    assert items[0].id == "job_123_0"
+    assert len(items[0].id) == 16
     assert items[0].is_target_metric_candidate is True
     assert items[0].table_name == "Adjusted EBITDA Reconciliation"
 
@@ -426,7 +429,7 @@ def test_review_repository_propagates_target_metric_and_table_name(
 
 def test_confirm_batch_locks_target_candidates_and_skips_errors(tmp_path: Path) -> None:
     """Ticket 4.1 & 4.3: confirm_batch locks candidates, adds pending taxonomy, and skips extraction errors."""
-    _job_repo, review_repo, job_id = _setup_job_with_records(tmp_path)
+    _job_repo, review_repo, job_id, item_ids = _setup_job_with_records(tmp_path)
     # _setup_job_with_records creates:
     # item 0: matched SBC (candidate=True)
     # item 1: pending litigation (candidate=True)
@@ -440,23 +443,23 @@ def test_confirm_batch_locks_target_candidates_and_skips_errors(tmp_path: Path) 
     assert err is None
     # 2 items should be locked (item 0 and item 1); item 2 has extraction_error so it's skipped
     assert len(locked_ids) == 2
-    assert f"{job_id}_0" in locked_ids
-    assert f"{job_id}_1" in locked_ids
-    assert f"{job_id}_2" not in locked_ids
+    assert item_ids[0] in locked_ids
+    assert item_ids[1] in locked_ids
+    assert item_ids[2] not in locked_ids
 
     # Item 1 should have had its taxonomy status updated to matched
-    item1 = next(it for it in items if it.id == f"{job_id}_1")
+    item1 = next(it for it in items if it.id == item_ids[1])
     assert item1.status == ReviewStatus.locked
     assert item1.taxonomy_status == "matched"
 
     # Item 2 should remain extraction_error
-    item2 = next(it for it in items if it.id == f"{job_id}_2")
+    item2 = next(it for it in items if it.id == item_ids[2])
     assert item2.status == ReviewStatus.extraction_error
 
 
 def test_confirm_batch_router_endpoint(tmp_path: Path) -> None:
     """Ticket 4.3: POST /review/{job_id}/confirm-batch integration test."""
-    job_repo, review_repo, job_id = _setup_job_with_records(tmp_path)
+    job_repo, review_repo, job_id, item_ids = _setup_job_with_records(tmp_path)
 
     with patch("app.review.router._job_repo", job_repo), patch(
         "app.review.router._review_repo", review_repo
@@ -470,9 +473,24 @@ def test_confirm_batch_router_endpoint(tmp_path: Path) -> None:
     data = res.json()
     assert data["job_id"] == job_id
     assert data["total_locked"] == 2
-    assert f"{job_id}_0" in data["locked_item_ids"]
-    assert f"{job_id}_1" in data["locked_item_ids"]
-    assert f"{job_id}_2" not in data["locked_item_ids"]
+    assert item_ids[0] in data["locked_item_ids"]
+    assert item_ids[1] in data["locked_item_ids"]
+    assert item_ids[2] not in data["locked_item_ids"]
+
+
+def test_review_item_ids_are_deterministic_content_hash(tmp_path: Path) -> None:
+    """Ticket 12.1: ReviewItem IDs are deterministic content hashes of physical cell properties."""
+    from app.review.repository import make_review_id
+
+    job_id = "test_hash_job"
+    id1 = make_review_id(job_id, "doc.pdf", 1, {"x0": 100.2, "y0": 200.4})
+    id2 = make_review_id(job_id, "doc.pdf", 1, {"x0": 100.0, "y0": 200.0})
+    # Both round to x0=100, y0=200
+    assert id1 == id2
+    assert len(id1) == 16
+
+    id_other = make_review_id(job_id, "doc.pdf", 2, {"x0": 100.0, "y0": 200.0})
+    assert id1 != id_other
 
 
 def test_auto_accepted_and_matched_item_is_pre_locked(tmp_path: Path) -> None:

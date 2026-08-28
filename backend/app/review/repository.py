@@ -4,10 +4,12 @@ Review repository for loading and updating extraction records for human review (
 Governed by CONSTITUTION §1.1 (mypy --strict), §1.9 (atomic persistence), §3.9 (review stage isolation).
 """
 
+import hashlib
 import json
 import logging
 import os
 from pathlib import Path
+from typing import Any
 
 from app.classification.models import ClassifiedRecord, TaxonomyStatus
 from app.classification.repository import ClassificationRepository
@@ -19,6 +21,16 @@ from app.review.models import ReviewItem, ReviewStatus
 logger = logging.getLogger(__name__)
 
 _DEFAULT_DATA_DIR: Path = Path(__file__).parent.parent.parent / "data"
+
+
+def make_review_id(
+    job_id: str, source_file: str, page: int, bbox: dict[str, Any] | None
+) -> str:
+    """Generate a deterministic 16-character content hash ID for a review item (Ticket 12.1)."""
+    x0 = float(bbox.get("x0", 0.0)) if bbox and isinstance(bbox, dict) else 0.0
+    y0 = float(bbox.get("y0", 0.0)) if bbox and isinstance(bbox, dict) else 0.0
+    key = f"{job_id}:{source_file}:{page}:{x0:.0f}:{y0:.0f}"
+    return hashlib.sha256(key.encode("utf-8")).hexdigest()[:16]
 
 
 class ReviewRepository:
@@ -294,6 +306,47 @@ class ReviewRepository:
         self.save_review_items(job_id, items)
         return target_item, None
 
+    def auto_approve_bridge_items(
+        self,
+        job_id: str,
+        add_pending_taxonomy: bool = True,
+    ) -> tuple[list[ReviewItem], list[str], str | None]:
+        """
+        One-click approve & lock all reconciliation bridge items (Ticket 0.4.1).
+        """
+        items = self.get_review_items(job_id)
+        if items is None:
+            return [], [], "Job records not found"
+
+        taxonomy_repo = TaxonomyRepository(data_dir=self._data_dir)
+        locked_ids: list[str] = []
+
+        for item in items:
+            # Only auto-approve reconciliation bridge candidates
+            if not item.is_target_metric_candidate and item.statement_type != "non_gaap_bridge":
+                if item.status == ReviewStatus.locked:
+                    locked_ids.append(item.id)
+                continue
+
+            if item.status == ReviewStatus.extraction_error:
+                continue
+
+            if (
+                item.status == ReviewStatus.pending_taxonomy_confirmation
+                or item.taxonomy_status == "pending_taxonomy_confirmation"
+            ) and add_pending_taxonomy:
+                term = item.normalized_label or item.label
+                taxonomy_repo.add_entry(term)
+                item.taxonomy_status = "matched"
+                if item.normalized_label is None:
+                    item.normalized_label = item.label
+
+            item.status = ReviewStatus.locked
+            locked_ids.append(item.id)
+
+        self.save_review_items(job_id, items)
+        return items, locked_ids, None
+
     def confirm_batch(
         self,
         job_id: str,
@@ -323,7 +376,6 @@ class ReviewRepository:
         locked_ids: list[str] = []
 
         for item in items:
-            # Determine if this item should be confirmed
             should_confirm = False
             if explicit_id_set is not None:
                 should_confirm = item.id in explicit_id_set
@@ -337,11 +389,9 @@ class ReviewRepository:
                     locked_ids.append(item.id)
                 continue
 
-            # Skip items with extraction error (EC-1)
             if item.status == ReviewStatus.extraction_error:
                 continue
 
-            # Handle pending taxonomy confirmation
             if (
                 item.status == ReviewStatus.pending_taxonomy_confirmation
                 or item.taxonomy_status == "pending_taxonomy_confirmation"
@@ -352,7 +402,6 @@ class ReviewRepository:
                 if item.normalized_label is None:
                     item.normalized_label = item.label
 
-            # Lock the item and clear flag
             item.status = ReviewStatus.locked
             locked_ids.append(item.id)
 
@@ -369,16 +418,15 @@ class ReviewRepository:
         """
         existing = self.get_review_items(job_id)
         if not existing:
-            self.save_review_items(job_id, new_items)
             return new_items
 
         locked_map = {
             item.id: item for item in existing if item.status == ReviewStatus.locked
         }
+
         merged: list[ReviewItem] = []
         for new_item in new_items:
             if new_item.id in locked_map:
-                # Retain the locked item byte-identically
                 merged.append(locked_map[new_item.id])
             else:
                 merged.append(new_item)
@@ -391,12 +439,12 @@ class ReviewRepository:
         job_id: str,
         records: list[ClassifiedRecord],
     ) -> list[ReviewItem]:
-        """Convert ClassifiedRecord objects into review items."""
+        """Convert ClassifiedRecord objects into review items using content-hash IDs (Ticket 12.1)."""
         items: list[ReviewItem] = []
         has_reconciliation_candidates = any(
             cr.record.is_reconciliation_candidate for cr in records
         )
-        for idx, cr in enumerate(records):
+        for cr in records:
             sr = cr.record
             if has_reconciliation_candidates and not sr.is_reconciliation_candidate:
                 continue
@@ -424,9 +472,11 @@ class ReviewRepository:
                     else str(cr.taxonomy_status)
                 )
 
+            item_id = make_review_id(job_id, er.source_file, er.page, er.bbox)
+
             items.append(
                 ReviewItem(
-                    id=f"{job_id}_{idx}",
+                    id=item_id,
                     value=er.value,
                     label=er.label,
                     page=er.page,
@@ -451,12 +501,12 @@ class ReviewRepository:
         job_id: str,
         records: list[ScoredRecord],
     ) -> list[ReviewItem]:
-        """Convert ScoredRecord objects into review items."""
+        """Convert ScoredRecord objects into review items using content-hash IDs (Ticket 12.1)."""
         items: list[ReviewItem] = []
         has_reconciliation_candidates = any(
             sr.is_reconciliation_candidate for sr in records
         )
-        for idx, sr in enumerate(records):
+        for sr in records:
             if has_reconciliation_candidates and not sr.is_reconciliation_candidate:
                 continue
 
@@ -471,9 +521,11 @@ class ReviewRepository:
             else:
                 status = ReviewStatus.manual_required
 
+            item_id = make_review_id(job_id, er.source_file, er.page, er.bbox)
+
             items.append(
                 ReviewItem(
-                    id=f"{job_id}_{idx}",
+                    id=item_id,
                     value=er.value,
                     label=er.label,
                     page=er.page,

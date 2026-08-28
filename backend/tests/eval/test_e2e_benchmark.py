@@ -569,11 +569,10 @@ def test_e2e_reconciliation_batch_approval_and_regeneration(tmp_path: Path) -> N
         auto_add_pending_taxonomy=True,
     )
     assert err is None
-    assert len(locked_ids) == 3
-    assert f"{job_id}_0" in locked_ids
-    assert f"{job_id}_1" in locked_ids
-    assert f"{job_id}_2" in locked_ids
-    assert f"{job_id}_3" not in locked_ids  # balance sheet not locked
+    assert review_items[0].id in locked_ids
+    assert review_items[1].id in locked_ids
+    assert review_items[2].id in locked_ids
+    assert review_items[3].id not in locked_ids  # balance sheet not locked
 
     # 6. Re-generation from Confirmed Review Items (Ticket 4.2)
     review_formula_inputs = read_formula_inputs_from_review(updated_items)
