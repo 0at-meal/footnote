@@ -22,17 +22,23 @@ def test_drift_graph_store_save_and_load_restart_simulation(tmp_path: Path) -> N
 
     # Step 1: Baseline 2022
     n1, _ = graph1.apply_comparison(
-        compare_metric_components("ACME", "Adjusted EBITDA", 2022, ["Depreciation", "SBC"], None)
+        compare_metric_components(
+            "ACME", "Adjusted EBITDA", 2022, ["Depreciation", "SBC"], None
+        )
     )
 
     # Step 2: Redefinition 2023 (add Litigation)
     n2, _e2 = graph1.apply_comparison(
-        compare_metric_components("ACME", "Adjusted EBITDA", 2023, ["Depreciation", "SBC", "Litigation"], n1)
+        compare_metric_components(
+            "ACME", "Adjusted EBITDA", 2023, ["Depreciation", "SBC", "Litigation"], n1
+        )
     )
 
     # Step 3: Continuation 2024
     n3, _e3 = graph1.apply_comparison(
-        compare_metric_components("ACME", "Adjusted EBITDA", 2024, ["Depreciation", "SBC", "Litigation"], n2)
+        compare_metric_components(
+            "ACME", "Adjusted EBITDA", 2024, ["Depreciation", "SBC", "Litigation"], n2
+        )
     )
 
     # Save to SQLite

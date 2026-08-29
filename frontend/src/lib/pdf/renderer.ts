@@ -14,6 +14,8 @@ if (typeof window !== 'undefined' && pdfjsLib.GlobalWorkerOptions) {
   pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker
 }
 
+export const PDF_RENDER_SCALE = 1.5
+
 export type { PDFDocumentProxy, PDFPageProxy }
 
 /**

@@ -508,19 +508,24 @@ def _parse_pdf_with_pymupdf(
                             x1=float(table.bbox[2]),
                             y1=float(table.bbox[3]),
                         )
-                        if hasattr(table, "cells") and table.cells:
+                        if (
+                            hasattr(table, "cells")
+                            and isinstance(table.cells, (list, tuple))
+                            and table.cells
+                        ):
                             # row_idx and col_idx start at 1 (data rows/cols), so
                             # we must subtract 1 from each to get the 0-based flat index
                             # into the table.cells list.
                             flat_idx = (row_idx - 1) * len(row) + (col_idx - 1)
                             if flat_idx < len(table.cells):
                                 cb = table.cells[flat_idx]
-                                cell_bbox = DoclingBbox(
-                                    x0=float(cb[0]),
-                                    y0=float(cb[1]),
-                                    x1=float(cb[2]),
-                                    y1=float(cb[3]),
-                                )
+                                if isinstance(cb, (list, tuple)) and len(cb) >= 4:
+                                    cell_bbox = DoclingBbox(
+                                        x0=float(cb[0]),
+                                        y0=float(cb[1]),
+                                        x1=float(cb[2]),
+                                        y1=float(cb[3]),
+                                    )
 
                         items.append(
                             DoclingItem(

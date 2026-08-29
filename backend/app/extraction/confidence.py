@@ -207,9 +207,7 @@ def score_record(
             is_reconciliation_candidate=is_rec,
         )
 
-    score, flags = compute_confidence_score(
-        record, is_reconciliation_candidate=is_rec
-    )
+    score, flags = compute_confidence_score(record, is_reconciliation_candidate=is_rec)
     band = assign_confidence_band(score)
     return ScoredRecord(
         record=record,

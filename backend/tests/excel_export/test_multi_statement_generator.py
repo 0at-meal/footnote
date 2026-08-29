@@ -10,9 +10,8 @@ Validates:
 """
 
 from pathlib import Path
-import openpyxl
-import pytest
 
+import openpyxl
 from app.classification.models import StatementType
 from app.excel_export.multi_statement_generator import generate_multi_statement_workbook
 from app.formula_engine.models import (
@@ -46,22 +45,87 @@ def _make_node(
 def _make_sample_tree() -> ComprehensiveModelTree:
     nodes = [
         # IS
-        _make_node("Revenue", value="1,000", record_index=0, statement_type=StatementType.income_statement),
-        _make_node("Cost of Revenue", value="400", record_index=1, statement_type=StatementType.income_statement),
-        _make_node("Research & Development", value="150", record_index=2, statement_type=StatementType.income_statement),
-        _make_node("Sales & Marketing", value="100", record_index=3, statement_type=StatementType.income_statement),
-        _make_node("General & Administrative", value="50", record_index=4, statement_type=StatementType.income_statement),
-        _make_node("Provision for Income Taxes", value="60", record_index=5, statement_type=StatementType.income_statement),
+        _make_node(
+            "Revenue",
+            value="1,000",
+            record_index=0,
+            statement_type=StatementType.income_statement,
+        ),
+        _make_node(
+            "Cost of Revenue",
+            value="400",
+            record_index=1,
+            statement_type=StatementType.income_statement,
+        ),
+        _make_node(
+            "Research & Development",
+            value="150",
+            record_index=2,
+            statement_type=StatementType.income_statement,
+        ),
+        _make_node(
+            "Sales & Marketing",
+            value="100",
+            record_index=3,
+            statement_type=StatementType.income_statement,
+        ),
+        _make_node(
+            "General & Administrative",
+            value="50",
+            record_index=4,
+            statement_type=StatementType.income_statement,
+        ),
+        _make_node(
+            "Provision for Income Taxes",
+            value="60",
+            record_index=5,
+            statement_type=StatementType.income_statement,
+        ),
         # Bridge
-        _make_node("Stock-Based Compensation", value="40", record_index=6, statement_type=StatementType.non_gaap_bridge),
-        _make_node("Amortization of Intangibles", value="20", record_index=7, statement_type=StatementType.non_gaap_bridge),
+        _make_node(
+            "Stock-Based Compensation",
+            value="40",
+            record_index=6,
+            statement_type=StatementType.non_gaap_bridge,
+        ),
+        _make_node(
+            "Amortization of Intangibles",
+            value="20",
+            record_index=7,
+            statement_type=StatementType.non_gaap_bridge,
+        ),
         # CF
-        _make_node("Capital Expenditures", value="80", record_index=8, statement_type=StatementType.cash_flow),
-        _make_node("Cash Provided by Operating Activities", value="300", record_index=9, statement_type=StatementType.cash_flow),
+        _make_node(
+            "Capital Expenditures",
+            value="80",
+            record_index=8,
+            statement_type=StatementType.cash_flow,
+        ),
+        _make_node(
+            "Cash Provided by Operating Activities",
+            value="300",
+            record_index=9,
+            statement_type=StatementType.cash_flow,
+        ),
         # BS
-        _make_node("Cash and Cash Equivalents", value="250", record_index=10, statement_type=StatementType.balance_sheet),
-        _make_node("Short-Term Debt", value="50", record_index=11, statement_type=StatementType.balance_sheet),
-        _make_node("Long-Term Debt", value="400", record_index=12, statement_type=StatementType.balance_sheet),
+        _make_node(
+            "Cash and Cash Equivalents",
+            value="250",
+            record_index=10,
+            statement_type=StatementType.balance_sheet,
+        ),
+        _make_node(
+            "Short-Term Debt",
+            value="50",
+            record_index=11,
+            statement_type=StatementType.balance_sheet,
+        ),
+        _make_node(
+            "Long-Term Debt",
+            value="400",
+            record_index=12,
+            statement_type=StatementType.balance_sheet,
+        ),
     ]
     batch = FormulaInputBatch(
         nodes=nodes,
@@ -122,9 +186,33 @@ def test_multi_statement_multi_year_columns_sorted(tmp_path: Path) -> None:
         job_ids=["job_2023", "job_2022", "job_2024"],
     )
 
-    job_2024 = JobRecord(job_id="job_2024", filename="2024.pdf", file_size_bytes=100, target_metric="Adjusted EBITDA", status=JobStatus.done, submitted_at="2026-01-03T00:00:00Z", filing_year=2024)
-    job_2022 = JobRecord(job_id="job_2022", filename="2022.pdf", file_size_bytes=100, target_metric="Adjusted EBITDA", status=JobStatus.done, submitted_at="2026-01-01T00:00:00Z", filing_year=2022)
-    job_2023 = JobRecord(job_id="job_2023", filename="2023.pdf", file_size_bytes=100, target_metric="Adjusted EBITDA", status=JobStatus.done, submitted_at="2026-01-02T00:00:00Z", filing_year=2023)
+    job_2024 = JobRecord(
+        job_id="job_2024",
+        filename="2024.pdf",
+        file_size_bytes=100,
+        target_metric="Adjusted EBITDA",
+        status=JobStatus.done,
+        submitted_at="2026-01-03T00:00:00Z",
+        filing_year=2024,
+    )
+    job_2022 = JobRecord(
+        job_id="job_2022",
+        filename="2022.pdf",
+        file_size_bytes=100,
+        target_metric="Adjusted EBITDA",
+        status=JobStatus.done,
+        submitted_at="2026-01-01T00:00:00Z",
+        filing_year=2022,
+    )
+    job_2023 = JobRecord(
+        job_id="job_2023",
+        filename="2023.pdf",
+        file_size_bytes=100,
+        target_metric="Adjusted EBITDA",
+        status=JobStatus.done,
+        submitted_at="2026-01-02T00:00:00Z",
+        filing_year=2023,
+    )
 
     comp_tree = _make_sample_tree()
     year_trees = [
@@ -150,7 +238,15 @@ def test_multi_statement_multi_year_columns_sorted(tmp_path: Path) -> None:
 
 
 def test_cross_sheet_formulas_compiled(tmp_path: Path) -> None:
-    job = JobRecord(job_id="job_001", filename="filing.pdf", file_size_bytes=100, target_metric="Adjusted EBITDA", status=JobStatus.done, submitted_at="2026-01-01T00:00:00Z", filing_year=2023)
+    job = JobRecord(
+        job_id="job_001",
+        filename="filing.pdf",
+        file_size_bytes=100,
+        target_metric="Adjusted EBITDA",
+        status=JobStatus.done,
+        submitted_at="2026-01-01T00:00:00Z",
+        filing_year=2023,
+    )
     comp_tree = _make_sample_tree()
 
     result = generate_multi_statement_workbook(
@@ -163,7 +259,9 @@ def test_cross_sheet_formulas_compiled(tmp_path: Path) -> None:
 
     # 1. EBITDA_Bridge has cross reference to Income_Statement
     ws_bridge = wb["EBITDA_Bridge"]
-    ebit_formula_cell = ws_bridge.cell(row=4, column=2)  # row 4 is Operating Income (EBIT)
+    ebit_formula_cell = ws_bridge.cell(
+        row=4, column=2
+    )  # row 4 is Operating Income (EBIT)
     assert ebit_formula_cell.value.startswith("='Income_Statement'!")
 
     # 2. Executive_Summary has cross references
@@ -173,7 +271,15 @@ def test_cross_sheet_formulas_compiled(tmp_path: Path) -> None:
 
 
 def test_cell_provenance_and_audit_trail(tmp_path: Path) -> None:
-    job = JobRecord(job_id="job_001", filename="filing.pdf", file_size_bytes=100, target_metric="Adjusted EBITDA", status=JobStatus.done, submitted_at="2026-01-01T00:00:00Z", filing_year=2023)
+    job = JobRecord(
+        job_id="job_001",
+        filename="filing.pdf",
+        file_size_bytes=100,
+        target_metric="Adjusted EBITDA",
+        status=JobStatus.done,
+        submitted_at="2026-01-01T00:00:00Z",
+        filing_year=2023,
+    )
     comp_tree = _make_sample_tree()
 
     result = generate_multi_statement_workbook(

@@ -246,8 +246,9 @@ export default function ReviewPage({
         setCurrentPage(targetPage)
         setPageRenderError(null)
         if (canvasRef.current) {
-          const width = parseInt(canvasRef.current.style.width, 10) || canvasRef.current.clientWidth
-          const height = parseInt(canvasRef.current.style.height, 10) || canvasRef.current.clientHeight
+          const rect = canvasRef.current.getBoundingClientRect()
+          const width = rect.width || canvasRef.current.clientWidth
+          const height = rect.height || canvasRef.current.clientHeight
           setCanvasSize({ width, height })
         }
       } catch (err) {

@@ -323,7 +323,10 @@ class ReviewRepository:
 
         for item in items:
             # Only auto-approve reconciliation bridge candidates
-            if not item.is_target_metric_candidate and item.statement_type != "non_gaap_bridge":
+            if (
+                not item.is_target_metric_candidate
+                and item.statement_type != "non_gaap_bridge"
+            ):
                 if item.status == ReviewStatus.locked:
                     locked_ids.append(item.id)
                 continue

@@ -68,7 +68,6 @@ class DoclingItem(BaseModel):
     """Which parser produced this item. Controls Y-axis coordinate space in the normalizer."""
 
 
-
 class NormalizedBbox(BaseModel):
     """
     W3C Web Annotation-style bounding box, normalized to 0-1000 coordinate space.

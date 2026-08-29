@@ -10,7 +10,6 @@ Validates:
 - Unmatched records returned for Groq dispatch
 """
 
-import json
 from pathlib import Path
 
 from app.classification.dispatcher import pre_classify_records
@@ -22,10 +21,8 @@ from app.classification.models import (
 )
 from app.classification.taxonomy import (
     SEED_MASTER_TAXONOMY,
-    SEED_TAXONOMY,
     TaxonomyRepository,
     check_label_against_taxonomy,
-    match_canonical_taxonomy,
     match_master_taxonomy,
 )
 from app.extraction.models import (
@@ -92,7 +89,9 @@ def test_match_master_taxonomy_canonical_and_aliases() -> None:
     assert res_sbc.canonical_name == "Stock-Based Compensation"
 
     # 4. Leaf match (after /)
-    res_leaf = match_master_taxonomy("Operating activities / Depreciation of property and equipment", master)
+    res_leaf = match_master_taxonomy(
+        "Operating activities / Depreciation of property and equipment", master
+    )
     assert res_leaf is not None
     assert "Depreciation" in res_leaf.canonical_name
 
@@ -105,7 +104,9 @@ def test_get_items_by_statement() -> None:
     repo = TaxonomyRepository()
     is_items = repo.get_items_by_statement(StatementType.income_statement)
     assert len(is_items) >= 10
-    assert all(item.statement_type == StatementType.income_statement for item in is_items)
+    assert all(
+        item.statement_type == StatementType.income_statement for item in is_items
+    )
 
     cf_items = repo.get_items_by_statement(StatementType.cash_flow)
     assert len(cf_items) >= 5

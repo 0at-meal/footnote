@@ -54,7 +54,6 @@ def test_normalize_item_bbox_exact_scaling() -> None:
     assert norm.source_file == "test.pdf"
 
 
-
 def test_normalize_item_bbox_clamping_and_inverted() -> None:
     # Point coords outside page boundaries and inverted
     item = DoclingItem(
@@ -167,112 +166,87 @@ def test_count_image_only_pages_missing_file(tmp_path: Path) -> None:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Ticket 1.4 Tests — Coordinate space inversion and per-cell flat_idx
+# Ticket A-6 Tests — Parametrized coordinate space inversion and per-cell flat_idx
 # ──────────────────────────────────────────────────────────────────────────────
 
 
-def test_normalize_item_bbox_docling_y_inversion() -> None:
+@pytest.mark.parametrize(
+    "y0,y1,page_height,expected_y0,expected_y1",
+    [
+        (50.0, 100.0, 792.0, 873.74, 936.87),
+        (0.0, 50.0, 1000.0, 950.0, 1000.0),
+        (200.0, 400.0, 800.0, 500.0, 750.0),
+    ],
+)
+def test_normalize_item_bbox_docling_y_inversion_parametrized(
+    y0: float, y1: float, page_height: float, expected_y0: float, expected_y1: float
+) -> None:
     """
-    Docling path: given a cell near the bottom of a 792pt-tall page
-    (y0=50, y1=100), after Y-inversion the normalized y0 should be near 1000
-    (close to the bottom of the 0-1000 screen space).
-
-    Docling: y0=50 (top of cell, high in page), y1=100 (lower edge).
-    After scaling to 0-1000 on a 792pt-tall page:
-      y0_raw = 50/792 * 1000 ≈ 63.13
-      y1_raw = 100/792 * 1000 ≈ 126.26
-    After Docling inversion:
-      y0_screen = 1000 - y1_raw ≈ 873.74  (top of cell in screen coords)
-      y1_screen = 1000 - y0_raw ≈ 936.87  (bottom of cell in screen coords)
+    Parametrized Docling path test: verifies Y-axis inversion across multiple coordinate sets.
     """
     item = DoclingItem(
         value="50",
         label="Revenue",
         page=1,
-        bbox=DoclingBbox(x0=10.0, y0=50.0, x1=200.0, y1=100.0),
+        bbox=DoclingBbox(x0=10.0, y0=y0, x1=200.0, y1=y1),
         source_file="test.pdf",
         parser_used="docling",
     )
-    page_width = 612.0
-    page_height = 792.0
-
-    norm = normalize_item_bbox(item, page_width=page_width, page_height=page_height)
-
-    # After inversion: y0 ~ 1000 - (100/792*1000) and y1 ~ 1000 - (50/792*1000)
-    expected_y0 = round(1000.0 - (100.0 / page_height) * 1000.0, 2)
-    expected_y1 = round(1000.0 - (50.0 / page_height) * 1000.0, 2)
-
-    assert abs(norm.bbox.y0 - expected_y0) < 0.1, f"y0={norm.bbox.y0} expected~{expected_y0}"
-    assert abs(norm.bbox.y1 - expected_y1) < 0.1, f"y1={norm.bbox.y1} expected~{expected_y1}"
-    # y0 should be much larger than 0 (near bottom of screen space for a cell at y=50-100 from bottom)
-    assert norm.bbox.y0 > 800.0, f"Docling bottom cell should map to y0 > 800, got {norm.bbox.y0}"
+    norm = normalize_item_bbox(item, page_width=600.0, page_height=page_height)
+    assert abs(norm.bbox.y0 - expected_y0) <= 0.05
+    assert abs(norm.bbox.y1 - expected_y1) <= 0.05
 
 
-def test_normalize_item_bbox_pymupdf_no_inversion() -> None:
+@pytest.mark.parametrize(
+    "y0,y1,page_height,expected_y0,expected_y1",
+    [
+        (50.0, 100.0, 792.0, 63.13, 126.26),
+        (0.0, 50.0, 1000.0, 0.0, 50.0),
+        (200.0, 400.0, 800.0, 250.0, 500.0),
+    ],
+)
+def test_normalize_item_bbox_pymupdf_no_inversion_parametrized(
+    y0: float, y1: float, page_height: float, expected_y0: float, expected_y1: float
+) -> None:
     """
-    PyMuPDF path: given top-left coordinates y0=50, y1=100 on a 792pt page,
-    assert the normalized values are y0 ≈ 63 and y1 ≈ 126 (no inversion applied).
+    Parametrized PyMuPDF path test: verifies direct top-left coordinate mapping without Y-inversion.
     """
     item = DoclingItem(
         value="50",
         label="Expense",
         page=1,
-        bbox=DoclingBbox(x0=10.0, y0=50.0, x1=200.0, y1=100.0),
+        bbox=DoclingBbox(x0=10.0, y0=y0, x1=200.0, y1=y1),
         source_file="test.pdf",
         parser_used="pymupdf",
     )
-    page_width = 612.0
-    page_height = 792.0
-
-    norm = normalize_item_bbox(item, page_width=page_width, page_height=page_height)
-
-    expected_y0 = round((50.0 / page_height) * 1000.0, 2)
-    expected_y1 = round((100.0 / page_height) * 1000.0, 2)
-
-    assert abs(norm.bbox.y0 - expected_y0) < 0.1, f"y0={norm.bbox.y0} expected~{expected_y0}"
-    assert abs(norm.bbox.y1 - expected_y1) < 0.1, f"y1={norm.bbox.y1} expected~{expected_y1}"
-    # y0 should be near 63, not near 1000
-    assert norm.bbox.y0 < 100.0, f"PyMuPDF top cell should map to small y0, got {norm.bbox.y0}"
+    norm = normalize_item_bbox(item, page_width=600.0, page_height=page_height)
+    assert abs(norm.bbox.y0 - expected_y0) <= 0.05
+    assert abs(norm.bbox.y1 - expected_y1) <= 0.05
 
 
-def test_pymupdf_flat_idx_per_cell_bbox() -> None:
+@pytest.mark.parametrize(
+    "row_idx,col_idx,expected_flat_idx",
+    [
+        (1, 1, 0),
+        (1, 2, 1),
+        (1, 3, 2),
+        (1, 4, 3),
+        (2, 1, 4),
+        (2, 2, 5),
+        (2, 3, 6),
+        (2, 4, 7),
+        (3, 1, 8),
+        (3, 2, 9),
+        (3, 3, 10),
+        (3, 4, 11),
+    ],
+)
+def test_pymupdf_flat_idx_3x4_mock_table(
+    row_idx: int, col_idx: int, expected_flat_idx: int
+) -> None:
     """
-    Ticket 1.4: Per-cell flat_idx test for the PyMuPDF fallback table parser.
-    Mock a 3-row x 4-col table. For cell at row_idx=1, col_idx=2:
-      flat_idx = (1-1) * 4 + (2-1) = 1
-    For cell at row_idx=2, col_idx=3:
-      flat_idx = (2-1) * 4 + (3-1) = 6
-    Verify each cell gets the correct bbox from table.cells.
+    Test per-cell flat index mapping for all cells in a 3x4 table.
     """
-    # Build a flat cells list for a 3-row × 4-col logical table
-    # Indices: 0..11
-    # row_idx=1, col_idx=1 → flat 0
-    # row_idx=1, col_idx=2 → flat 1
-    # row_idx=2, col_idx=3 → flat 6
-    num_rows = 3
     num_cols = 4
-    cells = [(float(i * 10), float(i * 5), float(i * 10 + 50), float(i * 5 + 25)) for i in range(num_rows * num_cols)]
-
-    def make_flat_idx(row_idx: int, col_idx: int, row_len: int) -> int:
-        return (row_idx - 1) * row_len + (col_idx - 1)
-
-    # Test (row=1, col=1) → idx 0
-    flat = make_flat_idx(1, 1, num_cols)
-    assert flat == 0, f"Expected 0, got {flat}"
-    assert cells[flat] == (0.0, 0.0, 50.0, 25.0)
-
-    # Test (row=1, col=2) → idx 1
-    flat = make_flat_idx(1, 2, num_cols)
-    assert flat == 1, f"Expected 1, got {flat}"
-    assert cells[flat] == (10.0, 5.0, 60.0, 30.0)
-
-    # Test (row=2, col=3) → idx 6
-    flat = make_flat_idx(2, 3, num_cols)
-    assert flat == 6, f"Expected 6, got {flat}"
-    assert cells[flat] == (60.0, 30.0, 110.0, 55.0)
-
-    # Test (row=3, col=4) → idx 11 (last cell)
-    flat = make_flat_idx(3, 4, num_cols)
-    assert flat == 11, f"Expected 11, got {flat}"
-    assert cells[flat] == (110.0, 55.0, 160.0, 80.0)
-
+    flat_idx = (row_idx - 1) * num_cols + (col_idx - 1)
+    assert flat_idx == expected_flat_idx

@@ -416,7 +416,6 @@ def test_e2e_reconciliation_batch_approval_and_regeneration(tmp_path: Path) -> N
     -> 1-Click Batch Approval -> Model Re-generation -> Formula & Provenance Validation.
     """
     from app.excel_export.generator import generate_workbook
-    from app.excel_export.repository import ModelRepository
     from app.extraction.models import ConfidenceBand, ExtractedRecord, ScoredRecord
     from app.extraction.repository import ExtractionRepository
     from app.formula_engine.reader import (
@@ -426,7 +425,6 @@ def test_e2e_reconciliation_batch_approval_and_regeneration(tmp_path: Path) -> N
     from app.formula_engine.tree import build_formula_tree
     from app.ingestion.models import JobStatus
     from app.ingestion.repository import JobRepository
-    from app.review.models import ReviewStatus
     from app.review.repository import ReviewRepository
 
     data_dir = tmp_path / "data"
@@ -434,7 +432,9 @@ def test_e2e_reconciliation_batch_approval_and_regeneration(tmp_path: Path) -> N
 
     # 1. Job Ingestion
     job_repo = JobRepository(data_dir=data_dir)
-    job = job_repo.save_job("TechCorp_Q3_2024.pdf", b"%PDF-1.4 sample", "Adjusted EBITDA")
+    job = job_repo.save_job(
+        "TechCorp_Q3_2024.pdf", b"%PDF-1.4 sample", "Adjusted EBITDA"
+    )
     job_id = job.job_id
 
     # 2. Simulated Scored Extraction Records with table names and noise
@@ -517,13 +517,17 @@ def test_e2e_reconciliation_batch_approval_and_regeneration(tmp_path: Path) -> N
             ClassificationItemResult(
                 record_index=1,
                 payload=ClassifierInputPayload(label="Stock-based compensation"),
-                raw_response=ClassifierRawResponse(label="Stock-Based Compensation", confidence=0.99),
+                raw_response=ClassifierRawResponse(
+                    label="Stock-Based Compensation", confidence=0.99
+                ),
                 is_error=False,
             ),
             ClassificationItemResult(
                 record_index=2,
                 payload=ClassifierInputPayload(label="Depreciation and amortization"),
-                raw_response=ClassifierRawResponse(label="Amortization of Intangibles", confidence=0.94),
+                raw_response=ClassifierRawResponse(
+                    label="Amortization of Intangibles", confidence=0.94
+                ),
                 is_error=False,
             ),
         ],
@@ -552,7 +556,6 @@ def test_e2e_reconciliation_batch_approval_and_regeneration(tmp_path: Path) -> N
     tree = build_formula_tree(formula_inputs, target_metric="Adjusted EBITDA")
     assert tree.is_valid is True
 
-    model_repo = ModelRepository(data_dir=data_dir)
     initial_gen = generate_workbook(tree, job_id=job_id, output_dir=data_dir)
     assert initial_gen.is_success is True
     assert Path(initial_gen.file_path).exists()
@@ -577,7 +580,9 @@ def test_e2e_reconciliation_batch_approval_and_regeneration(tmp_path: Path) -> N
     # 6. Re-generation from Confirmed Review Items (Ticket 4.2)
     review_formula_inputs = read_formula_inputs_from_review(updated_items)
     assert len(review_formula_inputs.nodes) == 3
-    final_tree = build_formula_tree(review_formula_inputs, target_metric="Adjusted EBITDA")
+    final_tree = build_formula_tree(
+        review_formula_inputs, target_metric="Adjusted EBITDA"
+    )
     assert final_tree.is_valid is True
 
     final_gen = generate_workbook(final_tree, job_id=job_id, output_dir=data_dir)
@@ -601,5 +606,3 @@ def test_e2e_reconciliation_batch_approval_and_regeneration(tmp_path: Path) -> N
         assert "#REF!" not in f
         assert "#VALUE!" not in f
         assert "#NAME?" not in f
-
-

@@ -58,10 +58,14 @@ def test_generate_audit_report_success(tmp_path: Path) -> None:
     job_repo = JobRepository(data_dir=data_dir)
     model_repo = ModelRepository(data_dir=data_dir)
 
-    job_rec = job_repo.save_job("E2ETest_2024.pdf", b"%PDF-1.4 dummy", "Adjusted EBITDA")
+    job_rec = job_repo.save_job(
+        "E2ETest_2024.pdf", b"%PDF-1.4 dummy", "Adjusted EBITDA"
+    )
     job_id = job_rec.job_id
 
-    rec = _make_w3c_record(job_id, "Source_Inputs", "B2", "leaf_0_sbc", "50000", "Stock-Based Compensation")
+    rec = _make_w3c_record(
+        job_id, "Source_Inputs", "B2", "leaf_0_sbc", "50000", "Stock-Based Compensation"
+    )
     model_repo.save_provenance_records(job_id, [rec])
 
     pdf_path = generate_audit_report(job_id, data_dir=data_dir)
@@ -91,7 +95,9 @@ def test_generate_audit_report_raises_for_missing_job(tmp_path: Path) -> None:
 def test_generate_audit_report_raises_for_incomplete_model(tmp_path: Path) -> None:
     data_dir = tmp_path / "data"
     job_repo = JobRepository(data_dir=data_dir)
-    job_rec = job_repo.save_job("Incomplete_2024.pdf", b"%PDF-1.4 dummy", "Adjusted EBITDA")
+    job_rec = job_repo.save_job(
+        "Incomplete_2024.pdf", b"%PDF-1.4 dummy", "Adjusted EBITDA"
+    )
     job_id = job_rec.job_id
 
     with pytest.raises(ModelNotCompleteError, match="model generation not complete"):

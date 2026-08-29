@@ -1,5 +1,7 @@
 from typing import Any
+
 from app.ingestion.company_repository import CompanyRepository
+
 """
 End-to-End Multi-Statement & Multi-Year Pipeline Tests (Phase E).
 
@@ -9,35 +11,19 @@ Validates:
 """
 
 from pathlib import Path
-import openpyxl
-import pytest
 
+import openpyxl
 from app.classification.models import (
-    ClassificationBatchResult,
-    ClassificationItemResult,
-    ClassifierInputPayload,
-    ClassifierRawResponse,
     StatementType,
 )
-from app.classification.normalizer import normalize_records
-from app.classification.repository import ClassificationRepository
-from app.classification.taxonomy import SEED_MASTER_TAXONOMY, TaxonomyRepository
 from app.excel_export.multi_statement_generator import generate_multi_statement_workbook
-from app.excel_export.repository import ModelRepository
 from app.extraction.models import (
     ConfidenceBand,
-    DoclingBbox,
-    DoclingItem,
-    ExtractedRecord,
-    NormalizedBbox,
-    NormalizedItem,
-    ScoredRecord,
 )
-from app.extraction.repository import ExtractionRepository
 from app.formula_engine.models import FormulaInputBatch, FormulaInputNode
 from app.formula_engine.reader import read_formula_inputs_from_review
 from app.formula_engine.tree import build_comprehensive_model_tree
-from app.ingestion.models import CompanyRecord, JobRecord, JobStatus
+from app.ingestion.models import JobRecord
 from app.ingestion.repository import JobRepository
 from app.review.models import ReviewItem, ReviewStatus
 from app.review.repository import ReviewRepository
@@ -52,7 +38,9 @@ def test_e2e_single_filing_multi_statement_pipeline(tmp_path: Path) -> None:
 
     # 1. Ingestion
     job_repo = JobRepository(data_dir=data_dir)
-    job = job_repo.save_job("TechCorp_10K.pdf", b"%PDF-1.4 sample", "Full Model", filing_year=2023)
+    job = job_repo.save_job(
+        "TechCorp_10K.pdf", b"%PDF-1.4 sample", "Full Model", filing_year=2023
+    )
     job_id = job.job_id
 
     # 2. Review Items (multi-statement extraction items)

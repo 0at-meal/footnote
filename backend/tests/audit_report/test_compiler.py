@@ -101,7 +101,10 @@ def test_compile_raises_model_not_complete_when_provenance_missing(
     job_id = jobs[0].job_id
 
     compiler = AuditReportCompiler(data_dir=data_dir)
-    with pytest.raises(ModelNotCompleteError, match="model generation not complete.*At least one line item must be confirmed"):
+    with pytest.raises(
+        ModelNotCompleteError,
+        match="model generation not complete.*At least one line item must be confirmed",
+    ):
         compiler.compile(job_id)
 
 
@@ -112,7 +115,9 @@ def test_compile_auto_generates_model_when_confirmed_review_items_exist(
     job_repo = JobRepository(data_dir=data_dir)
     review_repo = ReviewRepository(data_dir=data_dir)
 
-    job_rec = job_repo.save_job("AutoModel_2024.pdf", b"%PDF-1.4 dummy", "Adjusted EBITDA")
+    job_rec = job_repo.save_job(
+        "AutoModel_2024.pdf", b"%PDF-1.4 dummy", "Adjusted EBITDA"
+    )
     job_id = job_rec.job_id
 
     # Create locked review item but do NOT manually call model generation
@@ -148,7 +153,9 @@ def test_compile_successful_with_full_provenance_and_zero_overrides(
     review_repo = ReviewRepository(data_dir=data_dir)
     extraction_repo = ExtractionRepository(data_dir=data_dir)
 
-    job_rec = job_repo.save_job("Acme_2024_10K.pdf", b"%PDF-1.4 dummy", "Adjusted EBITDA")
+    job_rec = job_repo.save_job(
+        "Acme_2024_10K.pdf", b"%PDF-1.4 dummy", "Adjusted EBITDA"
+    )
     job_id = job_rec.job_id
     job_repo.update_job_status(job_id, JobStatus.done)
 
@@ -303,7 +310,9 @@ def test_compile_manual_overrides_and_hardcodes(
     assert len(dataset.manual_overrides) == 2
 
     # Verify user edit override
-    edit_override = next(o for o in dataset.manual_overrides if o.item_id == f"{job_id}_0")
+    edit_override = next(
+        o for o in dataset.manual_overrides if o.item_id == f"{job_id}_0"
+    )
     assert edit_override.override_type == "extraction_error_recovery"
     assert edit_override.original_value == "3500"
     assert edit_override.final_value == "35000"
@@ -327,7 +336,9 @@ def test_compile_classifier_governance_numeric_free_log(
     job_repo = JobRepository(data_dir=data_dir)
     model_repo = ModelRepository(data_dir=data_dir)
 
-    job_rec = job_repo.save_job("LogTest_2024.pdf", b"%PDF-1.4 dummy", "Adjusted EBITDA")
+    job_rec = job_repo.save_job(
+        "LogTest_2024.pdf", b"%PDF-1.4 dummy", "Adjusted EBITDA"
+    )
     job_id = job_rec.job_id
 
     rec1 = _make_w3c_record(
@@ -393,7 +404,9 @@ def test_compile_drift_baseline_and_redefinition(
     model_repo = ModelRepository(data_dir=data_dir)
     drift_repo = DriftRepository(data_dir=data_dir)
 
-    job_rec = job_repo.save_job("DriftTest_2024.pdf", b"%PDF-1.4 dummy", "Adjusted EBITDA")
+    job_rec = job_repo.save_job(
+        "DriftTest_2024.pdf", b"%PDF-1.4 dummy", "Adjusted EBITDA"
+    )
     job_id = job_rec.job_id
 
     rec1 = _make_w3c_record(
@@ -460,7 +473,9 @@ def test_compile_is_read_only_and_preserves_state(
     job_repo = JobRepository(data_dir=data_dir)
     model_repo = ModelRepository(data_dir=data_dir)
 
-    job_rec = job_repo.save_job("PureTest_2024.pdf", b"%PDF-1.4 dummy", "Adjusted EBITDA")
+    job_rec = job_repo.save_job(
+        "PureTest_2024.pdf", b"%PDF-1.4 dummy", "Adjusted EBITDA"
+    )
     job_id = job_rec.job_id
 
     rec1 = _make_w3c_record(

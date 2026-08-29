@@ -39,10 +39,18 @@ def test_extract_locked_normalized_labels_only_locked_items() -> None:
     items = [
         _make_review_item("item_1", "Stock-Based Compensation", ReviewStatus.locked),
         _make_review_item("item_2", "Restructuring Charges", ReviewStatus.locked),
-        _make_review_item("item_3", "Litigation Settlement", ReviewStatus.pending_taxonomy_confirmation),
+        _make_review_item(
+            "item_3",
+            "Litigation Settlement",
+            ReviewStatus.pending_taxonomy_confirmation,
+        ),
         _make_review_item("item_4", "Acquisition Costs", ReviewStatus.needs_review),
-        _make_review_item("item_5", "Goodwill Impairment", ReviewStatus.manual_required),
-        _make_review_item("item_6", "Foreign Exchange Loss", ReviewStatus.extraction_error),
+        _make_review_item(
+            "item_5", "Goodwill Impairment", ReviewStatus.manual_required
+        ),
+        _make_review_item(
+            "item_6", "Foreign Exchange Loss", ReviewStatus.extraction_error
+        ),
         _make_review_item("item_7", "Severance Costs", ReviewStatus.flagged),
     ]
 
@@ -79,8 +87,14 @@ def test_baseline_year_produces_no_discrepancies_and_is_baseline_flag() -> None:
     assert result.has_discrepancy is False
     assert result.added_labels == []
     assert result.removed_labels == []
-    assert result.unchanged_labels == ["Depreciation & Amortization", "Stock-Based Compensation"]
-    assert result.current_labels == ["Depreciation & Amortization", "Stock-Based Compensation"]
+    assert result.unchanged_labels == [
+        "Depreciation & Amortization",
+        "Stock-Based Compensation",
+    ]
+    assert result.current_labels == [
+        "Depreciation & Amortization",
+        "Stock-Based Compensation",
+    ]
     assert result.prior_node_id is None
 
 
@@ -225,8 +239,12 @@ def test_comparator_purity_and_determinism() -> None:
 
     current_labels = ["C", "D", "B"]
 
-    res1 = compare_metric_components("TEST_ENT", "Adjusted EBITDA", 2023, current_labels, prior_node)
-    res2 = compare_metric_components("TEST_ENT", "Adjusted EBITDA", 2023, current_labels, prior_node)
+    res1 = compare_metric_components(
+        "TEST_ENT", "Adjusted EBITDA", 2023, current_labels, prior_node
+    )
+    res2 = compare_metric_components(
+        "TEST_ENT", "Adjusted EBITDA", 2023, current_labels, prior_node
+    )
 
     assert res1.model_dump() == res2.model_dump()
     assert res1.added_labels == ["D"]

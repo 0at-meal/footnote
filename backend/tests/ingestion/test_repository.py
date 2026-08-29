@@ -272,7 +272,9 @@ def test_update_job_status_with_model_skip_reason(tmp_path: Path) -> None:
     )
     assert updated is not None
     assert updated.model_ready is False
-    assert updated.model_skip_reason == "No auto-accepted or confirmed records available"
+    assert (
+        updated.model_skip_reason == "No auto-accepted or confirmed records available"
+    )
 
     # Verify persisted in jobs.json
     found = repo.get_job(record.job_id)

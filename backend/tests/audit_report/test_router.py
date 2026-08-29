@@ -40,12 +40,16 @@ def client(tmp_path: Path) -> Generator[TestClient, None, None]:
         yield test_client
 
 
-def _create_mock_completed_job(tmp_path: Path, job_id_prefix: str = "job-route") -> tuple[str, Path]:
+def _create_mock_completed_job(
+    tmp_path: Path, job_id_prefix: str = "job-route"
+) -> tuple[str, Path]:
     data_dir = tmp_path / "data"
     job_repo = JobRepository(data_dir=data_dir)
     model_repo = ModelRepository(data_dir=data_dir)
 
-    job_rec = job_repo.save_job(f"{job_id_prefix}_2024.pdf", b"%PDF-1.4 dummy", "Adjusted EBITDA")
+    job_rec = job_repo.save_job(
+        f"{job_id_prefix}_2024.pdf", b"%PDF-1.4 dummy", "Adjusted EBITDA"
+    )
     job_id = job_rec.job_id
 
     coords = BoundingBoxCoordinates(x0=100.0, y0=200.0, x1=300.0, y1=250.0)
@@ -55,7 +59,9 @@ def _create_mock_completed_job(tmp_path: Path, job_id_prefix: str = "job-route")
         refinedBy=W3CRefinedBy(coordinates=coords),
     )
     target = W3CTarget(source=f"{job_id}.pdf", selector=selector)
-    body = W3CBody(value="50000", label="Stock-Based Compensation", original_label="SBC")
+    body = W3CBody(
+        value="50000", label="Stock-Based Compensation", original_label="SBC"
+    )
     rec = W3CAnnotationRecord(
         id=f"urn:footnote:provenance:{job_id}:leaf_0",
         job_id=job_id,
@@ -70,17 +76,23 @@ def _create_mock_completed_job(tmp_path: Path, job_id_prefix: str = "job-route")
     return job_id, data_dir
 
 
-def test_download_audit_report_success_on_the_fly(client: TestClient, tmp_path: Path) -> None:
+def test_download_audit_report_success_on_the_fly(
+    client: TestClient, tmp_path: Path
+) -> None:
     job_id, _ = _create_mock_completed_job(tmp_path, "job-fly")
 
     response = client.get(f"/api/jobs/{job_id}/audit-report")
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/pdf"
-    assert f'filename="audit_report_{job_id}.pdf"' in response.headers.get("content-disposition", "")
+    assert f'filename="audit_report_{job_id}.pdf"' in response.headers.get(
+        "content-disposition", ""
+    )
     assert response.content.startswith(b"%PDF-")
 
 
-def test_download_audit_report_pre_existing_on_disk(client: TestClient, tmp_path: Path) -> None:
+def test_download_audit_report_pre_existing_on_disk(
+    client: TestClient, tmp_path: Path
+) -> None:
     job_id, data_dir = _create_mock_completed_job(tmp_path, "job-disk")
     repo = AuditReportRepository(data_dir=data_dir)
     dummy_pdf = b"%PDF-1.4 pre-existing content"
@@ -98,10 +110,14 @@ def test_download_audit_report_job_not_found_404(client: TestClient) -> None:
     assert "not found" in response.json()["detail"].lower()
 
 
-def test_download_audit_report_incomplete_model_400(client: TestClient, tmp_path: Path) -> None:
+def test_download_audit_report_incomplete_model_400(
+    client: TestClient, tmp_path: Path
+) -> None:
     data_dir = tmp_path / "data"
     job_repo = JobRepository(data_dir=data_dir)
-    job_rec = job_repo.save_job("incomplete_job.pdf", b"%PDF-1.4 dummy", "Adjusted EBITDA")
+    job_rec = job_repo.save_job(
+        "incomplete_job.pdf", b"%PDF-1.4 dummy", "Adjusted EBITDA"
+    )
     job_id = job_rec.job_id
 
     response = client.get(f"/api/jobs/{job_id}/audit-report")

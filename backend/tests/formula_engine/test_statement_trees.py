@@ -10,7 +10,6 @@ Validates:
 - Zero-hallucination guarantee: every leaf is strictly bound to a confirmed input node
 """
 
-import pytest
 from app.classification.models import StatementType
 from app.formula_engine.models import (
     FormulaInputBatch,
@@ -47,13 +46,48 @@ def _make_node(
 
 def test_build_income_statement_tree_structure_and_signs() -> None:
     nodes = [
-        _make_node("Revenue", value="1000", record_index=0, statement_type=StatementType.income_statement),
-        _make_node("Cost of Revenue", value="400", record_index=1, statement_type=StatementType.income_statement),
-        _make_node("Research & Development", value="150", record_index=2, statement_type=StatementType.income_statement),
-        _make_node("Sales & Marketing", value="100", record_index=3, statement_type=StatementType.income_statement),
-        _make_node("Operating Income", value="350", record_index=4, statement_type=StatementType.income_statement),
-        _make_node("Provision for Income Taxes", value="50", record_index=5, statement_type=StatementType.income_statement),
-        _make_node("Net Income", value="300", record_index=6, statement_type=StatementType.income_statement),
+        _make_node(
+            "Revenue",
+            value="1000",
+            record_index=0,
+            statement_type=StatementType.income_statement,
+        ),
+        _make_node(
+            "Cost of Revenue",
+            value="400",
+            record_index=1,
+            statement_type=StatementType.income_statement,
+        ),
+        _make_node(
+            "Research & Development",
+            value="150",
+            record_index=2,
+            statement_type=StatementType.income_statement,
+        ),
+        _make_node(
+            "Sales & Marketing",
+            value="100",
+            record_index=3,
+            statement_type=StatementType.income_statement,
+        ),
+        _make_node(
+            "Operating Income",
+            value="350",
+            record_index=4,
+            statement_type=StatementType.income_statement,
+        ),
+        _make_node(
+            "Provision for Income Taxes",
+            value="50",
+            record_index=5,
+            statement_type=StatementType.income_statement,
+        ),
+        _make_node(
+            "Net Income",
+            value="300",
+            record_index=6,
+            statement_type=StatementType.income_statement,
+        ),
     ]
 
     tree = build_income_statement_tree(nodes)
@@ -61,7 +95,11 @@ def test_build_income_statement_tree_structure_and_signs() -> None:
     assert tree.total_leaves == 7
 
     # Check sign conventions
-    nodes_by_label = {leaf.source_node.normalized_label: leaf for leaf in tree.leaves if leaf.source_node}
+    nodes_by_label = {
+        leaf.source_node.normalized_label: leaf
+        for leaf in tree.leaves
+        if leaf.source_node
+    }
     assert nodes_by_label["Revenue"].operator == "+"
     assert nodes_by_label["Cost of Revenue"].operator == "-"
     assert nodes_by_label["Research & Development"].operator == "-"
@@ -78,8 +116,18 @@ def test_build_income_statement_tree_empty() -> None:
 
 def test_build_ebitda_bridge_tree_cross_reference_and_addbacks() -> None:
     nodes = [
-        _make_node("Stock-Based Compensation", value="50", record_index=1, statement_type=StatementType.non_gaap_bridge),
-        _make_node("Restructuring Charges", value="20", record_index=2, statement_type=StatementType.non_gaap_bridge),
+        _make_node(
+            "Stock-Based Compensation",
+            value="50",
+            record_index=1,
+            statement_type=StatementType.non_gaap_bridge,
+        ),
+        _make_node(
+            "Restructuring Charges",
+            value="20",
+            record_index=2,
+            statement_type=StatementType.non_gaap_bridge,
+        ),
     ]
 
     tree = build_ebitda_bridge_tree(nodes)
@@ -89,7 +137,11 @@ def test_build_ebitda_bridge_tree_cross_reference_and_addbacks() -> None:
     assert "=SUM(" in tree.root.formula_expression
 
     # Check EBIT cross-reference node
-    cross_refs = [n for n in tree.nodes_by_id.values() if n.node_type == FormulaNodeType.cross_reference]
+    cross_refs = [
+        n
+        for n in tree.nodes_by_id.values()
+        if n.node_type == FormulaNodeType.cross_reference
+    ]
     assert len(cross_refs) == 1
     assert cross_refs[0].cross_reference_sheet == "Income_Statement"
     assert cross_refs[0].cross_reference_target == "Operating Income"
@@ -97,16 +149,35 @@ def test_build_ebitda_bridge_tree_cross_reference_and_addbacks() -> None:
 
 def test_build_free_cash_flow_tree_structure() -> None:
     nodes = [
-        _make_node("Cash Provided by Operating Activities", value="500", record_index=0, statement_type=StatementType.cash_flow),
-        _make_node("Capital Expenditures", value="120", record_index=1, statement_type=StatementType.cash_flow),
-        _make_node("Dividends Paid", value="80", record_index=2, statement_type=StatementType.cash_flow),
+        _make_node(
+            "Cash Provided by Operating Activities",
+            value="500",
+            record_index=0,
+            statement_type=StatementType.cash_flow,
+        ),
+        _make_node(
+            "Capital Expenditures",
+            value="120",
+            record_index=1,
+            statement_type=StatementType.cash_flow,
+        ),
+        _make_node(
+            "Dividends Paid",
+            value="80",
+            record_index=2,
+            statement_type=StatementType.cash_flow,
+        ),
     ]
 
     tree = build_free_cash_flow_tree(nodes)
     assert tree.is_valid is True
     assert tree.total_leaves == 3
 
-    nodes_by_label = {leaf.source_node.normalized_label: leaf for leaf in tree.leaves if leaf.source_node}
+    nodes_by_label = {
+        leaf.source_node.normalized_label: leaf
+        for leaf in tree.leaves
+        if leaf.source_node
+    }
     assert nodes_by_label["Cash Provided by Operating Activities"].operator == "+"
     assert nodes_by_label["Capital Expenditures"].operator == "-"
     assert nodes_by_label["Dividends Paid"].operator == "-"
@@ -114,17 +185,41 @@ def test_build_free_cash_flow_tree_structure() -> None:
 
 def test_build_net_debt_tree_structure() -> None:
     nodes = [
-        _make_node("Cash and Cash Equivalents", value="200", record_index=0, statement_type=StatementType.balance_sheet),
-        _make_node("Short-Term Investments", value="300", record_index=1, statement_type=StatementType.balance_sheet),
-        _make_node("Short-Term Debt", value="100", record_index=2, statement_type=StatementType.balance_sheet),
-        _make_node("Long-Term Debt", value="800", record_index=3, statement_type=StatementType.balance_sheet),
+        _make_node(
+            "Cash and Cash Equivalents",
+            value="200",
+            record_index=0,
+            statement_type=StatementType.balance_sheet,
+        ),
+        _make_node(
+            "Short-Term Investments",
+            value="300",
+            record_index=1,
+            statement_type=StatementType.balance_sheet,
+        ),
+        _make_node(
+            "Short-Term Debt",
+            value="100",
+            record_index=2,
+            statement_type=StatementType.balance_sheet,
+        ),
+        _make_node(
+            "Long-Term Debt",
+            value="800",
+            record_index=3,
+            statement_type=StatementType.balance_sheet,
+        ),
     ]
 
     tree = build_net_debt_tree(nodes)
     assert tree.is_valid is True
     assert tree.total_leaves == 4
 
-    nodes_by_label = {leaf.source_node.normalized_label: leaf for leaf in tree.leaves if leaf.source_node}
+    nodes_by_label = {
+        leaf.source_node.normalized_label: leaf
+        for leaf in tree.leaves
+        if leaf.source_node
+    }
     assert nodes_by_label["Short-Term Debt"].operator == "+"
     assert nodes_by_label["Long-Term Debt"].operator == "+"
     assert nodes_by_label["Cash and Cash Equivalents"].operator == "-"
@@ -134,16 +229,51 @@ def test_build_net_debt_tree_structure() -> None:
 def test_build_comprehensive_model_tree_mixed_batch() -> None:
     nodes = [
         # Income statement
-        _make_node("Revenue", value="1000", record_index=0, statement_type=StatementType.income_statement),
-        _make_node("Net Income", value="200", record_index=1, statement_type=StatementType.income_statement),
+        _make_node(
+            "Revenue",
+            value="1000",
+            record_index=0,
+            statement_type=StatementType.income_statement,
+        ),
+        _make_node(
+            "Net Income",
+            value="200",
+            record_index=1,
+            statement_type=StatementType.income_statement,
+        ),
         # Bridge
-        _make_node("Stock-Based Compensation", value="30", record_index=2, statement_type=StatementType.non_gaap_bridge),
+        _make_node(
+            "Stock-Based Compensation",
+            value="30",
+            record_index=2,
+            statement_type=StatementType.non_gaap_bridge,
+        ),
         # Cash Flow
-        _make_node("Cash Provided by Operating Activities", value="400", record_index=3, statement_type=StatementType.cash_flow),
-        _make_node("Capital Expenditures", value="80", record_index=4, statement_type=StatementType.cash_flow),
+        _make_node(
+            "Cash Provided by Operating Activities",
+            value="400",
+            record_index=3,
+            statement_type=StatementType.cash_flow,
+        ),
+        _make_node(
+            "Capital Expenditures",
+            value="80",
+            record_index=4,
+            statement_type=StatementType.cash_flow,
+        ),
         # Balance Sheet
-        _make_node("Cash and Cash Equivalents", value="150", record_index=5, statement_type=StatementType.balance_sheet),
-        _make_node("Long-Term Debt", value="500", record_index=6, statement_type=StatementType.balance_sheet),
+        _make_node(
+            "Cash and Cash Equivalents",
+            value="150",
+            record_index=5,
+            statement_type=StatementType.balance_sheet,
+        ),
+        _make_node(
+            "Long-Term Debt",
+            value="500",
+            record_index=6,
+            statement_type=StatementType.balance_sheet,
+        ),
     ]
 
     batch = FormulaInputBatch(

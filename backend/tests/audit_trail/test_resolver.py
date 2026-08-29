@@ -319,7 +319,9 @@ def test_flagged_item_pdf_lookup_does_not_modify_flag(
     # Perform lookup on Reconciliation!B7 (which aggregates item 1)
     resp = resolver.resolve_by_cell(job_id, "Reconciliation", "B7")
     assert resp.is_found
-    flagged_comp = next(c for c in resp.components if c.component_id == items_before[1].id)
+    flagged_comp = next(
+        c for c in resp.components if c.component_id == items_before[1].id
+    )
     assert flagged_comp.review_status == ReviewStatus.flagged.value
 
     # Verify status in store remains strictly flagged (no mutation)

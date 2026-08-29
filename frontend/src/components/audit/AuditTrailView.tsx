@@ -6,7 +6,7 @@ import type {
   ProvenanceSummaryRecord,
 } from '../../types/audit'
 import type { JobRecord } from '../../types/job'
-import { loadPdf, renderPage, type PDFDocumentProxy } from '../../lib/pdf/renderer'
+import { loadPdf, renderPage, PDF_RENDER_SCALE, type PDFDocumentProxy } from '../../lib/pdf/renderer'
 import { normalizeBboxToPixels, type PixelBoundingBox } from '../../lib/pdf/coordinates'
 import { computeChainRollup } from '../../lib/pdf/audit_status'
 import { buildAuditReportDownloadUrl, buildAuditReportFilename } from '../../lib/audit_report'
@@ -304,13 +304,14 @@ export default function AuditTrailView({
       }
 
       try {
-        await renderPage(pdfDoc, targetPage, canvasRef.current, 1.3)
+        await renderPage(pdfDoc, targetPage, canvasRef.current, PDF_RENDER_SCALE)
         if (cancelled) return
         setPdfError(null)
         setActivePage(targetPage)
         if (canvasRef.current) {
-          const width = parseInt(canvasRef.current.style.width, 10) || canvasRef.current.width
-          const height = parseInt(canvasRef.current.style.height, 10) || canvasRef.current.height
+          const rect = canvasRef.current.getBoundingClientRect()
+          const width = rect.width || canvasRef.current.width
+          const height = rect.height || canvasRef.current.height
           setCanvasDims({ width, height })
         }
       } catch (err) {

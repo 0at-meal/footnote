@@ -17,7 +17,12 @@ def test_generate_drift_flag_creates_flag_when_discrepancy_exists() -> None:
         added_labels=["Legal Settlement", "COVID-19 Relief"],
         removed_labels=["Restructuring Charges"],
         unchanged_labels=["Depreciation & Amortization", "Stock-Based Compensation"],
-        current_labels=["COVID-19 Relief", "Depreciation & Amortization", "Legal Settlement", "Stock-Based Compensation"],
+        current_labels=[
+            "COVID-19 Relief",
+            "Depreciation & Amortization",
+            "Legal Settlement",
+            "Stock-Based Compensation",
+        ],
         prior_node_id="node_2022_acme",
         has_discrepancy=True,
     )

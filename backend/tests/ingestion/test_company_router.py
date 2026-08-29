@@ -389,5 +389,8 @@ def test_generate_full_model_success_and_download(
     # Test download
     dl_res = client.get(f"/companies/{company.company_id}/full-model/download")
     assert dl_res.status_code == 200
-    assert "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" in dl_res.headers["content-type"]
+    assert (
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        in dl_res.headers["content-type"]
+    )
     assert len(dl_res.content) > 0

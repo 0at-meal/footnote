@@ -173,10 +173,14 @@ def test_get_drift_flags_not_found(client: TestClient) -> None:
 def test_get_metric_history_and_export_graph(client: TestClient) -> None:
     graph = HistoricalDriftGraph()
     n1, _ = graph.apply_comparison(
-        compare_metric_components("GAMMA", "Adjusted EBITDA", 2022, ["LabelA", "LabelB"], None)
+        compare_metric_components(
+            "GAMMA", "Adjusted EBITDA", 2022, ["LabelA", "LabelB"], None
+        )
     )
     _n2, _e2 = graph.apply_comparison(
-        compare_metric_components("GAMMA", "Adjusted EBITDA", 2023, ["LabelA", "LabelB", "LabelC"], n1)
+        compare_metric_components(
+            "GAMMA", "Adjusted EBITDA", 2023, ["LabelA", "LabelB", "LabelC"], n1
+        )
     )
     set_drift_graph(graph)
 
@@ -221,7 +225,9 @@ def test_post_evaluate_job_endpoint(tmp_path: Path, client: TestClient) -> None:
 
     # 2. 2023 redefinition evaluation via API
     job_2023 = job_repo.save_job("ACME_2023.pdf", b"%PDF-2023", "Adjusted EBITDA")
-    _seed_review_items(review_repo, job_2023.job_id, ["Depreciation", "SBC", "Litigation"])
+    _seed_review_items(
+        review_repo, job_2023.job_id, ["Depreciation", "SBC", "Litigation"]
+    )
 
     res_2 = client.post(
         f"/drift/jobs/{job_2023.job_id}/evaluate",

@@ -40,7 +40,9 @@ def _build_test_dataset(
         target_metric="Adjusted EBITDA",
         generated_at="2026-08-17T12:00:00Z",
         total_cells=item_count,
-        automated_count=item_count if not has_overrides else item_count - override_count,
+        automated_count=(
+            item_count if not has_overrides else item_count - override_count
+        ),
         verified_count=override_count if has_overrides else 0,
         flagged_count=0,
         override_count=override_count if has_overrides else 0,
@@ -51,7 +53,9 @@ def _build_test_dataset(
             sheet_name="Model_Summary",
             cell_coord=f"B{i+2}",
             label=f"Operating Metric Line Item #{i+1} & Details",
-            normalized_label="Operating Income" if i == 0 else "Stock-Based Compensation",
+            normalized_label=(
+                "Operating Income" if i == 0 else "Stock-Based Compensation"
+            ),
             formula_expression=f"=SUM(B2:B{i+1})" if i > 0 else None,
             computed_value=f"${(i+1)*50_000:,}",
             is_formula=i > 0,
