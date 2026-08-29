@@ -15,6 +15,7 @@ def test_extracted_record_schema_fields_frozen() -> None:
         "bbox",
         "source_file",
         "is_reconciliation_candidate",
+        "footnote_type",
     }
     actual_fields = set(ExtractedRecord.model_fields.keys())
     assert actual_fields == expected_fields

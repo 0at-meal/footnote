@@ -37,6 +37,7 @@ def assemble_record(item: NormalizedItem) -> ExtractedRecord:
         bbox=bbox_dict,
         source_file=item.source_file,
         is_reconciliation_candidate=item.is_reconciliation_candidate,
+        footnote_type=item.footnote_type,
     )
 
 

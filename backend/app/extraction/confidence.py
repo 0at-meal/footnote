@@ -194,6 +194,11 @@ def score_record(
         if normalized_item is not None
         else record.is_reconciliation_candidate
     )
+    footnote_type = (
+        normalized_item.footnote_type
+        if normalized_item is not None
+        else record.footnote_type
+    )
 
     if normalized_item is not None and normalized_item.is_error:
         return ScoredRecord(
@@ -205,6 +210,7 @@ def score_record(
             status="extraction_error",
             error_detail=normalized_item.error_detail or "Extraction error",
             is_reconciliation_candidate=is_rec,
+            footnote_type=footnote_type,
         )
 
     score, flags = compute_confidence_score(record, is_reconciliation_candidate=is_rec)
@@ -218,6 +224,7 @@ def score_record(
         status="ok",
         error_detail=None,
         is_reconciliation_candidate=is_rec,
+        footnote_type=footnote_type,
     )
 
 

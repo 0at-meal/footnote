@@ -118,6 +118,7 @@ def normalize_item_bbox(
         source_file=item.source_file,
         table_name=item.table_name,
         is_reconciliation_candidate=item.is_reconciliation_candidate,
+        footnote_type=item.footnote_type,
     )
 
 

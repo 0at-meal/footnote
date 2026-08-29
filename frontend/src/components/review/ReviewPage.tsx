@@ -3,6 +3,7 @@ import type { ReviewItem, ReviewItemsResponse, ReviewStatus, StatementType } fro
 import { loadPdf, renderPage } from '../../lib/pdf/renderer'
 import type { PDFDocumentProxy } from '../../lib/pdf/renderer'
 import { normalizeBboxToPixels } from '../../lib/pdf/coordinates'
+import DebtScheduleCard from '../DebtScheduleCard'
 import './ReviewPage.css'
 
 interface Props {
@@ -984,6 +985,13 @@ export default function ReviewPage({
               </div>
             )
           })()}
+
+          {/* ── Debt Schedule Footnote Card (Feature 8, Step E) ── */}
+          <DebtScheduleCard
+            jobId={jobId}
+            apiBase={apiBase}
+            onTrancheSelect={(tranche) => setCurrentPage(tranche.page)}
+          />
 
           {!itemsLoading && !itemsError && filteredItems.length > 0 && (
             <div className="review-sidebar__list" role="listbox" aria-label="Extracted items list">

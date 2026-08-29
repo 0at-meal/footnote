@@ -373,6 +373,13 @@ def parse_pdf(
                         y1 = float(getattr(raw_bbox, "b", getattr(raw_bbox, "y1", 0.0)))
                         bbox_obj = DoclingBbox(x0=x0, y0=y0, x1=x1, y1=y1)
 
+                    _DEBT_TITLE_REGEX = re.compile(
+                        r"(note\s+(?:8|\d+)[.:\s-]*)?(debt|credit\s+facilities|financing\s+arrangements|long-term\s+debt|borrowings|senior\s+notes|notes\s+payable|debt\s+obligations)",
+                        re.IGNORECASE,
+                    )
+                    is_debt_footnote = bool(_DEBT_TITLE_REGEX.search(table_title))
+                    footnote_type = "debt" if is_debt_footnote else None
+
                     item = DoclingItem(
                         value=cell_text,
                         label=label,
@@ -381,6 +388,7 @@ def parse_pdf(
                         source_file=source_file,
                         table_name=table_title,
                         is_reconciliation_candidate=is_reconciliation,
+                        footnote_type=footnote_type,
                     )
                     items.append(item)
 
@@ -527,6 +535,13 @@ def _parse_pdf_with_pymupdf(
                                         y1=float(cb[3]),
                                     )
 
+                        _DEBT_TITLE_REGEX = re.compile(
+                            r"(note\s+(?:8|\d+)[.:\s-]*)?(debt|credit\s+facilities|financing\s+arrangements|long-term\s+debt|borrowings|senior\s+notes|notes\s+payable|debt\s+obligations)",
+                            re.IGNORECASE,
+                        )
+                        is_debt_footnote = bool(_DEBT_TITLE_REGEX.search(table_title))
+                        footnote_type = "debt" if is_debt_footnote else None
+
                         items.append(
                             DoclingItem(
                                 value=cell_text,
@@ -537,6 +552,7 @@ def _parse_pdf_with_pymupdf(
                                 table_name=table_title or None,
                                 is_reconciliation_candidate=is_reconciliation,
                                 parser_used="pymupdf",
+                                footnote_type=footnote_type,
                             )
                         )
             except Exception as table_err:  # noqa: BLE001

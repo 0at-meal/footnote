@@ -194,3 +194,24 @@ class ExtractionRepository:
             return ExtractionSummary.model_validate(raw)
         except (json.JSONDecodeError, OSError, ValueError):
             return None
+
+    def get_scored_records(self, job_id: str) -> list[ScoredRecord] | None:
+        """
+        Load persisted ScoredRecord objects for job_id from data/results/<job_id>_scored.json.
+
+        Args:
+            job_id: UUID of the job whose scored records are to be loaded.
+
+        Returns:
+            List of ScoredRecord objects if file exists and parses validly; None otherwise.
+        """
+        path = self._results_dir / f"{job_id}_scored.json"
+        if not path.exists():
+            return None
+        try:
+            raw = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(raw, list):
+                return None
+            return [ScoredRecord.model_validate(item) for item in raw]
+        except (json.JSONDecodeError, OSError, ValueError):
+            return None

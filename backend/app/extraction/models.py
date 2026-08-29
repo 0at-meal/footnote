@@ -67,6 +67,9 @@ class DoclingItem(BaseModel):
     parser_used: Literal["docling", "pymupdf"] = "docling"
     """Which parser produced this item. Controls Y-axis coordinate space in the normalizer."""
 
+    footnote_type: str | None = None
+    """Type of footnote if extracted from a footnote section (e.g. 'debt')."""
+
 
 class NormalizedBbox(BaseModel):
     """
@@ -95,6 +98,7 @@ class NormalizedItem(BaseModel):
     is_error: bool = False
     error_detail: str | None = None
     is_reconciliation_candidate: bool = False
+    footnote_type: str | None = None
 
 
 class ExtractedRecord(BaseModel):
@@ -123,6 +127,9 @@ class ExtractedRecord(BaseModel):
 
     is_reconciliation_candidate: bool = False
     """Flag indicating whether this item belongs to a reconciliation candidate table."""
+
+    footnote_type: str | None = None
+    """Type of footnote if extracted from a footnote section (e.g. 'debt')."""
 
 
 class ConfidenceBand(str, Enum):
@@ -153,6 +160,7 @@ class ScoredRecord(BaseModel):
     status: Literal["ok", "extraction_error"] = "ok"
     error_detail: str | None = None
     is_reconciliation_candidate: bool = False
+    footnote_type: str | None = None
 
 
 class ExtractionSummary(BaseModel):
