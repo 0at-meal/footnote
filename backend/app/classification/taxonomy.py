@@ -370,14 +370,82 @@ def match_canonical_taxonomy(
     return None
 
 
+import difflib
+
+
+def compute_token_set_ratio(s1: str, s2: str) -> float:
+    """
+    Computes token-set-ratio similarity between two financial strings in [0.0, 1.0].
+    """
+    t1 = canonicalize_label(s1).split()
+    t2 = canonicalize_label(s2).split()
+    if not t1 or not t2:
+        return 0.0
+    set1 = set(t1)
+    set2 = set(t2)
+    intersection = set1 & set2
+    diff1 = set1 - set2
+    diff2 = set2 - set1
+
+    sorted_inter = " ".join(sorted(intersection))
+    sorted_1 = " ".join(sorted(intersection) + sorted(diff1))
+    sorted_2 = " ".join(sorted(intersection) + sorted(diff2))
+
+    if not sorted_inter:
+        return difflib.SequenceMatcher(
+            None, " ".join(sorted(t1)), " ".join(sorted(t2))
+        ).ratio()
+
+    r1 = difflib.SequenceMatcher(None, sorted_inter, sorted_1).ratio()
+    r2 = difflib.SequenceMatcher(None, sorted_inter, sorted_2).ratio()
+    r3 = difflib.SequenceMatcher(None, sorted_1, sorted_2).ratio()
+    return max(r1, r2, r3)
+
+
+def match_master_taxonomy_fuzzy(
+    candidate_label: str,
+    master: MasterTaxonomy | None = None,
+    threshold: float = 0.85,
+) -> tuple[TaxonomyItem | None, float]:
+    """
+    Finds best fuzzy matching TaxonomyItem with token-set-ratio >= threshold.
+    """
+    active_master = master if master is not None else SEED_MASTER_TAXONOMY
+    candidate_raw = candidate_label.strip()
+    if not candidate_raw:
+        return None, 0.0
+
+    best_item: TaxonomyItem | None = None
+    best_score: float = 0.0
+
+    for item in active_master.items:
+        score_canon = compute_token_set_ratio(candidate_raw, item.canonical_name)
+        if score_canon > best_score:
+            best_score = score_canon
+            best_item = item
+
+        for alias in item.aliases:
+            score_alias = compute_token_set_ratio(candidate_raw, alias)
+            if score_alias > best_score:
+                best_score = score_alias
+                best_item = item
+
+    if best_score >= threshold:
+        return best_item, best_score
+    return None, best_score
+
+
 def check_label_against_taxonomy(
     candidate_label: str,
     active_taxonomy: list[str] | MasterTaxonomy,
+    fuzzy_threshold: float = 0.85,
 ) -> TaxonomyCheckResult:
     """
     Checks candidate label against the active taxonomy (AC-4, AC-5).
 
-    Supports MasterTaxonomy (exact and alias match) and legacy list[str].
+    1. Exact & canonicalized match -> TaxonomyStatus.matched (is_matched=True)
+    2. Fuzzy token-set-ratio match (>= 0.85) -> TaxonomyStatus.fuzzy_matched (is_matched=True)
+    3. Unrecognized -> TaxonomyStatus.pending_taxonomy_confirmation (is_matched=False)
     """
     if isinstance(active_taxonomy, MasterTaxonomy):
         matched_item = match_master_taxonomy(candidate_label, active_taxonomy)
@@ -389,6 +457,21 @@ def check_label_against_taxonomy(
                 matched_item=matched_item,
                 is_matched=True,
             )
+
+        # Fuzzy match pass
+        fuzzy_item, fuzzy_score = match_master_taxonomy_fuzzy(
+            candidate_label, active_taxonomy, threshold=fuzzy_threshold
+        )
+        if fuzzy_item is not None:
+            return TaxonomyCheckResult(
+                candidate_label=candidate_label,
+                status=TaxonomyStatus.fuzzy_matched,
+                matched_entry=fuzzy_item.canonical_name,
+                matched_item=fuzzy_item,
+                is_matched=True,
+                similarity_score=round(fuzzy_score, 2),
+            )
+
         return TaxonomyCheckResult(
             candidate_label=candidate_label,
             status=TaxonomyStatus.pending_taxonomy_confirmation,

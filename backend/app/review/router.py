@@ -12,6 +12,8 @@ from fastapi.responses import FileResponse
 from app.extraction.repository import ExtractionRepository
 from app.ingestion.repository import JobRepository
 from app.review.models import (
+    BulkConfirmTaxonomyRequest,
+    BulkConfirmTaxonomyResponse,
     ReviewBatchConfirmRequest,
     ReviewBatchConfirmResponse,
     ReviewItem,
@@ -319,5 +321,46 @@ def confirm_batch_review_items(
         job_id=job_id,
         total_locked=len(locked_ids),
         locked_item_ids=locked_ids,
+        items=items,
+    )
+
+
+@router.post(
+    "/{job_id}/bulk-confirm-taxonomy",
+    response_model=BulkConfirmTaxonomyResponse,
+    summary="Bulk confirm and map items to taxonomy canonical names",
+    responses={
+        200: {"description": "Items successfully confirmed and mapped to taxonomy."},
+        400: {"description": "Bulk taxonomy confirmation failed."},
+        404: {"description": "Job not found."},
+    },
+)
+def bulk_confirm_taxonomy_items(
+    job_id: str,
+    payload: BulkConfirmTaxonomyRequest,
+) -> BulkConfirmTaxonomyResponse:
+    """
+    Bulk confirm taxonomy mappings for multiple items in one request (Ticket C-4).
+    """
+    job = _job_repo.get_job(job_id)
+    if job is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Job not found",
+        )
+
+    items, confirmed_count, err = _review_repo.bulk_confirm_taxonomy(
+        job_id=job_id,
+        confirmations=payload.confirmations,
+    )
+    if err is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=err,
+        )
+
+    return BulkConfirmTaxonomyResponse(
+        job_id=job_id,
+        confirmed_count=confirmed_count,
         items=items,
     )

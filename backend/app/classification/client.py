@@ -140,6 +140,8 @@ class GroqClassifierClient:
         return ClassifierInputPayload(
             label=truncated_label,
             structural_context=truncated_context,
+            company_name=payload.company_name,
+            sic_code=payload.sic_code,
         )
 
     def classify(self, payload: ClassifierInputPayload) -> ClassifierRawResponse:
@@ -160,11 +162,17 @@ class GroqClassifierClient:
 
         sanitized_payload = self._truncate_payload_if_oversized(payload)
 
-        prompt_user_content = f"Item Label: {sanitized_payload.label}"
+        prompt_parts: list[str] = [f"Item Label: {sanitized_payload.label}"]
+        if sanitized_payload.company_name:
+            prompt_parts.append(f"Company: {sanitized_payload.company_name}")
+        if sanitized_payload.sic_code:
+            prompt_parts.append(f"SIC Code: {sanitized_payload.sic_code}")
         if sanitized_payload.structural_context:
-            prompt_user_content += (
-                f"\nStructural Context: {sanitized_payload.structural_context}"
+            prompt_parts.append(
+                f"Structural Context: {sanitized_payload.structural_context}"
             )
+
+        prompt_user_content = "\n".join(prompt_parts)
 
         messages: list[ChatCompletionMessageParam] = [
             {"role": "system", "content": CLASSIFIER_SYSTEM_PROMPT},

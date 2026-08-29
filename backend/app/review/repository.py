@@ -16,7 +16,11 @@ from app.classification.repository import ClassificationRepository
 from app.classification.taxonomy import TaxonomyRepository
 from app.extraction.models import ConfidenceBand, ScoredRecord
 from app.extraction.repository import ExtractionRepository
-from app.review.models import ReviewItem, ReviewStatus
+from app.review.models import (
+    BulkConfirmTaxonomyItem,
+    ReviewItem,
+    ReviewStatus,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -410,6 +414,39 @@ class ReviewRepository:
 
         self.save_review_items(job_id, items)
         return items, locked_ids, None
+
+    def bulk_confirm_taxonomy(
+        self,
+        job_id: str,
+        confirmations: list[BulkConfirmTaxonomyItem],
+    ) -> tuple[list[ReviewItem], int, str | None]:
+        """
+        Bulk confirm taxonomy mappings for multiple items in one atomic operation (Ticket C-4).
+        """
+        items = self.get_review_items(job_id)
+        if items is None:
+            return [], 0, f"Job {job_id} not found"
+
+        taxonomy_repo = TaxonomyRepository(data_dir=self._data_dir)
+        item_map = {item.id: item for item in items}
+        confirmed_count = 0
+
+        for conf in confirmations:
+            item = item_map.get(conf.item_id)
+            if item is None:
+                continue
+
+            item.normalized_label = conf.canonical_name
+            item.taxonomy_status = "matched"
+            item.statement_type = conf.statement_type
+            item.status = ReviewStatus.locked
+            taxonomy_repo.add_entry(
+                conf.canonical_name, statement_type=conf.statement_type
+            )
+            confirmed_count += 1
+
+        self.save_review_items(job_id, items)
+        return items, confirmed_count, None
 
     def protect_locked_items(
         self,

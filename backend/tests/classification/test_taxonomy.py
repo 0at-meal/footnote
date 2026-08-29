@@ -176,3 +176,42 @@ def test_check_label_against_taxonomy_master() -> None:
     unknown_result = check_label_against_taxonomy("Random Unknown Item", master)
     assert unknown_result.status == TaxonomyStatus.pending_taxonomy_confirmation
     assert unknown_result.is_matched is False
+
+
+def test_fuzzy_alias_matching_token_set_ratio() -> None:
+    """
+    Ticket C-3: Fuzzy alias matching matches similar labels with token-set-ratio >= 0.85
+    and produces TaxonomyStatus.fuzzy_matched without blocking matching.
+    """
+    master = SEED_MASTER_TAXONOMY
+    # "Derivative fair value adjustment" vs alias "Derivative fair value adjustments"
+    result = check_label_against_taxonomy("Derivative fair value adjustment", master)
+    assert result.is_matched is True
+    assert result.status in (TaxonomyStatus.matched, TaxonomyStatus.fuzzy_matched)
+    assert result.matched_entry == "Change in FV of Derivatives"
+
+
+def test_expanded_taxonomy_coverage() -> None:
+    """
+    Ticket C-1: Seed taxonomy contains 60+ items covering non-GAAP and key financial categories.
+    """
+    master = SEED_MASTER_TAXONOMY
+    assert len(master.items) >= 60
+
+    canonical_names = {item.canonical_name for item in master.items}
+    required_categories = [
+        "Change in FV of Derivatives",
+        "Non-cash Lease Expense",
+        "Earn-out Payments",
+        "IPO-related Costs",
+        "Spin-off Costs",
+        "COVID Costs",
+        "Contingent Consideration",
+        "Stock-Based Compensation",
+        "Restructuring Charges",
+        "Litigation Charges",
+        "Interest Expense",
+        "Provision for Income Taxes",
+    ]
+    for cat in required_categories:
+        assert cat in canonical_names, f"Missing required category: {cat}"

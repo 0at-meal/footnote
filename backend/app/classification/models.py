@@ -30,6 +30,14 @@ class ClassifierInputPayload(BaseModel):
         default=None,
         description="Surrounding structural context (e.g. adjacent headers)",
     )
+    company_name: str | None = Field(
+        default=None,
+        description="Reporting company name for industry context",
+    )
+    sic_code: str | None = Field(
+        default=None,
+        description="SIC industry classification code for industry context",
+    )
 
 
 class ClassifierRawResponse(BaseModel):
@@ -141,6 +149,9 @@ class TaxonomyStatus(str, Enum):
     matched = "matched"
     """Candidate label matches an active seed taxonomy entry by exact string match."""
 
+    fuzzy_matched = "fuzzy_matched"
+    """Candidate label matches an active taxonomy entry by fuzzy token-set-ratio similarity (>= 0.85)."""
+
     pending_taxonomy_confirmation = "pending_taxonomy_confirmation"
     """Candidate label does not match taxonomy; queued for explicit human review."""
 
@@ -154,11 +165,12 @@ class TaxonomyCheckResult(BaseModel):
         ..., description="Candidate label returned by classifier"
     )
     status: TaxonomyStatus = Field(
-        ..., description="Match status (matched or pending_taxonomy_confirmation)"
+        ...,
+        description="Match status (matched, fuzzy_matched, or pending_taxonomy_confirmation)",
     )
     matched_entry: str | None = Field(
         default=None,
-        description="Exact matched taxonomy entry if matched, otherwise None",
+        description="Matched taxonomy entry if matched or fuzzy matched, otherwise None",
     )
     matched_item: TaxonomyItem | None = Field(
         default=None,
@@ -166,7 +178,11 @@ class TaxonomyCheckResult(BaseModel):
     )
     is_matched: bool = Field(
         default=False,
-        description="Convenience boolean indicating whether exact match was found",
+        description="Convenience boolean indicating whether exact or fuzzy match was found",
+    )
+    similarity_score: float | None = Field(
+        default=None,
+        description="Fuzzy matching token-set similarity score if fuzzy matched",
     )
 
 

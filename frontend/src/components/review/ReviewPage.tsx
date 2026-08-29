@@ -104,6 +104,9 @@ export default function ReviewPage({
   const [generateModelError, setGenerateModelError] = useState<string | null>(null)
   const [parserUsed, setParserUsed] = useState<string | null>(initialParserUsed)
   const [isParserBannerDismissed, setIsParserBannerDismissed] = useState<boolean>(false)
+  const [selectedBulkTaxonomyIds, setSelectedBulkTaxonomyIds] = useState<Set<string>>(new Set())
+  const [customCanonicalNames, setCustomCanonicalNames] = useState<Record<string, string>>({})
+  const [isBulkConfirmingTaxonomy, setIsBulkConfirmingTaxonomy] = useState<boolean>(false)
 
   const lockedCount = items.filter((i) => i.status === 'locked').length
 
@@ -395,6 +398,47 @@ export default function ReviewPage({
       alert(err instanceof Error ? err.message : 'Unlock action failed')
     } finally {
       setIsActionPending(false)
+    }
+  }
+
+  // ── Bulk Taxonomy Confirmation Handler (Ticket C-5) ─────────────────────
+  async function handleBulkConfirmTaxonomy() {
+    const pending = items.filter(
+      (it) =>
+        it.status === 'pending_taxonomy_confirmation' ||
+        it.taxonomy_status === 'pending_taxonomy_confirmation',
+    )
+    const selected = pending.filter((it) => selectedBulkTaxonomyIds.has(it.id))
+    if (selected.length === 0) return
+
+    setIsBulkConfirmingTaxonomy(true)
+    try {
+      const confirmations = selected.map((it) => ({
+        item_id: it.id,
+        canonical_name: customCanonicalNames[it.id] || it.normalized_label || it.label,
+        statement_type: it.statement_type || 'non_gaap_bridge',
+      }))
+
+      const res = await fetch(`${apiBase}/review/${jobId}/bulk-confirm-taxonomy`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirmations }),
+      })
+
+      if (!res.ok) {
+        const detail = await res.json().catch(() => ({ detail: 'Bulk taxonomy confirmation failed' }))
+        throw new Error(detail.detail || `Server error ${res.status}`)
+      }
+
+      const data = (await res.json()) as { items?: ReviewItem[] }
+      if (data.items) {
+        setItems(data.items)
+      }
+      setSelectedBulkTaxonomyIds(new Set())
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Bulk taxonomy confirmation failed')
+    } finally {
+      setIsBulkConfirmingTaxonomy(false)
     }
   }
 
@@ -789,6 +833,157 @@ export default function ReviewPage({
               )}
             </div>
           )}
+
+          {/* ── Bulk Taxonomy Confirmation Panel (Ticket C-5) ── */}
+          {(() => {
+            const pendingTaxonomyItems = items.filter(
+              (it) =>
+                it.status === 'pending_taxonomy_confirmation' ||
+                it.taxonomy_status === 'pending_taxonomy_confirmation',
+            )
+            if (pendingTaxonomyItems.length === 0) return null
+
+            const allSelected =
+              pendingTaxonomyItems.length > 0 &&
+              pendingTaxonomyItems.every((it) => selectedBulkTaxonomyIds.has(it.id))
+
+            const toggleSelectAll = () => {
+              if (allSelected) {
+                setSelectedBulkTaxonomyIds(new Set())
+              } else {
+                setSelectedBulkTaxonomyIds(new Set(pendingTaxonomyItems.map((it) => it.id)))
+              }
+            }
+
+            const toggleItem = (id: string) => {
+              setSelectedBulkTaxonomyIds((prev) => {
+                const next = new Set(prev)
+                if (next.has(id)) next.delete(id)
+                else next.add(id)
+                return next
+              })
+            }
+
+            return (
+              <div
+                className="review-bulk-taxonomy-panel"
+                style={{
+                  background: 'var(--surface-raised, #1e293b)',
+                  border: '1px solid var(--border-color, #334155)',
+                  borderRadius: '6px',
+                  padding: '10px 12px',
+                  margin: '8px 12px',
+                  fontSize: '0.85rem',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '8px',
+                  }}
+                >
+                  <strong style={{ color: '#f59e0b' }}>
+                    Pending Taxonomy Confirmations ({pendingTaxonomyItems.length})
+                  </strong>
+                  <button
+                    type="button"
+                    className="review-btn review-btn--edit"
+                    style={{ fontSize: '11px', padding: '2px 6px' }}
+                    onClick={toggleSelectAll}
+                  >
+                    {allSelected ? 'Deselect All' : 'Select All'}
+                  </button>
+                </div>
+                <div
+                  style={{
+                    maxHeight: '180px',
+                    overflowY: 'auto',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    marginBottom: '8px',
+                  }}
+                >
+                  {pendingTaxonomyItems.map((pItem) => {
+                    const isChecked = selectedBulkTaxonomyIds.has(pItem.id)
+                    const canonicalVal =
+                      customCanonicalNames[pItem.id] ??
+                      pItem.normalized_label ??
+                      pItem.label
+                    return (
+                      <div
+                        key={pItem.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          background: 'rgba(0,0,0,0.2)',
+                          padding: '4px 6px',
+                          borderRadius: '4px',
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => toggleItem(pItem.id)}
+                          aria-label={`Select ${pItem.label}`}
+                        />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div
+                            style={{
+                              fontSize: '12px',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {pItem.label} ({pItem.value})
+                          </div>
+                          <input
+                            type="text"
+                            value={canonicalVal}
+                            onChange={(e) =>
+                              setCustomCanonicalNames((prev) => ({
+                                ...prev,
+                                [pItem.id]: e.target.value,
+                              }))
+                            }
+                            placeholder="Canonical name"
+                            style={{
+                              width: '100%',
+                              fontSize: '11px',
+                              padding: '2px 4px',
+                              marginTop: '2px',
+                              background: '#0f172a',
+                              color: '#fff',
+                              border: '1px solid #475569',
+                              borderRadius: '3px',
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+                <button
+                  type="button"
+                  className="review-btn review-btn--confirm"
+                  disabled={
+                    selectedBulkTaxonomyIds.size === 0 ||
+                    isBulkConfirmingTaxonomy
+                  }
+                  onClick={() => void handleBulkConfirmTaxonomy()}
+                  style={{ width: '100%', fontSize: '12px', padding: '6px' }}
+                >
+                  {isBulkConfirmingTaxonomy
+                    ? 'Confirming Taxonomy...'
+                    : `Batch Confirm Selected (${selectedBulkTaxonomyIds.size})`}
+                </button>
+              </div>
+            )
+          })()}
 
           {!itemsLoading && !itemsError && filteredItems.length > 0 && (
             <div className="review-sidebar__list" role="listbox" aria-label="Extracted items list">

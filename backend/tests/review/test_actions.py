@@ -530,3 +530,68 @@ def test_auto_accepted_and_matched_item_is_pre_locked(tmp_path: Path) -> None:
     assert items is not None
     assert len(items) == 1
     assert items[0].status == ReviewStatus.locked
+
+
+def test_bulk_confirm_taxonomy_endpoint(tmp_path: Path) -> None:
+    """
+    Ticket C-4: POST /review/{job_id}/bulk-confirm-taxonomy batch maps items to canonical names and locks them.
+    """
+    job_repo = JobRepository(data_dir=tmp_path)
+    job = job_repo.save_job(
+        filename="test_filing.pdf",
+        content=b"%PDF-1.4 sample",
+        target_metric="Adjusted EBITDA",
+    )
+    class_repo = ClassificationRepository(data_dir=tmp_path)
+    sr = ScoredRecord(
+        record=ExtractedRecord(
+            value="350",
+            label="Acquisition transition integration",
+            page=1,
+            bbox={"x0": 100, "y0": 100, "x1": 200, "y1": 200},
+            source_file="test_filing.pdf",
+            is_reconciliation_candidate=True,
+        ),
+        confidence_score=0.85,
+        confidence_band=ConfidenceBand.needs_review,
+        flags=[],
+        status="ok",
+        is_reconciliation_candidate=True,
+    )
+    cr = ClassifiedRecord(
+        record=sr,
+        normalized_label=None,
+        taxonomy_status=TaxonomyStatus.pending_taxonomy_confirmation,
+        classifier_confidence=0.75,
+        is_confirmed=False,
+    )
+    class_repo.save_classified_records(job.job_id, [cr])
+
+    review_repo = ReviewRepository(data_dir=tmp_path)
+    items = review_repo.get_review_items(job.job_id)
+    assert items is not None
+    assert len(items) == 1
+    item_id = items[0].id
+
+    with patch("app.review.router._job_repo", job_repo), patch(
+        "app.review.router._review_repo", review_repo
+    ):
+        res = client.post(
+            f"/review/{job.job_id}/bulk-confirm-taxonomy",
+            json={
+                "confirmations": [
+                    {
+                        "item_id": item_id,
+                        "canonical_name": "Acquisition-Related Expenses",
+                        "statement_type": "non_gaap_bridge",
+                    }
+                ]
+            },
+        )
+        assert res.status_code == 200
+        data = res.json()
+        assert data["confirmed_count"] == 1
+        updated = next(i for i in data["items"] if i["id"] == item_id)
+        assert updated["status"] == "locked"
+        assert updated["normalized_label"] == "Acquisition-Related Expenses"
+        assert updated["taxonomy_status"] == "matched"

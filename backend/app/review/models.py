@@ -150,3 +150,36 @@ class ReviewBatchConfirmResponse(BaseModel):
     total_locked: int
     locked_item_ids: list[str]
     items: list[ReviewItem]
+
+
+class BulkConfirmTaxonomyItem(BaseModel):
+    """
+    Pair of item_id and canonical_name for bulk taxonomy confirmation.
+    """
+
+    item_id: str = Field(..., description="Review item identifier")
+    canonical_name: str = Field(
+        ..., description="Canonical taxonomy label to map and confirm"
+    )
+    statement_type: StatementType = Field(
+        default=StatementType.non_gaap_bridge,
+        description="Statement type category",
+    )
+
+
+class BulkConfirmTaxonomyRequest(BaseModel):
+    """
+    Request payload for POST /review/{job_id}/bulk-confirm-taxonomy (Ticket C-4).
+    """
+
+    confirmations: list[BulkConfirmTaxonomyItem]
+
+
+class BulkConfirmTaxonomyResponse(BaseModel):
+    """
+    Response model for POST /review/{job_id}/bulk-confirm-taxonomy (Ticket C-4).
+    """
+
+    job_id: str
+    confirmed_count: int
+    items: list[ReviewItem]
