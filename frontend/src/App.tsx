@@ -6,6 +6,7 @@ import ReviewPage from './components/review/ReviewPage'
 import AuditTrailView from './components/audit/AuditTrailView'
 import CompanySelector from './components/CompanySelector'
 import CompanyMultiYearCard from './components/CompanyMultiYearCard'
+import EdgarSearch from './components/EdgarSearch'
 import type {
   StagedFile,
   TargetMetric,
@@ -256,8 +257,15 @@ function App() {
             Upload Filings
           </h2>
           <p className="section-desc">
-            Select one or more PDF 10-K filings to begin extraction.
+            Select one or more PDF 10-K filings to begin extraction, or search and ingest directly from SEC EDGAR.
           </p>
+          <EdgarSearch
+            apiBase={API_BASE}
+            onJobCreated={(job) => {
+              setPersistedJobs((prev) => [...prev, job])
+              refreshCompanies()
+            }}
+          />
           <UploadZone onFilesAdded={handleFilesAdded} />
         </section>
 

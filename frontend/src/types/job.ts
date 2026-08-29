@@ -101,3 +101,21 @@ export type MultiYearModelResponse = {
   file_path: string
 }
 
+export type EdgarCompanyResult = {
+  cik: string
+  company_name: string
+  sic?: string | null
+  ticker?: string | null
+}
+
+export type EdgarFiling = {
+  accession_number: string
+  form_type: string
+  filing_date: string
+  report_date?: string | null
+  primary_document: string
+  description?: string | null
+  filing_year?: number | null
+}
+
+

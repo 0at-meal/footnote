@@ -101,9 +101,41 @@ class SubmitResponse(BaseModel):
 
 
 class GetJobsResponse(BaseModel):
-    """Response for GET /upload/jobs: all persisted job records."""
+    """Response model for GET /upload/jobs."""
 
     jobs: list[JobRecord]
+
+
+class EdgarCompanyResult(BaseModel):
+    """Company search result from EDGAR EFTS / company tickers."""
+
+    cik: str
+    company_name: str
+    sic: str | None = None
+    ticker: str | None = None
+
+
+class EdgarFiling(BaseModel):
+    """SEC filing metadata parsed from EDGAR submissions API."""
+
+    accession_number: str
+    form_type: str
+    filing_date: str
+    report_date: str | None = None
+    primary_document: str = ""
+    description: str | None = None
+    filing_year: int | None = None
+
+
+class EdgarSubmitRequest(BaseModel):
+    """Request payload for POST /upload/edgar."""
+
+    cik: str
+    accession_number: str
+    target_metric: str = "Adjusted EBITDA"
+    filing_year: int | None = None
+    company_name: str | None = None
+    primary_document: str | None = None
 
 
 class MultiYearModelResponse(BaseModel):

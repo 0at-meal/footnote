@@ -23,8 +23,20 @@ from fastapi import (
 )
 
 from app.ingestion.company_repository import CompanyRepository
+from app.ingestion.edgar_client import (
+    EdgarClientError,
+    EdgarCompanyNotFoundError,
+    EdgarFetchError,
+    EdgarFilingNotFoundError,
+    fetch_filing_pdf,
+    get_filings,
+    search_company,
+)
 from app.ingestion.models import (
     ALLOWED_TARGET_METRICS,
+    EdgarCompanyResult,
+    EdgarFiling,
+    EdgarSubmitRequest,
     GetJobsResponse,
     JobRecord,
     SubmitResponse,
@@ -243,3 +255,100 @@ def list_jobs(
 ) -> GetJobsResponse:
     """Return all persisted JobRecords (spec AC-7: survive page refresh)."""
     return GetJobsResponse(jobs=repo.list_jobs())
+
+
+# ── SEC EDGAR Direct Integration Endpoints (Step D) ──────────────────────────
+
+
+@router.get(
+    "/edgar/search",
+    response_model=list[EdgarCompanyResult],
+    summary="Search companies on SEC EDGAR",
+)
+def search_edgar_companies(q: str) -> list[EdgarCompanyResult]:
+    """
+    Search companies by ticker, name, or CIK on SEC EDGAR (Ticket D-1).
+    """
+    return search_company(query=q)
+
+
+@router.get(
+    "/edgar/filings/{cik}",
+    response_model=list[EdgarFiling],
+    summary="List SEC filings for a company CIK",
+)
+def list_edgar_filings(
+    cik: str,
+    form_type: str | None = None,
+    limit: int = 10,
+) -> list[EdgarFiling]:
+    """
+    Retrieve SEC 10-K and 10-Q filing history for a CIK (Ticket D-2).
+    """
+    try:
+        return get_filings(cik=cik, form_type=form_type, limit=limit)
+    except EdgarCompanyNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except EdgarClientError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
+@router.post(
+    "/edgar",
+    response_model=JobRecord,
+    summary="Directly ingest a SEC EDGAR filing",
+)
+async def submit_edgar_filing(
+    payload: EdgarSubmitRequest,
+    background_tasks: BackgroundTasks,
+    repo: Annotated[JobRepository, Depends(get_repository)],
+    company_repo: Annotated[CompanyRepository, Depends(get_company_repository)],
+) -> JobRecord:
+    """
+    Download SEC filing PDF directly from EDGAR, persist job, and enqueue extraction pipeline (Ticket D-4).
+    """
+    if payload.target_metric not in ALLOWED_TARGET_METRICS:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Target metric '{payload.target_metric}' is not in allowed metrics {ALLOWED_TARGET_METRICS}",
+        )
+
+    try:
+        pdf_bytes = fetch_filing_pdf(
+            accession_number=payload.accession_number,
+            cik=payload.cik,
+            primary_document=payload.primary_document,
+        )
+    except EdgarFilingNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except EdgarFetchError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except EdgarClientError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+    company_id: str | None = None
+    if payload.company_name and payload.company_name.strip():
+        cleaned_company_name = payload.company_name.strip()
+        company = company_repo.get_company_by_name(cleaned_company_name)
+        if company is None:
+            company = company_repo.save_company(name=cleaned_company_name)
+        company_id = company.company_id
+
+    filename = (
+        payload.primary_document
+        if payload.primary_document and payload.primary_document.endswith(".pdf")
+        else f"{payload.accession_number}.pdf"
+    )
+
+    job = repo.save_job(
+        filename=filename,
+        content=pdf_bytes,
+        target_metric=payload.target_metric,
+        filing_year=payload.filing_year,
+        company_id=company_id,
+    )
+    if company_id is not None:
+        company_repo.add_job_to_company(company_id, job.job_id)
+
+    background_tasks.add_task(process_queued_job, job.job_id, repo)
+    return job
