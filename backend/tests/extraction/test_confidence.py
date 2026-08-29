@@ -240,3 +240,36 @@ def test_table_consistency_boost() -> None:
         assert scored[i].confidence_score == 0.65
         assert scored[i].confidence_band == ConfidenceBand.needs_review
         assert "table_consistency_boost" in scored[i].flags
+
+
+def test_reconciliation_bonus_scores_ge_95_and_non_rec_unaffected() -> None:
+    """
+    Test B-6: A reconciliation table item with flat label scores >= 0.95 (auto_accepted),
+    while a non-reconciliation table item with flat label is unaffected by the +0.15 bonus (score 0.90, needs_review).
+    """
+    rec_rec = ExtractedRecord(
+        value="1,200",
+        label="Stock-Based Compensation",  # flat label: -0.15 hierarchy, +0.15 is_rec, +0.05 numeric -> 1.0
+        page=1,
+        bbox={"x0": 0.0, "y0": 0.0, "x1": 10.0, "y1": 10.0},
+        source_file="test.pdf",
+        is_reconciliation_candidate=True,
+    )
+    score_rec, _ = compute_confidence_score(rec_rec)
+    assert score_rec >= 0.95
+    assert score_rec == 1.0
+    scored_rec = score_record(rec_rec)
+    assert scored_rec.confidence_band == ConfidenceBand.auto_accepted
+
+    rec_non_rec = ExtractedRecord(
+        value="1,200",
+        label="Stock-Based Compensation",  # flat label: -0.15 hierarchy, 0 is_rec, +0.05 numeric -> 0.90
+        page=1,
+        bbox={"x0": 0.0, "y0": 0.0, "x1": 10.0, "y1": 10.0},
+        source_file="test.pdf",
+        is_reconciliation_candidate=False,
+    )
+    score_non_rec, _ = compute_confidence_score(rec_non_rec)
+    assert score_non_rec == 0.90
+    scored_non_rec = score_record(rec_non_rec)
+    assert scored_non_rec.confidence_band == ConfidenceBand.needs_review
