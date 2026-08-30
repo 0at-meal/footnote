@@ -197,9 +197,46 @@ def test_exact_string_matching_preserves_special_characters_and_whitespace() -> 
     )
 
     assert result.has_discrepancy is True
-    assert result.added_labels == ["M&A Expenses (Pre-Tax)"]
-    assert result.removed_labels == ["M&A Expenses (Pre-tax)"]
+    assert len(result.relabeled_components) == 1
+    assert result.relabeled_components[0].old_label == "M&A Expenses (Pre-tax)"
+    assert result.relabeled_components[0].new_label == "M&A Expenses (Pre-Tax)"
     assert result.unchanged_labels == ["R&D Tax Credit / (Rebate)"]
+
+
+def test_cosmetic_relabeling_semantic_similarity() -> None:
+    prior_node = MetricDefinitionNode(
+        node_id="node_2022",
+        entity="CORP",
+        target_metric="Adjusted EBITDA",
+        filing_year=2022,
+        component_labels=[
+            "Stock-based compensation expense",
+            "Depreciation and amortization",
+        ],
+        created_at="2026-08-17T10:00:00Z",
+    )
+
+    current_labels = [
+        "Share-based compensation expense",
+        "Depreciation and amortization",
+    ]
+
+    result = compare_metric_components(
+        entity="CORP",
+        target_metric="Adjusted EBITDA",
+        filing_year=2023,
+        current_labels=current_labels,
+        prior_node=prior_node,
+    )
+
+    assert result.has_discrepancy is True
+    assert len(result.relabeled_components) == 1
+    rel = result.relabeled_components[0]
+    assert rel.old_label == "Stock-based compensation expense"
+    assert rel.new_label == "Share-based compensation expense"
+    assert rel.similarity_score >= 0.80
+    assert result.added_labels == []
+    assert result.removed_labels == []
 
 
 def test_zero_locked_records_with_prior_node() -> None:

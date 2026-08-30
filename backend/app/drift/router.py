@@ -11,8 +11,10 @@ from app.drift.graph import HistoricalDriftGraph
 from app.drift.models import (
     DriftEvaluationRequest,
     DriftEvaluationResponse,
+    DriftFlag,
     DriftFlagsResponse,
     DriftGraphExport,
+    MarkRelabeledRequest,
     MetricHistoryResponse,
 )
 from app.drift.repository import DriftRepository
@@ -227,3 +229,34 @@ def export_drift_graph(
     """
     graph = get_drift_graph()
     return graph.export_graph(entity=entity, target_metric=target_metric)
+
+
+@router.post(
+    "/{job_id}/mark-relabeled",
+    response_model=DriftFlag,
+    summary="Mark a component as confirmed cosmetic relabeling (Step J)",
+)
+@router.post(
+    "/jobs/{job_id}/mark-relabeled",
+    response_model=DriftFlag,
+    summary="Mark a component as confirmed cosmetic relabeling (Step J)",
+)
+def mark_component_relabeled(
+    job_id: str,
+    payload: MarkRelabeledRequest,
+) -> DriftFlag:
+    """
+    Confirm that an added/removed component pair represents a cosmetic relabeling (Step J).
+    """
+    updated_flag = _drift_repo.confirm_relabeling(
+        job_id=job_id,
+        old_label=payload.old_standard_label,
+        new_label=payload.new_standard_label,
+        justification=payload.justification,
+    )
+    if updated_flag is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Drift flag or relabeled component not found for job '{job_id}'",
+        )
+    return updated_flag

@@ -4,7 +4,13 @@ Pure comparator engine for Cross-Year Drift Detection (Feature 7, Step 1).
 Governed by CONSTITUTION §1.1 (mypy --strict), §1.4 (pure functions), §3.5 (isolation).
 """
 
-from app.drift.models import DriftComparisonResult, MetricDefinitionNode
+import difflib
+
+from app.drift.models import (
+    DriftComparisonResult,
+    MetricDefinitionNode,
+    RelabeledComponent,
+)
 from app.review.models import ReviewItem, ReviewStatus
 
 
@@ -78,19 +84,54 @@ def compare_metric_components(
     current_set = set(deduped_current)
     prior_set = set(prior_node.component_labels)
 
-    added = sorted(current_set - prior_set)
-    removed = sorted(prior_set - current_set)
+    raw_added = sorted(current_set - prior_set)
+    raw_removed = sorted(prior_set - current_set)
     unchanged = sorted(current_set & prior_set)
+
+    relabeled_components: list[RelabeledComponent] = []
+    unmatched_added = list(raw_added)
+    unmatched_removed = list(raw_removed)
+
+    for rem in raw_removed:
+        best_add: str | None = None
+        best_sim: float = 0.0
+        for add in raw_added:
+            sim = round(
+                float(difflib.SequenceMatcher(None, rem.lower(), add.lower()).ratio()),
+                3,
+            )
+            if sim >= 0.80 and sim > best_sim:
+                best_sim = sim
+                best_add = add
+
+        if (
+            best_add is not None
+            and best_add in unmatched_added
+            and rem in unmatched_removed
+        ):
+            relabeled_components.append(
+                RelabeledComponent(
+                    old_label=rem,
+                    new_label=best_add,
+                    similarity_score=best_sim,
+                    is_confirmed=False,
+                )
+            )
+            unmatched_added.remove(best_add)
+            unmatched_removed.remove(rem)
 
     return DriftComparisonResult(
         entity=entity,
         target_metric=target_metric,
         filing_year=filing_year,
         is_baseline=False,
-        added_labels=added,
-        removed_labels=removed,
+        added_labels=unmatched_added,
+        removed_labels=unmatched_removed,
         unchanged_labels=unchanged,
+        relabeled_components=relabeled_components,
         current_labels=deduped_current,
         prior_node_id=prior_node.node_id,
-        has_discrepancy=bool(added or removed),
+        has_discrepancy=bool(
+            unmatched_added or unmatched_removed or relabeled_components
+        ),
     )

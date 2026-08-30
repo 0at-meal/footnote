@@ -9,6 +9,17 @@ from enum import Enum
 from pydantic import BaseModel, Field
 
 
+class DriftChangeType(str, Enum):
+    """
+    Classification of drift change.
+    """
+
+    added = "added"
+    removed = "removed"
+    modified = "modified"
+    relabeled = "relabeled"
+
+
 class DriftEdgeType(str, Enum):
     """
     Type of directed transition edge in the historical drift graph.
@@ -16,6 +27,24 @@ class DriftEdgeType(str, Enum):
 
     redefinition = "redefinition"
     continuation = "continuation"
+
+
+class RelabeledComponent(BaseModel):
+    """
+    Component whose label shifted cosmetically but substance remains identical (Step J).
+    """
+
+    old_label: str = Field(..., description="Prior period component label")
+    new_label: str = Field(..., description="Current period component label")
+    similarity_score: float = Field(
+        ..., description="Token / fuzzy similarity score (0.0 - 1.0)"
+    )
+    is_confirmed: bool = Field(
+        default=False, description="True if confirmed by analyst"
+    )
+    justification: str | None = Field(
+        default=None, description="Analyst rationale or confirmation note"
+    )
 
 
 class MetricDefinitionNode(BaseModel):
@@ -60,6 +89,10 @@ class DriftEdge(BaseModel):
         default_factory=list,
         description="Component labels removed in this transition",
     )
+    relabeled_labels: list[RelabeledComponent] = Field(
+        default_factory=list,
+        description="Component labels relabeled in this transition",
+    )
     created_at: str = Field(..., description="ISO 8601 UTC timestamp of edge creation")
 
 
@@ -86,6 +119,10 @@ class DriftComparisonResult(BaseModel):
     unchanged_labels: list[str] = Field(
         default_factory=list,
         description="Normalized labels present in both current filing and prior entry",
+    )
+    relabeled_components: list[RelabeledComponent] = Field(
+        default_factory=list,
+        description="Components detected as cosmetic relabeling (similarity >= 0.80)",
     )
     current_labels: list[str] = Field(
         default_factory=list,
@@ -118,6 +155,10 @@ class DriftFlag(BaseModel):
     removed_labels: list[str] = Field(
         default_factory=list,
         description="List of component labels removed in this filing",
+    )
+    relabeled_components: list[RelabeledComponent] = Field(
+        default_factory=list,
+        description="List of cosmetic relabelings detected in this filing",
     )
     prior_node_id: str = Field(
         ...,
@@ -200,3 +241,13 @@ class DriftEvaluationResponse(BaseModel):
     has_discrepancy: bool = False
     flag: DriftFlag | None = None
     active_definition_node: MetricDefinitionNode | None = None
+
+
+class MarkRelabeledRequest(BaseModel):
+    """
+    Payload for POST /drift/{job_id}/mark-relabeled (Step J).
+    """
+
+    old_standard_label: str = Field(..., description="Prior period label")
+    new_standard_label: str = Field(..., description="Current period label")
+    justification: str | None = Field(default=None, description="Analyst justification")

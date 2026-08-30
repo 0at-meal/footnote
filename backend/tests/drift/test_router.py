@@ -247,3 +247,48 @@ def test_post_evaluate_job_endpoint(tmp_path: Path, client: TestClient) -> None:
     d_flags = res_flags.json()
     assert d_flags["total_flags"] == 1
     assert d_flags["flags"][0]["added_labels"] == ["Litigation"]
+
+
+def test_mark_relabeled_endpoint(tmp_path: Path, client: TestClient) -> None:
+    drift_repo = DriftRepository(data_dir=tmp_path)
+    job_id = "job_relabel"
+
+    from app.drift.models import RelabeledComponent
+
+    flag = DriftFlag(
+        flag_id="flag_rel",
+        job_id=job_id,
+        entity="CORP",
+        target_metric="Adjusted EBITDA",
+        filing_year=2024,
+        added_labels=[],
+        removed_labels=[],
+        relabeled_components=[
+            RelabeledComponent(
+                old_label="Stock-based compensation",
+                new_label="Share-based compensation",
+                similarity_score=0.85,
+                is_confirmed=False,
+            )
+        ],
+        prior_node_id="node_2023",
+        created_at="2026-08-30T12:00:00Z",
+    )
+    drift_repo.save_drift_flags(job_id, [flag])
+
+    res = client.post(
+        f"/drift/{job_id}/mark-relabeled",
+        json={
+            "old_standard_label": "Stock-based compensation",
+            "new_standard_label": "Share-based compensation",
+            "justification": "Confirmed identical substance",
+        },
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert len(data["relabeled_components"]) == 1
+    assert data["relabeled_components"][0]["is_confirmed"] is True
+    assert (
+        data["relabeled_components"][0]["justification"]
+        == "Confirmed identical substance"
+    )

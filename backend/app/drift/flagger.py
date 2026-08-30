@@ -49,6 +49,7 @@ def generate_drift_flag(
         filing_year=comparison.filing_year,
         added_labels=list(comparison.added_labels),
         removed_labels=list(comparison.removed_labels),
+        relabeled_components=list(comparison.relabeled_components),
         prior_node_id=comparison.prior_node_id,
         created_at=created_at,
     )

@@ -10,7 +10,10 @@ import os
 from pathlib import Path
 
 from app.drift.graph import HistoricalDriftGraph
-from app.drift.models import DriftComparisonResult, DriftFlag
+from app.drift.models import (
+    DriftComparisonResult,
+    DriftFlag,
+)
 from app.drift.storage import DriftGraphStore
 
 logger = logging.getLogger(__name__)
@@ -117,3 +120,33 @@ class DriftRepository:
         except (json.JSONDecodeError, OSError, ValueError) as err:
             logger.error("Failed to load drift comparison for job %s: %s", job_id, err)
             return None
+
+    def confirm_relabeling(
+        self,
+        job_id: str,
+        old_label: str,
+        new_label: str,
+        justification: str | None = None,
+    ) -> DriftFlag | None:
+        """
+        Mark a relabeled component as confirmed in the job's drift flags (Step J).
+        """
+        flags = self.get_drift_flags(job_id)
+        if not flags:
+            return None
+
+        matched_flag: DriftFlag | None = None
+        for flag in flags:
+            for rc in flag.relabeled_components:
+                if (
+                    rc.old_label.strip().lower() == old_label.strip().lower()
+                    and rc.new_label.strip().lower() == new_label.strip().lower()
+                ):
+                    rc.is_confirmed = True
+                    rc.justification = justification
+                    matched_flag = flag
+
+        if matched_flag is not None:
+            self.save_drift_flags(job_id, flags)
+
+        return matched_flag
