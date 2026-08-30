@@ -23,6 +23,7 @@ from app.excel_export.router import router as excel_export_router
 from app.footnote.router import router as footnote_router
 from app.ingestion.company_router import router as company_router
 from app.ingestion.router import router as ingestion_router
+from app.narrative.router import router as narrative_router
 from app.review.router import router as review_router
 
 app = FastAPI(
@@ -51,6 +52,7 @@ app.include_router(
 app.include_router(excel_export_router)
 app.include_router(review_router)
 app.include_router(footnote_router)
+app.include_router(narrative_router)
 app.include_router(audit_trail_router)
 app.include_router(drift_router)
 app.include_router(audit_report_router)
