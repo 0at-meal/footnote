@@ -156,3 +156,60 @@ class LeaseScheduleConfirmRequest(BaseModel):
     years: list[LeaseCommitmentYear]
     operating_discount_rate: float | None = None
     finance_discount_rate: float | None = None
+
+
+class CustomerConcentration(BaseModel):
+    """
+    Extracted disclosure of a major customer or supplier accounting for >= 10% of revenue/purchases.
+    """
+
+    customer_name: str = Field(
+        ...,
+        description="Name or pseudonym of major customer (e.g. 'Customer A', 'Apple Inc.')",
+    )
+    revenue_percentage: float | None = Field(
+        default=None, description="Percentage of consolidated revenue (e.g. 14.5)"
+    )
+    segment: str | None = Field(
+        default=None, description="Operating segment associated with disclosure"
+    )
+    disclosure_location: str = Field(
+        default="Significant Customers",
+        description="Footnote title or location in filing",
+    )
+    job_id: str = Field(..., description="Job identifier")
+    is_supplier: bool = Field(
+        default=False, description="True if supplier concentration, False if customer"
+    )
+
+
+class ConcentrationSummary(BaseModel):
+    """
+    Summary of customer and supplier concentration disclosures (ASC 280 / Item 8).
+    """
+
+    job_id: str = Field(..., description="Job identifier")
+    company_id: str | None = Field(default=None, description="Associated company ID")
+    filing_year: int | None = Field(default=None, description="Filing fiscal year")
+    customers: list[CustomerConcentration] = Field(
+        default_factory=list, description="Extracted customer concentrations"
+    )
+    suppliers: list[CustomerConcentration] = Field(
+        default_factory=list, description="Extracted supplier concentrations"
+    )
+    has_high_concentration: bool = Field(
+        default=False,
+        description="True if any single counterparty accounts for >= 15.0% of revenue",
+    )
+    is_confirmed: bool = Field(
+        default=False, description="True if confirmed by analyst review"
+    )
+
+
+class ConcentrationConfirmRequest(BaseModel):
+    """
+    Payload for POST /footnote/{job_id}/concentration/confirm.
+    """
+
+    customers: list[CustomerConcentration]
+    suppliers: list[CustomerConcentration] = Field(default_factory=list)

@@ -11,12 +11,15 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.footnote.models import (
+    ConcentrationConfirmRequest,
+    ConcentrationSummary,
     DebtSchedule,
     DebtScheduleConfirmRequest,
     LeaseSchedule,
     LeaseScheduleConfirmRequest,
 )
 from app.footnote.repository import (
+    ConcentrationRepository,
     DebtScheduleRepository,
     LeaseScheduleRepository,
 )
@@ -27,6 +30,7 @@ router = APIRouter(prefix="/footnote", tags=["footnote"])
 _default_job_repo = JobRepository()
 _default_schedule_repo = DebtScheduleRepository()
 _default_lease_repo = LeaseScheduleRepository()
+_default_concentration_repo = ConcentrationRepository()
 
 
 def get_job_repository() -> JobRepository:
@@ -41,6 +45,10 @@ def get_lease_repository() -> LeaseScheduleRepository:
     return _default_lease_repo
 
 
+def get_concentration_repository() -> ConcentrationRepository:
+    return _default_concentration_repo
+
+
 @router.get(
     "/{job_id}/available",
     response_model=list[str],
@@ -51,6 +59,9 @@ def get_available_footnotes(
     job_repo: Annotated[JobRepository, Depends(get_job_repository)],
     debt_repo: Annotated[DebtScheduleRepository, Depends(get_debt_repository)],
     lease_repo: Annotated[LeaseScheduleRepository, Depends(get_lease_repository)],
+    conc_repo: Annotated[
+        ConcentrationRepository, Depends(get_concentration_repository)
+    ],
 ) -> list[str]:
     job = job_repo.get_job(job_id)
     if job is None:
@@ -64,6 +75,9 @@ def get_available_footnotes(
         available.append("debt_schedule")
     if lease_repo.get_lease_schedule(job_id) is not None:
         available.append("lease_schedule")
+    conc = conc_repo.get_concentration(job_id)
+    if conc is not None and (conc.customers or conc.suppliers):
+        available.append("customer_concentration")
     return available
 
 
@@ -208,6 +222,77 @@ def confirm_lease_schedule(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Could not confirm lease schedule for job '{job_id}'",
+        )
+
+    return updated
+
+
+@router.get(
+    "/{job_id}/concentration",
+    response_model=ConcentrationSummary,
+    summary="Retrieve customer and supplier concentration disclosures (ASC 280)",
+    responses={
+        200: {"description": "Customer and supplier concentration summary."},
+        404: {"description": "Job not found."},
+    },
+)
+def get_concentration(
+    job_id: str,
+    job_repo: Annotated[JobRepository, Depends(get_job_repository)],
+    conc_repo: Annotated[
+        ConcentrationRepository, Depends(get_concentration_repository)
+    ],
+) -> ConcentrationSummary:
+    job = job_repo.get_job(job_id)
+    if job is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Job '{job_id}' not found",
+        )
+
+    summary = conc_repo.get_concentration(job_id)
+    if summary is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No concentration data extracted for job '{job_id}'",
+        )
+
+    return summary
+
+
+@router.post(
+    "/{job_id}/concentration/confirm",
+    response_model=ConcentrationSummary,
+    summary="Confirm and update customer and supplier concentration disclosures",
+    responses={
+        200: {"description": "Concentration summary confirmed and saved."},
+        404: {"description": "Job not found."},
+    },
+)
+def confirm_concentration(
+    job_id: str,
+    payload: ConcentrationConfirmRequest,
+    job_repo: Annotated[JobRepository, Depends(get_job_repository)],
+    conc_repo: Annotated[
+        ConcentrationRepository, Depends(get_concentration_repository)
+    ],
+) -> ConcentrationSummary:
+    job = job_repo.get_job(job_id)
+    if job is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Job '{job_id}' not found",
+        )
+
+    updated = conc_repo.confirm_concentration(
+        job_id=job_id,
+        customers=payload.customers,
+        suppliers=payload.suppliers,
+    )
+    if updated is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Could not confirm concentration for job '{job_id}'",
         )
 
     return updated

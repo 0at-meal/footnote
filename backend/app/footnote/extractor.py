@@ -16,6 +16,8 @@ from collections.abc import Sequence
 
 from app.extraction.models import ExtractedRecord, ScoredRecord
 from app.footnote.models import (
+    ConcentrationSummary,
+    CustomerConcentration,
     DebtSchedule,
     DebtTranche,
     LeaseCommitmentYear,
@@ -361,5 +363,154 @@ def extract_lease_schedule(
         finance_total=finance_total,
         operating_discount_rate=operating_discount_rate,
         finance_discount_rate=finance_discount_rate,
+        is_confirmed=False,
+    )
+
+
+_NO_SINGLE_CUSTOMER_REGEX = re.compile(
+    r"\b(?:no\s+single\s+customer|no\s+individual\s+customer|no\s+customer)\s+(?:accounted\s+for|represented|comprised)\s+(?:more\s+than\s+|greater\s+than\s+)?(?:\d+\s*%|\d+\s+percent|\d+%)",
+    re.IGNORECASE,
+)
+_CUSTOMER_CONCENTRATION_REGEX = re.compile(
+    r"\b((?:Customer\s+[A-Z0-9]+|[A-Z][A-Za-z0-9&.,\s]{2,40}?))\s+(?:accounted\s+for|represented|comprised|generated)\s+(?:approximately\s+)?(\d+(?:\.\d+)?)\s*%",
+    re.IGNORECASE,
+)
+_SUPPLIER_CONCENTRATION_REGEX = re.compile(
+    r"\b((?:Supplier\s+[A-Z0-9]+|[A-Z][A-Za-z0-9&.,\s]{2,40}?))\s+(?:supplied|accounted\s+for|provided)\s+(?:approximately\s+)?(\d+(?:\.\d+)?)\s*%",
+    re.IGNORECASE,
+)
+_SEGMENT_REGEX = re.compile(
+    r"(?:in\s+the|for\s+the)\s+([A-Za-z\s]+?)\s+segment",
+    re.IGNORECASE,
+)
+
+
+def extract_customer_concentration(
+    records_or_text: Sequence[ScoredRecord | ExtractedRecord] | str | list[str],
+    job_id: str,
+    company_id: str | None = None,
+    filing_year: int | None = None,
+) -> ConcentrationSummary:
+    """
+    Extract customer and supplier concentration disclosures (ASC 280 / Item 8).
+    """
+    if isinstance(records_or_text, str):
+        full_text = records_or_text
+    else:
+        lines: list[str] = []
+        for r in records_or_text:
+            if isinstance(r, str):
+                lines.append(r)
+            elif isinstance(r, ScoredRecord):
+                lines.append(f"{r.record.label} {r.record.value}")
+            elif isinstance(r, ExtractedRecord):
+                lines.append(f"{r.label} {r.value}")
+        full_text = "\n".join(lines)
+
+    # Check for negative "no single customer" disclosure
+    if _NO_SINGLE_CUSTOMER_REGEX.search(full_text):
+        return ConcentrationSummary(
+            job_id=job_id,
+            company_id=company_id,
+            filing_year=filing_year,
+            customers=[],
+            suppliers=[],
+            has_high_concentration=False,
+            is_confirmed=False,
+        )
+
+    customers: list[CustomerConcentration] = []
+    suppliers: list[CustomerConcentration] = []
+
+    # Match customer concentrations
+    for match in _CUSTOMER_CONCENTRATION_REGEX.finditer(full_text):
+        name = match.group(1).strip()
+        # Clean leading sentence boundaries and date prefixes
+        name = re.sub(r"^.*?[.;:]\s*", "", name)
+        name = re.sub(
+            r"^(?:during\s+\d{4},?\s*|in\s+\d{4},?\s*|for\s+\d{4},?\s*)",
+            "",
+            name,
+            flags=re.IGNORECASE,
+        ).strip()
+
+        cust_match = re.search(r"\bCustomer\s+[A-Z0-9]+\b", name, re.IGNORECASE)
+        if cust_match:
+            name = cust_match.group(0)
+
+        # Filter out common noise phrases
+        if (
+            not name
+            or name.lower().startswith("in ")
+            or name.lower().startswith("for ")
+        ):
+            continue
+        try:
+            pct = float(match.group(2))
+        except ValueError:
+            continue
+
+        # Look for segment near the match
+        snippet = full_text[match.start() : match.end() + 150]
+        seg_match = _SEGMENT_REGEX.search(snippet)
+        segment = seg_match.group(1).strip() if seg_match else None
+
+        customers.append(
+            CustomerConcentration(
+                customer_name=name,
+                revenue_percentage=pct,
+                segment=segment,
+                disclosure_location="Significant Customers (Item 8 / ASC 280)",
+                job_id=job_id,
+                is_supplier=False,
+            )
+        )
+
+    # Match supplier concentrations
+    for match in _SUPPLIER_CONCENTRATION_REGEX.finditer(full_text):
+        name = match.group(1).strip()
+        name = re.sub(r"^.*?[.;:]\s*", "", name)
+        name = re.sub(
+            r"^(?:during\s+\d{4},?\s*|in\s+\d{4},?\s*|for\s+\d{4},?\s*)",
+            "",
+            name,
+            flags=re.IGNORECASE,
+        ).strip()
+
+        supp_match = re.search(r"\bSupplier\s+[A-Z0-9]+\b", name, re.IGNORECASE)
+        if supp_match:
+            name = supp_match.group(0)
+
+        if (
+            not name
+            or name.lower().startswith("in ")
+            or name.lower().startswith("for ")
+        ):
+            continue
+        try:
+            pct = float(match.group(2))
+        except ValueError:
+            continue
+
+        suppliers.append(
+            CustomerConcentration(
+                customer_name=name,
+                revenue_percentage=pct,
+                segment=None,
+                disclosure_location="Concentration of Suppliers",
+                job_id=job_id,
+                is_supplier=True,
+            )
+        )
+
+    has_high = any((c.revenue_percentage or 0.0) >= 15.0 for c in customers + suppliers)
+
+    return ConcentrationSummary(
+        job_id=job_id,
+        company_id=company_id,
+        filing_year=filing_year,
+        customers=customers,
+        suppliers=suppliers,
+        has_high_concentration=has_high,
         is_confirmed=False,
     )

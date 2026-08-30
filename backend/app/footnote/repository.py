@@ -14,9 +14,12 @@ from pathlib import Path
 from app.extraction.repository import ExtractionRepository
 from app.footnote.extractor import (
     compile_debt_schedule,
+    extract_customer_concentration,
     extract_lease_schedule,
 )
 from app.footnote.models import (
+    ConcentrationSummary,
+    CustomerConcentration,
     DebtSchedule,
     DebtTranche,
     LeaseCommitmentYear,
@@ -227,3 +230,85 @@ class LeaseScheduleRepository:
 
         self.save_lease_schedule(schedule)
         return schedule
+
+
+class ConcentrationRepository:
+    """
+    Persists and retrieves ConcentrationSummary records for extraction jobs.
+    """
+
+    def __init__(self, data_dir: Path = _DEFAULT_DATA_DIR) -> None:
+        self._data_dir = data_dir
+        self._results_dir = data_dir / "results"
+        self._results_dir.mkdir(parents=True, exist_ok=True)
+
+    def _concentration_path(self, job_id: str) -> Path:
+        return self._results_dir / f"{job_id}_concentration.json"
+
+    def get_concentration(self, job_id: str) -> ConcentrationSummary | None:
+        """
+        Load persisted ConcentrationSummary for a job, or compile on demand.
+        """
+        path = self._concentration_path(job_id)
+        if path.exists():
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                return ConcentrationSummary.model_validate(data)
+            except (json.JSONDecodeError, OSError, ValueError) as err:
+                logger.warning(
+                    "Failed to read saved concentration for %s: %s", job_id, err
+                )
+
+        ext_repo = ExtractionRepository(data_dir=self._data_dir)
+        scored_records = ext_repo.get_scored_records(job_id)
+        if not scored_records:
+            return None
+
+        job_repo = JobRepository(data_dir=self._data_dir)
+        job = job_repo.get_job(job_id)
+
+        summary = extract_customer_concentration(
+            records_or_text=scored_records,
+            job_id=job_id,
+            company_id=job.company_id if job else None,
+            filing_year=job.filing_year if job else None,
+        )
+        self.save_concentration(summary)
+        return summary
+
+    def save_concentration(self, summary: ConcentrationSummary) -> Path:
+        """
+        Save ConcentrationSummary to disk atomically.
+        """
+        target_path = self._concentration_path(summary.job_id)
+        tmp_path = target_path.with_suffix(".tmp")
+
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            json.dump(summary.model_dump(), f, indent=2)
+
+        os.replace(tmp_path, target_path)
+        return target_path
+
+    def confirm_concentration(
+        self,
+        job_id: str,
+        customers: list[CustomerConcentration],
+        suppliers: list[CustomerConcentration],
+    ) -> ConcentrationSummary | None:
+        """
+        Update concentration entries and mark as confirmed.
+        """
+        summary = self.get_concentration(job_id)
+        if summary is None:
+            return None
+
+        summary.customers = customers
+        summary.suppliers = suppliers
+        summary.has_high_concentration = any(
+            (c.revenue_percentage or 0.0) >= 15.0 for c in customers + suppliers
+        )
+        summary.is_confirmed = True
+
+        self.save_concentration(summary)
+        return summary

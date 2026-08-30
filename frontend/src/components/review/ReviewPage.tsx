@@ -5,6 +5,7 @@ import type { PDFDocumentProxy } from '../../lib/pdf/renderer'
 import { normalizeBboxToPixels } from '../../lib/pdf/coordinates'
 import DebtScheduleCard from '../DebtScheduleCard'
 import LeaseScheduleCard from '../footnote/LeaseScheduleCard'
+import ConcentrationCard from '../footnote/ConcentrationCard'
 import './ReviewPage.css'
 
 interface Props {
@@ -1000,6 +1001,9 @@ export default function ReviewPage({
             apiBase={apiBase}
             onYearSelect={(year) => setCurrentPage(year.page)}
           />
+
+          {/* ── Customer & Supplier Concentration Card (Feature 8, Step I) ── */}
+          <ConcentrationCard jobId={jobId} apiBase={apiBase} />
 
           {!itemsLoading && !itemsError && filteredItems.length > 0 && (
             <div className="review-sidebar__list" role="listbox" aria-label="Extracted items list">
