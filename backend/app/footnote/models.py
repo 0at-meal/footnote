@@ -86,3 +86,73 @@ class DebtScheduleConfirmRequest(BaseModel):
     """
 
     tranches: list[DebtTranche]
+
+
+class LeaseCommitmentYear(BaseModel):
+    """
+    Maturity / commitment row in ASC 842 lease liability waterfall.
+    """
+
+    year_label: str = Field(
+        ..., description="Fiscal year label (e.g. '2025', '2026', 'Thereafter')"
+    )
+    operating_amount: float | None = Field(
+        default=None, description="Undiscounted operating lease cash flow"
+    )
+    finance_amount: float | None = Field(
+        default=None, description="Undiscounted finance lease cash flow"
+    )
+    total_amount: float | None = Field(
+        default=None, description="Total lease commitment for the year"
+    )
+    page: int = Field(default=1, ge=1, description="1-indexed source PDF page number")
+    bbox: dict[str, float] = Field(
+        default_factory=lambda: {"x0": 0.0, "y0": 0.0, "x1": 0.0, "y1": 0.0},
+        description="Bounding box in 0-1000 coordinate space",
+    )
+
+
+class LeaseSchedule(BaseModel):
+    """
+    Complete ASC 842 lease commitment waterfall and discount rate schedule.
+    """
+
+    job_id: str = Field(..., description="Job identifier")
+    company_id: str | None = Field(default=None, description="Associated company ID")
+    filing_year: int | None = Field(default=None, description="Filing fiscal year")
+    footnote_title: str = Field(
+        default="Note 12. Leases", description="Footnote section title"
+    )
+    years: list[LeaseCommitmentYear] = Field(
+        default_factory=list, description="Year-by-year lease commitment waterfall"
+    )
+    operating_total: float | None = Field(
+        default=None, description="Total undiscounted operating lease commitments"
+    )
+    finance_total: float | None = Field(
+        default=None, description="Total undiscounted finance lease commitments"
+    )
+    operating_discount_rate: float | None = Field(
+        default=None,
+        description="Weighted-average operating lease discount rate percentage",
+    )
+    finance_discount_rate: float | None = Field(
+        default=None,
+        description="Weighted-average finance lease discount rate percentage",
+    )
+    as_of_date: str | None = Field(
+        default=None, description="Balance sheet / footnote as of date"
+    )
+    is_confirmed: bool = Field(
+        default=False, description="True if confirmed by analyst review"
+    )
+
+
+class LeaseScheduleConfirmRequest(BaseModel):
+    """
+    Payload for POST /footnote/{job_id}/lease/confirm.
+    """
+
+    years: list[LeaseCommitmentYear]
+    operating_discount_rate: float | None = None
+    finance_discount_rate: float | None = None

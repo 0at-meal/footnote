@@ -10,14 +10,23 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.footnote.models import DebtSchedule, DebtScheduleConfirmRequest
-from app.footnote.repository import DebtScheduleRepository
+from app.footnote.models import (
+    DebtSchedule,
+    DebtScheduleConfirmRequest,
+    LeaseSchedule,
+    LeaseScheduleConfirmRequest,
+)
+from app.footnote.repository import (
+    DebtScheduleRepository,
+    LeaseScheduleRepository,
+)
 from app.ingestion.repository import JobRepository
 
 router = APIRouter(prefix="/footnote", tags=["footnote"])
 
 _default_job_repo = JobRepository()
 _default_schedule_repo = DebtScheduleRepository()
+_default_lease_repo = LeaseScheduleRepository()
 
 
 def get_job_repository() -> JobRepository:
@@ -26,6 +35,36 @@ def get_job_repository() -> JobRepository:
 
 def get_debt_repository() -> DebtScheduleRepository:
     return _default_schedule_repo
+
+
+def get_lease_repository() -> LeaseScheduleRepository:
+    return _default_lease_repo
+
+
+@router.get(
+    "/{job_id}/available",
+    response_model=list[str],
+    summary="Get list of available footnote categories extracted for a job",
+)
+def get_available_footnotes(
+    job_id: str,
+    job_repo: Annotated[JobRepository, Depends(get_job_repository)],
+    debt_repo: Annotated[DebtScheduleRepository, Depends(get_debt_repository)],
+    lease_repo: Annotated[LeaseScheduleRepository, Depends(get_lease_repository)],
+) -> list[str]:
+    job = job_repo.get_job(job_id)
+    if job is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Job '{job_id}' not found",
+        )
+
+    available: list[str] = []
+    if debt_repo.get_debt_schedule(job_id) is not None:
+        available.append("debt_schedule")
+    if lease_repo.get_lease_schedule(job_id) is not None:
+        available.append("lease_schedule")
+    return available
 
 
 @router.get(
@@ -95,6 +134,80 @@ def confirm_debt_schedule(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Could not confirm debt schedule for job '{job_id}'",
+        )
+
+    return updated
+
+
+@router.get(
+    "/{job_id}/lease",
+    response_model=LeaseSchedule,
+    summary="Retrieve extracted ASC 842 lease schedule for a job",
+    responses={
+        200: {"description": "Extracted lease schedule and commitment waterfall."},
+        404: {"description": "Job or lease records not found."},
+    },
+)
+def get_lease_schedule(
+    job_id: str,
+    job_repo: Annotated[JobRepository, Depends(get_job_repository)],
+    lease_repo: Annotated[LeaseScheduleRepository, Depends(get_lease_repository)],
+) -> LeaseSchedule:
+    """
+    Retrieve or compile the Lease Schedule (Note 12 / ASC 842) for a filing.
+    """
+    job = job_repo.get_job(job_id)
+    if job is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Job '{job_id}' not found",
+        )
+
+    schedule = lease_repo.get_lease_schedule(job_id)
+    if schedule is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No lease footnote extracted for job '{job_id}'",
+        )
+
+    return schedule
+
+
+@router.post(
+    "/{job_id}/lease/confirm",
+    response_model=LeaseSchedule,
+    summary="Confirm and update lease schedule waterfall",
+    responses={
+        200: {"description": "Lease schedule confirmed and saved."},
+        404: {"description": "Job not found."},
+    },
+)
+def confirm_lease_schedule(
+    job_id: str,
+    payload: LeaseScheduleConfirmRequest,
+    job_repo: Annotated[JobRepository, Depends(get_job_repository)],
+    lease_repo: Annotated[LeaseScheduleRepository, Depends(get_lease_repository)],
+) -> LeaseSchedule:
+    """
+    Save confirmed lease commitment waterfall and discount rates.
+    """
+    job = job_repo.get_job(job_id)
+    if job is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Job '{job_id}' not found",
+        )
+
+    updated = lease_repo.confirm_lease_schedule(
+        job_id=job_id,
+        years=payload.years,
+        operating_discount_rate=payload.operating_discount_rate,
+        finance_discount_rate=payload.finance_discount_rate,
+    )
+    if updated is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Could not confirm lease schedule for job '{job_id}'",
         )
 
     return updated

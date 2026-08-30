@@ -4,6 +4,7 @@ import { loadPdf, renderPage } from '../../lib/pdf/renderer'
 import type { PDFDocumentProxy } from '../../lib/pdf/renderer'
 import { normalizeBboxToPixels } from '../../lib/pdf/coordinates'
 import DebtScheduleCard from '../DebtScheduleCard'
+import LeaseScheduleCard from '../footnote/LeaseScheduleCard'
 import './ReviewPage.css'
 
 interface Props {
@@ -991,6 +992,13 @@ export default function ReviewPage({
             jobId={jobId}
             apiBase={apiBase}
             onTrancheSelect={(tranche) => setCurrentPage(tranche.page)}
+          />
+
+          {/* ── Lease Schedule Footnote Card (Feature 8, Step F) ── */}
+          <LeaseScheduleCard
+            jobId={jobId}
+            apiBase={apiBase}
+            onYearSelect={(year) => setCurrentPage(year.page)}
           />
 
           {!itemsLoading && !itemsError && filteredItems.length > 0 && (

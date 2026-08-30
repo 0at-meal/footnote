@@ -15,7 +15,12 @@ import re
 from collections.abc import Sequence
 
 from app.extraction.models import ExtractedRecord, ScoredRecord
-from app.footnote.models import DebtSchedule, DebtTranche
+from app.footnote.models import (
+    DebtSchedule,
+    DebtTranche,
+    LeaseCommitmentYear,
+    LeaseSchedule,
+)
 
 _FIXED_RATE_REGEX = re.compile(r"(\d+(?:\.\d+)?)\s*%", re.IGNORECASE)
 _FLOATING_RATE_REGEX = re.compile(
@@ -32,6 +37,22 @@ _DEBT_TABLE_REGEX = re.compile(
 )
 _TOTAL_DEBT_LABEL_REGEX = re.compile(
     r"\b(total\s+(?:long-term\s+)?debt|total\s+borrowings|total\s+notes|total\s+credit\s+facilities|total\s+debt\s+obligations|total\s+carrying\s+value)\b",
+    re.IGNORECASE,
+)
+_LEASE_TABLE_REGEX = re.compile(
+    r"(note\s+(?:12|\d+)[.:\s-]*)?(lease|leases|undiscounted\s+lease\s+liabilities|future\s+minimum\s+lease\s+payments|maturity\s+of\s+lease\s+liabilities|lease\s+commitments)",
+    re.IGNORECASE,
+)
+_DISCOUNT_RATE_REGEX = re.compile(
+    r"(?:weighted[\s-]average\s+discount\s+rate|discount\s+rate)",
+    re.IGNORECASE,
+)
+_YEAR_ROW_REGEX = re.compile(
+    r"\b(20[2-9]\d|thereafter|after\s+20[2-9]\d)\b",
+    re.IGNORECASE,
+)
+_TOTAL_LEASE_ROW_REGEX = re.compile(
+    r"\b(total\s+(?:undiscounted\s+)?lease\s+(?:payments|commitments|liabilities)|total\s+future\s+minimum\s+lease\s+payments)\b",
     re.IGNORECASE,
 )
 
@@ -225,5 +246,120 @@ def compile_debt_schedule(
         tranches=tranches,
         total_debt=total_debt,
         weighted_avg_rate=weighted_avg_rate,
+        is_confirmed=False,
+    )
+
+
+def extract_lease_schedule(
+    records: Sequence[ScoredRecord | ExtractedRecord],
+    job_id: str,
+    company_id: str | None = None,
+    filing_year: int | None = None,
+) -> LeaseSchedule | None:
+    """
+    Extract ASC 842 lease commitment waterfall and discount rates.
+    """
+    year_map: dict[str, LeaseCommitmentYear] = {}
+    operating_discount_rate: float | None = None
+    finance_discount_rate: float | None = None
+    has_any_lease_data = False
+
+    for r in records:
+        rec = r.record if isinstance(r, ScoredRecord) else r
+        table_name = getattr(r, "table_name", None) or ""
+        footnote_type = getattr(r, "footnote_type", None) or getattr(
+            rec, "footnote_type", None
+        )
+
+        is_lease = (
+            footnote_type == "lease"
+            or bool(_LEASE_TABLE_REGEX.search(table_name))
+            or bool(_LEASE_TABLE_REGEX.search(rec.label))
+        )
+        if not is_lease:
+            continue
+
+        has_any_lease_data = True
+        label_lower = rec.label.lower()
+
+        # Check discount rate row
+        if _DISCOUNT_RATE_REGEX.search(label_lower):
+            rate_val, _, _, _, _ = parse_rate_from_text(rec.value)
+            if rate_val is None:
+                amt, _ = parse_principal_amount(rec.value)
+                if amt is not None:
+                    rate_val = amt
+            if rate_val is not None:
+                if "finance" in label_lower:
+                    finance_discount_rate = rate_val
+                else:
+                    operating_discount_rate = rate_val
+            continue
+
+        # Suppress total lines from individual year waterfall rows
+        if _TOTAL_LEASE_ROW_REGEX.search(label_lower):
+            continue
+
+        # Match year / commitment row
+        year_match = _YEAR_ROW_REGEX.search(rec.label)
+        if year_match:
+            year_label = year_match.group(1).title()
+            amt, _ = parse_principal_amount(rec.value)
+            if amt is None:
+                continue
+
+            if year_label not in year_map:
+                year_map[year_label] = LeaseCommitmentYear(
+                    year_label=year_label,
+                    page=rec.page,
+                    bbox=rec.bbox,
+                )
+
+            entry = year_map[year_label]
+            if "finance" in label_lower:
+                entry.finance_amount = amt
+            else:
+                entry.operating_amount = amt
+
+            # Recompute total
+            op = entry.operating_amount or 0.0
+            fin = entry.finance_amount or 0.0
+            entry.total_amount = round(op + fin, 2)
+
+    if not has_any_lease_data or not year_map:
+        return None
+
+    # Sort years: 2025, 2026, 2027... Thereafter at the end
+    def _year_sort_key(y: str) -> tuple[int, str]:
+        if y.lower().startswith("there") or y.lower().startswith("after"):
+            return (9999, y)
+        try:
+            return (int(y), y)
+        except ValueError:
+            return (9000, y)
+
+    sorted_years = sorted(year_map.keys(), key=_year_sort_key)
+    years_list = [year_map[y] for y in sorted_years]
+
+    op_total_vals = [
+        y.operating_amount for y in years_list if y.operating_amount is not None
+    ]
+    fin_total_vals = [
+        y.finance_amount for y in years_list if y.finance_amount is not None
+    ]
+
+    operating_total = round(sum(op_total_vals), 2) if op_total_vals else None
+    finance_total = round(sum(fin_total_vals), 2) if fin_total_vals else None
+
+    return LeaseSchedule(
+        job_id=job_id,
+        company_id=company_id,
+        filing_year=filing_year,
+        footnote_title="Note 12. Leases (ASC 842)",
+        years=years_list,
+        operating_total=operating_total,
+        finance_total=finance_total,
+        operating_discount_rate=operating_discount_rate,
+        finance_discount_rate=finance_discount_rate,
         is_confirmed=False,
     )
