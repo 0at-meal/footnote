@@ -20,6 +20,7 @@ plan.md §5). No locking is implemented; concurrent access is out of scope.
 
 import json
 import os
+import threading
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -30,6 +31,7 @@ from app.ingestion.models import JobRecord, JobStatus
 # Default data directory: backend/data/ (one level above the app/ package root).
 # Tests override this by constructing JobRepository(data_dir=tmp_path).
 _DEFAULT_DATA_DIR: Path = Path(__file__).parent.parent.parent / "data"
+_REPO_LOCK = threading.RLock()
 
 
 class JobRepository:
@@ -59,19 +61,23 @@ class JobRepository:
         Any read or parse error propagates — never silently ignored
         (CONSTITUTION §1.9).
         """
-        if not self._jobs_file.exists():
-            return []
-        text: str = self._jobs_file.read_text(encoding="utf-8-sig")
-        raw: Any = json.loads(text)
-        return [JobRecord.model_validate(item) for item in raw]
+        with _REPO_LOCK:
+            if not self._jobs_file.exists():
+                return []
+            text: str = self._jobs_file.read_text(encoding="utf-8-sig")
+            raw: Any = json.loads(text)
+            return [JobRecord.model_validate(item) for item in raw]
 
     def _write_records(self, records: list[JobRecord]) -> None:
-        """Serialise JobRecord list to jobs.json (overwrite in place)."""
-        payload: list[dict[str, Any]] = [r.model_dump() for r in records]
-        self._jobs_file.write_text(
-            json.dumps(payload, indent=2, ensure_ascii=False),
-            encoding="utf-8",
-        )
+        """Serialise JobRecord list to jobs.json atomically with lock and tempfile rename."""
+        with _REPO_LOCK:
+            payload: list[dict[str, Any]] = [r.model_dump() for r in records]
+            tmp_file = self._jobs_file.with_suffix(".json.tmp")
+            tmp_file.write_text(
+                json.dumps(payload, indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
+            os.replace(tmp_file, self._jobs_file)
 
     # ── Public API ────────────────────────────────────────────────────────────
 
@@ -82,31 +88,10 @@ class JobRepository:
         target_metric: str,
         filing_year: int | None = None,
         company_id: str | None = None,
+        session_id: str | None = None,
     ) -> JobRecord:
         """
         Persist a validated PDF and create a JobRecord.
-
-        Steps:
-        1. Generate a UUIDv4 job_id.
-        2. Write content to uploads/<job_id>.pdf.tmp, then atomically rename
-           to uploads/<job_id>.pdf using os.replace.
-        3. Build a JobRecord with status=queued and submitted_at=now (UTC).
-        4. Append the record to jobs.json (read → append → write).
-        5. Return the JobRecord.
-
-        If any step raises, the exception propagates. The caller must not
-        treat a raised exception as a silent no-op (spec AC-9).
-
-        Args:
-            filename:      Original filename as supplied by the uploader.
-                           Stored as-is (UTF-8) — EC-8.
-            content:       Raw validated PDF bytes.
-            target_metric: User-selected target metric string.
-            filing_year:   Optional user-selected fiscal year.
-            company_id:    Optional associated company UUIDv4.
-
-        Returns:
-            The newly created and persisted JobRecord.
         """
         self._ensure_dirs()
 
@@ -130,12 +115,14 @@ class JobRepository:
             submitted_at=submitted_at,
             filing_year=filing_year,
             company_id=company_id,
+            session_id=session_id,
         )
 
-        # Read-modify-write: safe at MVP (single-user, no concurrent writers).
-        records = self._read_records()
-        records.append(record)
-        self._write_records(records)
+        # Thread-safe read-modify-write with lock
+        with _REPO_LOCK:
+            records = self._read_records()
+            records.append(record)
+            self._write_records(records)
 
         return record
 
@@ -187,27 +174,28 @@ class JobRepository:
         Returns:
             The updated JobRecord if found, or None if no job with job_id exists.
         """
-        records = self._read_records()
-        updated_record: JobRecord | None = None
+        with _REPO_LOCK:
+            records = self._read_records()
+            updated_record: JobRecord | None = None
 
-        for idx, rec in enumerate(records):
-            if rec.job_id == job_id:
-                updates: dict[str, Any] = {"status": status}
-                if model_ready is not None:
-                    updates["model_ready"] = model_ready
-                    if model_ready:
-                        updates["model_skip_reason"] = None
-                if filing_year is not None:
-                    updates["filing_year"] = filing_year
-                if company_id is not None:
-                    updates["company_id"] = company_id
-                if model_skip_reason is not None:
-                    updates["model_skip_reason"] = model_skip_reason
-                updated_record = rec.model_copy(update=updates)
-                records[idx] = updated_record
-                break
+            for idx, rec in enumerate(records):
+                if rec.job_id == job_id:
+                    updates: dict[str, Any] = {"status": status}
+                    if model_ready is not None:
+                        updates["model_ready"] = model_ready
+                        if model_ready:
+                            updates["model_skip_reason"] = None
+                    if filing_year is not None:
+                        updates["filing_year"] = filing_year
+                    if company_id is not None:
+                        updates["company_id"] = company_id
+                    if model_skip_reason is not None:
+                        updates["model_skip_reason"] = model_skip_reason
+                    updated_record = rec.model_copy(update=updates)
+                    records[idx] = updated_record
+                    break
 
-        if updated_record is not None:
-            self._write_records(records)
+            if updated_record is not None:
+                self._write_records(records)
 
-        return updated_record
+            return updated_record

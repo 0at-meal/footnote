@@ -56,6 +56,8 @@ class JobRecord(BaseModel):
     """User-selected fiscal year for the filing (e.g. 2023)."""
     company_id: str | None = None
     """UUIDv4 of the associated CompanyRecord, if assigned."""
+    session_id: str | None = None
+    """Optional analyst session ID for multi-user / team deployment isolation (Step K)."""
 
 
 class CompanyRecord(BaseModel):

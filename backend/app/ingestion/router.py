@@ -143,18 +143,13 @@ async def submit_jobs(
         str | None,
         Form(description="Optional company name to assign uploaded filings to"),
     ] = None,
+    session_id: Annotated[
+        str | None,
+        Form(description="Optional session ID for multi-analyst isolation"),
+    ] = None,
 ) -> SubmitResponse:
     """
     Submit one or more PDF files for processing.
-
-    The request must include an equal number of 'files' and 'target_metrics'
-    fields (422 if they differ). Each file is validated independently:
-    accepted files are persisted and a JobRecord is created; rejected files
-    are returned in 'rejections' without affecting the other files (EC-7).
-
-    File bytes are written atomically before the record is appended to
-    jobs.json. Any write failure propagates as a 500 — no partial job
-    record is silently left behind (spec AC-9, CONSTITUTION §1.9).
     """
     if len(files) != len(target_metrics):
         raise HTTPException(
@@ -228,6 +223,7 @@ async def submit_jobs(
                 target_metric=metric,
                 filing_year=year,
                 company_id=company_id,
+                session_id=session_id,
             )
             if company_id is not None:
                 company_repo.add_job_to_company(company_id, job.job_id)
@@ -235,6 +231,49 @@ async def submit_jobs(
             background_tasks.add_task(process_queued_job, job.job_id, repo)
 
     return SubmitResponse(created_jobs=created_jobs, rejections=rejections)
+
+
+@router.post(
+    "/jobs/async",
+    response_model=SubmitResponse,
+    status_code=202,
+    summary="Submit PDF files asynchronously (returns 202 Accepted, Step K)",
+)
+async def submit_jobs_async(
+    files: Annotated[
+        list[UploadFile],
+        File(description="One or more PDF files to submit"),
+    ],
+    target_metrics: Annotated[
+        list[str],
+        Form(description="Target metric per file, parallel-indexed to files[]"),
+    ],
+    repo: Annotated[JobRepository, Depends(get_repository)],
+    company_repo: Annotated[CompanyRepository, Depends(get_company_repository)],
+    background_tasks: BackgroundTasks,
+    filing_years: Annotated[
+        list[str] | None,
+        Form(description="Optional fiscal year per file, parallel-indexed to files[]"),
+    ] = None,
+    company_name: Annotated[
+        str | None,
+        Form(description="Optional company name to assign uploaded filings to"),
+    ] = None,
+    session_id: Annotated[
+        str | None,
+        Form(description="Optional session ID for multi-analyst isolation"),
+    ] = None,
+) -> SubmitResponse:
+    return await submit_jobs(
+        files=files,
+        target_metrics=target_metrics,
+        repo=repo,
+        company_repo=company_repo,
+        background_tasks=background_tasks,
+        filing_years=filing_years,
+        company_name=company_name,
+        session_id=session_id,
+    )
 
 
 # ── GET /upload/jobs (Step 3) ─────────────────────────────────────────────────

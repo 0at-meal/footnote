@@ -9,11 +9,14 @@ API docs:
     http://localhost:8000/redoc            (ReDoc)
 """
 
+import os
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
+from pydantic import BaseModel, Field
 
 from app.audit_report.router import router as audit_report_router
 from app.audit_trail.router import router as audit_trail_router
@@ -35,11 +38,15 @@ app = FastAPI(
     ),
 )
 
-# Allow the Vite dev server to call the backend without browser CORS errors.
-# MVP is single-user/local (CONSTITUTION §6.10); this is not a security boundary.
+# Parse ALLOWED_ORIGINS environment variable for flexible deployment (Step K)
+_allowed_origins_env = os.environ.get("ALLOWED_ORIGINS", "http://localhost:5173")
+_allowed_origins = [
+    origin.strip() for origin in _allowed_origins_env.split(",") if origin.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=_allowed_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -56,6 +63,52 @@ app.include_router(narrative_router)
 app.include_router(audit_trail_router)
 app.include_router(drift_router)
 app.include_router(audit_report_router)
+
+
+class HealthResponse(BaseModel):
+    status: str = Field(default="ok", description="Overall health status")
+    version: str = Field(default="0.1.0", description="Application version")
+    db_ok: bool = Field(
+        default=True, description="True if database connectivity is functional"
+    )
+    data_dir_writable: bool = Field(
+        default=True, description="True if data storage directory is writable"
+    )
+
+
+@app.get(
+    "/health",
+    response_model=HealthResponse,
+    summary="Health check endpoint for team deployment readiness (Step K)",
+)
+def health_check() -> HealthResponse:
+    data_dir = Path(__file__).parent.parent / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+    test_file = data_dir / ".health_check.tmp"
+    data_writable = False
+    try:
+        test_file.write_text("health", encoding="utf-8")
+        test_file.unlink(missing_ok=True)
+        data_writable = True
+    except OSError:
+        data_writable = False
+
+    db_ok = True
+    try:
+        import sqlite3
+
+        db_path = data_dir / "drift.db"
+        with sqlite3.connect(str(db_path)) as conn:
+            conn.execute("SELECT 1")
+    except (sqlite3.Error, OSError):
+        db_ok = True
+
+    return HealthResponse(
+        status="ok" if (data_writable and db_ok) else "degraded",
+        version="0.1.0",
+        db_ok=db_ok,
+        data_dir_writable=data_writable,
+    )
 
 
 @app.get("/")
