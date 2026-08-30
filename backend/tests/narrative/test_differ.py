@@ -174,3 +174,51 @@ def test_narrative_router_endpoints(tmp_path: Path) -> None:
         assert diff_data["removed_tokens"] > 0
     finally:
         app.dependency_overrides.clear()
+
+
+def test_diff_risk_factors_matching() -> None:
+    from app.narrative.differ import diff_risk_factors
+    from app.narrative.models import RiskFactor
+
+    early = [
+        RiskFactor(
+            heading="Supply Chain Risks",
+            body_text="We rely on single-source manufacturing partners.",
+        ),
+        RiskFactor(
+            heading="Discontinued Product Line",
+            body_text="Old legacy product risks.",
+        ),
+    ]
+    late = [
+        RiskFactor(
+            heading="Supply Chain Risks",
+            body_text="We rely on single-source manufacturing partners and face raw material cost inflation.",
+        ),
+        RiskFactor(
+            heading="Artificial Intelligence Regulatory Risks",
+            body_text="New compliance mandates on generative AI models.",
+        ),
+    ]
+
+    redline = diff_risk_factors(
+        earlier_risks=early,
+        later_risks=late,
+        company_id="comp-1",
+        earlier_job_id="j1",
+        later_job_id="j2",
+    )
+
+    assert redline.added_count == 1
+    assert redline.removed_count == 1
+    assert redline.modified_count == 1
+
+    added = next(c for c in redline.changes if c.change_type == "added")
+    assert "Artificial Intelligence" in added.heading
+
+    removed = next(c for c in redline.changes if c.change_type == "removed")
+    assert "Discontinued" in removed.heading
+
+    modified = next(c for c in redline.changes if c.change_type == "modified")
+    assert "Supply Chain" in modified.heading
+    assert "cost inflation" in modified.added_text

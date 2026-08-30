@@ -13,7 +13,7 @@ import re
 from collections.abc import Sequence
 
 from app.extraction.models import DoclingItem, ExtractedRecord, ScoredRecord
-from app.narrative.models import NarrativeSection
+from app.narrative.models import NarrativeSection, RiskFactor
 
 _ITEM_7_REGEX = re.compile(
     r"\bitem\s+7\.?\s*(?:[-:—]\s*)?(?:management'?s?\s+discussion\s+and\s+analysis|md&a)\b",
@@ -132,3 +132,33 @@ def extract_narrative_sections(
             s.page_end = all_pages[-1]
 
     return extracted
+
+
+def extract_risk_factors(risk_section_text: str) -> list[RiskFactor]:
+    """
+    Parse individual risk factors (heading + body text) from Item 1A text.
+    """
+    if not risk_section_text.strip():
+        return []
+
+    # Heuristic: split by paragraphs with prominent leading sentences or bold headers
+    paragraphs = [p.strip() for p in risk_section_text.split("\n\n") if p.strip()]
+    if not paragraphs:
+        paragraphs = [p.strip() for p in risk_section_text.split("\n") if p.strip()]
+
+    risks: list[RiskFactor] = []
+    for p in paragraphs:
+        # First sentence or first 120 chars as heading
+        first_period = p.find(". ")
+        if first_period != -1 and first_period < 150:
+            heading = p[: first_period + 1].strip()
+            body = p[first_period + 1 :].strip()
+        else:
+            lines = p.split("\n")
+            heading = lines[0].strip()
+            body = "\n".join(lines[1:]).strip() if len(lines) > 1 else ""
+
+        if len(heading) > 5:
+            risks.append(RiskFactor(heading=heading, body_text=body))
+
+    return risks

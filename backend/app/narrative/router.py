@@ -11,11 +11,17 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.ingestion.repository import JobRepository
-from app.narrative.differ import diff_narrative_sections
+from app.narrative.differ import (
+    diff_narrative_sections,
+    diff_risk_factors,
+)
+from app.narrative.extractor import extract_risk_factors
 from app.narrative.models import (
     NarrativeDiff,
     NarrativeDiffRequest,
     NarrativeSection,
+    RiskFactorRedline,
+    RiskFactorRedlineRequest,
 )
 from app.narrative.repository import NarrativeRepository
 
@@ -137,3 +143,77 @@ def compute_narrative_diff(
     )
     narrative_repo.save_diff(diff)
     return diff
+
+
+@router.post(
+    "/{company_id}/risk-redline",
+    response_model=RiskFactorRedline,
+    summary="Compute risk factor changes, additions, and deletions between consecutive filings",
+)
+def compute_risk_redline(
+    company_id: str,
+    payload: RiskFactorRedlineRequest,
+    job_repo: Annotated[JobRepository, Depends(get_job_repository)],
+    narrative_repo: Annotated[NarrativeRepository, Depends(get_narrative_repository)],
+) -> RiskFactorRedline:
+    earlier_job = job_repo.get_job(payload.earlier_job_id)
+    if earlier_job is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Earlier job '{payload.earlier_job_id}' not found",
+        )
+
+    later_job = job_repo.get_job(payload.later_job_id)
+    if later_job is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Later job '{payload.later_job_id}' not found",
+        )
+
+    # Check cached redline
+    cached = narrative_repo.get_risk_redline(
+        company_id=company_id,
+        earlier_job=payload.earlier_job_id,
+        later_job=payload.later_job_id,
+    )
+    if cached is not None:
+        return cached
+
+    earlier_sections = narrative_repo.get_sections(payload.earlier_job_id)
+    later_sections = narrative_repo.get_sections(payload.later_job_id)
+
+    earlier_risk_sec = next(
+        (
+            s
+            for s in earlier_sections
+            if s.item_number.lower().replace(" ", "") == "item1a"
+        ),
+        None,
+    )
+    later_risk_sec = next(
+        (
+            s
+            for s in later_sections
+            if s.item_number.lower().replace(" ", "") == "item1a"
+        ),
+        None,
+    )
+
+    earlier_risks = (
+        extract_risk_factors(earlier_risk_sec.text)
+        if earlier_risk_sec is not None
+        else []
+    )
+    later_risks = (
+        extract_risk_factors(later_risk_sec.text) if later_risk_sec is not None else []
+    )
+
+    redline = diff_risk_factors(
+        earlier_risks=earlier_risks,
+        later_risks=later_risks,
+        company_id=company_id,
+        earlier_job_id=payload.earlier_job_id,
+        later_job_id=payload.later_job_id,
+    )
+    narrative_repo.save_risk_redline(redline)
+    return redline

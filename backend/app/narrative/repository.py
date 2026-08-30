@@ -13,7 +13,11 @@ from pathlib import Path
 
 from app.extraction.repository import ExtractionRepository
 from app.narrative.extractor import extract_narrative_sections
-from app.narrative.models import NarrativeDiff, NarrativeSection
+from app.narrative.models import (
+    NarrativeDiff,
+    NarrativeSection,
+    RiskFactorRedline,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -112,5 +116,45 @@ class NarrativeRepository:
             with open(path, "r", encoding="utf-8") as f:
                 data = json.load(f)
             return NarrativeDiff.model_validate(data)
+        except (json.JSONDecodeError, OSError, ValueError):
+            return None
+
+    def _risk_redline_path(
+        self, company_id: str, earlier_job: str, later_job: str
+    ) -> Path:
+        return (
+            self._narrative_dir
+            / f"{company_id}_{earlier_job}_{later_job}_risk_redline.json"
+        )
+
+    def save_risk_redline(self, redline: RiskFactorRedline) -> Path:
+        """
+        Save RiskFactorRedline to disk atomically.
+        """
+        cid = redline.company_id or "general"
+        target_path = self._risk_redline_path(
+            cid, redline.earlier_job_id, redline.later_job_id
+        )
+        tmp_path = target_path.with_suffix(".tmp")
+
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            json.dump(redline.model_dump(), f, indent=2)
+
+        os.replace(tmp_path, target_path)
+        return target_path
+
+    def get_risk_redline(
+        self, company_id: str, earlier_job: str, later_job: str
+    ) -> RiskFactorRedline | None:
+        """
+        Load persisted RiskFactorRedline if exists.
+        """
+        path = self._risk_redline_path(company_id, earlier_job, later_job)
+        if not path.exists():
+            return None
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            return RiskFactorRedline.model_validate(data)
         except (json.JSONDecodeError, OSError, ValueError):
             return None

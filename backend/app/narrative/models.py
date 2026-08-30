@@ -72,3 +72,55 @@ class NarrativeDiffRequest(BaseModel):
     earlier_job_id: str
     later_job_id: str
     item_number: str = "Item 7"
+
+
+class RiskFactor(BaseModel):
+    """
+    Individual risk factor extracted from Item 1A.
+    """
+
+    heading: str = Field(..., description="Risk factor header / summary statement")
+    body_text: str = Field(default="", description="Detailed risk disclosure body text")
+
+
+class RiskFactorChange(BaseModel):
+    """
+    Detected modification, insertion, or deletion of a risk factor between periods.
+    """
+
+    heading: str = Field(..., description="Risk factor heading")
+    change_type: Literal["added", "removed", "modified"] = Field(
+        ..., description="Type of change"
+    )
+    severity_score: float = Field(
+        default=0.0,
+        description="Severity score (0.0-1.0) indicating magnitude of delta",
+    )
+    added_text: str = Field(default="", description="New or expanded text disclosures")
+    removed_text: str = Field(default="", description="Deleted or removed disclosures")
+
+
+class RiskFactorRedline(BaseModel):
+    """
+    Compiled risk factor redline report across consecutive filings.
+    """
+
+    company_id: str | None = Field(default=None, description="Company identifier")
+    earlier_job_id: str = Field(..., description="Prior period job ID")
+    later_job_id: str = Field(..., description="Later period job ID")
+    changes: list[RiskFactorChange] = Field(
+        default_factory=list,
+        description="List of risk factor changes sorted by severity",
+    )
+    added_count: int = Field(default=0, description="Count of newly added risks")
+    removed_count: int = Field(default=0, description="Count of discontinued risks")
+    modified_count: int = Field(default=0, description="Count of modified risks")
+
+
+class RiskFactorRedlineRequest(BaseModel):
+    """
+    Payload for POST /narrative/{company_id}/risk-redline.
+    """
+
+    earlier_job_id: str
+    later_job_id: str
