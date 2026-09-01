@@ -1,9 +1,13 @@
-# spec.md -- Feature 9: Evaluation Harness
+# spec_feature9.md — Feature 9: Evaluation Harness
+
+> **Note:** This file was previously named `spec.md`. Renamed 2026-09-01 to match the
+> `spec_feature{N}.md` naming convention of all other feature specs. Any reference to
+> `docs/spec.md` in older documents should be read as `docs/spec_feature9.md`.
 
 **Satisfies:** Verification & Validation of FR1-FR9, NFR1-NFR4
-**Phase:** 5 -- Validation & Hardening
+**Phase:** 5 — Validation & Hardening
 **Depends on:** Feature 1 through Feature 8 (the evaluation harness executes the complete production pipeline end-to-end against a curated benchmark corpus)
-**Status:** Draft
+**Status:** Draft — Deferred. Per `business_alignment.md` §1.1, the eval harness is frozen until a pilot client confirms the pipeline handles their primary use case end-to-end. Benchmark corpus does not yet exist.
 
 ---
 

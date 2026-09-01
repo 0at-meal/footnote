@@ -1,7 +1,8 @@
 # Architectural Decision Record (ADR) 001: Target-Metric-Scoped Extraction & Review Triage
 
-* **Status:** Proposed / Accepted
+* **Status:** ✅ Implemented
 * **Date:** 2026-08-19
+* **Implemented:** 2026-09-01 (Refinement Phase 1, Steps 1.1–1.2)
 * **Deciders:** Antigravity Team & Lead Financial Architect
 
 ---
@@ -54,3 +55,21 @@ We introduce **Target-Metric-Scoped Triage & Relevance Filtering** across the pi
 * **Positive:** Preserves 100% provenance and 100% determinism.
 * **Positive:** Leaves all other document tables reachable in the secondary "All Filing Tables" drawer without cluttering the primary workflow.
 * **Negative/Trade-off:** Requires a deterministic table header classifier and regex scoring rule for non-GAAP reconciliation detection.
+
+---
+
+## 5. Implementation Notes
+
+This decision was fully implemented in **Refinement Phase 1** (see `docs/archive/refinement.md`):
+
+| Ticket | File | Implementation |
+|---|---|---|
+| 1.1.1 | `extraction/docling_parser.py` | Added `_is_reconciliation_table()` pure function; added `is_reconciliation_candidate: bool` to `DoclingItem` |
+| 1.1.2 | `extraction/models.py`, `assembler.py`, `confidence.py` | Propagated `is_reconciliation_candidate` from `DoclingItem` → `ExtractedRecord` → `ScoredRecord` |
+| 1.1.3 | `job_runner.py` | Filter to `is_reconciliation_candidate == True` before Groq dispatch |
+| 1.2.1 | `review/repository.py` | `_from_classified_records()` skips non-reconciliation items; auto-accepted+matched items pre-locked |
+| 1.2.2 | `frontend/src/components/review/ReviewPage.tsx` | Simplified to two tabs: Flagged (default) and All Reconciliation Items |
+| 1.2.3 | `ReviewPage.tsx`, `review/router.py` | Added "Approve All & Generate Model" one-click button |
+
+Also note: `isFlagged` predicate was fixed per ADR intent in `issues_charter.md` Ticket 3.4 — confidence score threshold removed; only `status`-based predicate used.
+

@@ -1,8 +1,41 @@
 # Footnote — Issues Implementation Charter
 
-> Each **Step** = one issue from `issues.md`. Each **Ticket** = one atomic task implemented and tested in isolation. Tickets within a Step are ordered by dependency (earlier tickets unblock later ones).
+> **Source:** `issues.md` (2026-08-26 audit). This charter supersedes that file.  
+> Each **Step** = one issue from the audit. Each **Ticket** = one atomic task implemented
+> and tested in isolation. Tickets within a Step are ordered by dependency.
 
 ---
+
+## Completion Status
+
+> Update the checkboxes below as tickets are resolved. Steps 7, 10, and 14 are subsumed
+> by Steps 3 and 1 respectively — they have no standalone tickets.
+
+| Step | Description | Status |
+|---|---|---|
+| Step 1 | Fix PDF Highlight Positions (bbox wrong) | `[ ]` |
+| Step 2 | Fix Audit PDF Download Always Failing | `[ ]` |
+| Step 3 | Reduce Review Queue to Only Genuinely Uncertain Items | `[ ]` |
+| Step 4 | Audit Trail Empty State: Actionable Path | `[ ]` |
+| Step 5 | Warn User When PyMuPDF Fallback Is Used | `[ ]` |
+| Step 6 | Improve Confidence Scoring with Document-Structure Context | `[ ]` |
+| Step 7 | Fix `isFlagged` Filter | _(Covered by Step 3 Ticket 3.4)_ |
+| Step 8 | Audit Trail Sheet Selector: Derive Dynamically | `[ ]` |
+| Step 9 | Empty Flagged Tab: Add Generate Model Guidance | `[ ]` |
+| Step 10 | Auto-Lock High-Confidence Taxonomy-Matched Items | _(Covered by Step 3 Ticket 3.1)_ |
+| Step 11 | Formula Engine: Surface Failure Clearly | `[ ]` |
+| Step 12 | Fix Review Item IDs: Content-Based Hash | `[ ]` |
+| Step 13 | Fix Isolation Violation: audit_report imports excel_export | `[ ]` |
+| Step 14 | Fix PyMuPDF Cell Index Off-By-One | _(Covered by Step 1 Ticket 1.1)_ |
+| Step 15 | Standardize PDF Render Scale | `[ ]` |
+| Step 16 | Fix Canvas Size Read Using clientWidth | `[ ]` |
+| Step 17 | Add Extraction Progress Indicator | `[ ]` |
+| Step 18 | Replace alert() with Inline Error State | `[ ]` |
+| Step 19 | Validate Target Metric Against Document Content | `[ ]` |
+| Step 20 | Make CORS Origin Configurable | `[ ]` |
+
+---
+
 
 ## Step 1 — Fix PDF Highlight Positions (Issue 1: Bbox Wrong)
 

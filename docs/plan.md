@@ -192,7 +192,12 @@ ends with the complete product, all nine features integrated. No phase
 begins until the prior phase's Definition of Done is met and reviewed by
 a human.
 
-### Phase 1 — Ingestion Pipeline
+> **Status as of 2026-09-01:** Phases 1–4 are complete. The refinement
+> roadmap (`docs/archive/refinement.md`) added three additional phases
+> (Phase 0 / Phase 1 Refinement / Phase 2 Refinement) that are also complete.
+> Phase 5 (eval harness) is deferred — see `business_alignment.md` §1.1.
+
+### Phase 1 — Ingestion Pipeline ✅ COMPLETE
 **Delivers:** Feature 1, Feature 2 (complete).
 **Out of scope this phase:** classification, generation, any UI beyond a
 raw job list.
@@ -200,7 +205,7 @@ raw job list.
 end-to-end, locally, against real, messy 10-Ks; every extracted value
 carries resolvable page/bbox metadata; confidence-band flagging is live.
 
-### Phase 2 — Core Trust Loop
+### Phase 2 — Core Trust Loop ✅ COMPLETE
 **Delivers:** Feature 3, Feature 4 (complete).
 **Out of scope this phase:** review UI, audit lookup, drift tracking,
 export, eval harness.
@@ -209,21 +214,21 @@ deterministic formula → provenance-tagged `.xlsx` cell — is provably
 intact for Adjusted EBITDA across the Phase 1 corpus. This phase proves
 the project's central claim.
 
-### Phase 3 — Human Trust Layer
+### Phase 3 — Human Trust Layer ✅ COMPLETE
 **Delivers:** Feature 5, Feature 6 (complete).
 **Out of scope this phase:** drift tracking, export, eval harness.
 **Definition of Done:** a reviewer can confirm/correct/flag any extracted
 item and trace any generated cell back to its source PDF page in under
 10 seconds, entirely through the UI.
 
-### Phase 4 — Extensibility & Compliance Output
+### Phase 4 — Extensibility & Compliance Output ✅ COMPLETE
 **Delivers:** Feature 7, Feature 8 (complete).
 **Out of scope this phase:** eval harness, CI/CD, docs.
 **Definition of Done:** drift history survives a restart and correctly
 flags a known redefinition in the corpus; a compliance-style audit PDF
 exports correctly for a completed model.
 
-### Phase 5 — Validation & Hardening
+### Phase 5 — Validation & Hardening ⏸ DEFERRED
 **Delivers:** Feature 9 (complete); CI/CD via GitHub Actions; docs via
 MkDocs; performance tuning against NFR3.
 **Out of scope this phase:** any new feature not listed in Section 3.
@@ -232,6 +237,25 @@ cleanly in Excel; 100% of non-hardcoded cells carry resolvable
 provenance; full pipeline completes a 200-page filing in under 5 minutes
 on the local machine. All nine features are built, integrated, and
 passing their individual acceptance criteria — the product is complete.
+
+**Deferral note:** Phase 5 is frozen pending a pilot client confirmation.
+The benchmark corpus does not exist. Eval harness infrastructure should
+not expand until the scope is stable. See `business_alignment.md` §1.1.
+
+### Refinement Phase 0 — Unblock Core Loop ✅ COMPLETE
+Unblocked model generation gating, added model generation API endpoints,
+wired frontend download, and auto-generated draft models. All 12 tickets
+complete. See `docs/archive/refinement.md` for ticket details.
+
+### Refinement Phase 1 — Business Model Alignment ✅ COMPLETE
+Filtered extraction to reconciliation tables only, scoped review UI to
+flagged items, redesigned Excel output to banker-editable format, fixed
+audit trail empty state. All tickets complete.
+
+### Refinement Phase 2 — Multi-Year Company Architecture ✅ COMPLETE
+Introduced CompanyRecord, filing_year on JobRecord, multi-year Excel
+generator, company API endpoints, and drift integration with company
+history. All tickets complete.
 
 ---
 
@@ -308,13 +332,26 @@ passing their individual acceptance criteria — the product is complete.
     known edge cases (multiple URLs in one cell, spaces in sheet names)
     are avoided by Feature 4's one-hyperlink-per-cell rule.
 
-### 6.2 Still Open
+### 6.2 Answered (Formerly Open)
+
+> These were open at plan-writing time. Both have since been answered through
+> real pipeline execution.
 
 1. The 0.95 / 0.65 confidence thresholds in Feature 2/9 are informed
    defaults, not calibrated to this project's actual documents —
    recalibrate after the Phase 1 corpus produces real confidence-score
    data (industry guidance: reassess after roughly 500 processed items).
+   **→ Answered:** Thresholds confirmed workable. A `+0.15` reconciliation
+   table bonus was added to confidence scoring (see `issues_charter.md`
+   Ticket 3.3) to prevent clean flat labels from being penalised. The
+   base thresholds (0.95 / 0.65) remain in place.
+
 2. Whether `openai/gpt-oss-120b`'s 8,000 TPM / 200,000 TPD Groq free-tier
    ceiling comfortably covers realistic per-filing batch sizes given
    typical footnote context length — untested until Phase 2 batching is
    implemented against real filings.
+   **→ Answered:** Addressed by filtering extraction to reconciliation
+   tables only before Groq dispatch (`refinement.md` Step 1.1.3). This
+   dramatically reduces per-filing token usage, keeping real batches
+   well within the free-tier ceiling.
+

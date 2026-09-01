@@ -1,8 +1,31 @@
-# Footnote -- Business Alignment Diagnosis
+# Footnote — Business Alignment Diagnosis
 
 > **Purpose:** This document diagnoses Footnote against how buy-side analysts, investment bankers, and credit auditors actually consume 10-K and 10-Q filings. It covers what is **extra** (overhead with no institutional ROI), what is **wrong** (misaligned with real practitioner workflow), and what is **missing** (gaps for subscription viability). Each section closes with actionable steps and atomic tickets.
+>
+> **Produced:** 2026-08-29 | **Last reviewed:** 2026-09-01
 
 ---
+
+## Step Status (A–K)
+
+> This is the current active roadmap. Update as steps are completed.
+
+| Step | Focus | Priority | Status |
+|---|---|---|---|
+| **A** | Fix PDF coordinate accuracy (bbox wrong, Y-inversion, scale mismatch) | P0 — Demo Blocker | `[ ]` |
+| **B** | Fix review queue (zero items unless genuine ambiguity) | P0 — Demo Blocker | `[ ]` |
+| **C** | Taxonomy expansion (17-item seed → 60+ canonical, fuzzy alias) | P1 — Pilot Prerequisite | `[ ]` |
+| **D** | SEC EDGAR direct integration (ticker → filing, no upload required) | P1 — Pilot Prerequisite | `[ ]` |
+| **E** | Debt schedule footnote extraction (Item 8 tranche tables) | P2 — Differentiator | `[ ]` |
+| **F** | Lease commitment waterfall extraction (ASC 842 schedules) | P2 — Differentiator | `[ ]` |
+| **G** | MD&A delta tracking (narrative word-diff, Item 7) | P2 — Differentiator | `[ ]` |
+| **H** | Risk factor redline tracking (Item 1A) | P3 — Retention | `[ ]` |
+| **I** | Customer & supplier concentration extraction | P3 — Retention | `[ ]` |
+| **J** | Drift detection: economic substance vs. label cosmetics | P3 — Retention | `[ ]` |
+| **K** | Architecture path to team deployment (SQLite JobRepo, async, health) | P4 — Scale | `[ ]` |
+
+---
+
 
 ## 0. Executive Context
 

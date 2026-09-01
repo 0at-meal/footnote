@@ -45,3 +45,53 @@ The immutable JSON schema required by `CONSTITUTION §2.3` for all raw extractio
 
 #### 9. W3C Web Annotation Provenance Record
 A canonical JSON object mapping each generated `.xlsx` cell to its exact bounding box (`x0, y0, x1, y1` normalized to 0–1000), page number, and source file in the original filing.
+
+---
+
+### Multi-Year & Company Architecture Terms (Phase 2)
+
+#### 10. CompanyRecord
+A Pydantic model (`backend/app/ingestion/models.py`) grouping one or more `JobRecord`s under a named company entity. Fields: `company_id` (UUIDv4), `name`, `ticker`, `created_at`, `job_ids`. Stored in `data/companies.json`.
+
+#### 11. filing_year
+An optional integer field on `JobRecord` recording the fiscal year of a filing (e.g. `2023`). Used to order columns in the multi-year Excel workbook and to supply filing year context to drift detection without manual input.
+
+#### 12. Multi-Year Generator
+The function `generate_multi_year_workbook` in `backend/app/excel_export/multi_year_generator.py`. Produces a single `.xlsx` with fiscal years as columns and normalized line items as rows, covering all filings associated with a company.
+
+---
+
+### Reconciliation Scoping Terms (Refinement Phase 1)
+
+#### 13. is_reconciliation_candidate
+A boolean flag (`bool = False`) propagated from `DoclingItem` → `ExtractedRecord` → `ScoredRecord`. Set `True` for items whose parent table title matches the target metric (case-insensitive) or contains keywords: `non-gaap`, `reconciliation`, `adjusted`, `bridge`. Items flagged `False` are filtered from Groq dispatch and the review queue.
+
+#### 14. Noise Suppression Pre-Filter
+The function `_is_noise_cell(cell_text, row_idx, col_idx)` in `docling_parser.py` that drops non-data table cells (SEC document boilerplate like `"Item 7."`, `"Table of Contents"`, `"PART I"`, currency qualifiers like `"in millions"`, and cells containing no numeric digits).
+
+#### 15. Draft Model
+An `.xlsx` workbook auto-generated during the initial extraction pass using auto-accepted reconciliation items. Generated without requiring explicit analyst review, enabling immediate download for clean filings.
+
+---
+
+### Footnote Intelligence Terms (Roadmap — Steps E, F)
+
+#### 16. DebtSchedule
+A structured model (`backend/app/footnote/models.py`) representing a parsed debt maturity table from Item 8. Fields include `tranches` (list of `DebtTranche` with coupon rate, maturity date, outstanding principal) and `total_debt`.
+
+#### 17. LeaseSchedule
+A structured model representing the ASC 842 lease commitment waterfall. Fields include year-by-year `operating_amount` and `finance_amount`, `operating_discount_rate`, and `finance_discount_rate`.
+
+#### 18. NarrativeSection
+A structured model (`backend/app/narrative/models.py`) representing a parsed MD&A or Risk Factors section extracted from a filing. Fields: `job_id`, `item_number`, `title`, `text`, `page_start`, `page_end`.
+
+---
+
+### Drift Detection Terms (Refinement)
+
+#### 19. DriftChangeType
+An enum on `DriftEdge` with values: `added`, `removed`, `relabeled`, `split`, `merged`. `relabeled` carries `from_label` and `to_label` fields, distinguishing economic-substance changes from cosmetic label renames.
+
+#### 20. parser_used
+A `Literal["docling", "pymupdf", "mixed"]` field on `DoclingItem` and `ExtractionSummary`. Records which parser produced each extraction record, enabling conditional Y-axis inversion in the coordinate normalizer and surfacing a quality-degraded warning in the review UI when the PyMuPDF fallback was used.
+
