@@ -1,9 +1,15 @@
-# Footnote -- Refinement Roadmap
+# Footnote — Refinement Roadmap
+
+> **✅ ARCHIVED — ALL PHASES COMPLETE.** This document was moved to `docs/archive/`
+> on 2026-09-01. All 22 tickets across Phases 0, 1, and 2 are marked `[x]` complete.
+> This is a historical reference. For the next active roadmap, see
+> `docs/business_alignment.md` (Steps A–K).
 
 **Produced by:** Strategic diagnosis + grill-me interview session (2026-08-20).
-**Execution model:** Each ticket is implemented one at a time using the standard 7-step development loop from handoff.md (Explore -> Plan -> Implement -> Verify -> Review -> Test -> Commit). No phase begins until every ticket in the prior phase passes mypy --strict, pytest, npm test, ruff, and eslint.
+**Execution model:** Each ticket is implemented one at a time using the standard 7-step development loop from `docs/implementation-loop.md`. No phase begins until every ticket in the prior phase passes mypy --strict, pytest, npm test, ruff, and eslint.
 
 ---
+
 
 ## Resolved Architecture Decisions
 

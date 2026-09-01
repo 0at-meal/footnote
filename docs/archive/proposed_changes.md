@@ -1,11 +1,18 @@
 # Proposed Architectural Evolution: From Single-Metric Bridge to Institutional Multi-Statement Valuation Engine
 
+> **⚠ ARCHIVED — SUPERSEDED.** This document was moved to `docs/archive/` on 2026-09-01.
+> It is superseded by `docs/business_alignment.md` (2026-08-29), which concluded that the
+> 6-tab multi-statement generator proposed here is architectural inflation. The Income
+> Statement, Cash Flow, and Balance Sheet tabs have no subscription value vs. terminals.
+> See `business_alignment.md` §1.2 for the freeze decision and rationale.
+
 **Document Version:** 1.0.0  
 **Target Platform:** Footnote Financial Modeling Platform  
 **Target Audience:** Engineering, Product, Financial Engineering  
-**File Location:** `docs/proposed_changes.md`
+**File Location:** ~~`docs/proposed_changes.md`~~ → `docs/archive/proposed_changes.md`
 
 ---
+
 
 ## 1. Current State Architecture & Baseline Capabilities
 
