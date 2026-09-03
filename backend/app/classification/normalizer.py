@@ -82,26 +82,14 @@ def is_target_metric_candidate_item(
     table_lower = table_name.lower()
     metric_lower = target_metric.lower()
 
-    # 2. Named target metric or reconciliation keywords in table title
-    if (
+    # 2. Table title contains target metric name or explicit reconciliation bridge markers
+    return bool(
         metric_lower in table_lower
         or "reconciliation" in table_lower
         or "non-gaap" in table_lower
         or "non gaap" in table_lower
-        or "adjusted" in table_lower
         or "bridge" in table_lower
-    ):
-        return True
-
-    # 3. Keyword match on normalized label only if is_reconciliation_candidate is True
-    if record.is_reconciliation_candidate or record.record.is_reconciliation_candidate:
-        raw_label = record.record.label.lower()
-        norm_label = (normalized_label or "").lower()
-        for kw in _RECONCILIATION_KEYWORDS:
-            if kw in norm_label or kw in raw_label:
-                return True
-
-    return False
+    )
 
 
 def normalize_records(

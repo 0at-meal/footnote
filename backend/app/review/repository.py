@@ -497,8 +497,11 @@ class ReviewRepository:
             elif cr.taxonomy_status == TaxonomyStatus.pending_taxonomy_confirmation:
                 status = ReviewStatus.pending_taxonomy_confirmation
             elif sr.confidence_band == ConfidenceBand.auto_accepted:
-                # Ticket 3.1: auto_accepted + matched items are pre-locked
-                status = ReviewStatus.locked
+                # Ticket 2.1: auto_accepted + matched items are pre-locked
+                if cr.taxonomy_status == TaxonomyStatus.matched:
+                    status = ReviewStatus.locked
+                else:
+                    status = ReviewStatus.auto_accepted
             elif sr.confidence_band == ConfidenceBand.needs_review:
                 status = ReviewStatus.needs_review
             else:

@@ -12,7 +12,7 @@
 | Step | Priority | Title | Tickets | Status |
 |---|---|---|:---:|:---:|
 | [Step 1](#step-1--p0--fix-core-coordinate--rendering-correctness-bugs) | **P0** | Fix Core Coordinate & Rendering Correctness Bugs | 6 | `[x]` 6/6 |
-| [Step 2](#step-2--p0--fix-review-queue-overcrowding--confidence-scoring) | **P0** | Fix Review Queue Overcrowding & Confidence Scoring | 5 | `[ ]` 0/5 |
+| [Step 2](#step-2--p0--fix-review-queue-overcrowding--confidence-scoring) | **P0** | Fix Review Queue Overcrowding & Confidence Scoring | 5 | `[x]` 5/5 |
 | [Step 3](#step-3--p0--fix-architectural-isolation-violation) | **P0** | Fix Architectural Isolation Violation | 2 | `[ ]` 0/2 |
 | [Step 4](#step-4--p1--fix-fragile-review-item-ids--audit-trail-resolution) | **P1** | Fix Fragile Review Item IDs & Audit Trail Resolution | 2 | `[ ]` 0/2 |
 | [Step 5](#step-5--p1--fix-audit-pdf-export--empty-state-guidance) | **P1** | Fix Audit PDF Export & Empty State Guidance | 4 | `[ ]` 0/4 |
@@ -142,11 +142,11 @@
 
 | Ticket ID | Title | Target File | Status |
 |---|---|---|:---:|
-| Ticket 2.1 | Auto-lock `auto_accepted` + `taxonomy_matched` items on init | `backend/app/review/repository.py` | `[ ]` |
-| Ticket 2.2 | Tighten `is_target_metric_candidate_item()` candidate filter | `backend/app/classification/normalizer.py` | `[ ]` |
-| Ticket 2.3 | Fix frontend `isFlagged` filter to status-based check | `frontend/src/components/review/ReviewPage.tsx` | `[ ]` |
-| Ticket 2.4 | Add numeric value (+0.05) & reconciliation (+0.15) signals | `backend/app/extraction/confidence.py` | `[ ]` |
-| Ticket 2.5 | Add table-consistency second-pass boost in `score_records` | `backend/app/extraction/confidence.py` | `[ ]` |
+| Ticket 2.1 | Auto-lock `auto_accepted` + `taxonomy_matched` items on init | `backend/app/review/repository.py` | `[x]` |
+| Ticket 2.2 | Tighten `is_target_metric_candidate_item()` candidate filter | `backend/app/classification/normalizer.py` | `[x]` |
+| Ticket 2.3 | Fix frontend `isFlagged` filter to status-based check | `frontend/src/components/review/ReviewPage.tsx` | `[x]` |
+| Ticket 2.4 | Add numeric value (+0.05) & reconciliation (+0.15) signals | `backend/app/extraction/confidence.py` | `[x]` |
+| Ticket 2.5 | Add table-consistency second-pass boost in `score_records` | `backend/app/extraction/confidence.py` | `[x]` |
 
 ---
 
