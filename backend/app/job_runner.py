@@ -197,7 +197,62 @@ def process_queued_job(
         model_ready = False
         model_skip_reason: str | None = None
 
-        if len(formula_inputs.nodes) > 0:
+        if workflow_pack == "capital_structure":
+            # Stage 8: Capital Structure & Debt Sizing Model Generation (Ticket 14.1)
+            from app.excel_export.debt_schedule_generator import (
+                generate_capital_structure_workbook,
+            )
+            from app.footnote.extractor import (
+                compile_debt_schedule,
+                extract_lease_schedule,
+            )
+            from app.footnote.repository import (
+                DebtScheduleRepository,
+                LeaseScheduleRepository,
+            )
+
+            debt_repo = DebtScheduleRepository(data_dir=repo.data_dir)
+            lease_repo = LeaseScheduleRepository(data_dir=repo.data_dir)
+            debt_sched = compile_debt_schedule(
+                job_id=job_id,
+                company_id=getattr(job, "company_id", None),
+                filing_year=getattr(job, "filing_year", None),
+                records=scored_records,
+            )
+            lease_sched = extract_lease_schedule(
+                job_id=job_id,
+                records=scored_records,
+            )
+            debt_repo.save_debt_schedule(job_id, debt_sched)
+            lease_repo.save_lease_schedule(job_id, lease_sched)
+
+            generation_result = generate_capital_structure_workbook(
+                debt_schedule=debt_sched,
+                lease_schedule=lease_sched,
+                job_id=job_id,
+                output_dir=repo.data_dir,
+            )
+            model_repo.save_generation_result(job_id, generation_result)
+            if (
+                generation_result.is_success
+                and generation_result.provenance_records
+            ):
+                model_repo.save_provenance_records(
+                    job_id, generation_result.provenance_records
+                )
+                model_ready = True
+                model_skip_reason = None
+                logger.info(
+                    "Generated draft Capital Structure model for job %s with %d cells",
+                    job_id,
+                    generation_result.total_cells_generated,
+                )
+            else:
+                model_skip_reason = (
+                    generation_result.error_detail
+                    or "Capital structure workbook generation failed"
+                )
+        elif len(formula_inputs.nodes) > 0:
             if workflow_pack == "non_gaap_bridge":
                 # Stage 8: Primary 2-tab Non-GAAP Bridge Model Generation (Ticket 7.3)
                 formula_tree = build_formula_tree(

@@ -61,7 +61,11 @@ app.include_router(
 app.include_router(excel_export_router)
 app.include_router(review_router)
 app.include_router(footnote_router)
-app.include_router(narrative_router)
+
+# Narrative text diffing is deferred from primary numeric spreading pipeline (Ticket 14.2)
+ENABLE_NARRATIVE = os.getenv("ENABLE_NARRATIVE", "true").lower() in ("true", "1")
+if ENABLE_NARRATIVE:
+    app.include_router(narrative_router)
 app.include_router(audit_trail_router)
 app.include_router(drift_router)
 app.include_router(audit_report_router)
