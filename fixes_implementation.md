@@ -16,7 +16,7 @@
 | [Step 3](#step-3--p0--fix-architectural-isolation-violation) | **P0** | Fix Architectural Isolation Violation | 2 | `[x]` 2/2 |
 | [Step 4](#step-4--p1--fix-fragile-review-item-ids--audit-trail-resolution) | **P1** | Fix Fragile Review Item IDs & Audit Trail Resolution | 2 | `[x]` 2/2 |
 | [Step 5](#step-5--p1--fix-audit-pdf-export--empty-state-guidance) | **P1** | Fix Audit PDF Export & Empty State Guidance | 4 | `[x]` 4/4 |
-| [Step 6](#step-6--p1--surface-pipeline-failures--review-completion-actions) | **P1** | Surface Pipeline Failures & Review Completion Actions | 3 | `[ ]` 0/3 |
+| [Step 6](#step-6--p1--surface-pipeline-failures--review-completion-actions) | **P1** | Surface Pipeline Failures & Review Completion Actions | 3 | `[x]` 3/3 |
 | [Step 7](#step-7--p2--introduce-targeted-workflow-packs-architecture) | **P2** | Introduce Targeted Workflow Packs Architecture | 4 | `[ ]` 0/4 |
 | [Step 8](#step-8--p2--extract-and-deduplicate-shared-excel-utilities) | **P2** | Extract and Deduplicate Shared Excel Utilities | 2 | `[ ]` 0/2 |
 | [Step 9](#step-9--p2--fix-remaining-ux--operational-issues) | **P2** | Fix Remaining UX & Operational Issues | 6 | `[ ]` 0/6 |
@@ -386,9 +386,9 @@
 
 | Ticket ID | Title | Target File | Status |
 |---|---|---|:---:|
-| Ticket 6.1 | Populate and persist `model_skip_reason` on `JobRecord` | `backend/app/ingestion/models.py`, `repository.py`, `job_runner.py` | `[ ]` |
-| Ticket 6.2 | Surface `model_skip_reason` tooltip in `JobList` | `frontend/src/components/JobList.tsx`, `frontend/src/types/job.ts` | `[ ]` |
-| Ticket 6.3 | Add "Approve & Generate Model" CTA to empty Flagged tab | `frontend/src/components/review/ReviewPage.tsx` | `[ ]` |
+| Ticket 6.1 | Populate and persist `model_skip_reason` on `JobRecord` | `backend/app/ingestion/models.py`, `repository.py`, `job_runner.py` | `[x]` |
+| Ticket 6.2 | Surface `model_skip_reason` tooltip in `JobList` | `frontend/src/components/JobList.tsx`, `frontend/src/types/job.ts` | `[x]` |
+| Ticket 6.3 | Add "Approve & Generate Model" CTA to empty Flagged tab | `frontend/src/components/review/ReviewPage.tsx` | `[x]` |
 
 ---
 
