@@ -26,18 +26,11 @@ from app.audit_report.models import (
     ReportMetadata,
 )
 from app.audit_trail.resolver import AuditTrailResolver
-from app.classification.repository import ClassificationRepository
 from app.drift.repository import DriftRepository
-from app.excel_export.generator import generate_workbook
-from app.excel_export.repository import ModelRepository
 from app.extraction.models import ScoredRecord
 from app.extraction.repository import ExtractionRepository
-from app.formula_engine.reader import (
-    read_formula_inputs,
-    read_formula_inputs_from_review,
-)
-from app.formula_engine.tree import build_formula_tree
 from app.ingestion.repository import JobRepository
+from app.model_compilation_service import get_or_compile_provenance
 from app.review.models import ReviewItem, ReviewStatus
 from app.review.repository import ReviewRepository
 
@@ -63,7 +56,6 @@ class AuditReportCompiler:
     def __init__(self, data_dir: Path = _DEFAULT_DATA_DIR) -> None:
         self._data_dir = data_dir
         self._job_repo = JobRepository(data_dir=data_dir)
-        self._model_repo = ModelRepository(data_dir=data_dir)
         self._review_repo = ReviewRepository(data_dir=data_dir)
         self._audit_trail_resolver = AuditTrailResolver(data_dir=data_dir)
         self._drift_repo = DriftRepository(data_dir=data_dir)
@@ -87,45 +79,11 @@ class AuditReportCompiler:
         if job is None:
             raise JobNotFoundError(f"Job '{job_id}' not found.")
 
-        provenance_records = self._model_repo.get_provenance_records(job_id)
-        if not provenance_records:
-            # Attempt on-the-fly model compilation if confirmed/locked items exist (Ticket 5.2)
-            review_items_for_gen = self._review_repo.get_review_items(job_id)
-            classification_repo = ClassificationRepository(data_dir=self._data_dir)
-            classified_records = classification_repo.get_classified_records(job_id)
-
-            batch = None
-            if review_items_for_gen is not None and len(review_items_for_gen) > 0:
-                batch = read_formula_inputs_from_review(review_items_for_gen)
-            elif classified_records is not None and len(classified_records) > 0:
-                batch = read_formula_inputs(classified_records)
-
-            if batch is not None and len(batch.nodes) > 0:
-                target_metric = job.target_metric or "Adjusted EBITDA"
-                formula_tree = build_formula_tree(batch, target_metric=target_metric)
-                if formula_tree.is_valid:
-                    generation_result = generate_workbook(
-                        formula_tree,
-                        job_id=job_id,
-                        output_dir=self._data_dir,
-                    )
-                    self._model_repo.save_generation_result(job_id, generation_result)
-                    if generation_result.provenance_records:
-                        self._model_repo.save_provenance_records(
-                            job_id, generation_result.provenance_records
-                        )
-                        provenance_records = generation_result.provenance_records
-                else:
-                    logger.warning(
-                        "Audit report compilation failed for job %s: formula tree invalid (%s)",
-                        job_id,
-                        formula_tree.error_message,
-                    )
-            else:
-                logger.warning(
-                    "Audit report compilation failed for job %s: no confirmed or auto-accepted line items found",
-                    job_id,
-                )
+        provenance_records = get_or_compile_provenance(
+            job_id=job_id,
+            data_dir=self._data_dir,
+            target_metric=job.target_metric or "Adjusted EBITDA",
+        )
 
         if not provenance_records:
             logger.warning(
