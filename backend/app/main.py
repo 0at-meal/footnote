@@ -103,7 +103,7 @@ def health_check() -> HealthResponse:
         with sqlite3.connect(str(db_path)) as conn:
             conn.execute("SELECT 1")
     except (sqlite3.Error, OSError):
-        db_ok = True
+        db_ok = False
 
     return HealthResponse(
         status="ok" if (data_writable and db_ok) else "degraded",
