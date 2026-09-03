@@ -34,49 +34,14 @@ from app.ingestion.models import CompanyRecord, JobRecord
 logger = logging.getLogger(__name__)
 
 _DEFAULT_DATA_DIR: Path = Path(__file__).parent.parent.parent / "data"
-_IB_CURRENCY_FORMAT: str = '$#,##0.00;($#,##0.00);"-"'
-
-
-def _parse_numeric_value(raw_val: str) -> tuple[float | None, bool]:
-    """
-    Parses a raw string value into a float, supporting commas, parentheses for negatives.
-
-    Returns:
-        (parsed_float_or_None, is_valid_number)
-    """
-    cleaned = raw_val.strip()
-    if not cleaned:
-        return None, False
-
-    is_negative = False
-    if cleaned.startswith("(") and cleaned.endswith(")"):
-        is_negative = True
-        cleaned = cleaned[1:-1].strip()
-
-    cleaned = cleaned.replace(",", "").replace("$", "").strip()
-
-    try:
-        val = float(cleaned)
-        if is_negative:
-            val = -val
-        return val, True
-    except ValueError:
-        return None, False
-
-
-def _col_to_letter(col_idx: int) -> str:
-    """Converts 0-indexed column number to Excel column letter (0 -> 'A', 1 -> 'B')."""
-    result = ""
-    col = col_idx
-    while col >= 0:
-        result = chr(ord("A") + (col % 26)) + result
-        col = (col // 26) - 1
-    return result
-
-
-def _to_cell_coord(row_idx: int, col_idx: int) -> str:
-    """Converts 0-indexed (row, col) to A1-style coordinate (e.g. (1, 1) -> 'B2')."""
-    return f"{_col_to_letter(col_idx)}{row_idx + 1}"
+from app.excel_export.utils import (
+    IB_CURRENCY_FORMAT as _IB_CURRENCY_FORMAT,
+)
+from app.excel_export.utils import (
+    _col_to_letter,
+    _parse_numeric_value,
+    _to_cell_coord,
+)
 
 
 def generate_multi_year_workbook(
