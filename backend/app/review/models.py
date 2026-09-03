@@ -98,6 +98,7 @@ class ReviewItemsResponse(BaseModel):
     items: list[ReviewItem]
     total_items: int
     parser_used: str | None = None
+    target_metric_found: bool = True
 
 
 class ReviewItemEditRequest(BaseModel):

@@ -49,4 +49,5 @@ export type ReviewItemsResponse = {
   items: ReviewItem[]
   total_items: number
   parser_used?: 'docling' | 'pymupdf' | 'mixed' | null
+  target_metric_found?: boolean
 }

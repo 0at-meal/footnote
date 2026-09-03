@@ -101,12 +101,16 @@ def get_review_items(job_id: str) -> ReviewItemsResponse:
     extraction_repo = ExtractionRepository(data_dir=_job_repo.data_dir)
     summary = extraction_repo.get_extraction_summary(job_id)
     parser_used = summary.parser_used if summary is not None else None
+    target_metric_found = (
+        summary.target_metric_found if summary is not None else True
+    )
 
     return ReviewItemsResponse(
         job_id=job_id,
         items=items,
         total_items=len(items),
         parser_used=parser_used,
+        target_metric_found=target_metric_found,
     )
 
 

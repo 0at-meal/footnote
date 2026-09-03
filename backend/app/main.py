@@ -38,8 +38,10 @@ app = FastAPI(
     ),
 )
 
-# Parse ALLOWED_ORIGINS environment variable for flexible deployment (Step K)
-_allowed_origins_env = os.environ.get("ALLOWED_ORIGINS", "http://localhost:5173")
+# Parse ALLOWED_ORIGINS environment variable for flexible deployment (Step 9 Ticket 9.6)
+_allowed_origins_env = os.environ.get(
+    "ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:5174"
+)
 _allowed_origins = [
     origin.strip() for origin in _allowed_origins_env.split(",") if origin.strip()
 ]

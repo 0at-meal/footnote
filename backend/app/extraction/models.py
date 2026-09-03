@@ -179,3 +179,4 @@ class ExtractionSummary(BaseModel):
     passed_threshold: bool
     filtered_non_reconciliation_count: int = 0
     parser_used: Literal["docling", "pymupdf", "mixed"] = "docling"
+    target_metric_found: bool = True

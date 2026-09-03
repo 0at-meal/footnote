@@ -107,6 +107,8 @@ export default function ReviewPage({
   const [generateModelError, setGenerateModelError] = useState<string | null>(null)
   const [parserUsed, setParserUsed] = useState<string | null>(initialParserUsed)
   const [isParserBannerDismissed, setIsParserBannerDismissed] = useState<boolean>(false)
+  const [targetMetricFound, setTargetMetricFound] = useState<boolean>(true)
+  const [isTargetMetricBannerDismissed, setIsTargetMetricBannerDismissed] = useState<boolean>(false)
   const [selectedBulkTaxonomyIds, setSelectedBulkTaxonomyIds] = useState<Set<string>>(new Set())
   const [customCanonicalNames, setCustomCanonicalNames] = useState<Record<string, string>>({})
   const [isBulkConfirmingTaxonomy, setIsBulkConfirmingTaxonomy] = useState<boolean>(false)
@@ -189,6 +191,9 @@ export default function ReviewPage({
         setItems(data.items)
         if (data.parser_used) {
           setParserUsed(data.parser_used)
+        }
+        if (data.target_metric_found !== undefined) {
+          setTargetMetricFound(data.target_metric_found)
         }
         if (data.items.length > 0) {
           setSelectedItem(data.items[0])
@@ -349,8 +354,9 @@ export default function ReviewPage({
       setItems((prev) => prev.map((it) => (it.id === updatedItem.id ? updatedItem : it)))
       setSelectedItem(updatedItem)
       setTaxonomyPromptItem(null)
+      setEditError(null)
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Confirmation failed')
+      setEditError(err instanceof Error ? err.message : 'Confirmation failed')
     } finally {
       setIsActionPending(false)
     }
@@ -358,6 +364,7 @@ export default function ReviewPage({
 
   async function handleFlag(item: ReviewItem) {
     setIsActionPending(true)
+    setEditError(null)
 
     try {
       const res = await fetch(`${apiBase}/review/${jobId}/items/${item.id}/flag`, {
@@ -372,8 +379,9 @@ export default function ReviewPage({
       const updatedItem = (await res.json()) as ReviewItem
       setItems((prev) => prev.map((it) => (it.id === updatedItem.id ? updatedItem : it)))
       setSelectedItem(updatedItem)
+      setEditError(null)
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Flag action failed')
+      setEditError(err instanceof Error ? err.message : 'Flag action failed')
     } finally {
       setIsActionPending(false)
     }
@@ -381,6 +389,7 @@ export default function ReviewPage({
 
   async function handleUnlock(item: ReviewItem) {
     setIsActionPending(true)
+    setEditError(null)
 
     try {
       const res = await fetch(`${apiBase}/review/${jobId}/items/${item.id}/unlock`, {
@@ -395,8 +404,9 @@ export default function ReviewPage({
       const updatedItem = (await res.json()) as ReviewItem
       setItems((prev) => prev.map((it) => (it.id === updatedItem.id ? updatedItem : it)))
       setSelectedItem(updatedItem)
+      setEditError(null)
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Unlock action failed')
+      setEditError(err instanceof Error ? err.message : 'Unlock action failed')
     } finally {
       setIsActionPending(false)
     }
@@ -413,6 +423,7 @@ export default function ReviewPage({
     if (selected.length === 0) return
 
     setIsBulkConfirmingTaxonomy(true)
+    setEditError(null)
     try {
       const confirmations = selected.map((it) => ({
         item_id: it.id,
@@ -437,7 +448,7 @@ export default function ReviewPage({
       }
       setSelectedBulkTaxonomyIds(new Set())
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Bulk taxonomy confirmation failed')
+      setEditError(err instanceof Error ? err.message : 'Bulk taxonomy confirmation failed')
     } finally {
       setIsBulkConfirmingTaxonomy(false)
     }
@@ -597,6 +608,48 @@ export default function ReviewPage({
             className="review-banner__close-btn"
             onClick={() => setIsParserBannerDismissed(true)}
             aria-label="Dismiss warning"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#fef3c7',
+              cursor: 'pointer',
+              fontSize: '1rem',
+              padding: '0.25rem 0.5rem',
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* ── Target Metric Not Found Warning Banner (Ticket 9.4) ── */}
+      {!targetMetricFound && !isTargetMetricBannerDismissed && (
+        <div
+          className="review-banner review-banner--warning"
+          role="alert"
+          style={{
+            backgroundColor: '#451a03',
+            border: '1px solid #d97706',
+            color: '#fef3c7',
+            padding: '0.75rem 1rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '1rem',
+            marginBottom: '0.5rem',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
+            <span style={{ fontSize: '1.1rem' }}>⚠️</span>
+            <span>
+              <strong>Target Metric Not Found</strong> — The requested target metric was not explicitly identified in document table titles or headers. Please verify extracted items or confirm them manually.
+            </span>
+          </div>
+          <button
+            type="button"
+            className="review-banner__close-btn"
+            onClick={() => setIsTargetMetricBannerDismissed(true)}
+            aria-label="Dismiss metric warning"
             style={{
               background: 'transparent',
               border: 'none',

@@ -35,6 +35,7 @@ def create_extraction_summary(
     records: list[ScoredRecord],
     image_only_page_count: int = 0,
     parser_used: Literal["docling", "pymupdf", "mixed"] = "docling",
+    target_metric_found: bool = True,
 ) -> ExtractionSummary:
     """
     Compute aggregate summary statistics and threshold evaluation for an extraction job.
@@ -46,6 +47,8 @@ def create_extraction_summary(
     Args:
         records: List of all ScoredRecord objects produced for a job.
         image_only_page_count: Count of scanned/image-only pages without selectable text (Spec EC-7).
+        parser_used: Parser implementation used for extraction.
+        target_metric_found: Whether the target metric was found in document tables.
 
     Returns:
         An ExtractionSummary Pydantic model instance.
@@ -85,4 +88,5 @@ def create_extraction_summary(
         passed_threshold=passed_threshold,
         filtered_non_reconciliation_count=filtered_non_reconciliation_count,
         parser_used=parser_used,
+        target_metric_found=target_metric_found,
     )

@@ -58,6 +58,19 @@ function StatusBadge({
     )
   }
 
+  if (status === 'extracting') {
+    return (
+      <span
+        className="status-badge status-badge--extracting"
+        aria-label="Status: Extracting"
+        title="Processing PDF — this may take 30–60 seconds for large documents"
+        style={{ cursor: 'wait' }}
+      >
+        Extracting
+      </span>
+    )
+  }
+
   return (
     <span className={`status-badge status-badge--${status}`} aria-label={`Status: ${STATUS_LABELS[status]}`}>
       {STATUS_LABELS[status]}

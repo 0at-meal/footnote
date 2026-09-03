@@ -19,7 +19,7 @@
 | [Step 6](#step-6--p1--surface-pipeline-failures--review-completion-actions) | **P1** | Surface Pipeline Failures & Review Completion Actions | 3 | `[x]` 3/3 |
 | [Step 7](#step-7--p2--introduce-targeted-workflow-packs-architecture) | **P2** | Introduce Targeted Workflow Packs Architecture | 4 | `[x]` 4/4 |
 | [Step 8](#step-8--p2--extract-and-deduplicate-shared-excel-utilities) | **P2** | Extract and Deduplicate Shared Excel Utilities | 2 | `[x]` 2/2 |
-| [Step 9](#step-9--p2--fix-remaining-ux--operational-issues) | **P2** | Fix Remaining UX & Operational Issues | 6 | `[ ]` 0/6 |
+| [Step 9](#step-9--p2--fix-remaining-ux--operational-issues) | **P2** | Fix Remaining UX & Operational Issues | 6 | `[x]` 6/6 |
 | [Step 10](#step-10--p2--fix-route-duplication-and-dependency-injection-consistency) | **P2** | Fix Route Duplication and Dependency Injection Consistency | 5 | `[ ]` 0/5 |
 | [Step 11](#step-11--p3--fix-health-check-logic-inversion) | **P3** | Fix Health Check Logic Inversion | 1 | `[ ]` 0/1 |
 | [Step 12](#step-12--p3--normalize-audit-report-route-prefix) | **P3** | Normalize Audit Report Route Prefix | 1 | `[ ]` 0/1 |
@@ -552,12 +552,12 @@
 
 | Ticket ID | Title | Target File | Status |
 |---|---|---|:---:|
-| Ticket 9.1 | Replace blocking `alert()` with inline `editError` | `frontend/src/components/review/ReviewPage.tsx` | `[ ]` |
-| Ticket 9.2 | Add pulsing extraction progress indicator | `frontend/src/components/JobList.tsx`, `frontend/src/App.css` | `[ ]` |
-| Ticket 9.3 | Derive Audit Trail sheet selector dynamically | `frontend/src/components/audit/AuditTrailView.tsx` | `[ ]` |
-| Ticket 9.4 | Detect and surface target metric not found warning | `backend/app/job_runner.py`, `review/router.py`, `ReviewPage.tsx` | `[ ]` |
-| Ticket 9.5 | Surface PyMuPDF fallback degraded quality warning | `backend/app/review/router.py`, `frontend/src/components/review/ReviewPage.tsx` | `[ ]` |
-| Ticket 9.6 | Make CORS origin configurable via `ALLOWED_ORIGINS` | `backend/app/main.py` | `[ ]` |
+| Ticket 9.1 | Replace blocking `alert()` with inline `editError` | `frontend/src/components/review/ReviewPage.tsx` | `[x]` |
+| Ticket 9.2 | Add pulsing extraction progress indicator | `frontend/src/components/JobList.tsx`, `frontend/src/App.css` | `[x]` |
+| Ticket 9.3 | Derive Audit Trail sheet selector dynamically | `frontend/src/components/audit/AuditTrailView.tsx` | `[x]` |
+| Ticket 9.4 | Detect and surface target metric not found warning | `backend/app/job_runner.py`, `review/router.py`, `ReviewPage.tsx` | `[x]` |
+| Ticket 9.5 | Surface PyMuPDF fallback degraded quality warning | `backend/app/review/router.py`, `frontend/src/components/review/ReviewPage.tsx` | `[x]` |
+| Ticket 9.6 | Make CORS origin configurable via `ALLOWED_ORIGINS` | `backend/app/main.py` | `[x]` |
 
 ---
 

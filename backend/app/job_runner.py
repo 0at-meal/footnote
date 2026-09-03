@@ -120,10 +120,20 @@ def process_queued_job(
 
         # Stage 5: Extraction summary & threshold evaluation
         image_only_page_count = count_image_only_pages(pdf_path)
+        target_metric_found = (
+            any(
+                target_metric.lower() in (getattr(it, "table_name", "") or "").lower()
+                or target_metric.lower() in (getattr(it, "label", "") or "").lower()
+                for it in docling_items
+            )
+            if docling_items
+            else False
+        )
         summary = create_extraction_summary(
             scored_records,
             image_only_page_count=image_only_page_count,
             parser_used=parser_used,
+            target_metric_found=target_metric_found,
         )
         extraction_repo.save_extraction_summary(job_id, summary)
 
