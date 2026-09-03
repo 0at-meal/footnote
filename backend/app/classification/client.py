@@ -13,6 +13,10 @@ import logging
 import os
 import time
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from groq import APIConnectionError, APIError, Groq, RateLimitError
 from groq.types.chat import ChatCompletionMessageParam
 from pydantic import ValidationError

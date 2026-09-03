@@ -10,4 +10,6 @@ backend/data/
 backend/temp_test_dir/
 .pytest_cache/
 .agents/
-skills-lock.json
+skills-lock.json
+.env
+*.env
