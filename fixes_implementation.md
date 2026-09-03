@@ -23,7 +23,7 @@
 | [Step 10](#step-10--p2--fix-route-duplication-and-dependency-injection-consistency) | **P2** | Fix Route Duplication and Dependency Injection Consistency | 5 | `[x]` 5/5 |
 | [Step 11](#step-11--p3--fix-health-check-logic-inversion) | **P3** | Fix Health Check Logic Inversion | 1 | `[x]` 1/1 |
 | [Step 12](#step-12--p3--normalize-audit-report-route-prefix) | **P3** | Normalize Audit Report Route Prefix | 1 | `[x]` 1/1 |
-| [Step 13](#step-13--p3--freeze-the-evaluation-harness) | **P3** | Freeze the Evaluation Harness | 1 | `[ ]` 0/1 |
+| [Step 13](#step-13--p3--freeze-the-evaluation-harness) | **P3** | Freeze the Evaluation Harness | 1 | `[x]` 1/1 |
 | [Step 14](#step-14--p3--wire-footnote-as-workflow-pack-2-and-defer-narrative) | **P3** | Wire `footnote/` as Workflow Pack 2 and Defer `narrative/` | 2 | `[ ]` 0/2 |
 
 **Total:** 14 Steps, 44 Atomic Tickets
@@ -769,7 +769,7 @@
 
 | Ticket ID | Title | Target File | Status |
 |---|---|---|:---:|
-| Ticket 13.1 | Add freeze notice and documentation to `eval/` | `eval/README.md` | `[ ]` |
+| Ticket 13.1 | Add freeze notice and documentation to `eval/` | `eval/README.md` | `[x]` |
 
 ---
 
