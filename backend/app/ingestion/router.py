@@ -34,6 +34,7 @@ from app.ingestion.edgar_client import (
 )
 from app.ingestion.models import (
     ALLOWED_TARGET_METRICS,
+    ALLOWED_WORKFLOW_PACKS,
     EdgarCompanyResult,
     EdgarFiling,
     EdgarSubmitRequest,
@@ -147,6 +148,10 @@ async def submit_jobs(
         str | None,
         Form(description="Optional session ID for multi-analyst isolation"),
     ] = None,
+    workflow_packs: Annotated[
+        list[str] | None,
+        Form(description="Optional workflow pack per file, parallel-indexed to files[]"),
+    ] = None,
 ) -> SubmitResponse:
     """
     Submit one or more PDF files for processing.
@@ -198,6 +203,24 @@ async def submit_jobs(
     else:
         parsed_years = [None] * len(files)
 
+    parsed_packs: list[str] = []
+    if workflow_packs is not None and len(workflow_packs) > 0:
+        if len(workflow_packs) != len(files):
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    f"'files' and 'workflow_packs' must have the same length "
+                    f"(got {len(files)} files and {len(workflow_packs)} packs)"
+                ),
+            )
+        for wp in workflow_packs:
+            if wp in ALLOWED_WORKFLOW_PACKS:
+                parsed_packs.append(wp)
+            else:
+                parsed_packs.append("non_gaap_bridge")
+    else:
+        parsed_packs = ["non_gaap_bridge"] * len(files)
+
     company_id: str | None = None
     if company_name is not None and company_name.strip():
         cleaned_company_name = company_name.strip()
@@ -209,7 +232,7 @@ async def submit_jobs(
     created_jobs: list[JobRecord] = []
     rejections = []
 
-    for upload, metric, year in zip(files, target_metrics, parsed_years):
+    for upload, metric, year, pack in zip(files, target_metrics, parsed_years, parsed_packs):
         content: bytes = await upload.read()
         filename: str = upload.filename or "<unknown>"
         result = validate_pdf_bytes(filename, content)
@@ -224,6 +247,7 @@ async def submit_jobs(
                 filing_year=year,
                 company_id=company_id,
                 session_id=session_id,
+                workflow_pack=pack,
             )
             if company_id is not None:
                 company_repo.add_job_to_company(company_id, job.job_id)
@@ -263,6 +287,10 @@ async def submit_jobs_async(
         str | None,
         Form(description="Optional session ID for multi-analyst isolation"),
     ] = None,
+    workflow_packs: Annotated[
+        list[str] | None,
+        Form(description="Optional workflow pack per file, parallel-indexed to files[]"),
+    ] = None,
 ) -> SubmitResponse:
     return await submit_jobs(
         files=files,
@@ -273,6 +301,7 @@ async def submit_jobs_async(
         filing_years=filing_years,
         company_name=company_name,
         session_id=session_id,
+        workflow_packs=workflow_packs,
     )
 
 

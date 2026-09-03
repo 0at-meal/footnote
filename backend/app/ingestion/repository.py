@@ -89,6 +89,7 @@ class JobRepository:
         filing_year: int | None = None,
         company_id: str | None = None,
         session_id: str | None = None,
+        workflow_pack: str = "non_gaap_bridge",
     ) -> JobRecord:
         """
         Persist a validated PDF and create a JobRecord.
@@ -116,6 +117,7 @@ class JobRepository:
             filing_year=filing_year,
             company_id=company_id,
             session_id=session_id,
+            workflow_pack=workflow_pack,  # type: ignore[arg-type]
         )
 
         # Thread-safe read-modify-write with lock

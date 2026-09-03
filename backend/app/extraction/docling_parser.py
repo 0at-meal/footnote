@@ -213,12 +213,62 @@ def _is_reconciliation_table(
     return any(kw in combined for kw in reconciliation_keywords)
 
 
+def is_table_relevant_for_pack(
+    table_title: str,
+    workflow_pack: str = "non_gaap_bridge",
+    target_metric: str = "",
+    sample_text: str = "",
+) -> bool:
+    """
+    Deterministically determines if a table is relevant for the selected workflow pack (Step 7).
+    """
+    combined = f"{table_title} {sample_text}".lower().strip()
+    if not combined:
+        return False
+
+    if workflow_pack == "capital_structure":
+        debt_keywords = (
+            "debt",
+            "credit facility",
+            "credit facilities",
+            "borrowings",
+            "notes payable",
+            "senior notes",
+            "term loan",
+            "revolving credit",
+            "maturities",
+            "leases",
+            "lease obligations",
+            "capital structure",
+            "interest expense",
+        )
+        return any(kw in combined for kw in debt_keywords)
+
+    if workflow_pack == "cash_conversion":
+        cf_keywords = (
+            "cash flow",
+            "cash flows",
+            "operating activities",
+            "working capital",
+            "capital expenditures",
+            "capex",
+            "free cash flow",
+            "cash conversion",
+        )
+        return any(kw in combined for kw in cf_keywords)
+
+    return _is_reconciliation_table(table_title, target_metric, sample_text)
+
+
 class DoclingParseError(Exception):
     """Raised when an unrecoverable structural parse error occurs during extraction."""
 
 
 def parse_pdf(
-    pdf_path: Path, source_file: str, target_metric: str = ""
+    pdf_path: Path,
+    source_file: str,
+    target_metric: str = "",
+    workflow_pack: str = "non_gaap_bridge",
 ) -> list[DoclingItem]:
     """
     Parse a local PDF filing using Docling and extract raw table cell items.
@@ -227,6 +277,7 @@ def parse_pdf(
         pdf_path: Absolute or relative Path to the stored PDF file on disk.
         source_file: Original filename string stored in the job record (UTF-8, EC-8).
         target_metric: Optional target financial metric name to match in table titles.
+        workflow_pack: Selected workflow pack for bounded extraction (Step 7).
 
     Returns:
         List of DoclingItem objects ordered deterministically by page, row, col (NFR1).
@@ -257,7 +308,12 @@ def parse_pdf(
             pdf_path,
             err,
         )
-        return _parse_pdf_with_pymupdf(pdf_path, source_file, target_metric)
+        return _parse_pdf_with_pymupdf(
+            pdf_path,
+            source_file,
+            target_metric,
+            workflow_pack=workflow_pack,
+        )
 
     items: list[DoclingItem] = []
 
@@ -273,7 +329,9 @@ def parse_pdf(
                 continue
 
             table_title = _extract_table_title(table, table_idx, table_cells)
-            is_reconciliation = _is_reconciliation_table(table_title, target_metric)
+            is_reconciliation = is_table_relevant_for_pack(
+                table_title, workflow_pack, target_metric
+            )
 
             # Identify header text by column and row indices
             col_headers: dict[int, list[str]] = {}
@@ -447,6 +505,7 @@ def _parse_pdf_with_pymupdf(
     pdf_path: Path,
     source_file: str,
     target_metric: str = "Adjusted EBITDA",
+    workflow_pack: str = "non_gaap_bridge",
 ) -> list[DoclingItem]:
     """
     Fast, robust native PyMuPDF table parser fallback (used when Docling is not installed or errors).
@@ -484,8 +543,8 @@ def _parse_pdf_with_pymupdf(
                 sample_text = " ".join(
                     [str(c or "") for row in extracted[:6] for c in row if c]
                 )
-                is_reconciliation = _is_reconciliation_table(
-                    table_title, target_metric, sample_text=sample_text
+                is_reconciliation = is_table_relevant_for_pack(
+                    table_title, workflow_pack, target_metric, sample_text=sample_text
                 )
 
                 num_cols = getattr(table, "col_count", len(extracted[0]))

@@ -17,8 +17,8 @@
 | [Step 4](#step-4--p1--fix-fragile-review-item-ids--audit-trail-resolution) | **P1** | Fix Fragile Review Item IDs & Audit Trail Resolution | 2 | `[x]` 2/2 |
 | [Step 5](#step-5--p1--fix-audit-pdf-export--empty-state-guidance) | **P1** | Fix Audit PDF Export & Empty State Guidance | 4 | `[x]` 4/4 |
 | [Step 6](#step-6--p1--surface-pipeline-failures--review-completion-actions) | **P1** | Surface Pipeline Failures & Review Completion Actions | 3 | `[x]` 3/3 |
-| [Step 7](#step-7--p2--introduce-targeted-workflow-packs-architecture) | **P2** | Introduce Targeted Workflow Packs Architecture | 4 | `[ ]` 0/4 |
-| [Step 8](#step-8--p2--extract-and-deduplicate-shared-excel-utilities) | **P2** | Extract and Deduplicate Shared Excel Utilities | 2 | `[ ]` 0/2 |
+| [Step 7](#step-7--p2--introduce-targeted-workflow-packs-architecture) | **P2** | Introduce Targeted Workflow Packs Architecture | 4 | `[x]` 4/4 |
+| [Step 8](#step-8--p2--extract-and-deduplicate-shared-excel-utilities) | **P2** | Extract and Deduplicate Shared Excel Utilities | 2 | `[x]` 2/2 |
 | [Step 9](#step-9--p2--fix-remaining-ux--operational-issues) | **P2** | Fix Remaining UX & Operational Issues | 6 | `[ ]` 0/6 |
 | [Step 10](#step-10--p2--fix-route-duplication-and-dependency-injection-consistency) | **P2** | Fix Route Duplication and Dependency Injection Consistency | 5 | `[ ]` 0/5 |
 | [Step 11](#step-11--p3--fix-health-check-logic-inversion) | **P3** | Fix Health Check Logic Inversion | 1 | `[ ]` 0/1 |
@@ -441,10 +441,10 @@
 
 | Ticket ID | Title | Target File | Status |
 |---|---|---|:---:|
-| Ticket 7.1 | Add `workflow_pack` to Ingestion Schemas & API | `backend/app/ingestion/models.py`, `router.py`, `frontend/src/types/job.ts` | `[ ]` |
-| Ticket 7.2 | Implement Bounded Extraction Routing in Pipeline | `backend/app/job_runner.py`, `backend/app/extraction/docling_parser.py` | `[ ]` |
-| Ticket 7.3 | Restructure Generators: `bridge_generator.py` and demote 6-tab | `backend/app/excel_export/` | `[ ]` |
-| Ticket 7.4 | Add Workflow Pack Selector to `UploadZone` UI | `frontend/src/components/UploadZone.tsx`, `frontend/src/App.tsx` | `[ ]` |
+| Ticket 7.1 | Add `workflow_pack` to Ingestion Schemas & API | `backend/app/ingestion/models.py`, `router.py`, `frontend/src/types/job.ts` | `[x]` |
+| Ticket 7.2 | Implement Bounded Extraction Routing in Pipeline | `backend/app/job_runner.py`, `backend/app/extraction/docling_parser.py` | `[x]` |
+| Ticket 7.3 | Restructure Generators: `bridge_generator.py` and demote 6-tab | `backend/app/excel_export/` | `[x]` |
+| Ticket 7.4 | Add Workflow Pack Selector to `UploadZone` UI | `frontend/src/components/UploadZone.tsx`, `frontend/src/App.tsx` | `[x]` |
 
 ---
 
@@ -513,8 +513,8 @@
 
 | Ticket ID | Title | Target File | Status |
 |---|---|---|:---:|
-| Ticket 8.1 | Create `excel_export/utils.py` with canonical `_parse_numeric_value` | `backend/app/excel_export/utils.py` | `[ ]` |
-| Ticket 8.2 | Extract `_col_to_letter` and `_to_cell_coord` into `utils.py` | `backend/app/excel_export/utils.py` | `[ ]` |
+| Ticket 8.1 | Create `excel_export/utils.py` with canonical `_parse_numeric_value` | `backend/app/excel_export/utils.py` | `[x]` |
+| Ticket 8.2 | Extract `_col_to_letter` and `_to_cell_coord` into `utils.py` | `backend/app/excel_export/utils.py` | `[x]` |
 
 ---
 

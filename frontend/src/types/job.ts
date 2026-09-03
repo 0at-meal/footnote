@@ -11,6 +11,22 @@ export type TargetMetric = (typeof TARGET_METRICS)[number]
 
 export const DEFAULT_METRIC: TargetMetric = 'Adjusted EBITDA'
 
+export const WORKFLOW_PACKS = [
+  'non_gaap_bridge',
+  'capital_structure',
+  'cash_conversion',
+] as const
+
+export type WorkflowPack = (typeof WORKFLOW_PACKS)[number]
+
+export const DEFAULT_WORKFLOW_PACK: WorkflowPack = 'non_gaap_bridge'
+
+export const WORKFLOW_PACK_LABELS: Record<WorkflowPack, string> = {
+  non_gaap_bridge: 'Non-GAAP Bridge (Pack 1)',
+  capital_structure: 'Capital Structure & Debt (Pack 2)',
+  cash_conversion: 'Cash Conversion & WC (Pack 3)',
+}
+
 /**
  * A file that has been accepted client-side and is awaiting submission.
  * This is local state only — no backend job_id exists yet (that is Feature 1, Step 3).
@@ -28,6 +44,8 @@ export type StagedFile = {
   target_metric: TargetMetric
   /** Optional user-selected fiscal year for the filing (e.g. 2023). */
   filing_year?: number | null
+  /** Selected workflow pack for bounded extraction (Step 7). */
+  workflow_pack?: WorkflowPack
 }
 
 /**
@@ -70,6 +88,8 @@ export type JobRecord = {
   filing_year?: number | null
   /** UUIDv4 of the associated company entity. */
   company_id?: string | null
+  /** Selected workflow pack for bounded extraction (Step 7). */
+  workflow_pack?: WorkflowPack
 }
 
 /**

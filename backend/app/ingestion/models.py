@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -7,6 +8,13 @@ ALLOWED_TARGET_METRICS: tuple[str, ...] = (
     "EBITDA",
     "Net Income",
     "Free Cash Flow",
+)
+
+WorkflowPack = Literal["non_gaap_bridge", "capital_structure", "cash_conversion"]
+ALLOWED_WORKFLOW_PACKS: tuple[str, ...] = (
+    "non_gaap_bridge",
+    "capital_structure",
+    "cash_conversion",
 )
 
 
@@ -58,6 +66,8 @@ class JobRecord(BaseModel):
     """UUIDv4 of the associated CompanyRecord, if assigned."""
     session_id: str | None = None
     """Optional analyst session ID for multi-user / team deployment isolation (Step K)."""
+    workflow_pack: WorkflowPack = "non_gaap_bridge"
+    """Workflow pack selected for bounded extraction and model generation (Step 7)."""
 
 
 class CompanyRecord(BaseModel):

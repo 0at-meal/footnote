@@ -1,7 +1,7 @@
 """
-[DEPRECATED: Use multi_statement_generator.py instead for 6-tab multi-statement model generation]
+Primary Non-GAAP Reconciliation Bridge Excel Generator (Workflow Pack 1 / Step 7).
 
-Excel workbook generator using xlsxwriter with exact provenance tagging (Feature 4 Step 4).
+Generates a deterministic 2-tab workbook (Source_Inputs + Reconciliation) with exact W3C provenance tagging.
 
 Enforces:
 - CONSTITUTION §1.1, §1.3, §1.5, §2.5, §3.3, §4.2, §6.4
@@ -39,52 +39,13 @@ logger = logging.getLogger(__name__)
 
 _DEFAULT_DATA_DIR: Path = Path(__file__).parent.parent.parent / "data"
 
-# Standard IB currency number format: positive, negative in parens, zero as dash
-_IB_CURRENCY_FORMAT = '$#,##0.00;($#,##0.00);"-"'
-
-
-def _parse_numeric_value(raw_val: str) -> tuple[float | None, bool]:
-    """
-    Parses a raw string value into a float, supporting commas, parentheses for negatives.
-
-    Returns:
-        (parsed_float_or_None, is_valid_number)
-    """
-    cleaned = raw_val.strip()
-    if not cleaned:
-        return None, False
-
-    # Check for negative in parentheses: e.g. (1,234.56) -> -1234.56
-    is_negative = False
-    if cleaned.startswith("(") and cleaned.endswith(")"):
-        is_negative = True
-        cleaned = cleaned[1:-1].strip()
-
-    # Remove commas and currency symbols
-    cleaned = cleaned.replace(",", "").replace("$", "").strip()
-
-    try:
-        val = float(cleaned)
-        if is_negative:
-            val = -val
-        return val, True
-    except ValueError:
-        return None, False
-
-
-def _col_to_letter(col_idx: int) -> str:
-    """Converts 0-indexed column number to Excel column letter (0 -> 'A', 5 -> 'F')."""
-    result = ""
-    col = col_idx
-    while col >= 0:
-        result = chr(ord("A") + (col % 26)) + result
-        col = (col // 26) - 1
-    return result
-
-
-def _to_cell_coord(row_idx: int, col_idx: int) -> str:
-    """Converts 0-indexed (row, col) to A1-style coordinate (e.g. (1, 5) -> 'F2')."""
-    return f"{_col_to_letter(col_idx)}{row_idx + 1}"
+from app.excel_export.utils import (
+    IB_CURRENCY_FORMAT as _IB_CURRENCY_FORMAT,
+)
+from app.excel_export.utils import (
+    _parse_numeric_value,
+    _to_cell_coord,
+)
 
 
 def generate_workbook(

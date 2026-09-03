@@ -23,6 +23,7 @@ from app.classification.models import ClassificationBatchResult
 from app.classification.normalizer import normalize_records
 from app.classification.repository import ClassificationRepository
 from app.classification.taxonomy import TaxonomyRepository
+from app.excel_export.bridge_generator import generate_bridge_workbook
 from app.excel_export.multi_statement_generator import generate_multi_statement_workbook
 from app.excel_export.repository import ModelRepository
 from app.extraction.assembler import assemble_records
@@ -35,7 +36,7 @@ from app.extraction.docling_parser import parse_pdf
 from app.extraction.flagger import create_extraction_summary
 from app.extraction.repository import ExtractionRepository
 from app.formula_engine.reader import read_formula_inputs
-from app.formula_engine.tree import build_comprehensive_model_tree
+from app.formula_engine.tree import build_comprehensive_model_tree, build_formula_tree
 from app.ingestion.models import JobStatus
 from app.ingestion.repository import JobRepository
 
@@ -82,11 +83,16 @@ def process_queued_job(
 
     try:
         pdf_path = repo.get_pdf_path(job_id)
-
         target_metric = job.target_metric or "Adjusted EBITDA"
+        workflow_pack = getattr(job, "workflow_pack", "non_gaap_bridge") or "non_gaap_bridge"
 
-        # Stage 1: Docling structural parse
-        docling_items = parse_pdf(pdf_path, job.filename, target_metric=target_metric)
+        # Stage 1: Docling structural parse (bounded extraction per workflow pack, Ticket 7.2)
+        docling_items = parse_pdf(
+            pdf_path,
+            job.filename,
+            target_metric=target_metric,
+            workflow_pack=workflow_pack,
+        )
         extraction_repo.save_docling_items(job_id, docling_items)
 
         parsers_in_items = {
@@ -176,55 +182,80 @@ def process_queued_job(
         log_entries = build_log_entries(job_id, batch_result, active_taxonomy)
         decision_log_repo.log_batch_calls(job_id, log_entries)
 
-        # Stage 7: Formula Engine Input & Comprehensive Model Construction (Phase B & C)
+        # Stage 7: Formula Engine Input & Model Construction (Workflow Packs Architecture)
         formula_inputs = read_formula_inputs(classified_records)
         model_ready = False
         model_skip_reason: str | None = None
 
         if len(formula_inputs.nodes) > 0:
-            comp_tree = build_comprehensive_model_tree(formula_inputs)
-
-            # Stage 8: Excel Export & Provenance Tagging (6-Tab Model)
-            if comp_tree.is_valid:
-                generation_result = generate_multi_statement_workbook(
-                    company=None,
-                    year_trees=[(job, comp_tree)],
-                    output_dir=repo.data_dir,
+            if workflow_pack == "non_gaap_bridge":
+                # Stage 8: Primary 2-tab Non-GAAP Bridge Model Generation (Ticket 7.3)
+                formula_tree = build_formula_tree(
+                    formula_inputs, target_metric=target_metric
                 )
-                model_repo.save_generation_result(job_id, generation_result)
-
-                if (
-                    generation_result.is_success
-                    and generation_result.provenance_records
-                ):
-                    model_repo.save_provenance_records(
-                        job_id, generation_result.provenance_records
+                if formula_tree.is_valid:
+                    generation_result = generate_bridge_workbook(
+                        formula_tree,
+                        job_id=job_id,
+                        output_dir=repo.data_dir,
                     )
-                    model_ready = True
-                    model_skip_reason = None
-                    logger.info(
-                        "Generated draft Excel model workbook for job %s with %d cells",
-                        job_id,
-                        generation_result.total_cells_generated,
-                    )
+                    model_repo.save_generation_result(job_id, generation_result)
+                    if (
+                        generation_result.is_success
+                        and generation_result.provenance_records
+                    ):
+                        model_repo.save_provenance_records(
+                            job_id, generation_result.provenance_records
+                        )
+                        model_ready = True
+                        model_skip_reason = None
+                        logger.info(
+                            "Generated draft Non-GAAP bridge model for job %s with %d cells",
+                            job_id,
+                            generation_result.total_cells_generated,
+                        )
+                    else:
+                        model_skip_reason = (
+                            generation_result.error_detail
+                            or "Bridge workbook generation failed"
+                        )
                 else:
                     model_skip_reason = (
-                        generation_result.error_detail or "Workbook generation failed"
-                    )
-                    logger.warning(
-                        "Model workbook generation unsuccessful for job %s: %s",
-                        job_id,
-                        model_skip_reason,
+                        formula_tree.error_message or "Bridge formula tree invalid"
                     )
             else:
-                model_skip_reason = (
-                    comp_tree.error_message or "Formula tree validation failed"
-                )
-                logger.warning(
-                    "Formula tree invalid for draft generation in job %s: %s",
-                    job_id,
-                    comp_tree.error_message,
-                )
+                # Stage 8: Multi-statement / Comprehensive Model Generation
+                comp_tree = build_comprehensive_model_tree(formula_inputs)
+                if comp_tree.is_valid:
+                    generation_result = generate_multi_statement_workbook(
+                        company=None,
+                        year_trees=[(job, comp_tree)],
+                        output_dir=repo.data_dir,
+                    )
+                    model_repo.save_generation_result(job_id, generation_result)
+                    if (
+                        generation_result.is_success
+                        and generation_result.provenance_records
+                    ):
+                        model_repo.save_provenance_records(
+                            job_id, generation_result.provenance_records
+                        )
+                        model_ready = True
+                        model_skip_reason = None
+                        logger.info(
+                            "Generated draft Excel model workbook for job %s with %d cells",
+                            job_id,
+                            generation_result.total_cells_generated,
+                        )
+                    else:
+                        model_skip_reason = (
+                            generation_result.error_detail
+                            or "Workbook generation failed"
+                        )
+                else:
+                    model_skip_reason = (
+                        comp_tree.error_message or "Formula tree validation failed"
+                    )
         else:
             model_skip_reason = (
                 formula_inputs.error_message

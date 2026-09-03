@@ -12,6 +12,7 @@ import type {
   TargetMetric,
   JobRecord,
   CompanyWithJobs,
+  WorkflowPack,
 } from './types/job'
 import { DEFAULT_METRIC } from './types/job'
 import './App.css'
@@ -24,6 +25,7 @@ function App() {
   const [persistedJobs, setPersistedJobs] = useState<JobRecord[]>([])
   const [submissionErrors, setSubmissionErrors] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [selectedWorkflowPack, setSelectedWorkflowPack] = useState<WorkflowPack>('non_gaap_bridge')
   const [activeReviewJobId, setActiveReviewJobId] = useState<string | null>(null)
   const [activeAuditJobId, setActiveAuditJobId] = useState<string | null>(null)
   const [selectedCompany, setSelectedCompany] = useState<string>('')
@@ -88,6 +90,7 @@ function App() {
       file_size_bytes: file.size,
       target_metric: DEFAULT_METRIC,
       filing_year: null,
+      workflow_pack: selectedWorkflowPack,
     }))
     setStagedFiles((prev) => [...prev, ...newFiles])
   }
@@ -130,6 +133,7 @@ function App() {
         form.append('files', sf.file, sf.filename)
         form.append('target_metrics', sf.target_metric)
         form.append('filing_years', sf.filing_year ? String(sf.filing_year) : '')
+        form.append('workflow_packs', sf.workflow_pack ?? selectedWorkflowPack)
       }
 
       const res = await fetch(`${API_BASE}/upload/jobs`, {
@@ -266,7 +270,11 @@ function App() {
               refreshCompanies()
             }}
           />
-          <UploadZone onFilesAdded={handleFilesAdded} />
+          <UploadZone
+            onFilesAdded={handleFilesAdded}
+            selectedWorkflowPack={selectedWorkflowPack}
+            onSelectWorkflowPack={setSelectedWorkflowPack}
+          />
         </section>
 
         <section className="app-section" aria-labelledby="queue-heading">
