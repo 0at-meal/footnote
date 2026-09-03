@@ -310,9 +310,7 @@ export default function AuditTrailView({
         setActivePage(targetPage)
         if (canvasRef.current) {
           const rect = canvasRef.current.getBoundingClientRect()
-          const width = rect.width || canvasRef.current.width
-          const height = rect.height || canvasRef.current.height
-          setCanvasDims({ width, height })
+          setCanvasDims({ width: Math.round(rect.width), height: Math.round(rect.height) })
         }
       } catch (err) {
         if (cancelled) return

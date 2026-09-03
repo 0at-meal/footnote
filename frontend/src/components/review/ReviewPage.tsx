@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import type { ReviewItem, ReviewItemsResponse, ReviewStatus, StatementType } from '../../types/review'
-import { loadPdf, renderPage } from '../../lib/pdf/renderer'
+import { loadPdf, renderPage, PDF_RENDER_SCALE } from '../../lib/pdf/renderer'
 import type { PDFDocumentProxy } from '../../lib/pdf/renderer'
 import { normalizeBboxToPixels } from '../../lib/pdf/coordinates'
 import DebtScheduleCard from '../DebtScheduleCard'
@@ -247,15 +247,13 @@ export default function ReviewPage({
     async function draw() {
       if (!pdfDoc || !canvasRef.current) return
       try {
-        await renderPage(pdfDoc, targetPage, canvasRef.current)
+        await renderPage(pdfDoc, targetPage, canvasRef.current, PDF_RENDER_SCALE)
         if (cancelled) return
         setCurrentPage(targetPage)
         setPageRenderError(null)
         if (canvasRef.current) {
           const rect = canvasRef.current.getBoundingClientRect()
-          const width = rect.width || canvasRef.current.clientWidth
-          const height = rect.height || canvasRef.current.clientHeight
-          setCanvasSize({ width, height })
+          setCanvasSize({ width: Math.round(rect.width), height: Math.round(rect.height) })
         }
       } catch (err) {
         if (cancelled) return

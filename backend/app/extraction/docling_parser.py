@@ -388,6 +388,7 @@ def parse_pdf(
                         source_file=source_file,
                         table_name=table_title,
                         is_reconciliation_candidate=is_reconciliation,
+                        parser_used="docling",
                         footnote_type=footnote_type,
                     )
                     items.append(item)
@@ -427,6 +428,7 @@ def parse_pdf(
                         is_error=True,
                         error_detail=str(cell_err),
                         is_reconciliation_candidate=is_reconciliation,
+                        parser_used="docling",
                     )
                     items.append(err_item)
 
@@ -486,6 +488,8 @@ def _parse_pdf_with_pymupdf(
                     table_title, target_metric, sample_text=sample_text
                 )
 
+                num_cols = getattr(table, "col_count", len(extracted[0]))
+
                 # Process data rows
                 for row_idx in range(1, len(extracted)):
                     row = extracted[row_idx]
@@ -509,22 +513,36 @@ def _parse_pdf_with_pymupdf(
                             else (row_label or cell_text)
                         )
 
-                        # Cell bounding box
+                        # Cell bounding box fallback to whole table
                         cell_bbox = DoclingBbox(
                             x0=float(table.bbox[0]),
                             y0=float(table.bbox[1]),
                             x1=float(table.bbox[2]),
                             y1=float(table.bbox[3]),
                         )
+
+                        # Prefer direct row/col cell access from PyMuPDF table.rows
                         if (
+                            hasattr(table, "rows")
+                            and table.rows
+                            and row_idx < len(table.rows)
+                            and hasattr(table.rows[row_idx], "cells")
+                            and col_idx < len(table.rows[row_idx].cells)
+                        ):
+                            cb = table.rows[row_idx].cells[col_idx]
+                            if isinstance(cb, (list, tuple)) and len(cb) >= 4:
+                                cell_bbox = DoclingBbox(
+                                    x0=float(cb[0]),
+                                    y0=float(cb[1]),
+                                    x1=float(cb[2]),
+                                    y1=float(cb[3]),
+                                )
+                        elif (
                             hasattr(table, "cells")
                             and isinstance(table.cells, (list, tuple))
                             and table.cells
                         ):
-                            # row_idx and col_idx start at 1 (data rows/cols), so
-                            # we must subtract 1 from each to get the 0-based flat index
-                            # into the table.cells list.
-                            flat_idx = (row_idx - 1) * len(row) + (col_idx - 1)
+                            flat_idx = row_idx * num_cols + col_idx
                             if flat_idx < len(table.cells):
                                 cb = table.cells[flat_idx]
                                 if isinstance(cb, (list, tuple)) and len(cb) >= 4:
