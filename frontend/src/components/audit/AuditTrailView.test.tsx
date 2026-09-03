@@ -65,7 +65,7 @@ describe('AuditTrailView Component', () => {
     )
 
     expect(html).toContain('<a ')
-    expect(html).toContain('href="http://localhost:8000/api/jobs/job-123/audit-report"')
+    expect(html).toContain('href="http://localhost:8000/jobs/job-123/audit-report"')
     expect(html).toContain('download="audit_report_job-123.pdf"')
   })
 

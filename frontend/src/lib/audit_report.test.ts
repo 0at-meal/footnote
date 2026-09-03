@@ -9,17 +9,17 @@ describe('audit_report helpers', () => {
   describe('buildAuditReportDownloadUrl', () => {
     it('constructs correct URL without trailing slash', () => {
       const url = buildAuditReportDownloadUrl('http://localhost:8000', 'job-123')
-      expect(url).toBe('http://localhost:8000/api/jobs/job-123/audit-report')
+      expect(url).toBe('http://localhost:8000/jobs/job-123/audit-report')
     })
 
     it('strips trailing slashes from apiBase', () => {
       const url = buildAuditReportDownloadUrl('http://localhost:8000///', 'job-123')
-      expect(url).toBe('http://localhost:8000/api/jobs/job-123/audit-report')
+      expect(url).toBe('http://localhost:8000/jobs/job-123/audit-report')
     })
 
     it('URI-encodes special characters in jobId', () => {
       const url = buildAuditReportDownloadUrl('http://localhost:8000', 'job/special?id')
-      expect(url).toBe('http://localhost:8000/api/jobs/job%2Fspecial%3Fid/audit-report')
+      expect(url).toBe('http://localhost:8000/jobs/job%2Fspecial%3Fid/audit-report')
     })
   })
 

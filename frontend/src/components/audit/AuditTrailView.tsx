@@ -161,7 +161,7 @@ export default function AuditTrailView({
     try {
       // Fetch audit report status (Ticket 2.3)
       try {
-        const statusRes = await fetch(`${apiBase}/api/jobs/${jobId}/audit-report/status`)
+        const statusRes = await fetch(`${apiBase}/jobs/${jobId}/audit-report/status`)
         if (statusRes.ok) {
           const statusData = (await statusRes.json()) as { is_ready?: boolean }
           setIsReportReady(Boolean(statusData.is_ready))
@@ -212,7 +212,7 @@ export default function AuditTrailView({
       setIsLoadingProvenance(true)
       try {
         try {
-          const statusRes = await fetch(`${apiBase}/api/jobs/${jobId}/audit-report/status`)
+          const statusRes = await fetch(`${apiBase}/jobs/${jobId}/audit-report/status`)
           if (statusRes.ok && !cancelled) {
             const statusData = (await statusRes.json()) as { is_ready?: boolean }
             setIsReportReady(Boolean(statusData.is_ready))

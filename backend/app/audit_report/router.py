@@ -57,12 +57,12 @@ class ReportStatusResponse(BaseModel):
 
 
 @router.get(
-    "/api/jobs/{job_id}/audit-report",
+    "/jobs/{job_id}/audit-report",
     response_class=FileResponse,
     summary="Download compliance audit report PDF",
 )
 @router.get(
-    "/jobs/{job_id}/audit-report",
+    "/api/jobs/{job_id}/audit-report",
     response_class=FileResponse,
     include_in_schema=False,
 )
@@ -114,12 +114,12 @@ def download_audit_report(job_id: str) -> Response:
 
 
 @router.get(
-    "/api/jobs/{job_id}/audit-report/status",
+    "/jobs/{job_id}/audit-report/status",
     response_model=ReportStatusResponse,
     summary="Check audit report download status",
 )
 @router.get(
-    "/jobs/{job_id}/audit-report/status",
+    "/api/jobs/{job_id}/audit-report/status",
     response_model=ReportStatusResponse,
     include_in_schema=False,
 )
@@ -134,7 +134,7 @@ def get_audit_report_status(job_id: str) -> ReportStatusResponse:
     return ReportStatusResponse(
         job_id=job_id,
         is_ready=is_ready,
-        download_url=f"/api/jobs/{job_id}/audit-report",
+        download_url=f"/jobs/{job_id}/audit-report",
         error_detail=(
             None if is_ready else "Report not yet generated or model incomplete"
         ),

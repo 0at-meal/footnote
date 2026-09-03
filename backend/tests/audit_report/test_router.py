@@ -140,7 +140,7 @@ def test_get_audit_report_status(client: TestClient, tmp_path: Path) -> None:
     repo = AuditReportRepository(data_dir=data_dir)
     repo.save_report_pdf(job_id, b"%PDF-1.4 dummy")
 
-    res2 = client.get(f"/api/jobs/{job_id}/audit-report/status")
+    res2 = client.get(f"/jobs/{job_id}/audit-report/status")
     assert res2.status_code == 200
     assert res2.json()["is_ready"] is True
-    assert res2.json()["download_url"] == f"/api/jobs/{job_id}/audit-report"
+    assert res2.json()["download_url"] == f"/jobs/{job_id}/audit-report"

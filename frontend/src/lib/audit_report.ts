@@ -5,7 +5,7 @@ import type { JobStatus } from '../types/job'
  */
 export function buildAuditReportDownloadUrl(apiBase: string, jobId: string): string {
   const base = apiBase.replace(/\/+$/, '')
-  return `${base}/api/jobs/${encodeURIComponent(jobId)}/audit-report`
+  return `${base}/jobs/${encodeURIComponent(jobId)}/audit-report`
 }
 
 /**
