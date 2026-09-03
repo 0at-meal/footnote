@@ -92,3 +92,48 @@ def test_from_classified_records_auto_accepted_matched_is_locked(
 
     pending_item = next(i for i in items if i.value == "200")
     assert pending_item.status == ReviewStatus.pending_taxonomy_confirmation
+
+
+def test_content_hash_id_stability_across_shuffled_order(tmp_path: Path) -> None:
+    """Ticket 4.1: Review item IDs are stable content hashes regardless of input order."""
+    repo = ReviewRepository(data_dir=tmp_path)
+    sr1 = ScoredRecord(
+        record=ExtractedRecord(
+            value="100",
+            label="Item A",
+            page=1,
+            bbox={"x0": 50, "y0": 50, "x1": 150, "y1": 100},
+            source_file="doc.pdf",
+            is_reconciliation_candidate=True,
+        ),
+        confidence_score=0.98,
+        confidence_band=ConfidenceBand.auto_accepted,
+        flags=[],
+        status="ok",
+        is_reconciliation_candidate=True,
+    )
+    sr2 = ScoredRecord(
+        record=ExtractedRecord(
+            value="200",
+            label="Item B",
+            page=2,
+            bbox={"x0": 60, "y0": 70, "x1": 160, "y1": 120},
+            source_file="doc.pdf",
+            is_reconciliation_candidate=True,
+        ),
+        confidence_score=0.85,
+        confidence_band=ConfidenceBand.needs_review,
+        flags=[],
+        status="ok",
+        is_reconciliation_candidate=True,
+    )
+
+    items_forward = repo._from_scored_records("job_hash_test", [sr1, sr2])
+    items_reversed = repo._from_scored_records("job_hash_test", [sr2, sr1])
+
+    forward_map = {item.value: item.id for item in items_forward}
+    reversed_map = {item.value: item.id for item in items_reversed}
+
+    assert forward_map["100"] == reversed_map["100"]
+    assert forward_map["200"] == reversed_map["200"]
+    assert forward_map["100"] != forward_map["200"]

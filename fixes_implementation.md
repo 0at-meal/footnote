@@ -14,7 +14,7 @@
 | [Step 1](#step-1--p0--fix-core-coordinate--rendering-correctness-bugs) | **P0** | Fix Core Coordinate & Rendering Correctness Bugs | 6 | `[x]` 6/6 |
 | [Step 2](#step-2--p0--fix-review-queue-overcrowding--confidence-scoring) | **P0** | Fix Review Queue Overcrowding & Confidence Scoring | 5 | `[x]` 5/5 |
 | [Step 3](#step-3--p0--fix-architectural-isolation-violation) | **P0** | Fix Architectural Isolation Violation | 2 | `[x]` 2/2 |
-| [Step 4](#step-4--p1--fix-fragile-review-item-ids--audit-trail-resolution) | **P1** | Fix Fragile Review Item IDs & Audit Trail Resolution | 2 | `[ ]` 0/2 |
+| [Step 4](#step-4--p1--fix-fragile-review-item-ids--audit-trail-resolution) | **P1** | Fix Fragile Review Item IDs & Audit Trail Resolution | 2 | `[x]` 2/2 |
 | [Step 5](#step-5--p1--fix-audit-pdf-export--empty-state-guidance) | **P1** | Fix Audit PDF Export & Empty State Guidance | 4 | `[ ]` 0/4 |
 | [Step 6](#step-6--p1--surface-pipeline-failures--review-completion-actions) | **P1** | Surface Pipeline Failures & Review Completion Actions | 3 | `[ ]` 0/3 |
 | [Step 7](#step-7--p2--introduce-targeted-workflow-packs-architecture) | **P2** | Introduce Targeted Workflow Packs Architecture | 4 | `[ ]` 0/4 |
@@ -274,8 +274,8 @@
 
 | Ticket ID | Title | Target File | Status |
 |---|---|---|:---:|
-| Ticket 4.1 | Replace sequential index IDs with content-based hash | `backend/app/review/repository.py` | `[ ]` |
-| Ticket 4.2 | Update audit trail resolver to use content-hash matching | `backend/app/audit_trail/resolver.py` | `[ ]` |
+| Ticket 4.1 | Replace sequential index IDs with content-based hash | `backend/app/review/repository.py` | `[x]` |
+| Ticket 4.2 | Update audit trail resolver to use content-hash matching | `backend/app/audit_trail/resolver.py` | `[x]` |
 
 ---
 

@@ -28,11 +28,17 @@ _DEFAULT_DATA_DIR: Path = Path(__file__).parent.parent.parent / "data"
 
 
 def make_review_id(
-    job_id: str, source_file: str, page: int, bbox: dict[str, Any] | None
+    job_id: str, source_file: str, page: int, bbox: Any | None
 ) -> str:
     """Generate a deterministic 16-character content hash ID for a review item (Ticket 12.1)."""
-    x0 = float(bbox.get("x0", 0.0)) if bbox and isinstance(bbox, dict) else 0.0
-    y0 = float(bbox.get("y0", 0.0)) if bbox and isinstance(bbox, dict) else 0.0
+    if isinstance(bbox, dict):
+        x0 = float(bbox.get("x0", 0.0))
+        y0 = float(bbox.get("y0", 0.0))
+    elif bbox is not None:
+        x0 = float(getattr(bbox, "x0", 0.0))
+        y0 = float(getattr(bbox, "y0", 0.0))
+    else:
+        x0, y0 = 0.0, 0.0
     key = f"{job_id}:{source_file}:{page}:{x0:.0f}:{y0:.0f}"
     return hashlib.sha256(key.encode("utf-8")).hexdigest()[:16]
 
