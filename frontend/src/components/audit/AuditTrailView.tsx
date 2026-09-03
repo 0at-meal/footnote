@@ -478,7 +478,7 @@ export default function AuditTrailView({
                 No model yet — go to Review, approve the reconciliation bridge items, then click &apos;Approve &amp; Generate Complete Financial Model&apos;.
               </span>
               <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '2px' }}>
-                1. Go to Review tab · 2. Approve reconciliation bridge items · 3. Click &apos;Approve &amp; Generate&apos;
+                1. Go to Review tab · 2. Review flagged reconciliation items · 3. Click &apos;Approve &amp; Generate&apos; · 4. Return to inspect provenance
               </div>
             </div>
           </div>
@@ -652,6 +652,9 @@ export default function AuditTrailView({
                 </li>
                 <li>
                   <span>③</span> Click &ldquo;Approve &amp; Generate Complete Financial Model&rdquo; in the Review tab.
+                </li>
+                <li>
+                  <span>④</span> Return here to inspect cell-level provenance.
                 </li>
               </ol>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>

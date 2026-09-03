@@ -15,7 +15,7 @@
 | [Step 2](#step-2--p0--fix-review-queue-overcrowding--confidence-scoring) | **P0** | Fix Review Queue Overcrowding & Confidence Scoring | 5 | `[x]` 5/5 |
 | [Step 3](#step-3--p0--fix-architectural-isolation-violation) | **P0** | Fix Architectural Isolation Violation | 2 | `[x]` 2/2 |
 | [Step 4](#step-4--p1--fix-fragile-review-item-ids--audit-trail-resolution) | **P1** | Fix Fragile Review Item IDs & Audit Trail Resolution | 2 | `[x]` 2/2 |
-| [Step 5](#step-5--p1--fix-audit-pdf-export--empty-state-guidance) | **P1** | Fix Audit PDF Export & Empty State Guidance | 4 | `[ ]` 0/4 |
+| [Step 5](#step-5--p1--fix-audit-pdf-export--empty-state-guidance) | **P1** | Fix Audit PDF Export & Empty State Guidance | 4 | `[x]` 4/4 |
 | [Step 6](#step-6--p1--surface-pipeline-failures--review-completion-actions) | **P1** | Surface Pipeline Failures & Review Completion Actions | 3 | `[ ]` 0/3 |
 | [Step 7](#step-7--p2--introduce-targeted-workflow-packs-architecture) | **P2** | Introduce Targeted Workflow Packs Architecture | 4 | `[ ]` 0/4 |
 | [Step 8](#step-8--p2--extract-and-deduplicate-shared-excel-utilities) | **P2** | Extract and Deduplicate Shared Excel Utilities | 2 | `[ ]` 0/2 |
@@ -317,10 +317,10 @@
 
 | Ticket ID | Title | Target File | Status |
 |---|---|---|:---:|
-| Ticket 5.1 | Gate Export Audit PDF button on `model_ready` flag | `frontend/src/components/audit/AuditTrailView.tsx`, `App.tsx` | `[ ]` |
-| Ticket 5.2 | Enrich audit trail empty state with 4-step checklist | `frontend/src/components/audit/AuditTrailView.tsx` | `[ ]` |
-| Ticket 5.3 | Add in-page provenance refresh button | `frontend/src/components/audit/AuditTrailView.tsx` | `[ ]` |
-| Ticket 5.4 | Surface structured error on audit report failure | `backend/app/audit_report/service.py`, `router.py` | `[ ]` |
+| Ticket 5.1 | Gate Export Audit PDF button on `model_ready` flag | `frontend/src/components/audit/AuditTrailView.tsx`, `App.tsx` | `[x]` |
+| Ticket 5.2 | Enrich audit trail empty state with 4-step checklist | `frontend/src/components/audit/AuditTrailView.tsx` | `[x]` |
+| Ticket 5.3 | Add in-page provenance refresh button | `frontend/src/components/audit/AuditTrailView.tsx` | `[x]` |
+| Ticket 5.4 | Surface structured error on audit report failure | `backend/app/audit_report/service.py`, `router.py` | `[x]` |
 
 ---
 
