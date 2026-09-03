@@ -5,7 +5,9 @@ Exposes endpoints for querying drift flags, evaluation, graph definitions, and h
 Governed by CONSTITUTION §1.1 (mypy --strict), §1.3 (Pydantic models), §3.11 (isolation).
 """
 
-from fastapi import APIRouter, HTTPException, Query, status
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.drift.graph import HistoricalDriftGraph
 from app.drift.models import (
@@ -82,6 +84,9 @@ def set_drift_graph(graph: HistoricalDriftGraph | None) -> None:
 )
 def evaluate_job(
     job_id: str,
+    drift_repo: Annotated[DriftRepository, Depends(get_drift_repository)],
+    job_repo: Annotated[JobRepository, Depends(get_job_repository)],
+    review_repo: Annotated[ReviewRepository, Depends(get_review_repository)],
     payload: DriftEvaluationRequest | None = None,
 ) -> DriftEvaluationResponse:
     """
@@ -95,9 +100,9 @@ def evaluate_job(
     try:
         comparison, flag, node = evaluate_job_drift(
             job_id=job_id,
-            repo=_drift_repo,
-            job_repo=_job_repo,
-            review_repo=_review_repo,
+            repo=drift_repo,
+            job_repo=job_repo,
+            review_repo=review_repo,
             entity=entity,
             filing_year=filing_year,
         )
@@ -108,7 +113,7 @@ def evaluate_job(
         ) from err
 
     if comparison is None:
-        job = _job_repo.get_job(job_id)
+        job = job_repo.get_job(job_id)
         return DriftEvaluationResponse(
             job_id=job_id,
             status="skipped_no_locked_records",
@@ -146,7 +151,11 @@ def evaluate_job(
     summary="Get drift flags for a job (alias)",
     include_in_schema=False,
 )
-def get_job_drift_flags(job_id: str) -> DriftFlagsResponse:
+def get_job_drift_flags(
+    job_id: str,
+    drift_repo: Annotated[DriftRepository, Depends(get_drift_repository)],
+    job_repo: Annotated[JobRepository, Depends(get_job_repository)],
+) -> DriftFlagsResponse:
     """
     Retrieve all active drift flags for a processed job (spec AC-8, AC-9, EC-10).
 
@@ -154,9 +163,9 @@ def get_job_drift_flags(job_id: str) -> DriftFlagsResponse:
     - 200 OK with flags list (empty if baseline year or identical definition).
     - 404 Not Found if the job ID is unrecognized.
     """
-    job = _job_repo.get_job(job_id)
-    comparison = _drift_repo.get_comparison_result(job_id)
-    flags = _drift_repo.get_drift_flags(job_id)
+    job = job_repo.get_job(job_id)
+    comparison = drift_repo.get_comparison_result(job_id)
+    flags = drift_repo.get_drift_flags(job_id)
 
     if job is None and comparison is None and not flags:
         raise HTTPException(
@@ -196,11 +205,11 @@ def get_job_drift_flags(job_id: str) -> DriftFlagsResponse:
 def get_metric_history(
     entity: str,
     target_metric: str,
+    graph: Annotated[HistoricalDriftGraph, Depends(get_drift_graph)],
 ) -> MetricHistoryResponse:
     """
     Retrieve the historical sequence of metric definition nodes and transition edges (spec §3, AC-8).
     """
-    graph = get_drift_graph()
     definitions = graph.get_history(entity=entity, target_metric=target_metric)
     edges = graph.get_edges(entity=entity, target_metric=target_metric)
 
@@ -219,6 +228,7 @@ def get_metric_history(
     summary="Export the historical drift graph",
 )
 def export_drift_graph(
+    graph: Annotated[HistoricalDriftGraph, Depends(get_drift_graph)],
     entity: str | None = Query(default=None, description="Optional filter by entity"),
     target_metric: str | None = Query(
         default=None, description="Optional filter by target metric"
@@ -227,15 +237,9 @@ def export_drift_graph(
     """
     Retrieve all nodes and edges in the drift graph, optionally filtered by entity and metric (spec §3, AC-8).
     """
-    graph = get_drift_graph()
     return graph.export_graph(entity=entity, target_metric=target_metric)
 
 
-@router.post(
-    "/{job_id}/mark-relabeled",
-    response_model=DriftFlag,
-    summary="Mark a component as confirmed cosmetic relabeling (Step J)",
-)
 @router.post(
     "/jobs/{job_id}/mark-relabeled",
     response_model=DriftFlag,
@@ -244,11 +248,12 @@ def export_drift_graph(
 def mark_component_relabeled(
     job_id: str,
     payload: MarkRelabeledRequest,
+    drift_repo: Annotated[DriftRepository, Depends(get_drift_repository)],
 ) -> DriftFlag:
     """
     Confirm that an added/removed component pair represents a cosmetic relabeling (Step J).
     """
-    updated_flag = _drift_repo.confirm_relabeling(
+    updated_flag = drift_repo.confirm_relabeling(
         job_id=job_id,
         old_label=payload.old_standard_label,
         new_label=payload.new_standard_label,

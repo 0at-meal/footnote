@@ -7,7 +7,9 @@ Exposes:
 - GET /models/{job_id}/provenance/{sheet_name}/{cell_coord} (Exposed for Feature 6)
 """
 
-from fastapi import APIRouter, HTTPException, status
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import FileResponse
 
 from app.classification.repository import ClassificationRepository
@@ -46,26 +48,29 @@ def set_model_repository(repo: ModelRepository) -> None:
     response_model=WorkbookGenerationResult,
     summary="Compile confirmed review items into an Excel model workbook",
 )
-def generate_model_workbook(job_id: str) -> WorkbookGenerationResult:
+def generate_model_workbook(
+    job_id: str,
+    model_repo: Annotated[ModelRepository, Depends(get_model_repository)],
+) -> WorkbookGenerationResult:
     """
     Builds the deterministic FormulaTree and compiles the .xlsx model workbook
     along with W3C Web Annotation provenance records. Reads from Review state (Feature 5)
     or falls back to Classification state (Feature 3).
     """
-    job_repo = JobRepository(data_dir=_model_repo.data_dir)
+    job_repo = JobRepository(data_dir=model_repo.data_dir)
     job = job_repo.get_job(job_id)
     if job is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Job '{job_id}' not found.",
         )
-    review_repo = ReviewRepository(data_dir=_model_repo.data_dir)
+    review_repo = ReviewRepository(data_dir=model_repo.data_dir)
     review_items = review_repo.get_review_items(job_id)
 
     if review_items is not None and len(review_items) > 0:
         batch = read_formula_inputs_from_review(review_items)
     else:
-        classification_repo = ClassificationRepository(data_dir=_model_repo.data_dir)
+        classification_repo = ClassificationRepository(data_dir=model_repo.data_dir)
         classified_records = classification_repo.get_classified_records(job_id)
         if classified_records is not None and len(classified_records) > 0:
             batch = read_formula_inputs(classified_records)
@@ -93,9 +98,9 @@ def generate_model_workbook(job_id: str) -> WorkbookGenerationResult:
     generation_result = generate_multi_statement_workbook(
         company=None,
         year_trees=[(job, comp_tree)],
-        output_dir=_model_repo.data_dir,
+        output_dir=model_repo.data_dir,
     )
-    _model_repo.save_generation_result(job_id, generation_result)
+    model_repo.save_generation_result(job_id, generation_result)
 
     if not generation_result.is_success:
         raise HTTPException(
@@ -104,7 +109,7 @@ def generate_model_workbook(job_id: str) -> WorkbookGenerationResult:
         )
 
     if generation_result.provenance_records:
-        _model_repo.save_provenance_records(
+        model_repo.save_provenance_records(
             job_id, generation_result.provenance_records
         )
 
@@ -116,11 +121,14 @@ def generate_model_workbook(job_id: str) -> WorkbookGenerationResult:
     response_class=FileResponse,
     summary="Download generated Excel model workbook",
 )
-def download_model(job_id: str) -> FileResponse:
+def download_model(
+    job_id: str,
+    model_repo: Annotated[ModelRepository, Depends(get_model_repository)],
+) -> FileResponse:
     """
     Downloads the generated .xlsx workbook for a completed job.
     """
-    path = _model_repo.get_workbook_path(job_id)
+    path = model_repo.get_workbook_path(job_id)
     if path is None or not path.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -139,11 +147,14 @@ def download_model(job_id: str) -> FileResponse:
     response_model=ProvenanceQueryResponse,
     summary="Get all W3C Web Annotation provenance records for a model",
 )
-def get_provenance_records(job_id: str) -> ProvenanceQueryResponse:
+def get_provenance_records(
+    job_id: str,
+    model_repo: Annotated[ModelRepository, Depends(get_model_repository)],
+) -> ProvenanceQueryResponse:
     """
     Returns all W3C Web Annotation provenance records queryable by cell reference (Feature 6 / Feature 8).
     """
-    records = _model_repo.get_provenance_records(job_id)
+    records = model_repo.get_provenance_records(job_id)
     if records is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -166,11 +177,12 @@ def get_cell_provenance(
     job_id: str,
     sheet_name: str,
     cell_coord: str,
+    model_repo: Annotated[ModelRepository, Depends(get_model_repository)],
 ) -> W3CAnnotationRecord:
     """
     Resolves a cell selection to its full W3C Web Annotation provenance record (Feature 6).
     """
-    record = _model_repo.get_cell_provenance(job_id, sheet_name, cell_coord)
+    record = model_repo.get_cell_provenance(job_id, sheet_name, cell_coord)
     if record is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

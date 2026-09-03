@@ -277,7 +277,7 @@ def test_mark_relabeled_endpoint(tmp_path: Path, client: TestClient) -> None:
     drift_repo.save_drift_flags(job_id, [flag])
 
     res = client.post(
-        f"/drift/{job_id}/mark-relabeled",
+        f"/drift/jobs/{job_id}/mark-relabeled",
         json={
             "old_standard_label": "Stock-based compensation",
             "new_standard_label": "Share-based compensation",

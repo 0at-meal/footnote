@@ -27,16 +27,12 @@ from app.narrative.repository import NarrativeRepository
 
 router = APIRouter(prefix="/narrative", tags=["narrative"])
 
-_default_job_repo = JobRepository()
-_default_narrative_repo = NarrativeRepository()
-
-
 def get_job_repository() -> JobRepository:
-    return _default_job_repo
+    return JobRepository()
 
 
 def get_narrative_repository() -> NarrativeRepository:
-    return _default_narrative_repo
+    return NarrativeRepository()
 
 
 @router.get(

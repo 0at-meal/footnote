@@ -20,7 +20,7 @@
 | [Step 7](#step-7--p2--introduce-targeted-workflow-packs-architecture) | **P2** | Introduce Targeted Workflow Packs Architecture | 4 | `[x]` 4/4 |
 | [Step 8](#step-8--p2--extract-and-deduplicate-shared-excel-utilities) | **P2** | Extract and Deduplicate Shared Excel Utilities | 2 | `[x]` 2/2 |
 | [Step 9](#step-9--p2--fix-remaining-ux--operational-issues) | **P2** | Fix Remaining UX & Operational Issues | 6 | `[x]` 6/6 |
-| [Step 10](#step-10--p2--fix-route-duplication-and-dependency-injection-consistency) | **P2** | Fix Route Duplication and Dependency Injection Consistency | 5 | `[ ]` 0/5 |
+| [Step 10](#step-10--p2--fix-route-duplication-and-dependency-injection-consistency) | **P2** | Fix Route Duplication and Dependency Injection Consistency | 5 | `[x]` 5/5 |
 | [Step 11](#step-11--p3--fix-health-check-logic-inversion) | **P3** | Fix Health Check Logic Inversion | 1 | `[ ]` 0/1 |
 | [Step 12](#step-12--p3--normalize-audit-report-route-prefix) | **P3** | Normalize Audit Report Route Prefix | 1 | `[ ]` 0/1 |
 | [Step 13](#step-13--p3--freeze-the-evaluation-harness) | **P3** | Freeze the Evaluation Harness | 1 | `[ ]` 0/1 |
@@ -644,11 +644,11 @@
 
 | Ticket ID | Title | Target File | Status |
 |---|---|---|:---:|
-| Ticket 10.1 | Remove duplicate drift mark-relabeled route | `backend/app/drift/router.py` | `[ ]` |
-| Ticket 10.2 | Migrate `narrative/router.py` to FastAPI `Depends()` | `backend/app/narrative/router.py` | `[ ]` |
-| Ticket 10.3 | Migrate `footnote/router.py` to FastAPI `Depends()` | `backend/app/footnote/router.py` | `[ ]` |
-| Ticket 10.4 | Eliminate mutable globals in `excel_export/router.py` | `backend/app/excel_export/router.py` | `[ ]` |
-| Ticket 10.5 | Eliminate mutable globals in `drift/router.py` | `backend/app/drift/router.py` | `[ ]` |
+| Ticket 10.1 | Remove duplicate drift mark-relabeled route | `backend/app/drift/router.py` | `[x]` |
+| Ticket 10.2 | Migrate `narrative/router.py` to FastAPI `Depends()` | `backend/app/narrative/router.py` | `[x]` |
+| Ticket 10.3 | Migrate `footnote/router.py` to FastAPI `Depends()` | `backend/app/footnote/router.py` | `[x]` |
+| Ticket 10.4 | Eliminate mutable globals in `excel_export/router.py` | `backend/app/excel_export/router.py` | `[x]` |
+| Ticket 10.5 | Eliminate mutable globals in `drift/router.py` | `backend/app/drift/router.py` | `[x]` |
 
 ---
 

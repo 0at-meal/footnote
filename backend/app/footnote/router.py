@@ -27,26 +27,20 @@ from app.ingestion.repository import JobRepository
 
 router = APIRouter(prefix="/footnote", tags=["footnote"])
 
-_default_job_repo = JobRepository()
-_default_schedule_repo = DebtScheduleRepository()
-_default_lease_repo = LeaseScheduleRepository()
-_default_concentration_repo = ConcentrationRepository()
-
-
 def get_job_repository() -> JobRepository:
-    return _default_job_repo
+    return JobRepository()
 
 
 def get_debt_repository() -> DebtScheduleRepository:
-    return _default_schedule_repo
+    return DebtScheduleRepository()
 
 
 def get_lease_repository() -> LeaseScheduleRepository:
-    return _default_lease_repo
+    return LeaseScheduleRepository()
 
 
 def get_concentration_repository() -> ConcentrationRepository:
-    return _default_concentration_repo
+    return ConcentrationRepository()
 
 
 @router.get(
