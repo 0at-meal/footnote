@@ -7,7 +7,7 @@
 >
 > Do not extend or build further abstractions into this harness until a pilot client confirms the core extraction and spreading pipeline handles their primary use case end-to-end.
 >
-> Reference: `docs/business_alignment.md` §1.1 and `fixes.md` §13.
+> Reference: `docs/business_alignment.md` §1.1 and `docs/fixes.md` §13.
 
 ## Overview
 

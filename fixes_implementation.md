@@ -1,7 +1,7 @@
 # Footnote — Fixes Implementation Plan
 
 > **Generated:** 2026-09-03  
-> **Source:** Diagnostic Fixes Report (`fixes.md`) & Issues Charter (`docs/issues_charter.md`)  
+> **Source:** Diagnostic Fixes Report (`docs/fixes.md`) & Issues Charter (`docs/issues_charter.md`)  
 > **Architecture Target:** Core Correctness, Review UX, Strict Isolation, Intent-Driven Workflow Packs  
 > **Execution Strategy:** 14 Steps, 44 Atomic Tickets implemented and verified one at a time.
 
