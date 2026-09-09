@@ -81,13 +81,17 @@ def test_download_audit_report_success_on_the_fly(
 ) -> None:
     job_id, _ = _create_mock_completed_job(tmp_path, "job-fly")
 
-    response = client.get(f"/api/jobs/{job_id}/audit-report")
+    response = client.get(f"/jobs/{job_id}/audit-report")
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/pdf"
     assert f'filename="audit_report_{job_id}.pdf"' in response.headers.get(
         "content-disposition", ""
     )
     assert response.content.startswith(b"%PDF-")
+
+    # Verify legacy /api/ prefix returns 404 after normalization (Ticket R7.10)
+    legacy_resp = client.get(f"/api/jobs/{job_id}/audit-report")
+    assert legacy_resp.status_code == 404
 
 
 def test_download_audit_report_pre_existing_on_disk(
@@ -105,7 +109,7 @@ def test_download_audit_report_pre_existing_on_disk(
 
 
 def test_download_audit_report_job_not_found_404(client: TestClient) -> None:
-    response = client.get("/api/jobs/non-existent-uuid/audit-report")
+    response = client.get("/jobs/non-existent-uuid/audit-report")
     assert response.status_code == 404
     assert "not found" in response.json()["detail"].lower()
 
@@ -120,7 +124,7 @@ def test_download_audit_report_incomplete_model_400(
     )
     job_id = job_rec.job_id
 
-    response = client.get(f"/api/jobs/{job_id}/audit-report")
+    response = client.get(f"/jobs/{job_id}/audit-report")
     assert response.status_code == 400
     data = response.json()
     assert "model generation not complete" in data["detail"].lower()
@@ -132,7 +136,7 @@ def test_get_audit_report_status(client: TestClient, tmp_path: Path) -> None:
     job_id, data_dir = _create_mock_completed_job(tmp_path, "job-stat")
 
     # Initial status: not yet generated
-    res1 = client.get(f"/api/jobs/{job_id}/audit-report/status")
+    res1 = client.get(f"/jobs/{job_id}/audit-report/status")
     assert res1.status_code == 200
     assert res1.json()["is_ready"] is False
 

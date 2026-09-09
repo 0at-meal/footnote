@@ -25,7 +25,7 @@ export default function EdgarSearch({ apiBase, onJobCreated }: EdgarSearchProps)
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // ── Debounced Company Search (Ticket D-5) ───────────────────────────────────
   useEffect(() => {

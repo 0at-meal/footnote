@@ -2,9 +2,7 @@
 FastAPI router for compliance audit report download and status (Feature 8 Step 4).
 
 Exposes:
-- GET /api/jobs/{job_id}/audit-report (spec §4, AC-6)
 - GET /jobs/{job_id}/audit-report
-- GET /api/jobs/{job_id}/audit-report/status
 - GET /jobs/{job_id}/audit-report/status
 
 Enforces:
@@ -61,11 +59,6 @@ class ReportStatusResponse(BaseModel):
     response_class=FileResponse,
     summary="Download compliance audit report PDF",
 )
-@router.get(
-    "/api/jobs/{job_id}/audit-report",
-    response_class=FileResponse,
-    include_in_schema=False,
-)
 def download_audit_report(job_id: str) -> Response:
     """
     Serves the compliance audit report PDF as a downloadable binary attachment (spec §4, AC-6).
@@ -117,11 +110,6 @@ def download_audit_report(job_id: str) -> Response:
     "/jobs/{job_id}/audit-report/status",
     response_model=ReportStatusResponse,
     summary="Check audit report download status",
-)
-@router.get(
-    "/api/jobs/{job_id}/audit-report/status",
-    response_model=ReportStatusResponse,
-    include_in_schema=False,
 )
 def get_audit_report_status(job_id: str) -> ReportStatusResponse:
     """
