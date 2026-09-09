@@ -70,25 +70,15 @@ def is_target_metric_candidate_item(
 ) -> bool:
     """
     Determines if a record belongs to the reconciliation bridge or financial model.
+    The reconciliation tag from the parser is the authoritative signal (Ticket R3.1).
     """
     if target_metric is None or target_metric == "Full Model":
         return True
 
     # 1. Explicit reconciliation table from parser / record
-    if record.is_reconciliation_candidate or record.record.is_reconciliation_candidate:
-        return True
-
-    table_name = record.table_name or ""
-    table_lower = table_name.lower()
-    metric_lower = target_metric.lower()
-
-    # 2. Table title contains target metric name or explicit reconciliation bridge markers
     return bool(
-        metric_lower in table_lower
-        or "reconciliation" in table_lower
-        or "non-gaap" in table_lower
-        or "non gaap" in table_lower
-        or "bridge" in table_lower
+        record.is_reconciliation_candidate
+        or record.record.is_reconciliation_candidate
     )
 
 

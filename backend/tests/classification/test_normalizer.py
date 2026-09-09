@@ -28,6 +28,7 @@ def create_sample_scored_record(
     band: ConfidenceBand = ConfidenceBand.auto_accepted,
     status: str = "ok",
     value: str = "123,456",
+    is_reconciliation_candidate: bool = False,
 ) -> ScoredRecord:
     record = ExtractedRecord(
         value=value,
@@ -35,6 +36,7 @@ def create_sample_scored_record(
         page=1,
         bbox={"x0": 0.0, "y0": 0.0, "x1": 100.0, "y1": 100.0},
         source_file="annual_report.pdf",
+        is_reconciliation_candidate=is_reconciliation_candidate,
     )
     return ScoredRecord(
         record=record,
@@ -42,6 +44,7 @@ def create_sample_scored_record(
         confidence_band=band,
         flags=[],
         status="ok" if status == "ok" else "extraction_error",
+        is_reconciliation_candidate=is_reconciliation_candidate,
     )
 
 
@@ -198,34 +201,46 @@ def test_offline_fallback_normalizer_attaches_seed_taxonomy() -> None:
 
 
 def test_target_metric_candidate_tagging_reconciliation_vs_balance_sheet() -> None:
-    """Ticket 2.3: Reconciliation bridge items are marked candidates; balance sheet items are not."""
-    # 1. Non-GAAP reconciliation table items
+    """Ticket 2.3 & Ticket R3.2: Reconciliation bridge items are marked candidates via structural signal; balance sheet items are not."""
+    # 1. Non-GAAP reconciliation table items (structural is_reconciliation_candidate=True)
     rec_sbc = create_sample_scored_record(
-        "Stock-based compensation expense", value="12,000"
+        "Stock-based compensation expense",
+        value="12,000",
+        is_reconciliation_candidate=True,
     )
     rec_sbc.table_name = "Reconciliation of Net Income to Non-GAAP Adjusted EBITDA"
 
     rec_da = create_sample_scored_record(
-        "Depreciation and amortization", value="34,000"
+        "Depreciation and amortization",
+        value="34,000",
+        is_reconciliation_candidate=True,
     )
     rec_da.table_name = "Non-GAAP Financial Measures"
 
     rec_restruct = create_sample_scored_record(
-        "Restructuring and severance charges", value="5,000"
+        "Restructuring and severance charges",
+        value="5,000",
+        is_reconciliation_candidate=True,
     )
     rec_restruct.table_name = "Adjusted EBITDA Reconciliation"
 
-    # 2. Balance sheet / lease / PPE items
-    rec_cash = create_sample_scored_record("Cash and cash equivalents", value="150,000")
+    # 2. Balance sheet / lease / PPE items (is_reconciliation_candidate=False)
+    rec_cash = create_sample_scored_record(
+        "Cash and cash equivalents", value="150,000", is_reconciliation_candidate=False
+    )
     rec_cash.table_name = "Consolidated Balance Sheets"
 
     rec_ppe = create_sample_scored_record(
-        "Property, plant and equipment, net", value="850,000"
+        "Property, plant and equipment, net",
+        value="850,000",
+        is_reconciliation_candidate=False,
     )
     rec_ppe.table_name = "Property and Equipment Schedule"
 
     rec_lease = create_sample_scored_record(
-        "Operating lease liabilities, non-current", value="45,000"
+        "Operating lease liabilities, non-current",
+        value="45,000",
+        is_reconciliation_candidate=False,
     )
     rec_lease.table_name = "Operating Lease Commitments"
 
@@ -252,3 +267,21 @@ def test_target_metric_candidate_tagging_reconciliation_vs_balance_sheet() -> No
     assert classified[3].is_target_metric_candidate is False
     assert classified[4].is_target_metric_candidate is False
     assert classified[5].is_target_metric_candidate is False
+
+
+def test_reconciliation_keyword_fallback_removed() -> None:
+    """Ticket R3.1: Verify keyword fallback is removed and is_reconciliation_candidate is authoritative."""
+    from app.classification.normalizer import is_target_metric_candidate_item
+
+    # Item in table with "reconciliation" and "non-gaap" in title, but is_reconciliation_candidate is False
+    rec = create_sample_scored_record(
+        "Unrelated Debt Item",
+        value="100",
+        is_reconciliation_candidate=False,
+    )
+    rec.table_name = "Reconciliation of Non-GAAP Debt and Credit Facilities"
+
+    assert is_target_metric_candidate_item(
+        rec, normalized_label="Debt Item", target_metric="Adjusted EBITDA"
+    ) is False
+
