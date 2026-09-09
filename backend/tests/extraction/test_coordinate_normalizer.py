@@ -227,23 +227,23 @@ def test_normalize_item_bbox_pymupdf_no_inversion_parametrized(
 @pytest.mark.parametrize(
     "row_idx,col_idx,expected_flat_idx",
     [
-        (1, 1, 5),
-        (1, 2, 6),
-        (1, 3, 7),
-        (2, 1, 9),
-        (2, 2, 10),
-        (2, 3, 11),
+        (1, 1, 0),
+        (1, 2, 1),
+        (1, 3, 2),
+        (2, 1, 4),
+        (2, 2, 5),
+        (2, 3, 6),
     ],
 )
 def test_pymupdf_flat_idx_3x4_mock_table(
     row_idx: int, col_idx: int, expected_flat_idx: int
 ) -> None:
     """
-    Test per-cell flat index mapping for data cells in a 3x4 table with 12 cells.
-    Row 0 has indices 0..3 (headers), Row 1 has 4..7, Row 2 has 8..11.
+    Test per-cell flat index mapping for data cells in a 3x4 table with 12 cells
+    using the 0-based indexing formula: (row_idx - 1) * num_cols + (col_idx - 1).
     """
     num_cols = 4
-    flat_idx = row_idx * num_cols + col_idx
+    flat_idx = (row_idx - 1) * num_cols + (col_idx - 1)
     assert flat_idx == expected_flat_idx
 
 
@@ -262,11 +262,11 @@ def test_pymupdf_3x4_table_unique_bboxes() -> None:
     data_bboxes = []
     for r in range(1, num_rows):
         for c in range(1, num_cols):
-            flat_idx = r * num_cols + c
+            flat_idx = (r - 1) * num_cols + (c - 1)
             bbox = mock_cells[flat_idx]
             data_bboxes.append(bbox)
 
     assert len(data_bboxes) == 6  # 2 data rows x 3 data cols
     assert len(set(data_bboxes)) == 6  # All 6 must be strictly distinct
-    # Data row 1, col 1 is cell 5: (100, 50, 200, 100)
-    assert data_bboxes[0] == (100.0, 50.0, 200.0, 100.0)
+    # Data row 1, col 1 is cell 0: (0.0, 0.0, 100.0, 50.0)
+    assert data_bboxes[0] == (0.0, 0.0, 100.0, 50.0)

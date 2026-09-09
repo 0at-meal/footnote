@@ -601,7 +601,7 @@ def _parse_pdf_with_pymupdf(
                             and isinstance(table.cells, (list, tuple))
                             and table.cells
                         ):
-                            flat_idx = row_idx * num_cols + col_idx
+                            flat_idx = (row_idx - 1) * num_cols + (col_idx - 1)
                             if flat_idx < len(table.cells):
                                 cb = table.cells[flat_idx]
                                 if isinstance(cb, (list, tuple)) and len(cb) >= 4:

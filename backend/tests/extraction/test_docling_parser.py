@@ -373,3 +373,61 @@ def test_parse_pdf_reconciliation_candidate_flag(tmp_path: Path) -> None:
 
     assert bs_item.is_reconciliation_candidate is False
     assert rec_item.is_reconciliation_candidate is True
+
+
+def test_parse_pdf_with_pymupdf_3x4_table_cell_bboxes(tmp_path: Path) -> None:
+    """Ticket R1.2: Mock a 3x4 table; assert each cell gets the correct bbox with 0-based indexing."""
+    from app.extraction.docling_parser import _parse_pdf_with_pymupdf
+
+    pdf_file = tmp_path / "table_3x4.pdf"
+    pdf_file.write_bytes(b"%PDF-1.4 dummy")
+
+    num_rows = 3
+    num_cols = 4
+    # 12 cells in table.cells
+    mock_cells = [
+        (float(c * 100), float(r * 50), float((c + 1) * 100), float((r + 1) * 50))
+        for r in range(num_rows)
+        for c in range(num_cols)
+    ]
+
+    mock_table = SimpleNamespace(
+        extract=lambda: [
+            ["Metric", "2021", "2022", "2023"],
+            ["Operating Income", "$100", "$110", "$120"],
+            ["Adjusted EBITDA", "$150", "$160", "$170"],
+        ],
+        bbox=(0.0, 0.0, 400.0, 150.0),
+        col_count=num_cols,
+        cells=mock_cells,
+    )
+    # Ensure hasattr(mock_table, "rows") is False so it uses the table.cells flat_idx branch
+    mock_page = SimpleNamespace(
+        find_tables=lambda: SimpleNamespace(tables=[mock_table])
+    )
+    mock_doc = [mock_page]
+
+    with patch("fitz.open", return_value=mock_doc):
+        items = _parse_pdf_with_pymupdf(pdf_file, "table_3x4.pdf")
+
+    # 2 data rows x 3 data columns = 6 items
+    assert len(items) == 6
+    # Row 1, Col 1 ($100): flat_idx = (1-1)*4 + (1-1) = 0 -> mock_cells[0] = (0, 0, 100, 50)
+    item_100 = next(i for i in items if i.value == "$100")
+    assert item_100.bbox.x0 == 0.0
+    assert item_100.bbox.y0 == 0.0
+    assert item_100.bbox.x1 == 100.0
+    assert item_100.bbox.y1 == 50.0
+
+    # Row 1, Col 2 ($110): flat_idx = 1 -> mock_cells[1] = (100, 0, 200, 50)
+    item_110 = next(i for i in items if i.value == "$110")
+    assert item_110.bbox.x0 == 100.0
+    assert item_110.bbox.y0 == 0.0
+
+    # Row 2, Col 1 ($150): flat_idx = (2-1)*4 + (1-1) = 4 -> mock_cells[4] = (0, 50, 100, 100)
+    item_150 = next(i for i in items if i.value == "$150")
+    assert item_150.bbox.x0 == 0.0
+    assert item_150.bbox.y0 == 50.0
+    assert item_150.bbox.x1 == 100.0
+    assert item_150.bbox.y1 == 100.0
+
