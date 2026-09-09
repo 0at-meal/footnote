@@ -12,7 +12,7 @@ from pathlib import Path
 
 from app.classification.models import ClassifiedRecord
 from app.classification.repository import ClassificationRepository
-from app.excel_export.generator import generate_workbook
+from app.excel_export.bridge_generator import generate_bridge_workbook
 from app.excel_export.models import W3CAnnotationRecord
 from app.excel_export.repository import ModelRepository
 from app.formula_engine.reader import (
@@ -54,7 +54,7 @@ def try_compile_model_on_the_fly(
     if batch is not None and len(batch.nodes) > 0:
         formula_tree = build_formula_tree(batch, target_metric=target_metric)
         if formula_tree.is_valid:
-            generation_result = generate_workbook(
+            generation_result = generate_bridge_workbook(
                 formula_tree,
                 job_id=job_id,
                 output_dir=data_dir,

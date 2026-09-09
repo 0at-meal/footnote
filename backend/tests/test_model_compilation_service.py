@@ -65,7 +65,7 @@ def test_try_compile_model_on_the_fly_success(tmp_path: Path) -> None:
     ) as mock_read, patch(
         "app.model_compilation_service.build_formula_tree"
     ) as mock_tree_builder, patch(
-        "app.model_compilation_service.generate_workbook"
+        "app.model_compilation_service.generate_bridge_workbook"
     ) as mock_gen_wb, patch(
         "app.model_compilation_service.ModelRepository"
     ) as mock_repo_cls:
