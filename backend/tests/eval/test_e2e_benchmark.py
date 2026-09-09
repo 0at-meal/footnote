@@ -446,11 +446,13 @@ def test_e2e_reconciliation_batch_approval_and_regeneration(tmp_path: Path) -> N
             page=10,
             bbox={"x0": 100, "y0": 200, "x1": 400, "y1": 220},
             source_file="TechCorp_Q3_2024.pdf",
+            is_reconciliation_candidate=True,
         ),
         confidence_score=0.98,
         confidence_band=ConfidenceBand.auto_accepted,
         flags=[],
         table_name="Reconciliation of Net Income to Adjusted EBITDA",
+        is_reconciliation_candidate=True,
     )
     rec2 = ScoredRecord(
         record=ExtractedRecord(
@@ -459,11 +461,13 @@ def test_e2e_reconciliation_batch_approval_and_regeneration(tmp_path: Path) -> N
             page=10,
             bbox={"x0": 100, "y0": 240, "x1": 400, "y1": 260},
             source_file="TechCorp_Q3_2024.pdf",
+            is_reconciliation_candidate=True,
         ),
         confidence_score=0.95,
         confidence_band=ConfidenceBand.auto_accepted,
         flags=[],
         table_name="Reconciliation of Net Income to Adjusted EBITDA",
+        is_reconciliation_candidate=True,
     )
     rec3 = ScoredRecord(
         record=ExtractedRecord(
@@ -472,11 +476,13 @@ def test_e2e_reconciliation_batch_approval_and_regeneration(tmp_path: Path) -> N
             page=10,
             bbox={"x0": 100, "y0": 280, "x1": 400, "y1": 300},
             source_file="TechCorp_Q3_2024.pdf",
+            is_reconciliation_candidate=True,
         ),
         confidence_score=0.96,
         confidence_band=ConfidenceBand.auto_accepted,
         flags=[],
         table_name="Reconciliation of Net Income to Adjusted EBITDA",
+        is_reconciliation_candidate=True,
     )
     rec_bs = ScoredRecord(
         record=ExtractedRecord(
@@ -572,10 +578,16 @@ def test_e2e_reconciliation_batch_approval_and_regeneration(tmp_path: Path) -> N
         auto_add_pending_taxonomy=True,
     )
     assert err is None
+    assert len(review_items) == 3
     assert review_items[0].id in locked_ids
     assert review_items[1].id in locked_ids
     assert review_items[2].id in locked_ids
-    assert review_items[3].id not in locked_ids  # balance sheet not locked
+    from app.review.repository import make_review_id
+
+    bs_id = make_review_id(
+        job_id, rec_bs.record.source_file, rec_bs.record.page, rec_bs.record.bbox
+    )
+    assert bs_id not in locked_ids  # balance sheet not locked
 
     # 6. Re-generation from Confirmed Review Items (Ticket 4.2)
     review_formula_inputs = read_formula_inputs_from_review(updated_items)
