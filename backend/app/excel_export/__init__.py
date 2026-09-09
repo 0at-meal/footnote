@@ -20,7 +20,6 @@ from app.excel_export.provenance import (
 from app.excel_export.repository import ModelRepository
 from app.excel_export.router import (
     get_model_repository,
-    set_model_repository,
 )
 from app.excel_export.router import (
     router as excel_export_router,
@@ -39,5 +38,4 @@ __all__ = [
     "generate_multi_statement_workbook",
     "generate_workbook",
     "get_model_repository",
-    "set_model_repository",
 ]

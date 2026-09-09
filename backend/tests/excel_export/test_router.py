@@ -21,6 +21,7 @@ from app.excel_export.models import (
     WorkbookGenerationResult,
 )
 from app.excel_export.repository import ModelRepository
+from app.excel_export.router import get_model_repository
 from app.extraction.models import ConfidenceBand
 from app.formula_engine.models import FormulaInputBatch, FormulaInputNode
 from app.formula_engine.tree import build_formula_tree
@@ -98,11 +99,7 @@ def test_model_download_and_provenance_query(tmp_path: Path) -> None:
 
     repo.save_provenance_records(job_id, gen_result.provenance_records)
 
-    # Set the test data_dir repository in router
-    from app.excel_export.router import get_model_repository, set_model_repository
-
-    original_repo = get_model_repository()
-    set_model_repository(repo)
+    app.dependency_overrides[get_model_repository] = lambda: repo
     try:
         # Test 1: Download workbook
         dl_resp = client.get(f"/models/{job_id}/download")
@@ -130,7 +127,7 @@ def test_model_download_and_provenance_query(tmp_path: Path) -> None:
         assert cell_anno.target.source == "doc.pdf"
 
     finally:
-        set_model_repository(original_repo)
+        app.dependency_overrides.pop(get_model_repository, None)
 
 
 def test_generate_model_from_review_items_success(tmp_path: Path) -> None:
@@ -175,10 +172,7 @@ def test_generate_model_from_review_items_success(tmp_path: Path) -> None:
     review_repo.save_review_items(real_job_id, review_items)
 
     model_repo = ModelRepository(data_dir=tmp_path)
-    from app.excel_export.router import get_model_repository, set_model_repository
-
-    original_repo = get_model_repository()
-    set_model_repository(model_repo)
+    app.dependency_overrides[get_model_repository] = lambda: model_repo
     try:
         resp = client.post(f"/models/{real_job_id}/generate")
         assert resp.status_code == 200
@@ -199,7 +193,7 @@ def test_generate_model_from_review_items_success(tmp_path: Path) -> None:
         assert len(prov_records) > 0
 
     finally:
-        set_model_repository(original_repo)
+        app.dependency_overrides.pop(get_model_repository, None)
 
 
 def test_generate_model_no_confirmed_items_raises_400(tmp_path: Path) -> None:
@@ -230,30 +224,24 @@ def test_generate_model_no_confirmed_items_raises_400(tmp_path: Path) -> None:
     review_repo.save_review_items(job_id, review_items)
 
     model_repo = ModelRepository(data_dir=tmp_path)
-    from app.excel_export.router import get_model_repository, set_model_repository
-
-    original_repo = get_model_repository()
-    set_model_repository(model_repo)
+    app.dependency_overrides[get_model_repository] = lambda: model_repo
     try:
         resp = client.post(f"/models/{job_id}/generate")
         assert resp.status_code == 400
         assert "no confirmed" in resp.json()["detail"].lower()
     finally:
-        set_model_repository(original_repo)
+        app.dependency_overrides.pop(get_model_repository, None)
 
 
 def test_generate_model_job_not_found_raises_404(tmp_path: Path) -> None:
     """Verifies that POST /models/{job_id}/generate returns 404 for unknown jobs."""
     model_repo = ModelRepository(data_dir=tmp_path)
-    from app.excel_export.router import get_model_repository, set_model_repository
-
-    original_repo = get_model_repository()
-    set_model_repository(model_repo)
+    app.dependency_overrides[get_model_repository] = lambda: model_repo
     try:
         resp = client.post("/models/unknown_job_uuid/generate")
         assert resp.status_code == 404
     finally:
-        set_model_repository(original_repo)
+        app.dependency_overrides.pop(get_model_repository, None)
 
 
 def test_generate_then_download_e2e(tmp_path: Path) -> None:
@@ -296,10 +284,7 @@ def test_generate_then_download_e2e(tmp_path: Path) -> None:
     review_repo.save_review_items(job_id, items)
 
     model_repo = ModelRepository(data_dir=tmp_path)
-    from app.excel_export.router import get_model_repository, set_model_repository
-
-    original_repo = get_model_repository()
-    set_model_repository(model_repo)
+    app.dependency_overrides[get_model_repository] = lambda: model_repo
     try:
         # 1. POST /models/{job_id}/generate
         gen_resp = client.post(f"/models/{job_id}/generate")
@@ -334,4 +319,4 @@ def test_generate_then_download_e2e(tmp_path: Path) -> None:
         assert prov_data.total_records == len(gen_data.provenance_records)
         assert prov_data.total_records > 0
     finally:
-        set_model_repository(original_repo)
+        app.dependency_overrides.pop(get_model_repository, None)

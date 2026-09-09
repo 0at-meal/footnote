@@ -29,18 +29,11 @@ from app.ingestion.repository import JobRepository
 from app.review.repository import ReviewRepository
 
 router = APIRouter(prefix="/models", tags=["models"])
-_model_repo = ModelRepository()
 
 
 def get_model_repository() -> ModelRepository:
     """Returns the active model repository instance."""
-    return _model_repo
-
-
-def set_model_repository(repo: ModelRepository) -> None:
-    """Sets the active model repository instance (used for testing / dependency injection)."""
-    global _model_repo
-    _model_repo = repo
+    return ModelRepository()
 
 
 @router.post(
