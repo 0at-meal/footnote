@@ -24,7 +24,6 @@ from app.classification.normalizer import normalize_records
 from app.classification.repository import ClassificationRepository
 from app.classification.taxonomy import TaxonomyRepository
 from app.excel_export.bridge_generator import generate_bridge_workbook
-from app.excel_export.multi_statement_generator import generate_multi_statement_workbook
 from app.excel_export.repository import ModelRepository
 from app.extraction.assembler import assemble_records
 from app.extraction.confidence import score_records
@@ -36,7 +35,7 @@ from app.extraction.docling_parser import parse_pdf
 from app.extraction.flagger import create_extraction_summary
 from app.extraction.repository import ExtractionRepository
 from app.formula_engine.reader import read_formula_inputs
-from app.formula_engine.tree import build_comprehensive_model_tree, build_formula_tree
+from app.formula_engine.tree import build_formula_tree
 from app.ingestion.models import JobStatus
 from app.ingestion.repository import JobRepository
 
@@ -206,6 +205,7 @@ def process_queued_job(
                 compile_debt_schedule,
                 extract_lease_schedule,
             )
+            from app.footnote.models import LeaseSchedule
             from app.footnote.repository import (
                 DebtScheduleRepository,
                 LeaseScheduleRepository,
@@ -223,8 +223,11 @@ def process_queued_job(
                 job_id=job_id,
                 records=scored_records,
             )
-            debt_repo.save_debt_schedule(job_id, debt_sched)
-            lease_repo.save_lease_schedule(job_id, lease_sched)
+            debt_repo.save_debt_schedule(debt_sched)
+            if lease_sched is not None:
+                lease_repo.save_lease_schedule(lease_sched)
+            else:
+                lease_sched = LeaseSchedule(job_id=job_id, years=[])
 
             generation_result = generate_capital_structure_workbook(
                 debt_schedule=debt_sched,
@@ -289,38 +292,14 @@ def process_queued_job(
                         formula_tree.error_message or "Bridge formula tree invalid"
                     )
             else:
-                # Stage 8: Multi-statement / Comprehensive Model Generation
-                comp_tree = build_comprehensive_model_tree(formula_inputs)
-                if comp_tree.is_valid:
-                    generation_result = generate_multi_statement_workbook(
-                        company=None,
-                        year_trees=[(job, comp_tree)],
-                        output_dir=repo.data_dir,
-                    )
-                    model_repo.save_generation_result(job_id, generation_result)
-                    if (
-                        generation_result.is_success
-                        and generation_result.provenance_records
-                    ):
-                        model_repo.save_provenance_records(
-                            job_id, generation_result.provenance_records
-                        )
-                        model_ready = True
-                        model_skip_reason = None
-                        logger.info(
-                            "Generated draft Excel model workbook for job %s with %d cells",
-                            job_id,
-                            generation_result.total_cells_generated,
-                        )
-                    else:
-                        model_skip_reason = (
-                            generation_result.error_detail
-                            or "Workbook generation failed"
-                        )
-                else:
-                    model_skip_reason = (
-                        comp_tree.error_message or "Formula tree validation failed"
-                    )
+                model_skip_reason = (
+                    f"Workflow pack '{workflow_pack}' is not yet fully implemented. No model generated."
+                )
+                logger.info(
+                    "Skipping model generation for job %s: %s",
+                    job_id,
+                    model_skip_reason,
+                )
         else:
             model_skip_reason = (
                 formula_inputs.error_message

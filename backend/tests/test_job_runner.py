@@ -328,3 +328,94 @@ def test_job_runner_filters_non_reconciliation_candidates_before_classification(
     assert mock_classifier.classify.call_count == 1
     call_args = mock_classifier.classify.call_args[0][0]
     assert call_args.label == "Operating Expenses / Novel Unclassified Reserve"
+
+
+def test_job_runner_unimplemented_workflow_pack_skips_model(tmp_path: Path) -> None:
+    """Ticket R4.1: Unimplemented workflow pack sets model_skip_reason and does not run 6-tab generator."""
+    repo = JobRepository(data_dir=tmp_path)
+    repo.save_job(
+        filename="cash_flow_report.pdf",
+        content=b"%PDF-1.4 dummy",
+        target_metric="Free Cash Flow",
+        workflow_pack="cash_conversion",
+    )
+    job_id = repo.list_jobs()[0].job_id
+
+    sample_docling = [
+        DoclingItem(
+            value="300.0",
+            label="Operating Cash Flow",
+            page=1,
+            bbox=DoclingBbox(x0=10.0, y0=20.0, x1=30.0, y1=40.0),
+            source_file="cash_flow_report.pdf",
+            table_name="Statement of Cash Flows",
+            is_reconciliation_candidate=True,
+        )
+    ]
+    sample_normalized = [
+        NormalizedItem(
+            value="300.0",
+            label="Operating Cash Flow",
+            page=1,
+            bbox=NormalizedBbox(x0=100.0, y0=200.0, x1=300.0, y1=400.0),
+            source_file="cash_flow_report.pdf",
+            table_name="Statement of Cash Flows",
+            is_reconciliation_candidate=True,
+        )
+    ]
+    sample_records = [
+        ExtractedRecord(
+            value="300.0",
+            label="Operating Cash Flow",
+            page=1,
+            bbox={"x0": 100.0, "y0": 200.0, "x1": 300.0, "y1": 400.0},
+            source_file="cash_flow_report.pdf",
+            is_reconciliation_candidate=True,
+        )
+    ]
+    sample_scored = [
+        ScoredRecord(
+            record=sample_records[0],
+            confidence_score=0.99,
+            confidence_band=ConfidenceBand.auto_accepted,
+            flags=[],
+            table_name="Statement of Cash Flows",
+            is_reconciliation_candidate=True,
+        )
+    ]
+    sample_summary = ExtractionSummary(
+        total_items=1,
+        auto_accepted_count=1,
+        needs_review_count=0,
+        manual_required_count=0,
+        extraction_error_count=0,
+        flagged_count=0,
+        flagged_percentage=0.0,
+        passed_threshold=True,
+    )
+
+    mock_classifier = MagicMock()
+    mock_classifier.classify.return_value = ClassifierRawResponse(
+        label="Operating Cash Flow",
+        confidence=0.99,
+    )
+
+    with (
+        patch("app.job_runner.parse_pdf", return_value=sample_docling),
+        patch("app.job_runner.normalize_coordinates", return_value=sample_normalized),
+        patch("app.job_runner.assemble_records", return_value=sample_records),
+        patch("app.job_runner.score_records", return_value=sample_scored),
+        patch("app.job_runner.count_image_only_pages", return_value=0),
+        patch("app.job_runner.create_extraction_summary", return_value=sample_summary),
+    ):
+        process_queued_job(job_id, repo, classifier_client=mock_classifier)
+
+    updated_job = repo.get_job(job_id)
+    assert updated_job is not None
+    assert updated_job.status == JobStatus.done
+    assert updated_job.model_ready is False
+    assert (
+        updated_job.model_skip_reason
+        == "Workflow pack 'cash_conversion' is not yet fully implemented. No model generated."
+    )
+
