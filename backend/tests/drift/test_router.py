@@ -4,7 +4,9 @@ Integration tests for Drift API router (Feature 7, Steps 2, 3, 4).
 Governed by CONSTITUTION §1.1 (mypy --strict), §1.3 (Pydantic models), spec AC-1, AC-8, AC-9, AC-10, EC-10.
 """
 
+from collections.abc import Generator
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
 from app.drift.comparator import compare_metric_components
@@ -12,10 +14,10 @@ from app.drift.graph import HistoricalDriftGraph
 from app.drift.models import DriftComparisonResult, DriftFlag
 from app.drift.repository import DriftRepository
 from app.drift.router import (
-    set_drift_graph,
-    set_drift_repository,
-    set_job_repository,
-    set_review_repository,
+    get_drift_graph,
+    get_drift_repository,
+    get_job_repository,
+    get_review_repository,
 )
 from app.extraction.models import ConfidenceBand
 from app.ingestion.repository import JobRepository
@@ -26,17 +28,18 @@ from fastapi.testclient import TestClient
 
 
 @pytest.fixture
-def client(tmp_path: Path) -> TestClient:
+def client(tmp_path: Path) -> Generator[TestClient, None, None]:
     drift_repo = DriftRepository(data_dir=tmp_path)
     job_repo = JobRepository(data_dir=tmp_path)
     review_repo = ReviewRepository(data_dir=tmp_path)
 
-    set_drift_repository(drift_repo)
-    set_job_repository(job_repo)
-    set_review_repository(review_repo)
-    set_drift_graph(None)  # Use persistent SQLite by default
+    app.dependency_overrides[get_drift_repository] = lambda: drift_repo
+    app.dependency_overrides[get_job_repository] = lambda: job_repo
+    app.dependency_overrides[get_review_repository] = lambda: review_repo
 
-    return TestClient(app)
+    yield TestClient(app)
+
+    app.dependency_overrides.clear()
 
 
 def _seed_review_items(
@@ -182,7 +185,7 @@ def test_get_metric_history_and_export_graph(client: TestClient) -> None:
             "GAMMA", "Adjusted EBITDA", 2023, ["LabelA", "LabelB", "LabelC"], n1
         )
     )
-    set_drift_graph(graph)
+    app.dependency_overrides[get_drift_graph] = lambda: graph
 
     # 1. Test history endpoint
     res_history = client.get("/drift/history/GAMMA/Adjusted EBITDA")
@@ -292,3 +295,33 @@ def test_mark_relabeled_endpoint(tmp_path: Path, client: TestClient) -> None:
         data["relabeled_components"][0]["justification"]
         == "Confirmed identical substance"
     )
+
+
+def test_drift_router_dependency_overrides_isolation() -> None:
+    """Ticket R5.2: Verify drift endpoints work with app.dependency_overrides for isolation."""
+    mock_drift_repo = MagicMock()
+    mock_drift_repo.get_drift_flags.return_value = []
+    mock_drift_repo.get_comparison_result.return_value = None
+
+    mock_job_repo = MagicMock()
+    mock_job = MagicMock()
+    mock_job.target_metric = "Adjusted EBITDA"
+    mock_job.entity = "TEST_ENTITY"
+    mock_job.filing_year = 2023
+    mock_job_repo.get_job.return_value = mock_job
+
+    app.dependency_overrides[get_drift_repository] = lambda: mock_drift_repo
+    app.dependency_overrides[get_job_repository] = lambda: mock_job_repo
+
+    try:
+        test_client = TestClient(app)
+        res = test_client.get("/drift/jobs/override_job/flags")
+        assert res.status_code == 200
+        data = res.json()
+        assert data["job_id"] == "override_job"
+        assert data["entity"] == "TEST_ENTITY"
+        mock_drift_repo.get_drift_flags.assert_called_once_with("override_job")
+        mock_job_repo.get_job.assert_called_once_with("override_job")
+    finally:
+        app.dependency_overrides.clear()
+

@@ -25,56 +25,28 @@ from app.ingestion.repository import JobRepository
 from app.review.repository import ReviewRepository
 
 router = APIRouter(prefix="/drift", tags=["drift"])
-_drift_repo = DriftRepository()
-_job_repo = JobRepository()
-_review_repo = ReviewRepository()
-_drift_graph_override: HistoricalDriftGraph | None = None
 
 
 def get_drift_repository() -> DriftRepository:
-    """Return the active DriftRepository instance."""
-    return _drift_repo
-
-
-def set_drift_repository(repo: DriftRepository) -> None:
-    """Set the active DriftRepository instance (used for tests / DI)."""
-    global _drift_repo
-    _drift_repo = repo
+    """Dependency provider returning a DriftRepository instance."""
+    return DriftRepository()
 
 
 def get_job_repository() -> JobRepository:
-    """Return the active JobRepository instance."""
-    return _job_repo
-
-
-def set_job_repository(repo: JobRepository) -> None:
-    """Set the active JobRepository instance (used for tests / DI)."""
-    global _job_repo
-    _job_repo = repo
+    """Dependency provider returning a JobRepository instance."""
+    return JobRepository()
 
 
 def get_review_repository() -> ReviewRepository:
-    """Return the active ReviewRepository instance."""
-    return _review_repo
+    """Dependency provider returning a ReviewRepository instance."""
+    return ReviewRepository()
 
 
-def set_review_repository(repo: ReviewRepository) -> None:
-    """Set the active ReviewRepository instance (used for tests / DI)."""
-    global _review_repo
-    _review_repo = repo
-
-
-def get_drift_graph() -> HistoricalDriftGraph:
-    """Return the authoritative HistoricalDriftGraph from SQLite or override."""
-    if _drift_graph_override is not None:
-        return _drift_graph_override
-    return _drift_repo.load_graph()
-
-
-def set_drift_graph(graph: HistoricalDriftGraph | None) -> None:
-    """Set the active HistoricalDriftGraph instance (used for tests / DI)."""
-    global _drift_graph_override
-    _drift_graph_override = graph
+def get_drift_graph(
+    drift_repo: Annotated[DriftRepository, Depends(get_drift_repository)],
+) -> HistoricalDriftGraph:
+    """Dependency provider returning the authoritative HistoricalDriftGraph from SQLite."""
+    return drift_repo.load_graph()
 
 
 @router.post(
