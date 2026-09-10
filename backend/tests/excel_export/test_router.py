@@ -320,3 +320,100 @@ def test_generate_then_download_e2e(tmp_path: Path) -> None:
         assert prov_data.total_records > 0
     finally:
         app.dependency_overrides.pop(get_model_repository, None)
+
+
+def test_generate_model_capital_structure_success(tmp_path: Path) -> None:
+    """Verifies that POST /models/{job_id}/generate routes to capital structure generator when workflow_pack='capital_structure'."""
+    from app.footnote.models import (
+        DebtSchedule,
+        DebtTranche,
+        LeaseCommitmentYear,
+        LeaseSchedule,
+    )
+    from app.footnote.repository import (
+        DebtScheduleRepository,
+        LeaseScheduleRepository,
+    )
+
+    job_repo = JobRepository(data_dir=tmp_path)
+    job_record = job_repo.save_job(
+        filename="apple_debt.pdf",
+        content=b"%PDF-1.4 dummy",
+        target_metric="Adjusted EBITDA",
+        workflow_pack="capital_structure",
+    )
+    job_id = job_record.job_id
+
+    debt_repo = DebtScheduleRepository(data_dir=tmp_path)
+    debt_sched = DebtSchedule(
+        job_id=job_id,
+        tranches=[
+            DebtTranche(
+                id="tranche_1",
+                instrument_name="3.250% Notes due 2026",
+                principal_amount=1000.0,
+                interest_rate=3.25,
+                maturity_year=2026,
+                senior_subordinated="Senior",
+                page=42,
+                bbox={"x0": 100.0, "y0": 200.0, "x1": 300.0, "y1": 250.0},
+            )
+        ],
+    )
+    debt_repo.save_debt_schedule(debt_sched)
+
+    lease_repo = LeaseScheduleRepository(data_dir=tmp_path)
+    lease_sched = LeaseSchedule(
+        job_id=job_id,
+        years=[
+            LeaseCommitmentYear(
+                year_label="2025",
+                operating_amount=40.0,
+                finance_amount=10.0,
+                total_amount=50.0,
+                page=45,
+                bbox={"x0": 50.0, "y0": 100.0, "x1": 250.0, "y1": 120.0},
+            )
+        ],
+    )
+    lease_repo.save_lease_schedule(lease_sched)
+
+    model_repo = ModelRepository(data_dir=tmp_path)
+    app.dependency_overrides[get_model_repository] = lambda: model_repo
+    try:
+        resp = client.post(f"/models/{job_id}/generate")
+        assert resp.status_code == 200
+        result = WorkbookGenerationResult.model_validate(resp.json())
+        assert result.is_success is True
+        assert result.target_metric == "Capital Structure"
+        assert result.total_cells_generated > 0
+        assert result.formula_cells_count > 0
+
+        # Verify model workbook file exists on disk
+        wb_path = model_repo.get_workbook_path(job_id)
+        assert wb_path is not None
+        assert wb_path.exists()
+    finally:
+        app.dependency_overrides.pop(get_model_repository, None)
+
+
+def test_generate_model_capital_structure_empty_raises_400(tmp_path: Path) -> None:
+    """Verifies that POST /models/{job_id}/generate returns 400 when capital structure job has no tranches or leases."""
+    job_repo = JobRepository(data_dir=tmp_path)
+    job_record = job_repo.save_job(
+        filename="empty_debt.pdf",
+        content=b"%PDF-1.4 dummy",
+        target_metric="Adjusted EBITDA",
+        workflow_pack="capital_structure",
+    )
+    job_id = job_record.job_id
+
+    model_repo = ModelRepository(data_dir=tmp_path)
+    app.dependency_overrides[get_model_repository] = lambda: model_repo
+    try:
+        resp = client.post(f"/models/{job_id}/generate")
+        assert resp.status_code == 400
+        assert "No Note 8 debt tranches or ASC 842 lease commitments found" in resp.json()["detail"]
+    finally:
+        app.dependency_overrides.pop(get_model_repository, None)
+

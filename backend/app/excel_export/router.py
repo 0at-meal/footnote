@@ -13,6 +13,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import FileResponse
 
 from app.classification.repository import ClassificationRepository
+from app.excel_export.bridge_generator import generate_bridge_workbook
+from app.excel_export.debt_schedule_generator import (
+    generate_capital_structure_workbook,
+)
 from app.excel_export.models import (
     ProvenanceQueryResponse,
     W3CAnnotationRecord,
@@ -20,11 +24,19 @@ from app.excel_export.models import (
 )
 from app.excel_export.multi_statement_generator import generate_multi_statement_workbook
 from app.excel_export.repository import ModelRepository
+from app.footnote.models import DebtSchedule, LeaseSchedule
+from app.footnote.repository import (
+    DebtScheduleRepository,
+    LeaseScheduleRepository,
+)
 from app.formula_engine.reader import (
     read_formula_inputs,
     read_formula_inputs_from_review,
 )
-from app.formula_engine.tree import build_comprehensive_model_tree
+from app.formula_engine.tree import (
+    build_comprehensive_model_tree,
+    build_formula_tree,
+)
 from app.ingestion.repository import JobRepository
 from app.review.repository import ReviewRepository
 
@@ -49,6 +61,10 @@ def generate_model_workbook(
     Builds the deterministic FormulaTree and compiles the .xlsx model workbook
     along with W3C Web Annotation provenance records. Reads from Review state (Feature 5)
     or falls back to Classification state (Feature 3).
+    Routes to the appropriate generator based on the job's workflow pack:
+    - capital_structure: Debt Schedule and Lease Waterfall (debt_schedule_generator)
+    - non_gaap_bridge: Non-GAAP EBITDA / Adj EBITDA reconciliation bridge (bridge_generator)
+    - other / default: Multi-statement comprehensive model (multi_statement_generator)
     """
     job_repo = JobRepository(data_dir=model_repo.data_dir)
     job = job_repo.get_job(job_id)
@@ -57,6 +73,39 @@ def generate_model_workbook(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Job '{job_id}' not found.",
         )
+
+    if job.workflow_pack == "capital_structure":
+        debt_repo = DebtScheduleRepository(data_dir=model_repo.data_dir)
+        lease_repo = LeaseScheduleRepository(data_dir=model_repo.data_dir)
+        debt_sched = debt_repo.get_debt_schedule(job_id) or DebtSchedule(
+            job_id=job_id, tranches=[]
+        )
+        lease_sched = lease_repo.get_lease_schedule(job_id) or LeaseSchedule(
+            job_id=job_id, years=[]
+        )
+
+        generation_result = generate_capital_structure_workbook(
+            debt_schedule=debt_sched,
+            lease_schedule=lease_sched,
+            job_id=job_id,
+            output_dir=model_repo.data_dir,
+        )
+        model_repo.save_generation_result(job_id, generation_result)
+
+        if not generation_result.is_success:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=generation_result.error_detail
+                or "Failed to generate Capital Structure workbook.",
+            )
+
+        if generation_result.provenance_records:
+            model_repo.save_provenance_records(
+                job_id, generation_result.provenance_records
+            )
+
+        return generation_result
+
     review_repo = ReviewRepository(data_dir=model_repo.data_dir)
     review_items = review_repo.get_review_items(job_id)
 
@@ -80,19 +129,35 @@ def generate_model_workbook(
             or "No confirmed records available for formula generation.",
         )
 
-    comp_tree = build_comprehensive_model_tree(batch)
-    if not comp_tree.is_valid:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=comp_tree.error_message
-            or "Comprehensive model tree is invalid (no confirmed line items).",
+    if job.workflow_pack == "non_gaap_bridge":
+        formula_tree = build_formula_tree(
+            batch, target_metric=job.target_metric or "Adjusted EBITDA"
+        )
+        if not formula_tree.is_valid:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=formula_tree.error_message
+                or "Bridge formula tree is invalid (no confirmed add-back items).",
+            )
+        generation_result = generate_bridge_workbook(
+            formula_tree,
+            job_id=job_id,
+            output_dir=model_repo.data_dir,
+        )
+    else:
+        comp_tree = build_comprehensive_model_tree(batch)
+        if not comp_tree.is_valid:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=comp_tree.error_message
+                or "Comprehensive model tree is invalid (no confirmed line items).",
+            )
+        generation_result = generate_multi_statement_workbook(
+            company=None,
+            year_trees=[(job, comp_tree)],
+            output_dir=model_repo.data_dir,
         )
 
-    generation_result = generate_multi_statement_workbook(
-        company=None,
-        year_trees=[(job, comp_tree)],
-        output_dir=model_repo.data_dir,
-    )
     model_repo.save_generation_result(job_id, generation_result)
 
     if not generation_result.is_success:
