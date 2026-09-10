@@ -290,19 +290,13 @@ def clean_raw_label(label: str) -> str:
 
     # Check for slash-delimited segments e.g. "Research and development / 2024"
     segments = [s.strip() for s in text.split("/") if s.strip()]
-    if len(segments) > 1:
-        # Exclude segments that represent dates, fiscal periods, or years
-        non_date_segments = [
-            s
-            for s in segments
-            if not re.match(
-                r"^(?:(?:19|20)\d{2}|Q[1-4]|FY\d{2,4}|[A-Za-z]+ \d{1,2},? \d{4}|\d{1,2}/\d{1,2}/\d{2,4})$",
-                s.strip(),
-                re.IGNORECASE,
-            )
-        ]
-        if non_date_segments:
-            text = non_date_segments[0]
+    while len(segments) > 1 and re.match(
+        r"^(?:(?:19|20)\d{2}|Q[1-4]|FY\d{2,4}|[A-Za-z]+ \d{1,2},? \d{4}|\d{1,2}/\d{1,2}/\d{2,4}|three months|six months|nine months|twelve months|years? ended.*)$",
+        segments[-1],
+        re.IGNORECASE,
+    ):
+        segments.pop()
+    text = " / ".join(segments)
 
     # Strip parentheticals e.g. (exclusive of...), (loss), (Note 4), (1)
     text = re.sub(r"\([^)]*\)", " ", text)
@@ -323,19 +317,41 @@ def canonicalize_label(label: str) -> str:
     return re.sub(r"[^a-zA-Z0-9]+", " ", label).strip().lower()
 
 
+def extract_semantic_leaf(label: str) -> str:
+    """
+    Extracts the most specific semantic line-item leaf from a path,
+    stripping trailing period/year/quarter column header segments.
+    For example:
+    'Research and development / 2024' -> 'Research and development'
+    'Operating Expenses / Novel Unclassified Reserve' -> 'Novel Unclassified Reserve'
+    """
+    segments = [s.strip() for s in label.replace("\n", "/").split("/") if s.strip()]
+    if not segments:
+        return label
+    while len(segments) > 1 and re.search(
+        r"^(?:(?:19|20)\d{2}|Q[1-4]|FY\d{2,4}|three months|six months|nine months|twelve months|years? ended)",
+        segments[-1],
+        re.IGNORECASE,
+    ):
+        segments.pop()
+    return segments[-1]
+
+
 def match_master_taxonomy(
     candidate_label: str,
     master: MasterTaxonomy | None = None,
 ) -> TaxonomyItem | None:
     """
-    Attempts to match candidate_label against MasterTaxonomy entries using:
-    1. Exact canonical_name match (case-insensitive and exact)
-    2. Exact alias match (case-insensitive and exact)
-    3. Cleaned label match (stripping parentheticals, footnote marks, and date markers)
-    4. Canonicalized match on full and cleaned candidate against canonical_name & aliases
-    5. Segment match (first or last segment of '/' or '\n')
+    Matches a raw candidate label against MasterTaxonomy canonical names and aliases (Feature 3).
 
-    Returns the matched TaxonomyItem or None.
+    Evaluation order:
+    1. Exact canonical_name match (case-insensitive, raw or cleaned).
+    2. Exact alias match (case-insensitive, raw or cleaned).
+    3. Canonicalized match on candidate vs canonical_name and aliases.
+    4. Semantic leaf match across slash/newline delimited paths (ignoring trailing year headers).
+
+    Returns the matching TaxonomyItem, or None if no match is found.
+    Never raises an exception on unexpected label formats.
     """
     active_master = master if master is not None else SEED_MASTER_TAXONOMY
     candidate_raw = candidate_label.strip()
@@ -384,43 +400,37 @@ def match_master_taxonomy(
             ):
                 return item
 
-    # 4. Segment-level matching across slash or newline delimited paths
-    # (Checking row labels before column headers, and leaf labels)
-    raw_segments = [s.strip() for s in candidate_raw.replace("\n", "/").split("/") if s.strip()]
-    for seg in raw_segments:
-        if not seg:
-            continue
-        # Skip pure dates/years
-        if re.match(r"^(?:(?:19|20)\d{2}|Q[1-4]|FY\d{2,4})$", seg, re.IGNORECASE):
-            continue
-        seg_clean = clean_raw_label(seg)
-        seg_lower = seg.lower()
-        seg_clean_lower = seg_clean.lower()
-        seg_canon = canonicalize_label(seg)
-        seg_clean_canon = canonicalize_label(seg_clean)
+    # 4. Semantic leaf matching for slash or newline delimited paths
+    semantic_leaf = extract_semantic_leaf(candidate_raw)
+    if semantic_leaf and semantic_leaf != candidate_raw:
+        leaf_clean = clean_raw_label(semantic_leaf)
+        leaf_lower = semantic_leaf.lower()
+        leaf_clean_lower = leaf_clean.lower() if leaf_clean else ""
+        leaf_canon = canonicalize_label(semantic_leaf)
+        leaf_clean_canon = canonicalize_label(leaf_clean) if leaf_clean else ""
 
         for item in active_master.items:
             item_lower = item.canonical_name.lower()
             item_canon = canonicalize_label(item.canonical_name)
             if (
-                seg == item.canonical_name
-                or seg_lower == item_lower
-                or seg_clean == item.canonical_name
-                or seg_clean_lower == item_lower
-                or (seg_canon and item_canon == seg_canon)
-                or (seg_clean_canon and item_canon == seg_clean_canon)
+                semantic_leaf == item.canonical_name
+                or leaf_lower == item_lower
+                or (leaf_clean and leaf_clean == item.canonical_name)
+                or (leaf_clean_lower and leaf_clean_lower == item_lower)
+                or (leaf_canon and item_canon == leaf_canon)
+                or (leaf_clean_canon and item_canon == leaf_clean_canon)
             ):
                 return item
             for alias in item.aliases:
                 alias_lower = alias.lower()
                 alias_canon = canonicalize_label(alias)
                 if (
-                    seg == alias
-                    or seg_lower == alias_lower
-                    or seg_clean == alias
-                    or seg_clean_lower == alias_lower
-                    or (seg_canon and alias_canon == seg_canon)
-                    or (seg_clean_canon and alias_canon == seg_clean_canon)
+                    semantic_leaf == alias
+                    or leaf_lower == alias_lower
+                    or (leaf_clean and leaf_clean == alias)
+                    or (leaf_clean_lower and leaf_clean_lower == alias_lower)
+                    or (leaf_canon and alias_canon == leaf_canon)
+                    or (leaf_clean_canon and alias_canon == leaf_clean_canon)
                 ):
                     return item
 

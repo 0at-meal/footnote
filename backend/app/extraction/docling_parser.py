@@ -334,8 +334,11 @@ def parse_pdf(
                 continue
 
             table_title = _extract_table_title(table, table_idx, table_cells)
+            sample_text = " ".join(
+                [getattr(c, "text", "") or "" for c in table_cells[:16] if getattr(c, "text", None)]
+            )
             is_reconciliation = is_table_relevant_for_pack(
-                table_title, workflow_pack, target_metric
+                table_title, workflow_pack, target_metric, sample_text=sample_text
             )
 
             # Identify header text by column and row indices
@@ -348,13 +351,16 @@ def parse_pdf(
                     if not cell_text:
                         continue
 
-                    is_col_header = getattr(cell, "column_header", False)
-                    is_row_header = getattr(cell, "row_header", False) or getattr(
-                        cell, "row_section_header", False
-                    )
-
                     col_idx = getattr(cell, "start_col_offset_idx", 0)
                     row_idx = getattr(cell, "start_row_offset_idx", 0)
+                    has_digit = bool(re.search(r"\d", cell_text))
+
+                    is_col_header = getattr(cell, "column_header", False)
+                    is_row_header = (
+                        getattr(cell, "row_header", False)
+                        or getattr(cell, "row_section_header", False)
+                        or (col_idx == 0 and not has_digit)
+                    )
 
                     if is_col_header:
                         col_headers.setdefault(col_idx, []).append(cell_text)
@@ -376,10 +382,15 @@ def parse_pdf(
                     if not cell_text:
                         continue
 
+                    col_idx = getattr(cell, "start_col_offset_idx", 0)
+                    row_idx = getattr(cell, "start_row_offset_idx", 0)
+                    has_digit = bool(re.search(r"\d", cell_text))
+
                     is_header = (
                         getattr(cell, "column_header", False)
                         or getattr(cell, "row_header", False)
                         or getattr(cell, "row_section_header", False)
+                        or (col_idx == 0 and not has_digit)
                     )
 
                     # Header cells contribute to structural labels for data cells;
