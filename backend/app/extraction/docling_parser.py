@@ -334,9 +334,15 @@ def parse_pdf(
                 continue
 
             table_title = _extract_table_title(table, table_idx, table_cells)
-            sample_text = " ".join(
-                [getattr(c, "text", "") or "" for c in table_cells[:16] if getattr(c, "text", None)]
-            )
+            sample_parts: list[str] = []
+            for c in table_cells[:16]:
+                try:
+                    txt = (getattr(c, "text", "") or "").strip()
+                    if txt:
+                        sample_parts.append(txt)
+                except Exception:  # noqa: BLE001
+                    continue
+            sample_text = " ".join(sample_parts)
             is_reconciliation = is_table_relevant_for_pack(
                 table_title, workflow_pack, target_metric, sample_text=sample_text
             )
