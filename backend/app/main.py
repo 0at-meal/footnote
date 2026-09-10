@@ -10,6 +10,8 @@ API docs:
 """
 
 import os
+os.environ["TORCHDYNAMO_DISABLE"] = "1"
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 from pathlib import Path
 from typing import Any
 

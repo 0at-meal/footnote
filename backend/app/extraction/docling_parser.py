@@ -18,9 +18,13 @@ Isolation (CONSTITUTION §3.8, §3.2):
 """
 
 import logging
+import os
 import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+
+os.environ["TORCHDYNAMO_DISABLE"] = "1"
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 if TYPE_CHECKING:
     from docling.datamodel.base_models import InputFormat
@@ -303,10 +307,11 @@ def parse_pdf(
         result = converter.convert(str(pdf_path))
         doc = result.document
     except Exception as err:  # noqa: BLE001
-        logger.info(
-            "Docling unavailable or failed for %s (%s). Using PyMuPDF fallback.",
+        logger.warning(
+            "Docling unavailable or failed for %s (%s). Using native PyMuPDF fallback.",
             pdf_path,
             err,
+            exc_info=True,
         )
         return _parse_pdf_with_pymupdf(
             pdf_path,
