@@ -215,3 +215,45 @@ def test_expanded_taxonomy_coverage() -> None:
     ]
     for cat in required_categories:
         assert cat in canonical_names, f"Missing required category: {cat}"
+
+
+def test_clean_raw_label_parentheticals_and_dates() -> None:
+    """Verifies that clean_raw_label removes parentheticals, dates, footnotes, and bracketed text."""
+    from app.classification.taxonomy import clean_raw_label
+
+    assert clean_raw_label("Cost of revenues (exclusive of depreciation)") == "Cost of revenues"
+    assert clean_raw_label("Operating income (loss)") == "Operating income"
+    assert clean_raw_label("Research and development / 2024") == "Research and development"
+    assert clean_raw_label("Restructuring and other charges (Note 4)") == "Restructuring and other charges"
+    assert clean_raw_label("Stock-based compensation expense (1)") == "Stock-based compensation expense"
+    assert clean_raw_label("[a] Net cash provided by (used in) operating activities") == "Net cash provided by operating activities"
+
+
+def test_match_master_taxonomy_with_parentheticals_and_headers() -> None:
+    """Verifies that match_master_taxonomy matches items with parentheticals, footnote marks, or column dates."""
+    from app.classification.taxonomy import match_master_taxonomy
+
+    # Parenthetical exclusion
+    item1 = match_master_taxonomy("Cost of revenues (exclusive of depreciation)")
+    assert item1 is not None
+    assert item1.canonical_name == "Cost of Revenue"
+
+    # Parenthetical (loss)
+    item2 = match_master_taxonomy("Operating income (loss)")
+    assert item2 is not None
+    assert item2.canonical_name == "Operating Income"
+
+    # Year header suffix in table cell
+    item3 = match_master_taxonomy("Research and development / 2024")
+    assert item3 is not None
+    assert item3.canonical_name == "Research & Development"
+
+    # Footnote marker
+    item4 = match_master_taxonomy("Stock-based compensation expense (1)")
+    assert item4 is not None
+    assert item4.canonical_name == "Stock-Based Compensation"
+
+    # Note reference
+    item5 = match_master_taxonomy("Restructuring and other charges (Note 14)")
+    assert item5 is not None
+    assert item5.canonical_name == "Restructuring Charges"

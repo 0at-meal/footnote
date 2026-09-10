@@ -51,10 +51,13 @@ def pre_classify_records(
         raw_label = record.record.label
         parts = [p.strip() for p in raw_label.split(" / ") if p.strip()]
         leaf_label = parts[-1] if parts else raw_label
+        row_label = parts[0] if parts else raw_label
 
-        matched_item = match_master_taxonomy(
-            raw_label, master
-        ) or match_master_taxonomy(leaf_label, master)
+        matched_item = (
+            match_master_taxonomy(raw_label, master)
+            or match_master_taxonomy(row_label, master)
+            or match_master_taxonomy(leaf_label, master)
+        )
         if matched_item is not None:
             classified = ClassifiedRecord(
                 record=record,

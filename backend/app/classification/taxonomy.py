@@ -275,6 +275,46 @@ SEED_MASTER_TAXONOMY: MasterTaxonomy = _build_default_seed_taxonomy()
 SEED_TAXONOMY: list[str] = [item.canonical_name for item in SEED_MASTER_TAXONOMY.items]
 
 
+def clean_raw_label(label: str) -> str:
+    """
+    Cleans a line item label for robust financial taxonomy matching:
+    1. Strips parentheticals e.g. (exclusive of depreciation), (loss), (Note 4), (1).
+    2. Strips bracketed footnote references e.g. [1], [a].
+    3. Strips date or period column segments when separated by '/' e.g. ' / 2024'.
+    4. Strips leading/trailing footnote symbols and numeric bullets.
+    5. Normalizes whitespace and returns stripped text.
+    """
+    text = label.strip()
+    if not text:
+        return ""
+
+    # Check for slash-delimited segments e.g. "Research and development / 2024"
+    segments = [s.strip() for s in text.split("/") if s.strip()]
+    if len(segments) > 1:
+        # Exclude segments that represent dates, fiscal periods, or years
+        non_date_segments = [
+            s
+            for s in segments
+            if not re.match(
+                r"^(?:(?:19|20)\d{2}|Q[1-4]|FY\d{2,4}|[A-Za-z]+ \d{1,2},? \d{4}|\d{1,2}/\d{1,2}/\d{2,4})$",
+                s.strip(),
+                re.IGNORECASE,
+            )
+        ]
+        if non_date_segments:
+            text = non_date_segments[0]
+
+    # Strip parentheticals e.g. (exclusive of...), (loss), (Note 4), (1)
+    text = re.sub(r"\([^)]*\)", " ", text)
+    # Strip brackets e.g. [1], [a]
+    text = re.sub(r"\[[^\]]*\]", " ", text)
+    # Strip common footnote marks at start or end
+    text = re.sub(r"^[\d*#†‡§]+\s*[-.:]?\s*", "", text)
+    text = re.sub(r"\s*[\d*#†‡§]+$", "", text)
+    # Normalize whitespace
+    return re.sub(r"\s+", " ", text).strip()
+
+
 def canonicalize_label(label: str) -> str:
     """
     Canonicalizes a line item label for direct fallback matching.
@@ -291,8 +331,9 @@ def match_master_taxonomy(
     Attempts to match candidate_label against MasterTaxonomy entries using:
     1. Exact canonical_name match (case-insensitive and exact)
     2. Exact alias match (case-insensitive and exact)
-    3. Canonicalized match on full candidate against canonical_name & aliases
-    4. Leaf label match (after last '/') on canonical_name and aliases
+    3. Cleaned label match (stripping parentheticals, footnote marks, and date markers)
+    4. Canonicalized match on full and cleaned candidate against canonical_name & aliases
+    5. Segment match (first or last segment of '/' or '\n')
 
     Returns the matched TaxonomyItem or None.
     """
@@ -303,49 +344,83 @@ def match_master_taxonomy(
 
     candidate_lower = candidate_raw.lower()
     candidate_canon = canonicalize_label(candidate_raw)
+    clean_label = clean_raw_label(candidate_raw)
+    clean_lower = clean_label.lower() if clean_label else ""
+    clean_canon = canonicalize_label(clean_label) if clean_label else ""
 
-    # 1. Exact canonical_name match
+    # 1. Exact canonical_name match (raw or cleaned)
     for item in active_master.items:
         if (
             candidate_raw == item.canonical_name
             or candidate_lower == item.canonical_name.lower()
+            or (clean_label and clean_label == item.canonical_name)
+            or (clean_lower and clean_lower == item.canonical_name.lower())
         ):
             return item
 
-    # 2. Exact alias match
+    # 2. Exact alias match (raw or cleaned)
     for item in active_master.items:
         for alias in item.aliases:
-            if candidate_raw == alias or candidate_lower == alias.lower():
-                return item
-
-    # 3. Canonicalized match on full candidate against canonical_name & aliases
-    for item in active_master.items:
-        if (
-            candidate_canon
-            and canonicalize_label(item.canonical_name) == candidate_canon
-        ):
-            return item
-        for alias in item.aliases:
-            if candidate_canon and canonicalize_label(alias) == candidate_canon:
-                return item
-
-    # 4. Leaf match on canonical_name & aliases
-    leaf_raw = candidate_raw.split("/")[-1].strip()
-    leaf_raw = leaf_raw.split("\n")[-1].strip()
-    leaf_lower = leaf_raw.lower()
-    leaf_canon = canonicalize_label(leaf_raw)
-
-    if leaf_canon and leaf_canon != candidate_canon:
-        for item in active_master.items:
+            alias_lower = alias.lower()
             if (
-                leaf_lower == item.canonical_name.lower()
-                or canonicalize_label(item.canonical_name) == leaf_canon
+                candidate_raw == alias
+                or candidate_lower == alias_lower
+                or (clean_label and clean_label == alias)
+                or (clean_lower and clean_lower == alias_lower)
+            ):
+                return item
+
+    # 3. Canonicalized match on full candidate and clean candidate
+    for item in active_master.items:
+        item_canon = canonicalize_label(item.canonical_name)
+        if (candidate_canon and item_canon == candidate_canon) or (
+            clean_canon and item_canon == clean_canon
+        ):
+            return item
+        for alias in item.aliases:
+            alias_canon = canonicalize_label(alias)
+            if (candidate_canon and alias_canon == candidate_canon) or (
+                clean_canon and alias_canon == clean_canon
+            ):
+                return item
+
+    # 4. Segment-level matching across slash or newline delimited paths
+    # (Checking row labels before column headers, and leaf labels)
+    raw_segments = [s.strip() for s in candidate_raw.replace("\n", "/").split("/") if s.strip()]
+    for seg in raw_segments:
+        if not seg:
+            continue
+        # Skip pure dates/years
+        if re.match(r"^(?:(?:19|20)\d{2}|Q[1-4]|FY\d{2,4})$", seg, re.IGNORECASE):
+            continue
+        seg_clean = clean_raw_label(seg)
+        seg_lower = seg.lower()
+        seg_clean_lower = seg_clean.lower()
+        seg_canon = canonicalize_label(seg)
+        seg_clean_canon = canonicalize_label(seg_clean)
+
+        for item in active_master.items:
+            item_lower = item.canonical_name.lower()
+            item_canon = canonicalize_label(item.canonical_name)
+            if (
+                seg == item.canonical_name
+                or seg_lower == item_lower
+                or seg_clean == item.canonical_name
+                or seg_clean_lower == item_lower
+                or (seg_canon and item_canon == seg_canon)
+                or (seg_clean_canon and item_canon == seg_clean_canon)
             ):
                 return item
             for alias in item.aliases:
+                alias_lower = alias.lower()
+                alias_canon = canonicalize_label(alias)
                 if (
-                    leaf_lower == alias.lower()
-                    or canonicalize_label(alias) == leaf_canon
+                    seg == alias
+                    or seg_lower == alias_lower
+                    or seg_clean == alias
+                    or seg_clean_lower == alias_lower
+                    or (seg_canon and alias_canon == seg_canon)
+                    or (seg_clean_canon and alias_canon == seg_clean_canon)
                 ):
                     return item
 

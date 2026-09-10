@@ -8,11 +8,13 @@ Enforces:
 """
 
 import logging
+import re
 
 from app.classification.models import (
     ClassificationBatchResult,
     ClassifiedRecord,
     MasterTaxonomy,
+    StatementType,
     TaxonomyStatus,
 )
 from app.classification.taxonomy import (
@@ -62,6 +64,24 @@ _UNRELATED_TABLE_KEYWORDS: list[str] = [
     "fair value",
 ]
 
+_EQUITY_DISCLOSURE_PATTERNS: list[str] = [
+    r"par\s+value(?:\s+per\s+share)?",
+    r"shares\s+authorized",
+    r"shares\s+issued",
+    r"shares\s+outstanding",
+    r"authorized\s+shares",
+    r"issued\s+and\s+outstanding",
+    r"no\s+par\s+value",
+]
+_EQUITY_DISCLOSURE_RE = re.compile(
+    r"(?:" + "|".join(_EQUITY_DISCLOSURE_PATTERNS) + r")", re.IGNORECASE
+)
+
+
+def is_equity_disclosure_boilerplate(label: str) -> bool:
+    """Returns True if the label describes legal share counts, par values, or authorizations."""
+    return bool(_EQUITY_DISCLOSURE_RE.search(label))
+
 
 def is_target_metric_candidate_item(
     record: ScoredRecord,
@@ -72,6 +92,9 @@ def is_target_metric_candidate_item(
     Determines if a record belongs to the reconciliation bridge or financial model.
     The reconciliation tag from the parser is the authoritative signal (Ticket R3.1).
     """
+    if is_equity_disclosure_boilerplate(record.record.label):
+        return False
+
     if target_metric is None or target_metric == "Full Model":
         return True
 
@@ -182,20 +205,33 @@ def normalize_records(
                         )
                     )
                 else:
-                    is_candidate = is_target_metric_candidate_item(
-                        record, None, target_metric=target_metric
-                    )
-                    classified_records.append(
-                        ClassifiedRecord(
-                            record=record,
-                            normalized_label=None,
-                            statement_type=None,
-                            taxonomy_status=TaxonomyStatus.pending_taxonomy_confirmation,
-                            classifier_confidence=item_res.raw_response.confidence,
-                            is_confirmed=False,
-                            is_target_metric_candidate=is_candidate,
+                    if is_equity_disclosure_boilerplate(record.record.label):
+                        classified_records.append(
+                            ClassifiedRecord(
+                                record=record,
+                                normalized_label="Total Stockholders' Equity",
+                                statement_type=StatementType.balance_sheet,
+                                taxonomy_status=TaxonomyStatus.matched,
+                                classifier_confidence=0.90,
+                                is_confirmed=True,
+                                is_target_metric_candidate=False,
+                            )
                         )
-                    )
+                    else:
+                        is_candidate = is_target_metric_candidate_item(
+                            record, None, target_metric=target_metric
+                        )
+                        classified_records.append(
+                            ClassifiedRecord(
+                                record=record,
+                                normalized_label=None,
+                                statement_type=None,
+                                taxonomy_status=TaxonomyStatus.pending_taxonomy_confirmation,
+                                classifier_confidence=item_res.raw_response.confidence,
+                                is_confirmed=False,
+                                is_target_metric_candidate=is_candidate,
+                            )
+                        )
         else:
             canonical_item = None
             if isinstance(taxonomy, MasterTaxonomy):
@@ -224,6 +260,18 @@ def normalize_records(
                         classifier_confidence=0.95,
                         is_confirmed=True,
                         is_target_metric_candidate=is_candidate,
+                    )
+                )
+            elif is_equity_disclosure_boilerplate(record.record.label):
+                classified_records.append(
+                    ClassifiedRecord(
+                        record=record,
+                        normalized_label="Total Stockholders' Equity",
+                        statement_type=StatementType.balance_sheet,
+                        taxonomy_status=TaxonomyStatus.matched,
+                        classifier_confidence=0.90,
+                        is_confirmed=True,
+                        is_target_metric_candidate=False,
                     )
                 )
             else:
