@@ -87,7 +87,7 @@ function App() {
       file,
       filename: file.name,
       file_size_bytes: file.size,
-      target_metric: DEFAULT_METRIC,
+      target_metric: selectedWorkflowPack === 'capital_structure' ? 'Capital Structure' : DEFAULT_METRIC,
       filing_year: null,
       workflow_pack: selectedWorkflowPack,
     }))
@@ -328,7 +328,6 @@ function App() {
             stagedFiles={stagedFiles}
             persistedJobs={persistedJobs}
             apiBase={API_BASE}
-            onMetricChange={handleMetricChange}
             onYearChange={handleYearChange}
             onRemove={handleRemove}
             onReview={(jobId) => setActiveReviewJobId(jobId)}

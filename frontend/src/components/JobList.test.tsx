@@ -170,5 +170,45 @@ describe('JobList Component', () => {
     expect(html).toContain('ⓘ')
     expect(html).toContain('Awaiting Review')
   })
+
+  it('renders Workflow Pack column header and pack badge instead of target metric select', () => {
+    const stagedFiles = [
+      {
+        id: 'staged-wp-1',
+        file: new File([''], 'capital_debt.pdf', { type: 'application/pdf' }),
+        filename: 'capital_debt.pdf',
+        file_size_bytes: 5120,
+        target_metric: 'Capital Structure' as const,
+        filing_year: 2024,
+        workflow_pack: 'capital_structure' as const,
+      },
+    ]
+
+    const persistedJobs: JobRecord[] = [
+      {
+        job_id: 'job-wp-done',
+        filename: 'bridge_done.pdf',
+        file_size_bytes: 10240,
+        target_metric: 'Adjusted EBITDA',
+        status: 'done',
+        submitted_at: '2026-01-01T00:00:00Z',
+        workflow_pack: 'non_gaap_bridge',
+      },
+    ]
+
+    const html = renderToStaticMarkup(
+      <JobList
+        stagedFiles={stagedFiles}
+        persistedJobs={persistedJobs}
+        apiBase="http://localhost:8000"
+        onRemove={vi.fn()}
+      />
+    )
+
+    expect(html).toContain('Workflow Pack')
+    expect(html).not.toContain('Target Metric')
+    expect(html).toContain('Capital Structure')
+    expect(html).toContain('Non-GAAP Bridge')
+  })
 })
 

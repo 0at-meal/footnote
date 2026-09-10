@@ -1,12 +1,12 @@
 import type { StagedFile, TargetMetric, JobRecord, JobStatus } from '../types/job'
-import { TARGET_METRICS } from '../types/job'
+import { WORKFLOW_PACK_LABELS } from '../types/job'
 import { buildAuditReportDownloadUrl, buildAuditReportFilename, canDownloadAuditReport } from '../lib/audit_report'
 
 interface Props {
   stagedFiles: StagedFile[]
   persistedJobs: JobRecord[]
   apiBase?: string
-  onMetricChange: (id: string, metric: TargetMetric) => void
+  onMetricChange?: (id: string, metric: TargetMetric) => void
   onYearChange?: (id: string, year: number | null) => void
   onRemove: (id: string) => void
   onReview?: (jobId: string) => void
@@ -139,7 +139,7 @@ function JobList({
           <tr>
             <th scope="col">File</th>
             <th scope="col">Size</th>
-            <th scope="col">Target Metric</th>
+            <th scope="col">Workflow Pack</th>
             <th scope="col">Fiscal Year</th>
             <th scope="col">Status</th>
             <th scope="col">
@@ -157,18 +157,21 @@ function JobList({
               </td>
               <td className="job-table__size">{formatBytes(sf.file_size_bytes)}</td>
               <td className="job-table__metric">
-                <select
-                  id={`metric-${sf.id}`}
-                  value={sf.target_metric}
-                  onChange={(e) => onMetricChange(sf.id, e.target.value as TargetMetric)}
-                  aria-label={`Target metric for ${sf.filename}`}
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    padding: '0.2rem 0.55rem',
+                    borderRadius: '4px',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    background: 'rgba(37, 99, 235, 0.15)',
+                    color: '#38bdf8',
+                    border: '1px solid rgba(56, 189, 248, 0.3)',
+                  }}
                 >
-                  {TARGET_METRICS.map((m) => (
-                    <option key={m} value={m}>
-                      {m}
-                    </option>
-                  ))}
-                </select>
+                  {WORKFLOW_PACK_LABELS[sf.workflow_pack ?? 'non_gaap_bridge']}
+                </span>
               </td>
               <td className="job-table__year">
                 <input
@@ -230,8 +233,21 @@ function JobList({
               </td>
               <td className="job-table__size">{formatBytes(job.file_size_bytes)}</td>
               <td className="job-table__metric">
-                {/* Metric is locked after submission — spec AC-6 */}
-                <span className="job-table__metric-locked">{job.target_metric}</span>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    padding: '0.2rem 0.55rem',
+                    borderRadius: '4px',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    background: 'rgba(100, 116, 139, 0.15)',
+                    color: '#94a3b8',
+                    border: '1px solid rgba(148, 163, 184, 0.25)',
+                  }}
+                >
+                  {WORKFLOW_PACK_LABELS[job.workflow_pack ?? 'non_gaap_bridge']}
+                </span>
               </td>
               <td className="job-table__year">
                 <span className="job-table__year-locked">

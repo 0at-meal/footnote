@@ -8,6 +8,8 @@ export const WORKFLOW_PACK_DETAILS: {
   title: string
   subtitle: string
   icon: string
+  disabled?: boolean
+  badge?: string
 }[] = [
   {
     id: 'non_gaap_bridge',
@@ -26,6 +28,8 @@ export const WORKFLOW_PACK_DETAILS: {
     title: 'Valuation & Cash Conversion',
     subtitle: 'Operating Cash Flow, CapEx, Working Capital normalization',
     icon: '📈',
+    disabled: true,
+    badge: 'Coming Soon',
   },
 ]
 
@@ -129,15 +133,17 @@ function UploadZone({
         >
           {WORKFLOW_PACK_DETAILS.map((pack) => {
             const isSelected = activePack === pack.id
+            const isDisabled = Boolean(pack.disabled)
             return (
               <div
                 key={pack.id}
                 role="radio"
                 aria-checked={isSelected}
-                tabIndex={0}
-                onClick={() => handlePackChange(pack.id)}
+                aria-disabled={isDisabled}
+                tabIndex={isDisabled ? -1 : 0}
+                onClick={() => !isDisabled && handlePackChange(pack.id)}
                 onKeyDown={(e) => {
-                  if (e.key === ' ' || e.key === 'Enter') {
+                  if (!isDisabled && (e.key === ' ' || e.key === 'Enter')) {
                     e.preventDefault()
                     handlePackChange(pack.id)
                   }
@@ -147,18 +153,37 @@ function UploadZone({
                   borderRadius: '6px',
                   border: isSelected ? '2px solid #2563eb' : '1px solid #334155',
                   backgroundColor: isSelected ? 'rgba(37, 99, 235, 0.12)' : 'var(--surface, #1e293b)',
-                  cursor: 'pointer',
+                  cursor: isDisabled ? 'not-allowed' : 'pointer',
+                  opacity: isDisabled ? 0.55 : 1,
                   transition: 'all 0.15s ease',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '0.25rem',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ fontSize: '1.1rem' }}>{pack.icon}</span>
-                  <span style={{ fontWeight: 600, fontSize: '0.85rem', color: isSelected ? '#38bdf8' : '#e2e8f0' }}>
-                    {pack.title}
-                  </span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ fontSize: '1.1rem' }}>{pack.icon}</span>
+                    <span style={{ fontWeight: 600, fontSize: '0.85rem', color: isSelected ? '#38bdf8' : '#e2e8f0' }}>
+                      {pack.title}
+                    </span>
+                  </div>
+                  {pack.badge && (
+                    <span
+                      style={{
+                        fontSize: '0.65rem',
+                        fontWeight: 600,
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        background: '#334155',
+                        color: '#94a3b8',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                      }}
+                    >
+                      {pack.badge}
+                    </span>
+                  )}
                 </div>
                 <span style={{ fontSize: '0.75rem', color: '#94a3b8', lineHeight: 1.3 }}>
                   {pack.subtitle}
