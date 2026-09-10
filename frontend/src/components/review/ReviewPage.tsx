@@ -845,6 +845,7 @@ export default function ReviewPage({
             </div>
           )}
 
+          <div className="review-sidebar__scroll-container">
           {itemsLoading && (
             <div className="job-list--empty">
               <p>Loading extracted items...</p>
@@ -1248,6 +1249,7 @@ export default function ReviewPage({
           ))}
             </div>
           )}
+          </div>
         </aside>
 
         {/* ── Right PDF Viewer ── */}
