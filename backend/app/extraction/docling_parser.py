@@ -325,7 +325,7 @@ def parse_pdf(
         )
         result = converter.convert(str(pdf_path))
         doc = result.document
-    except Exception as err:  # noqa: BLE001
+    except Exception as err:
         logger.warning(
             "Docling unavailable or failed for %s (%s). Using native PyMuPDF fallback.",
             pdf_path,
@@ -359,7 +359,8 @@ def parse_pdf(
                     txt = (getattr(c, "text", "") or "").strip()
                     if txt:
                         sample_parts.append(txt)
-                except Exception:  # noqa: BLE001
+                except Exception as exc:  # noqa: BLE001
+                    logger.debug("Skipping unreadable sample cell text: %s", exc)
                     continue
             sample_text = " ".join(sample_parts)
             is_reconciliation = is_table_relevant_for_pack(
