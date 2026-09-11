@@ -431,3 +431,34 @@ def test_parse_pdf_with_pymupdf_3x4_table_cell_bboxes(tmp_path: Path) -> None:
     assert item_150.bbox.x1 == 100.0
     assert item_150.bbox.y1 == 100.0
 
+
+def test_is_reconciliation_table_statement_exclusions() -> None:
+    from app.extraction.docling_parser import _is_reconciliation_table
+
+    # Normal reconciliation table matches
+    assert _is_reconciliation_table("Reconciliation of Non-GAAP Financial Measures") is True
+    assert _is_reconciliation_table("Non-GAAP Measures", sample_text="Adjusted EBITDA") is True
+
+    # Comprehensive Income and Stockholders' Equity excluded even if sample_text contains keywords
+    assert (
+        _is_reconciliation_table(
+            "Consolidated Statements of Comprehensive Income",
+            sample_text="foreign currency translation adjustments",
+        )
+        is False
+    )
+    assert (
+        _is_reconciliation_table(
+            "Statements of Stockholders' Equity",
+            sample_text="Class A common stock authorized shares",
+        )
+        is False
+    )
+    assert (
+        _is_reconciliation_table(
+            "Statement of Shareholders' Equity",
+            sample_text="bridge or adjusted",
+        )
+        is False
+    )
+

@@ -201,10 +201,29 @@ def _is_reconciliation_table(
 
     Returns True if table_title or sample_text contains target_metric (case-insensitive, when non-empty)
     OR any of: non-gaap, reconciliation, adjusted, non gaap, bridge.
+    Explicitly excludes Statements of Comprehensive Income and Stockholders' Equity unless
+    explicitly labeled as a non-GAAP reconciliation.
     """
     combined = f"{table_title} {sample_text}".lower().strip()
     if not combined:
         return False
+
+    lower_title = table_title.lower()
+    excluded_statements = (
+        "comprehensive income",
+        "stockholders' equity",
+        "shareholders' equity",
+        "stockholder's equity",
+        "shareholder's equity",
+        "statements of equity",
+        "statement of equity",
+        "equity (deficit)",
+    )
+    if any(ex in lower_title for ex in excluded_statements) and not any(
+        kw in lower_title for kw in ("reconciliation", "non-gaap", "non gaap")
+    ):
+        return False
+
     if target_metric and target_metric.strip().lower() in combined:
         return True
     reconciliation_keywords = (

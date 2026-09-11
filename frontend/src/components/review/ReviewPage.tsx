@@ -410,8 +410,9 @@ export default function ReviewPage({
   async function handleBulkConfirmTaxonomy() {
     const pending = items.filter(
       (it) =>
-        it.status === 'pending_taxonomy_confirmation' ||
-        it.taxonomy_status === 'pending_taxonomy_confirmation',
+        it.is_target_metric_candidate !== false &&
+        (it.status === 'pending_taxonomy_confirmation' ||
+          it.taxonomy_status === 'pending_taxonomy_confirmation'),
     )
     const selected = pending.filter((it) => selectedBulkTaxonomyIds.has(it.id))
     if (selected.length === 0) return
@@ -821,8 +822,9 @@ export default function ReviewPage({
           {(() => {
             const pendingTaxonomyItems = items.filter(
               (it) =>
-                it.status === 'pending_taxonomy_confirmation' ||
-                it.taxonomy_status === 'pending_taxonomy_confirmation',
+                it.is_target_metric_candidate !== false &&
+                (it.status === 'pending_taxonomy_confirmation' ||
+                  it.taxonomy_status === 'pending_taxonomy_confirmation'),
             )
             if (pendingTaxonomyItems.length === 0) return null
 
