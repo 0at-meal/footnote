@@ -119,15 +119,18 @@ def process_queued_job(
 
         # Stage 5: Extraction summary & threshold evaluation
         image_only_page_count = count_image_only_pages(pdf_path)
-        target_metric_found = (
-            any(
-                target_metric.lower() in (getattr(it, "table_name", "") or "").lower()
-                or target_metric.lower() in (getattr(it, "label", "") or "").lower()
+        if workflow_pack == "capital_structure":
+            pack_candidate_found = any(
+                getattr(it, "is_reconciliation_candidate", False)
+                or getattr(it, "footnote_type", None) == "debt"
                 for it in docling_items
             )
-            if docling_items
-            else False
-        )
+        else:
+            pack_candidate_found = any(
+                getattr(it, "is_reconciliation_candidate", False)
+                for it in docling_items
+            )
+        target_metric_found = pack_candidate_found or bool(docling_items)
         summary = create_extraction_summary(
             scored_records,
             image_only_page_count=image_only_page_count,

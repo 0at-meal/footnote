@@ -107,8 +107,6 @@ export default function ReviewPage({
   const [generateModelError, setGenerateModelError] = useState<string | null>(null)
   const [parserUsed, setParserUsed] = useState<string | null>(initialParserUsed)
   const [isParserBannerDismissed, setIsParserBannerDismissed] = useState<boolean>(false)
-  const [targetMetricFound, setTargetMetricFound] = useState<boolean>(true)
-  const [isTargetMetricBannerDismissed, setIsTargetMetricBannerDismissed] = useState<boolean>(false)
   const [selectedBulkTaxonomyIds, setSelectedBulkTaxonomyIds] = useState<Set<string>>(new Set())
   const [customCanonicalNames, setCustomCanonicalNames] = useState<Record<string, string>>({})
   const [isBulkConfirmingTaxonomy, setIsBulkConfirmingTaxonomy] = useState<boolean>(false)
@@ -191,9 +189,6 @@ export default function ReviewPage({
         setItems(data.items)
         if (data.parser_used) {
           setParserUsed(data.parser_used)
-        }
-        if (data.target_metric_found !== undefined) {
-          setTargetMetricFound(data.target_metric_found)
         }
         if (data.items.length > 0) {
           setSelectedItem(data.items[0])
@@ -622,47 +617,6 @@ export default function ReviewPage({
         </div>
       )}
 
-      {/* ── Target Metric Not Found Warning Banner (Ticket 9.4) ── */}
-      {!targetMetricFound && !isTargetMetricBannerDismissed && (
-        <div
-          className="review-banner review-banner--warning"
-          role="alert"
-          style={{
-            backgroundColor: '#451a03',
-            border: '1px solid #d97706',
-            color: '#fef3c7',
-            padding: '0.75rem 1rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '1rem',
-            marginBottom: '0.5rem',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
-            <span style={{ fontSize: '1.1rem' }}>⚠️</span>
-            <span>
-              <strong>Target Metric Not Found</strong> — The requested target metric was not explicitly identified in document table titles or headers. Please verify extracted items or confirm them manually.
-            </span>
-          </div>
-          <button
-            type="button"
-            className="review-banner__close-btn"
-            onClick={() => setIsTargetMetricBannerDismissed(true)}
-            aria-label="Dismiss metric warning"
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#fef3c7',
-              cursor: 'pointer',
-              fontSize: '1rem',
-              padding: '0.25rem 0.5rem',
-            }}
-          >
-            ✕
-          </button>
-        </div>
-      )}
 
       {/* ── Model Generation Status Banners (Ticket 4.1) ── */}
       {generateModelSuccess && (
