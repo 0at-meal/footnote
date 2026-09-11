@@ -235,7 +235,7 @@ describe('ReviewPage Component', () => {
     expect(genData.total_cells_generated).toBe(12)
   })
 
-  it('renders Degraded Extraction Quality warning banner when parser_used is pymupdf (Ticket 5.2)', () => {
+  it('renders Engine: PyMuPDF badge when parser_used is pymupdf (Ticket 5.2)', () => {
     vi.mocked(fetch).mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -272,10 +272,9 @@ describe('ReviewPage Component', () => {
       />
     )
 
-    // Verify degraded quality banner is rendered with warning text
-    expect(html).toContain('Degraded Extraction Quality')
-    expect(html).toContain('Docling native parsing was unavailable for this filing')
-    expect(html).toContain('PyMuPDF fallback parser')
+    // Verify clean engine badge is rendered and no degraded warning banner
+    expect(html).toContain('Engine: PyMuPDF')
+    expect(html).not.toContain('Degraded Extraction Quality')
   })
 
   it('renders Generate Model button in empty Flagged tab when all items are reviewed/locked (Ticket 9.1)', () => {

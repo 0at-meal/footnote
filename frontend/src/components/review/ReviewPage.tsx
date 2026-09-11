@@ -106,7 +106,6 @@ export default function ReviewPage({
   const [generateModelSuccess, setGenerateModelSuccess] = useState<{ totalCells: number; message: string } | null>(null)
   const [generateModelError, setGenerateModelError] = useState<string | null>(null)
   const [parserUsed, setParserUsed] = useState<string | null>(initialParserUsed)
-  const [isParserBannerDismissed, setIsParserBannerDismissed] = useState<boolean>(false)
   const [selectedBulkTaxonomyIds, setSelectedBulkTaxonomyIds] = useState<Set<string>>(new Set())
   const [customCanonicalNames, setCustomCanonicalNames] = useState<Record<string, string>>({})
   const [isBulkConfirmingTaxonomy, setIsBulkConfirmingTaxonomy] = useState<boolean>(false)
@@ -544,6 +543,23 @@ export default function ReviewPage({
             {items.length > 0 && (
               <span className="section-title__badge">{items.length} items</span>
             )}
+            {parserUsed && (
+              <span
+                className="section-title__badge"
+                style={{
+                  backgroundColor: parserUsed === 'docling' ? '#064e3b' : '#1e293b',
+                  color: parserUsed === 'docling' ? '#6ee7b7' : '#94a3b8',
+                  border: `1px solid ${parserUsed === 'docling' ? '#059669' : '#475569'}`,
+                  marginLeft: '0.5rem',
+                  fontSize: '0.75rem',
+                  fontWeight: 500,
+                  textTransform: 'capitalize',
+                }}
+                data-testid="parser-engine-badge"
+              >
+                Engine: {parserUsed === 'pymupdf' ? 'PyMuPDF' : parserUsed}
+              </span>
+            )}
           </h1>
         </div>
         <div className="review-header__right">
@@ -574,48 +590,6 @@ export default function ReviewPage({
           </button>
         </div>
       </header>
-
-      {/* ── Degraded Quality Warning Banner (Ticket 5.2) ── */}
-      {(parserUsed === 'pymupdf' || parserUsed === 'mixed') && !isParserBannerDismissed && (
-        <div
-          className="review-banner review-banner--warning"
-          role="alert"
-          style={{
-            backgroundColor: '#451a03',
-            border: '1px solid #d97706',
-            color: '#fef3c7',
-            padding: '0.75rem 1rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '1rem',
-            marginBottom: '0.5rem',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
-            <span style={{ fontSize: '1.1rem' }}>⚠️</span>
-            <span>
-              <strong>Degraded Extraction Quality</strong> — Docling native parsing was unavailable for this filing. Layout was extracted using the PyMuPDF fallback parser. Bounding boxes and confidence scores may be less precise. Please review highlighted items carefully.
-            </span>
-          </div>
-          <button
-            type="button"
-            className="review-banner__close-btn"
-            onClick={() => setIsParserBannerDismissed(true)}
-            aria-label="Dismiss warning"
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#fef3c7',
-              cursor: 'pointer',
-              fontSize: '1rem',
-              padding: '0.25rem 0.5rem',
-            }}
-          >
-            ✕
-          </button>
-        </div>
-      )}
 
 
       {/* ── Model Generation Status Banners (Ticket 4.1) ── */}
