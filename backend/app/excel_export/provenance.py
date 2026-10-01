@@ -31,19 +31,37 @@ def build_w3c_annotation_for_node(
 
     if node.source_node is not None:
         src = node.source_node
-        bbox = src.bbox
-        coordinates = BoundingBoxCoordinates(
-            x0=float(bbox.get("x0", 0.0)),
-            y0=float(bbox.get("y0", 0.0)),
-            x1=float(bbox.get("x1", 1000.0)),
-            y1=float(bbox.get("y1", 1000.0)),
-        )
-        selector = W3CSelector(
-            page=src.page,
-            value=f"xywh=percent:{coordinates.x0},{coordinates.y0},{coordinates.x1},{coordinates.y1}",
-            refinedBy=W3CRefinedBy(coordinates=coordinates),
-        )
-        target = W3CTarget(source=src.source_file, selector=selector)
+        loc = getattr(src, "locator", None)
+        if loc is not None and getattr(loc, "type", None) == "html":
+            selector = W3CSelector(
+                type="XPathSelector",
+                conformsTo="http://www.w3.org/TR/DOM-XPath/",
+                page=1,
+                value=loc.element_path,
+                refinedBy=None,
+            )
+            source_target = (
+                loc.url
+                if loc.url
+                else f"https://www.sec.gov/edgar/data/{loc.accession}/{loc.document}"
+            )
+            target = W3CTarget(source=source_target, selector=selector)
+        else:
+            bbox = src.bbox
+            coordinates = BoundingBoxCoordinates(
+                x0=float(bbox.get("x0", 0.0)),
+                y0=float(bbox.get("y0", 0.0)),
+                x1=float(bbox.get("x1", 1000.0)),
+                y1=float(bbox.get("y1", 1000.0)),
+            )
+            selector = W3CSelector(
+                type="FragmentSelector",
+                conformsTo="http://www.w3.org/TR/media-frags/",
+                page=src.page,
+                value=f"xywh=percent:{coordinates.x0},{coordinates.y0},{coordinates.x1},{coordinates.y1}",
+                refinedBy=W3CRefinedBy(coordinates=coordinates),
+            )
+            target = W3CTarget(source=src.source_file, selector=selector)
         body = W3CBody(
             value=src.value,
             label=src.normalized_label,
@@ -78,7 +96,20 @@ def format_cell_comment(annotation: W3CAnnotationRecord) -> str:
     target = annotation.target
 
     if target.selector is not None:
-        coords = target.selector.refinedBy.coordinates
+        if target.selector.type == "XPathSelector":
+            return (
+                f"[Footnote Provenance - EDGAR HTML]\n"
+                f"Label: {body.label}\n"
+                f"Value: {body.value}\n"
+                f"Source: {target.source}\n"
+                f"Element: {target.selector.value}\n"
+                f"ID: {annotation.id}"
+            )
+        coords = (
+            target.selector.refinedBy.coordinates
+            if target.selector.refinedBy
+            else BoundingBoxCoordinates(x0=0.0, y0=0.0, x1=0.0, y1=0.0)
+        )
         return (
             f"[Footnote Provenance]\n"
             f"Label: {body.label}\n"

@@ -394,12 +394,12 @@ Refactor the formula engine to emit a neutral grid spec with two renderers (xlsx
 | FN-013 | Scale and sign | 1 | S | 010 | done |
 | FN-061 | Tokens, type, shell | 1 | M | 060 | done |
 | FN-066 | Brand and SourceChip | 1 | S | 061 | done |
-| FN-023 | Locator union | 2 | S | 003 | todo |
-| FN-020 | EDGAR client | 2 | M | 002 | todo |
-| FN-021 | iXBRL/HTML extractor | 2 | L | 023, 020 | todo |
-| FN-022 | EX-99.1 support | 2 | M | 021 | todo |
-| FN-024 | Ingestion router | 2 | M | 021 | todo |
-| FN-025 | Shared cache | 2 | M | 024 | todo |
+| FN-023 | Locator union | 2 | S | 003 | done |
+| FN-020 | EDGAR client | 2 | M | 002 | done |
+| FN-021 | iXBRL/HTML extractor | 2 | L | 023, 020 | done |
+| FN-022 | EX-99.1 support | 2 | M | 021 | done |
+| FN-024 | Ingestion router | 2 | M | 021 | done |
+| FN-025 | Shared cache | 2 | M | 024 | done |
 | FN-030 | Generate-first workflow | 3 | M | 012 | todo |
 | FN-062 | Review redesign | 3 | L | 061, 003, 030 | todo |
 | FN-063 | Home and queue redesign | 3 | M | 061 | todo |
@@ -436,6 +436,12 @@ _Blockers and deviations:_
 - **FN-012 (Checks Sheet)**: Pure function tie-out checker implemented across all 5 checks with live formula generation in Excel `Checks` worksheet. Provenance records remain strictly mapped to model cells to maintain 1:1 locator invariant.
 - **FN-013 (Scale & Sign)**: Pure functions normalize caption scale, handle accounting parentheses, exempt per-share/ratio metrics, and write explicit units headers to generated workbooks.
 - **FN-061 & FN-066 (Design & Brand)**: Full Appendix A tokens in CSS variables (light paper & ink default + low-glare dark workstation), tabular figures utility, primitive UI suite, slim layout with breadcrumbs and theme switcher, dev-only `/design` preview route, brand wordmark, `SourceChip` citation popover with PDF jump, and 3 actionable empty states.
+- **FN-023 (Locator Union)**: Pydantic discriminated union `Locator = PdfLocator | HtmlLocator` implemented with two-way backward compatibility for `page`/`bbox`/`source_file`. Content-hash review ID stability preserved (legacy 16-hex for PDF, deterministic element-path for HTML). Provenance export maps to W3C XPath and fragment selectors.
+- **FN-020 (EDGAR Client)**: SEC Submissions API client implemented with ticker-to-CIK padding, token-bucket rate limiting (<= 10 req/s), circuit breaker, immutable accession disk caching, and explicit `ForeignFilerUnsupportedError` rejection on Forms 20-F, 40-F, 6-K per Invariant I3.
+- **FN-021 (iXBRL / HTML Extractor)**: Dual extractor for inline XBRL facts and HTML table structures (colspan/rowspan grid reconstruction, parentheses, periods, XPath). Emits `ExtractedRecord` with `HtmlLocator` and explicit `not_found` failure reasons per Invariant I3.
+- **FN-022 (8-K EX-99.1 Earnings Release)**: Item 2.02 discovery, quarterly/YTD table extraction, guidance/outlook tagging, bridge diffing vs subsequent 10-Q, and 'latest filed wins' deduplication preserving dual provenance.
+- **FN-024 (Ingestion Router)**: Unified cascade router (EDGAR HTML/iXBRL -> 8-K EX-99.1 -> PDF fallback) with explicit failure reasons, `ixbrl_html`/`mixed` parser tagging, version stamping, and per-user concurrency limits.
+- **FN-025 (Shared Cache)**: Multi-layer cache with merge precedence `user > verified > machine`, consensus promotion (N=3), audit preservation on version bump, and verified zero per-user data in shared layers.
 
 _Out-of-scope discoveries:_ (none)
 

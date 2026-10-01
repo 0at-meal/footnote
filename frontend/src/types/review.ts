@@ -25,6 +25,25 @@ export type BoundingBox = {
   y1: number
 }
 
+export type PdfLocator = {
+  type: 'pdf'
+  page: number
+  bbox: BoundingBox
+  source_file: string
+}
+
+export type HtmlLocator = {
+  type: 'html'
+  accession: string
+  document: string
+  element_path: string
+  char_range?: [number, number] | null
+  url?: string | null
+  source_file?: string | null
+}
+
+export type Locator = PdfLocator | HtmlLocator
+
 export type ReviewItem = {
   id: string
   value: string
@@ -32,6 +51,7 @@ export type ReviewItem = {
   page: number
   bbox: BoundingBox
   source_file: string
+  locator?: Locator
   confidence_band: ConfidenceBand
   confidence_score: number
   normalized_label: string | null
@@ -48,6 +68,6 @@ export type ReviewItemsResponse = {
   job_id: string
   items: ReviewItem[]
   total_items: number
-  parser_used?: 'docling' | 'pymupdf' | 'mixed' | null
+  parser_used?: 'docling' | 'pymupdf' | 'mixed' | 'ixbrl_html' | null
   target_metric_found?: boolean
 }

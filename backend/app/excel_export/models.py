@@ -29,17 +29,17 @@ class W3CRefinedBy(BaseModel):
 
 
 class W3CSelector(BaseModel):
-    """W3C Media Fragments selector for PDF page and coordinate targeting."""
+    """W3C Web Annotation selector supporting PDF Media Fragment and HTML XPath/DOM targeting (FN-023)."""
 
-    type: Literal["FragmentSelector"] = "FragmentSelector"
-    conformsTo: Literal["http://www.w3.org/TR/media-frags/"] = (
-        "http://www.w3.org/TR/media-frags/"
+    type: Literal["FragmentSelector", "XPathSelector", "CssSelector"] = (
+        "FragmentSelector"
     )
-    page: int = Field(..., ge=1, description="1-indexed source PDF page")
+    conformsTo: str = "http://www.w3.org/TR/media-frags/"
+    page: int = Field(default=1, ge=1, description="1-indexed source page")
     value: str = Field(
-        ..., description="Media fragments selector string (e.g. xywh=...)"
+        ..., description="Selector string (e.g. xywh=... or /html/body/table...)"
     )
-    refinedBy: W3CRefinedBy
+    refinedBy: W3CRefinedBy | None = Field(default=None)
 
 
 class W3CTarget(BaseModel):

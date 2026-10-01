@@ -28,9 +28,30 @@ _DEFAULT_DATA_DIR: Path = Path(__file__).parent.parent.parent / "data"
 
 
 def make_review_id(
-    job_id: str, source_file: str, page: int, bbox: Any | None
+    job_id: str,
+    source_file: str,
+    page: int,
+    bbox: Any | None,
+    locator: Any | None = None,
 ) -> str:
-    """Generate a deterministic 16-character content hash ID for a review item (Ticket 12.1)."""
+    """Generate a deterministic 16-character content hash ID for a review item (Ticket 12.1 / FN-023)."""
+    if locator is not None:
+        loc_type = getattr(locator, "type", None) or (
+            locator.get("type") if isinstance(locator, dict) else None
+        )
+        if loc_type == "html":
+            accession = getattr(locator, "accession", None) or (
+                locator.get("accession") if isinstance(locator, dict) else ""
+            )
+            document = getattr(locator, "document", None) or (
+                locator.get("document") if isinstance(locator, dict) else ""
+            )
+            elem_path = getattr(locator, "element_path", None) or (
+                locator.get("element_path") if isinstance(locator, dict) else ""
+            )
+            key = f"{job_id}:{accession}:{document}:{elem_path}"
+            return hashlib.sha256(key.encode("utf-8")).hexdigest()[:16]
+
     if isinstance(bbox, dict):
         x0 = float(bbox.get("x0", 0.0))
         y0 = float(bbox.get("y0", 0.0))
@@ -521,7 +542,8 @@ class ReviewRepository:
                     else str(cr.taxonomy_status)
                 )
 
-            item_id = make_review_id(job_id, er.source_file, er.page, er.bbox)
+            er_locator = getattr(er, "locator", None)
+            item_id = make_review_id(job_id, er.source_file, er.page, er.bbox, locator=er_locator)
 
             items.append(
                 ReviewItem(
@@ -531,6 +553,7 @@ class ReviewRepository:
                     page=er.page,
                     bbox=er.bbox,
                     source_file=er.source_file,
+                    locator=er_locator,
                     confidence_band=sr.confidence_band,
                     confidence_score=sr.confidence_score,
                     normalized_label=cr.normalized_label,
@@ -570,7 +593,8 @@ class ReviewRepository:
             else:
                 status = ReviewStatus.manual_required
 
-            item_id = make_review_id(job_id, er.source_file, er.page, er.bbox)
+            er_locator = getattr(er, "locator", None)
+            item_id = make_review_id(job_id, er.source_file, er.page, er.bbox, locator=er_locator)
 
             items.append(
                 ReviewItem(
@@ -580,6 +604,7 @@ class ReviewRepository:
                     page=er.page,
                     bbox=er.bbox,
                     source_file=er.source_file,
+                    locator=er_locator,
                     confidence_band=sr.confidence_band,
                     confidence_score=sr.confidence_score,
                     normalized_label=None,

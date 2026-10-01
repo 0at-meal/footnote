@@ -34,7 +34,7 @@ def filter_flagged_records(records: list[ScoredRecord]) -> list[ScoredRecord]:
 def create_extraction_summary(
     records: list[ScoredRecord],
     image_only_page_count: int = 0,
-    parser_used: Literal["docling", "pymupdf", "mixed"] = "docling",
+    parser_used: Literal["docling", "pymupdf", "mixed", "ixbrl_html"] = "docling",
     target_metric_found: bool = True,
 ) -> ExtractionSummary:
     """

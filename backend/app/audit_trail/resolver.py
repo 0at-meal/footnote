@@ -199,14 +199,19 @@ class AuditTrailResolver:
             # Populate component details from leaf provenance record
             source_file = leaf_record.target.source
             if leaf_record.target.selector is not None:
-                page = leaf_record.target.selector.page
-                coords = leaf_record.target.selector.refinedBy.coordinates
-                bbox_dict = {
-                    "x0": coords.x0,
-                    "y0": coords.y0,
-                    "x1": coords.x1,
-                    "y1": coords.y1,
-                }
+                selector = leaf_record.target.selector
+                page = getattr(selector, "page", 1)
+                refined_by = getattr(selector, "refinedBy", None)
+                coords = getattr(refined_by, "coordinates", None)
+                if coords is not None:
+                    bbox_dict = {
+                        "x0": coords.x0,
+                        "y0": coords.y0,
+                        "x1": coords.x1,
+                        "y1": coords.y1,
+                    }
+                else:
+                    bbox_dict = {"x0": 0.0, "y0": 0.0, "x1": 1000.0, "y1": 1000.0}
             else:
                 page = 1
                 bbox_dict = {"x0": 0.0, "y0": 0.0, "x1": 1000.0, "y1": 1000.0}

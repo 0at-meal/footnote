@@ -519,7 +519,7 @@ export default function ReviewPage({
                 data-testid="parser-engine-badge"
               >
                 <Cpu size={12} aria-hidden="true" />
-                Engine: {parserUsed === 'pymupdf' ? 'PyMuPDF' : parserUsed}
+                Engine: {parserUsed === 'pymupdf' ? 'PyMuPDF' : parserUsed === 'ixbrl_html' ? 'iXBRL / HTML' : parserUsed}
               </span>
             )}
           </div>

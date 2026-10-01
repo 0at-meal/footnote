@@ -101,13 +101,21 @@ class NormalizedItem(BaseModel):
     footnote_type: str | None = None
 
 
+from pydantic import Field, model_validator
+
+from app.extraction.locator import (
+    HtmlLocator,
+    Locator,
+    PdfLocator,
+)
+
+
 class ExtractedRecord(BaseModel):
     """
-    Canonical 5-field frozen schema for an extracted line item (spec.md FR2, AC-3).
+    Canonical frozen schema for an extracted line item (spec.md FR2, AC-3, FN-023).
 
-    Field names (value, label, page, bbox, source_file) are frozen for the project lifetime
-    (CONSTITUTION §2.3, NFR7). Metadata fields like is_reconciliation_candidate do not alter
-    the frozen 5 schema fields.
+    Field names (value, label, page, bbox, source_file) are preserved for the project lifetime
+    (CONSTITUTION §2.3, NFR7). Supports discriminated Locator union (PdfLocator | HtmlLocator).
     """
 
     value: str
@@ -116,20 +124,45 @@ class ExtractedRecord(BaseModel):
     label: str
     """Raw structural label path from document structure."""
 
-    page: int
+    page: int = 1
     """1-indexed page number in the source PDF."""
 
-    bbox: dict[str, float]
+    bbox: dict[str, float] = Field(
+        default_factory=lambda: {"x0": 0.0, "y0": 0.0, "x1": 1000.0, "y1": 1000.0}
+    )
     """W3C Web Annotation-style bounding box in 0-1000 space: {x0, y0, x1, y1}."""
 
-    source_file: str
+    source_file: str = ""
     """Original filename string as uploaded (UTF-8, unmodified)."""
+
+    locator: Locator | None = None
+    """Discriminated union locator: PdfLocator or HtmlLocator (FN-023)."""
 
     is_reconciliation_candidate: bool = False
     """Flag indicating whether this item belongs to a reconciliation candidate table."""
 
     footnote_type: str | None = None
     """Type of footnote if extracted from a footnote section (e.g. 'debt')."""
+
+    @model_validator(mode="after")
+    def _sync_locator_and_legacy_fields(self) -> "ExtractedRecord":
+        if self.locator is None:
+            if self.page >= 1 and self.source_file:
+                try:
+                    self.locator = PdfLocator(
+                        page=self.page,
+                        bbox=self.bbox,
+                        source_file=self.source_file,
+                    )
+                except Exception:  # noqa: BLE001, S110
+                    pass
+        elif isinstance(self.locator, PdfLocator):
+            self.page = self.locator.page
+            self.bbox = self.locator.bbox
+            self.source_file = self.locator.source_file
+        elif isinstance(self.locator, HtmlLocator) and not self.source_file:
+            self.source_file = self.locator.document or self.locator.accession
+        return self
 
 
 class ConfidenceBand(str, Enum):
@@ -178,5 +211,5 @@ class ExtractionSummary(BaseModel):
     flagged_percentage: float
     passed_threshold: bool
     filtered_non_reconciliation_count: int = 0
-    parser_used: Literal["docling", "pymupdf", "mixed"] = "docling"
+    parser_used: Literal["docling", "pymupdf", "mixed", "ixbrl_html"] = "docling"
     target_metric_found: bool = True

@@ -14,6 +14,7 @@ def test_extracted_record_schema_fields_frozen() -> None:
         "page",
         "bbox",
         "source_file",
+        "locator",
         "is_reconciliation_candidate",
         "footnote_type",
     }

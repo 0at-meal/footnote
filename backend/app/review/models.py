@@ -6,9 +6,10 @@ Governed by CONSTITUTION §2.3 (frozen fields), §3.9 (review stage boundaries).
 
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from app.classification.models import StatementType
+from app.extraction.locator import HtmlLocator, Locator, PdfLocator
 from app.extraction.models import ConfidenceBand
 
 
@@ -31,7 +32,7 @@ class ReviewItem(BaseModel):
     Projection of an extracted/classified record for the review UI.
 
     Preserves canonical frozen field names: value, label, page, bbox, source_file
-    (CONSTITUTION §2.3, NFR7).
+    (CONSTITUTION §2.3, NFR7). Supports discriminated Locator union (FN-023).
     """
 
     id: str = Field(..., description="Unique review item identifier within the job")
@@ -39,12 +40,13 @@ class ReviewItem(BaseModel):
         ..., description="Displayed value text (unmodified or user-edited)"
     )
     label: str = Field(..., description="Structural label path")
-    page: int = Field(..., ge=1, description="1-indexed page number in the source PDF")
+    page: int = Field(default=1, ge=1, description="1-indexed page number in the source PDF")
     bbox: dict[str, float] = Field(
-        ...,
+        default_factory=lambda: {"x0": 0.0, "y0": 0.0, "x1": 1000.0, "y1": 1000.0},
         description="W3C Web Annotation-style bounding box in 0-1000 space: {x0, y0, x1, y1}",
     )
-    source_file: str = Field(..., description="Original filename string as uploaded")
+    source_file: str = Field(default="", description="Original filename string as uploaded")
+    locator: Locator | None = Field(default=None, description="Discriminated union locator (FN-023)")
     confidence_band: ConfidenceBand = Field(
         ...,
         description="Extraction confidence band from Feature 2",
@@ -55,6 +57,22 @@ class ReviewItem(BaseModel):
         le=1.0,
         description="Structural confidence score from Feature 2",
     )
+
+    @model_validator(mode="after")
+    def _sync_locator(self) -> "ReviewItem":
+        if self.locator is None:
+            self.locator = PdfLocator(
+                page=max(1, self.page),
+                bbox=self.bbox,
+                source_file=self.source_file or "unknown.pdf",
+            )
+        elif isinstance(self.locator, PdfLocator):
+            self.page = self.locator.page
+            self.bbox = self.locator.bbox
+            self.source_file = self.locator.source_file
+        elif isinstance(self.locator, HtmlLocator) and not self.source_file:
+            self.source_file = self.locator.document or self.locator.accession
+        return self
     normalized_label: str | None = Field(
         default=None,
         description="Standardized taxonomy label from Feature 3 if classified",

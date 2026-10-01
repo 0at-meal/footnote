@@ -10,9 +10,10 @@ Enforces CONSTITUTION ? 1.1, ? 1.3, ? 1.4, ? 2.3, ? 3.12:
 
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from app.classification.models import StatementType
+from app.extraction.locator import HtmlLocator, Locator, PdfLocator
 
 
 class FormulaInputNode(BaseModel):
@@ -20,7 +21,7 @@ class FormulaInputNode(BaseModel):
     Authoritative in-memory input node representing a single confirmed line item.
 
     Each node binds the confirmed normalized taxonomy label to its raw extracted value
-    and W3C Web Annotation provenance fields (0-1000 normalized space).
+    and W3C Web Annotation provenance fields (0-1000 normalized space, FN-023).
     """
 
     node_id: str = Field(
@@ -41,19 +42,38 @@ class FormulaInputNode(BaseModel):
         description="Original structural label from Feature 2 extraction",
     )
     page: int = Field(
-        ...,
+        default=1,
         ge=1,
         description="1-indexed page number in the source PDF",
     )
     bbox: dict[str, float] = Field(
-        ...,
+        default_factory=lambda: {"x0": 0.0, "y0": 0.0, "x1": 1000.0, "y1": 1000.0},
         description="W3C Web Annotation bounding box in 0-1000 space: {x0, y0, x1, y1}",
     )
     source_file: str = Field(
-        ...,
-        min_length=1,
+        default="",
         description="Original filename string as uploaded (UTF-8, unmodified)",
     )
+    locator: Locator | None = Field(
+        default=None,
+        description="Discriminated union locator: PdfLocator or HtmlLocator (FN-023)",
+    )
+
+    @model_validator(mode="after")
+    def _sync_locator(self) -> "FormulaInputNode":
+        if self.locator is None:
+            self.locator = PdfLocator(
+                page=max(1, self.page),
+                bbox=self.bbox,
+                source_file=self.source_file or "unknown.pdf",
+            )
+        elif isinstance(self.locator, PdfLocator):
+            self.page = self.locator.page
+            self.bbox = self.locator.bbox
+            self.source_file = self.locator.source_file
+        elif isinstance(self.locator, HtmlLocator) and not self.source_file:
+            self.source_file = self.locator.document or self.locator.accession
+        return self
     record_index: int = Field(
         ...,
         ge=0,
