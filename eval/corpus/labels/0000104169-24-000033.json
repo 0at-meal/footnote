@@ -1,0 +1,68 @@
+{
+  "accession_number": "0000104169-24-000033",
+  "cik": "0000104169",
+  "ticker": "WMT",
+  "company_name": "Walmart Inc.",
+  "sector": "retail",
+  "form": "10-K",
+  "period": "FY2024",
+  "fiscal_year": 2024,
+  "fiscal_quarter": null,
+  "filing_date": "2024-03-22",
+  "split": "dev",
+  "adversarial_cases": [
+    "footnote_markers"
+  ],
+  "reported_metric_name": "Adjusted Operating Income",
+  "reported_total": 27100.0,
+  "reconciliation_lines": [
+    {
+      "label": "Operating Income as Reported",
+      "value": "27,011",
+      "numeric_value": 27011.0,
+      "period": "FY2024",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000104169-24-000033",
+        "document": "wmt_2024.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "operating_income",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Measures",
+      "double_labeled": true,
+      "second_annotator_label": "Operating Income as Reported",
+      "second_annotator_value": "27,011",
+      "second_annotator_category": "operating_income",
+      "second_annotator_agrees": true
+    },
+    {
+      "label": "Restructuring and reorganization charges",
+      "value": "89",
+      "numeric_value": 89.0,
+      "period": "FY2024",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000104169-24-000033",
+        "document": "wmt_2024.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "restructuring",
+      "is_gaap_seeded": false,
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Measures",
+      "double_labeled": true,
+      "second_annotator_label": "Restructuring and reorganization charges",
+      "second_annotator_value": "89",
+      "second_annotator_category": "restructuring",
+      "second_annotator_agrees": true
+    }
+  ],
+  "double_labeled": true,
+  "inter_annotator_agreement": 0.96
+}

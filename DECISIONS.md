@@ -7,6 +7,10 @@ Format: one line per decision, with date and context.
 - **2026-10-01**: Groq free tier is not a production dependency; classifier abstracted to support enterprise LLM providers with deterministic fallback.
 - **2026-10-01**: 6-tab multi-statement generator retired (FN-001); non-GAAP reconciliation bridge and multi-period bridge are the core product focus.
 - **2026-10-01**: Narrative intelligence (MD&A / Risk factor diffing) removed from pipeline to focus entirely on numerical reconciliation accuracy and trust.
+- **2026-10-01**: Model tie-out checks embedded as a dedicated "Checks" worksheet in Excel output with live dynamic formulas (FN-012, Invariant I5).
+- **2026-10-01**: Labeled benchmark corpus keyed by SEC accession numbers with strictly gitignored PDF binaries in eval/.cache/ and deterministic cassette record/replay for CI (FN-010, FN-011).
+- **2026-10-01**: Scale and sign normalization executed via pure functions with strict exemptions for per-share and percentage figures (FN-013).
+- **2026-10-01**: Dual-theme design system deployed (Light "Paper and Ink" default + low-glare dark workstation) with CSS variables, tabular numerals, and /design preview route (FN-061, FN-066).
 - **2026-09-02**: 2-tab Excel output format (Source_Inputs + Reconciliation) selected as primary financial model standard (ADR-002).
 - **2026-09-01**: Review UI scoped to flagged items only; auto-accepted items pre-locked to maximize reviewer velocity (ADR-001).
 - **2026-09-01**: Target metric automatically scoped per workflow pack; `non_gaap_bridge` defaults to Adjusted EBITDA (ADR-001).

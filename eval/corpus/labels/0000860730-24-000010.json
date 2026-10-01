@@ -1,0 +1,137 @@
+{
+  "accession_number": "0000860730-24-000010",
+  "cik": "0000860730",
+  "ticker": "HCA",
+  "company_name": "HCA Healthcare, Inc.",
+  "sector": "healthcare_services",
+  "form": "10-K",
+  "period": "FY2023",
+  "fiscal_year": 2023,
+  "fiscal_quarter": null,
+  "filing_date": "2024-02-16",
+  "split": "test",
+  "adversarial_cases": [
+    "tables_spanning_pages"
+  ],
+  "reported_metric_name": "Adjusted EBITDA",
+  "reported_total": 12726.0,
+  "reconciliation_lines": [
+    {
+      "label": "Net income attributable to HCA Healthcare, Inc.",
+      "value": "5,241",
+      "numeric_value": 5241.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000860730-24-000010",
+        "document": "hca_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "net_income",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Financial Disclosures",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Provision for income taxes",
+      "value": "1,440",
+      "numeric_value": 1440.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000860730-24-000010",
+        "document": "hca_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "taxes",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Financial Disclosures",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Interest expense",
+      "value": "1,945",
+      "numeric_value": 1945.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000860730-24-000010",
+        "document": "hca_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "interest",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Financial Disclosures",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Depreciation and amortization",
+      "value": "3,100",
+      "numeric_value": 3100.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000860730-24-000010",
+        "document": "hca_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "depreciation_amortization",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Financial Disclosures",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Legal settlement charges",
+      "value": "1,000",
+      "numeric_value": 1000.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000860730-24-000010",
+        "document": "hca_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "litigation",
+      "is_gaap_seeded": false,
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Financial Disclosures",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    }
+  ],
+  "double_labeled": false,
+  "inter_annotator_agreement": null
+}

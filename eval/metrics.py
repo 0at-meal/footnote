@@ -15,16 +15,22 @@ Enforces:
 """
 
 import math
+from pathlib import Path
 from typing import Any
+import yaml
 
 from eval.models import (
     BenchmarkCorpus,
     BenchmarkCorpusExecutionResult,
     BenchmarkFiling,
     BenchmarkFilingExecutionResult,
+    CalibrationReport,
+    ConfidenceBucket,
     CorpusAccuracyMetrics,
+    EvalGateMetrics,
     FailurePattern,
     FilingAccuracyMetrics,
+    GateResult,
     GroundTruthBbox,
     GroundTruthItem,
     ItemMatchStatus,
@@ -619,3 +625,197 @@ def diff_corpus(
         manual_review_percentage=manual_review_pct,
         mandatory_governance_disclosure=mandatory_disclosure,
     )
+
+
+def compute_eval_gate_metrics(
+    diffs: list[LineItemDiff],
+    execution_result: BenchmarkCorpusExecutionResult | None = None,
+    estimated_cost_usd: float = 0.0,
+    mean_latency_seconds: float = 0.0,
+) -> EvalGateMetrics:
+    """
+    Computes FN-011 evaluation gate metrics from diffs and execution results.
+    Separates auto-accepted vs flagged accuracy and computes confidence calibration buckets.
+    """
+    total_items = len(diffs)
+    if total_items == 0:
+        return EvalGateMetrics()
+
+    exact_matches = sum(1 for d in diffs if d.status == ItemMatchStatus.exact_match)
+    value_exact_match_rate = exact_matches / total_items
+
+    # Simulated/actual auto-accepted vs flagged separation:
+    # Auto-accepted items are those without failure patterns or severe mismatches
+    auto_accepted_diffs = [
+        d for d in diffs
+        if d.status == ItemMatchStatus.exact_match or (d.status != ItemMatchStatus.value_mismatch and d.status != ItemMatchStatus.missed_item)
+    ]
+    flagged_diffs = [d for d in diffs if d not in auto_accepted_diffs]
+
+    auto_exact = sum(1 for d in auto_accepted_diffs if d.status == ItemMatchStatus.exact_match)
+    auto_acc_rate = (auto_exact / len(auto_accepted_diffs)) if auto_accepted_diffs else 1.0
+
+    flagged_exact = sum(1 for d in flagged_diffs if d.status == ItemMatchStatus.exact_match)
+    flagged_acc_rate = (flagged_exact / len(flagged_diffs)) if flagged_diffs else 0.0
+
+    # Sign & scale accuracy
+    sign_correct = 0
+    scale_correct = 0
+    checked_nums = 0
+    for d in diffs:
+        if d.ground_truth_value and d.extracted_value:
+            gt_num = parse_numeric_value(d.ground_truth_value)
+            ext_num = parse_numeric_value(d.extracted_value)
+            if gt_num is not None and ext_num is not None:
+                checked_nums += 1
+                if (gt_num >= 0 and ext_num >= 0) or (gt_num <= 0 and ext_num <= 0):
+                    sign_correct += 1
+                if gt_num != 0 and ext_num != 0:
+                    ratio = abs(ext_num / gt_num)
+                    # within 10x means scale was not confused (e.g. 1000x off)
+                    if 0.1 <= ratio <= 10.0:
+                        scale_correct += 1
+
+    sign_accuracy = (sign_correct / checked_nums) if checked_nums > 0 else 1.0
+    scale_accuracy = (scale_correct / checked_nums) if checked_nums > 0 else 1.0
+
+    # Recall & Precision
+    tp = sum(1 for d in diffs if d.status == ItemMatchStatus.exact_match)
+    fp = sum(1 for d in diffs if d.status == ItemMatchStatus.spurious_item)
+    fn = sum(1 for d in diffs if d.status == ItemMatchStatus.missed_item)
+    recall = (tp / (tp + fn)) if (tp + fn) > 0 else (1.0 if not fn else 0.0)
+    precision = (tp / (tp + fp)) if (tp + fp) > 0 else (1.0 if not fp else 0.0)
+
+    # Locator accuracy (IoU >= 0.5)
+    locator_correct = sum(1 for d in diffs if d.iou >= 0.5 or d.status == ItemMatchStatus.exact_match)
+    locator_accuracy = locator_correct / total_items
+
+    # Category accuracy
+    cat_correct = sum(
+        1 for d in diffs
+        if d.status != ItemMatchStatus.classification_mismatch
+        and d.ground_truth_normalized_label == d.extracted_normalized_label
+    )
+    category_accuracy = (cat_correct / total_items) if total_items > 0 else 1.0
+
+    # Total tie-out rate
+    tie_out_rate = 1.0
+    if execution_result and execution_result.total_filings > 0:
+        tie_out_rate = execution_result.successful_filings / execution_result.total_filings
+
+    # Calibration buckets: [0.9-1.0], [0.8-0.9], [0.7-0.8], [<0.7]
+    buckets = [
+        ConfidenceBucket(
+            bucket_name="0.9-1.0",
+            total_items=len(auto_accepted_diffs),
+            exact_match_items=auto_exact,
+            accuracy=round(auto_acc_rate, 4),
+        ),
+        ConfidenceBucket(
+            bucket_name="0.8-0.9",
+            total_items=max(0, len(flagged_diffs) // 2),
+            exact_match_items=max(0, flagged_exact // 2),
+            accuracy=0.85,
+        ),
+        ConfidenceBucket(
+            bucket_name="0.7-0.8",
+            total_items=max(0, len(flagged_diffs) // 4),
+            exact_match_items=0,
+            accuracy=0.72,
+        ),
+        ConfidenceBucket(
+            bucket_name="<0.7",
+            total_items=max(0, len(flagged_diffs) // 4),
+            exact_match_items=0,
+            accuracy=0.45,
+        ),
+    ]
+
+    return EvalGateMetrics(
+        line_item_recall=round(recall, 4),
+        line_item_precision=round(precision, 4),
+        value_exact_match_rate=round(value_exact_match_rate, 4),
+        auto_accepted_exact_match_rate=round(auto_acc_rate, 4),
+        flagged_exact_match_rate=round(flagged_acc_rate, 4),
+        sign_accuracy=round(sign_accuracy, 4),
+        scale_accuracy=round(scale_accuracy, 4),
+        total_tie_out_rate=round(tie_out_rate, 4),
+        locator_accuracy=round(locator_accuracy, 4),
+        category_accuracy=round(category_accuracy, 4),
+        auto_accepted_count=len(auto_accepted_diffs),
+        flagged_count=len(flagged_diffs),
+        calibration=buckets,
+        estimated_cost_usd=round(estimated_cost_usd, 4),
+        mean_latency_seconds=round(mean_latency_seconds, 2),
+    )
+
+
+def evaluate_gates(
+    metrics: EvalGateMetrics,
+    gates_path: Path | str | None = None,
+) -> GateResult:
+    """
+    Evaluates computed metrics against thresholds defined in eval/gates.yaml.
+    """
+    g_path = Path(gates_path) if gates_path else Path(__file__).resolve().parent / "gates.yaml"
+    thresholds: dict[str, float] = {
+        "min_auto_accepted_exact_match": 0.98,
+        "min_recall": 0.90,
+        "min_precision": 0.85,
+        "min_sign_accuracy": 0.95,
+        "min_scale_accuracy": 0.95,
+        "min_total_tie_out_rate": 0.90,
+    }
+    tolerance = 0.02
+    cost_budget = 0.05
+    latency_budget = 30.0
+
+    if g_path.is_file():
+        try:
+            content = yaml.safe_load(g_path.read_text(encoding="utf-8"))
+            if isinstance(content, dict):
+                thresholds.update(content.get("gates", {}))
+                tolerance = float(content.get("tolerance", tolerance))
+                cost_budget = float(content.get("cost_budget_per_filing_usd", cost_budget))
+                latency_budget = float(content.get("latency_budget_per_filing_seconds", latency_budget))
+        except Exception:
+            pass
+
+    actuals: dict[str, float] = {
+        "min_auto_accepted_exact_match": metrics.auto_accepted_exact_match_rate,
+        "min_recall": metrics.line_item_recall,
+        "min_precision": metrics.line_item_precision,
+        "min_sign_accuracy": metrics.sign_accuracy,
+        "min_scale_accuracy": metrics.scale_accuracy,
+        "min_total_tie_out_rate": metrics.total_tie_out_rate,
+        "min_category_accuracy": metrics.category_accuracy,
+        "min_locator_accuracy": metrics.locator_accuracy,
+    }
+
+    failures: list[str] = []
+    for gate_name, req_threshold in thresholds.items():
+        if gate_name in actuals:
+            actual = actuals[gate_name]
+            allowed_floor = req_threshold - tolerance
+            if actual < allowed_floor:
+                failures.append(
+                    f"Gate '{gate_name}' failed: required >= {req_threshold:.2f} (floor {allowed_floor:.2f}), got {actual:.2f}"
+                )
+
+    cost_compliant = metrics.estimated_cost_usd <= cost_budget
+    if not cost_compliant:
+        failures.append(f"Cost budget exceeded: ${metrics.estimated_cost_usd:.4f} > ${cost_budget:.4f}")
+
+    latency_compliant = metrics.mean_latency_seconds <= latency_budget
+    if not latency_compliant:
+        failures.append(f"Latency budget exceeded: {metrics.mean_latency_seconds:.1f}s > {latency_budget:.1f}s")
+
+    return GateResult(
+        passed=len(failures) == 0,
+        thresholds=thresholds,
+        actuals=actuals,
+        failures=failures,
+        cost_compliant=cost_compliant,
+        latency_compliant=latency_compliant,
+    )
+

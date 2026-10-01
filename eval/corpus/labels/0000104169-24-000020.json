@@ -1,0 +1,68 @@
+{
+  "accession_number": "0000104169-24-000020",
+  "cik": "0000104169",
+  "ticker": "WMT",
+  "company_name": "Walmart Inc.",
+  "sector": "retail",
+  "form": "8-K EX-99.1",
+  "period": "Q4 FY2024",
+  "fiscal_year": 2024,
+  "fiscal_quarter": 4,
+  "filing_date": "2024-02-20",
+  "split": "dev",
+  "adversarial_cases": [
+    "parentheses_negatives"
+  ],
+  "reported_metric_name": "Adjusted Operating Income",
+  "reported_total": 7250.0,
+  "reconciliation_lines": [
+    {
+      "label": "Operating income",
+      "value": "7,254",
+      "numeric_value": 7254.0,
+      "period": "Q4 FY2024",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000104169-24-000020",
+        "document": "wmt_2024.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "operating_income",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "EX-99.1 Non-GAAP Table",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Net adjustment for restructuring",
+      "value": "(4)",
+      "numeric_value": -4.0,
+      "period": "Q4 FY2024",
+      "scale": 1000000,
+      "sign": -1,
+      "locator": {
+        "type": "html",
+        "accession": "0000104169-24-000020",
+        "document": "wmt_2024.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "restructuring",
+      "is_gaap_seeded": false,
+      "is_optional": false,
+      "section": "EX-99.1 Non-GAAP Table",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    }
+  ],
+  "double_labeled": false,
+  "inter_annotator_agreement": null
+}

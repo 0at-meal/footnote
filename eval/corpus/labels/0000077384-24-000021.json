@@ -1,0 +1,91 @@
+{
+  "accession_number": "0000077384-24-000021",
+  "cik": "0000077384",
+  "ticker": "HON",
+  "company_name": "Honeywell International Inc.",
+  "sector": "industrials",
+  "form": "10-K",
+  "period": "FY2023",
+  "fiscal_year": 2023,
+  "fiscal_quarter": null,
+  "filing_date": "2024-02-16",
+  "split": "test",
+  "adversarial_cases": [
+    "footnote_markers"
+  ],
+  "reported_metric_name": "Adjusted EBITDA",
+  "reported_total": 9200.0,
+  "reconciliation_lines": [
+    {
+      "label": "Operating income",
+      "value": "7,500",
+      "numeric_value": 7500.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000077384-24-000021",
+        "document": "hon_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "operating_income",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. MD&A Non-GAAP",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Depreciation and amortization",
+      "value": "1,200",
+      "numeric_value": 1200.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000077384-24-000021",
+        "document": "hon_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "depreciation_amortization",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. MD&A Non-GAAP",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Repositioning and other charges",
+      "value": "500",
+      "numeric_value": 500.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000077384-24-000021",
+        "document": "hon_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "restructuring",
+      "is_gaap_seeded": false,
+      "is_optional": false,
+      "section": "Item 7. MD&A Non-GAAP",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    }
+  ],
+  "double_labeled": false,
+  "inter_annotator_agreement": null
+}

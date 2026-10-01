@@ -1,0 +1,114 @@
+{
+  "accession_number": "0001561550-24-000019",
+  "cik": "0001561550",
+  "ticker": "DDOG",
+  "company_name": "Datadog, Inc.",
+  "sector": "software",
+  "form": "10-Q",
+  "period": "Q1 2024",
+  "fiscal_year": 2024,
+  "fiscal_quarter": 1,
+  "filing_date": "2024-05-09",
+  "split": "test",
+  "adversarial_cases": [
+    "adjusted_net_income"
+  ],
+  "reported_metric_name": "Non-GAAP Net Income",
+  "reported_total": 154.0,
+  "reconciliation_lines": [
+    {
+      "label": "GAAP Net Income",
+      "value": "43",
+      "numeric_value": 43.0,
+      "period": "Q1 2024",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0001561550-24-000019",
+        "document": "ddog_2024.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "net_income",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 2. Non-GAAP Reconciliation",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Stock-based compensation",
+      "value": "118",
+      "numeric_value": 118.0,
+      "period": "Q1 2024",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0001561550-24-000019",
+        "document": "ddog_2024.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "SBC",
+      "is_gaap_seeded": false,
+      "is_optional": false,
+      "section": "Item 2. Non-GAAP Reconciliation",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Amortization of acquired intangibles",
+      "value": "4",
+      "numeric_value": 4.0,
+      "period": "Q1 2024",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0001561550-24-000019",
+        "document": "ddog_2024.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "depreciation_amortization",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 2. Non-GAAP Reconciliation",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Income tax benefit related to tax adjustments",
+      "value": "(11)",
+      "numeric_value": -11.0,
+      "period": "Q1 2024",
+      "scale": 1000000,
+      "sign": -1,
+      "locator": {
+        "type": "html",
+        "accession": "0001561550-24-000019",
+        "document": "ddog_2024.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "taxes",
+      "is_gaap_seeded": false,
+      "is_optional": false,
+      "section": "Item 2. Non-GAAP Reconciliation",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    }
+  ],
+  "double_labeled": false,
+  "inter_annotator_agreement": null
+}

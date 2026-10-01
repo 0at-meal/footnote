@@ -1,0 +1,114 @@
+{
+  "accession_number": "0000087347-24-000019",
+  "cik": "0000087347",
+  "ticker": "SLB",
+  "company_name": "Schlumberger Limited",
+  "sector": "energy",
+  "form": "10-K",
+  "period": "FY2023",
+  "fiscal_year": 2023,
+  "fiscal_quarter": null,
+  "filing_date": "2024-01-24",
+  "split": "dev",
+  "adversarial_cases": [
+    "restated_periods"
+  ],
+  "reported_metric_name": "Adjusted EBITDA",
+  "reported_total": 8107.0,
+  "reconciliation_lines": [
+    {
+      "label": "Net income attributable to SLB",
+      "value": "4,202",
+      "numeric_value": 4202.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000087347-24-000019",
+        "document": "slb_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "net_income",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Results",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Taxes on income",
+      "value": "950",
+      "numeric_value": 950.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000087347-24-000019",
+        "document": "slb_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "taxes",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Results",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Depreciation and amortization",
+      "value": "2,455",
+      "numeric_value": 2455.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000087347-24-000019",
+        "document": "slb_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "depreciation_amortization",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Results",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Merger & integration charges",
+      "value": "500",
+      "numeric_value": 500.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000087347-24-000019",
+        "document": "slb_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "M&A/integration",
+      "is_gaap_seeded": false,
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Results",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    }
+  ],
+  "double_labeled": false,
+  "inter_annotator_agreement": null
+}

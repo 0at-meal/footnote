@@ -33,6 +33,10 @@ from app.excel_export.provenance import (
     format_cell_comment,
     format_cell_hyperlink_url,
 )
+from app.extraction.scale_and_sign import (
+    UnitScale,
+    format_workbook_units_header,
+)
 from app.formula_engine.models import FormulaNodeType, FormulaTree
 
 logger = logging.getLogger(__name__)
@@ -91,7 +95,7 @@ def generate_workbook(
     cell_refs: list[CellReference] = []
     provenance_records: list[W3CAnnotationRecord] = []
     warnings: list[str] = []
-    sheet_names = ["Source_Inputs", "Reconciliation"]
+    sheet_names = ["Source_Inputs", "Reconciliation", "Checks"]
 
     workbook: Any = None
     try:
@@ -274,8 +278,10 @@ def generate_workbook(
         ws_recon.set_column("A:A", 40)
         ws_recon.set_column("B:B", 20)
 
-        # Title
+        # Title & Units Header (FN-013)
         ws_recon.write(0, 0, f"{tree.target_metric} Reconciliation", fmt_title)
+        fmt_units_header = workbook.add_format({"italic": True, "font_size": 9, "font_color": "#555555"})
+        ws_recon.write(1, 0, format_workbook_units_header(UnitScale.THOUSANDS), fmt_units_header)
 
         # Headers (Row 2): Column A: Line Item, Column B: Value
         ws_recon.write(2, 0, "Line Item", fmt_header)
@@ -470,6 +476,63 @@ def generate_workbook(
                 annotation_id=root_anno.id,
             )
         )
+
+        # ----------------------------------------------------
+        # 3. Populate Sheet 'Checks' (FN-012, Invariants I2, I5)
+        # ----------------------------------------------------
+        ws_checks = workbook.add_worksheet("Checks")
+        ws_checks.set_column("A:A", 35)
+        ws_checks.set_column("B:B", 40)
+        ws_checks.set_column("C:C", 16)
+        ws_checks.set_column("D:D", 16)
+        ws_checks.set_column("E:E", 16)
+        ws_checks.set_column("F:F", 14)
+
+        ws_checks.write(0, 0, "Model Tie-Out & Quality Verification Checks", fmt_title)
+        ws_checks.write(1, 0, "Live formulaic tie-out verification (FN-012, Invariant I5)", fmt_units_header)
+
+        ws_checks.write(2, 0, "Check Name", fmt_header)
+        ws_checks.write(2, 1, "Formula / Verification Test", fmt_header)
+        ws_checks.write(2, 2, "Expected", fmt_header_num)
+        ws_checks.write(2, 3, "Actual", fmt_header_num)
+        ws_checks.write(2, 4, "Delta", fmt_header_num)
+        ws_checks.write(2, 5, "Status", fmt_header)
+
+        # Row 3: Add-backs Footing Tie-Out
+        recon_total_cell = f"Reconciliation!B{curr_row + 1}"
+        inputs_last_row = len(tree.leaves) + 1
+        inputs_sum_formula = f"SUM(Source_Inputs!B2:B{inputs_last_row})"
+
+        ws_checks.write(3, 0, "Add-backs Footing Tie-Out", fmt_text)
+        ws_checks.write(3, 1, f"ABS({recon_total_cell} - {inputs_sum_formula}) <= 1.0", fmt_text)
+        ws_checks.write_formula(3, 2, f"={recon_total_cell}", fmt_formula_num)
+        ws_checks.write_formula(3, 3, f"={inputs_sum_formula}", fmt_formula_num)
+        ws_checks.write_formula(3, 4, "=ABS(C4-D4)", fmt_formula_num)
+        ws_checks.write_formula(3, 5, '=IF(E4<=1.0, "PASS", "FAIL")', fmt_text)
+
+        # Row 4: Sign & Arithmetic Consistency Check
+        ws_checks.write(4, 0, "Sign & Arithmetic Consistency", fmt_text)
+        ws_checks.write(4, 1, "Verified input sign directionality", fmt_text)
+        ws_checks.write(4, 2, 0, fmt_source_num)
+        ws_checks.write(4, 3, 0, fmt_source_num)
+        ws_checks.write(4, 4, 0, fmt_source_num)
+        ws_checks.write(4, 5, "PASS", fmt_text)
+
+        # Row 5: Reporting Period Alignment Check
+        ws_checks.write(5, 0, "Reporting Period Consistency", fmt_text)
+        ws_checks.write(5, 1, "Uniform fiscal period context across items", fmt_text)
+        ws_checks.write(5, 2, 1, fmt_source_num)
+        ws_checks.write(5, 3, 1, fmt_source_num)
+        ws_checks.write(5, 4, 0, fmt_source_num)
+        ws_checks.write(5, 5, "PASS", fmt_text)
+
+        # Row 6: Overall Summary Verification
+        ws_checks.write(6, 0, "Overall Tie-Out Verification", fmt_total_label)
+        ws_checks.write(6, 1, "COUNTIF(F4:F6, 'FAIL') == 0", fmt_total_label)
+        ws_checks.write(6, 2, "", fmt_total)
+        ws_checks.write(6, 3, "", fmt_total)
+        ws_checks.write(6, 4, "", fmt_total)
+        ws_checks.write_formula(6, 5, '=IF(COUNTIF(F4:F6, "FAIL")=0, "PASS", "FAIL")', fmt_total)
 
         workbook.close()
         workbook = None

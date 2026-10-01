@@ -7,17 +7,23 @@ with source PDFs and ground-truth line-item specifications.
 
 import json
 from pathlib import Path
+from typing import Any
 
 import pymupdf
 from pydantic import ValidationError
 
 from eval.models import (
+    AccessionCorpusManifest,
+    BenchmarkAccessionFiling,
     BenchmarkCorpusManifest,
     BenchmarkFiling,
+    BenchmarkReconciliationLine,
+    CorpusSplit,
     CorpusValidationResult,
 )
 
 DEFAULT_CORPUS_DIR = Path(__file__).resolve().parent / "corpus"
+DEFAULT_LABELS_DIR = DEFAULT_CORPUS_DIR / "labels"
 
 
 class CorpusLoadingError(Exception):
@@ -215,3 +221,166 @@ def validate_corpus(
         errors=errors,
         warnings=warnings,
     )
+
+
+def load_accession_filing(
+    filepath_or_accession: Path | str,
+    labels_dir: Path | str | None = None,
+) -> BenchmarkAccessionFiling:
+    """
+    Loads and validates a single benchmark accession filing JSON label file.
+    """
+    l_dir = Path(labels_dir).resolve() if labels_dir else DEFAULT_LABELS_DIR
+    p = Path(filepath_or_accession)
+    if not p.is_file():
+        # Try finding {accession}.json in labels_dir
+        candidate = l_dir / f"{filepath_or_accession}.json"
+        if candidate.is_file():
+            p = candidate
+        else:
+            raise CorpusLoadingError(f"Benchmark accession label file not found: {filepath_or_accession}")
+
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+        return BenchmarkAccessionFiling.model_validate(data)
+    except (json.JSONDecodeError, ValidationError, ValueError, OSError) as e:
+        raise CorpusLoadingError(f"Failed to load/validate accession filing from {p}: {e}") from e
+
+
+def load_labeled_corpus(
+    labels_dir: Path | str | None = None,
+    split: str | CorpusSplit | None = None,
+) -> list[BenchmarkAccessionFiling]:
+    """
+    Loads all accession-keyed benchmark filings from the labels directory.
+    Optionally filters by split ('dev' or 'test').
+    """
+    l_dir = Path(labels_dir).resolve() if labels_dir else DEFAULT_LABELS_DIR
+    if not l_dir.is_dir():
+        raise CorpusLoadingError(f"Benchmark labels directory not found: {l_dir}")
+
+    manifest_path = l_dir / "manifest.json"
+    filings: list[BenchmarkAccessionFiling] = []
+
+    if manifest_path.is_file():
+        manifest_data = json.loads(manifest_path.read_text(encoding="utf-8"))
+        accessions = manifest_data.get("filing_accessions", [])
+        for acc in accessions:
+            f = load_accession_filing(acc, labels_dir=l_dir)
+            if split is None:
+                filings.append(f)
+            else:
+                target_split = split.value if isinstance(split, CorpusSplit) else str(split).lower()
+                if f.split.value == target_split:
+                    filings.append(f)
+    else:
+        for json_path in sorted(l_dir.glob("*.json")):
+            if json_path.name == "manifest.json":
+                continue
+            f = load_accession_filing(json_path, labels_dir=l_dir)
+            if split is None or f.split.value == (split.value if isinstance(split, CorpusSplit) else str(split).lower()):
+                filings.append(f)
+
+    return filings
+
+
+def validate_labeled_corpus(
+    labels_dir: Path | str | None = None,
+    expected_count: int = 40,
+) -> CorpusValidationResult:
+    """
+    Validates schema conformance, split balance, double-labeling agreement,
+    and reconciliation line math for all 40 benchmark filings.
+    """
+    l_dir = Path(labels_dir).resolve() if labels_dir else DEFAULT_LABELS_DIR
+    errors: list[str] = []
+    warnings: list[str] = []
+
+    if not l_dir.is_dir():
+        return CorpusValidationResult(
+            valid=False,
+            filing_count=0,
+            total_items=0,
+            errors=[f"Labels directory does not exist: {l_dir}"],
+        )
+
+    try:
+        filings = load_labeled_corpus(labels_dir=l_dir)
+    except CorpusLoadingError as e:
+        return CorpusValidationResult(
+            valid=False,
+            filing_count=0,
+            total_items=0,
+            errors=[str(e)],
+        )
+
+    total_items = 0
+    dev_count = 0
+    test_count = 0
+    double_labeled_count = 0
+
+    for f in filings:
+        if f.split == CorpusSplit.dev:
+            dev_count += 1
+        elif f.split == CorpusSplit.test:
+            test_count += 1
+
+        if f.double_labeled:
+            double_labeled_count += 1
+            if f.inter_annotator_agreement is None or f.inter_annotator_agreement < 0.8:
+                errors.append(
+                    f"Filing {f.accession_number} is marked double_labeled but agreement is {f.inter_annotator_agreement}"
+                )
+
+        if not f.reconciliation_lines:
+            errors.append(f"Filing {f.accession_number} has no reconciliation lines")
+
+        for idx, line in enumerate(f.reconciliation_lines):
+            total_items += 1
+            if line.scale <= 0:
+                errors.append(f"Filing {f.accession_number} line [{idx}] invalid scale: {line.scale}")
+            if line.sign not in (1, -1):
+                errors.append(f"Filing {f.accession_number} line [{idx}] invalid sign: {line.sign}")
+
+    if len(filings) < expected_count:
+        errors.append(f"Expected at least {expected_count} filings, found {len(filings)}")
+
+    if dev_count < 30:
+        errors.append(f"Expected at least 30 dev filings, found {dev_count}")
+    if test_count < 10:
+        errors.append(f"Expected at least 10 locked test filings, found {test_count}")
+    if double_labeled_count < 8:
+        errors.append(f"Expected at least 8 (20%) double-labeled filings, found {double_labeled_count}")
+
+    is_valid = len(errors) == 0
+    return CorpusValidationResult(
+        valid=is_valid,
+        filing_count=len(filings),
+        total_items=total_items,
+        errors=errors,
+        warnings=warnings,
+    )
+
+
+def calculate_annotator_agreement(
+    filings: list[BenchmarkAccessionFiling],
+) -> dict[str, Any]:
+    """
+    Computes inter-annotator agreement statistics across double-labeled filings.
+    """
+    double_labeled = [f for f in filings if f.double_labeled]
+    if not double_labeled:
+        return {"double_labeled_count": 0, "mean_agreement": 0.0, "filings": {}}
+
+    agreements: dict[str, float] = {}
+    for f in double_labeled:
+        if f.inter_annotator_agreement is not None:
+            agreements[f.accession_number] = f.inter_annotator_agreement
+
+    mean_val = sum(agreements.values()) / len(agreements) if agreements else 0.0
+    return {
+        "double_labeled_count": len(double_labeled),
+        "mean_agreement": round(mean_val, 4),
+        "filings": agreements,
+    }
+

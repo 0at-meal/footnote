@@ -12,4 +12,6 @@ backend/temp_test_dir/
 .agents/
 skills-lock.json
 .env
-*.env
+*.env
+eval/.cache/
+eval/cache/

@@ -11,10 +11,14 @@ import pytest
 from eval.corpus_loader import (
     DEFAULT_CORPUS_DIR,
     CorpusLoadingError,
+    calculate_annotator_agreement,
     load_corpus,
     load_filing,
+    load_labeled_corpus,
     validate_corpus,
+    validate_labeled_corpus,
 )
+from eval.models import CorpusSplit
 
 
 def test_load_corpus_loads_all_curated_filings() -> None:
@@ -196,3 +200,90 @@ def test_duplicate_labels_across_sections() -> None:
     pages = {item.page for item in sbc_items}
     assert 1 in pages
     assert 2 in pages
+
+
+def test_load_labeled_corpus_dev_and_test_splits() -> None:
+    """FN-010: Corpus loads 40 filings with exactly 30 dev and 10 test filings."""
+    all_filings = load_labeled_corpus()
+    assert len(all_filings) == 40
+
+    dev_filings = load_labeled_corpus(split=CorpusSplit.dev)
+    assert len(dev_filings) == 30
+
+    test_filings = load_labeled_corpus(split="test")
+    assert len(test_filings) == 10
+
+
+def test_validate_labeled_corpus_integrity() -> None:
+    """FN-010: Validates 40 filings across 6 sectors with proper schema."""
+    result = validate_labeled_corpus()
+    assert result.valid is True
+    assert result.filing_count == 40
+    assert result.total_items > 100
+    assert len(result.errors) == 0
+
+    filings = load_labeled_corpus()
+    sectors = {f.sector for f in filings}
+    expected_sectors = {
+        "software",
+        "retail",
+        "healthcare_services",
+        "energy",
+        "telecom",
+        "industrials",
+    }
+    assert expected_sectors.issubset(sectors)
+
+
+def test_double_labeled_agreement_and_percentage() -> None:
+    """FN-010: Double-labels ~20% (8 filings) and records >= 80% agreement."""
+    filings = load_labeled_corpus()
+    stats = calculate_annotator_agreement(filings)
+    assert stats["double_labeled_count"] == 8
+    assert stats["mean_agreement"] >= 0.90
+    assert len(stats["filings"]) == 8
+
+
+def test_paired_filings_coverage() -> None:
+    """FN-010: Includes both 8-K EX-99.1 and 10-Q/10-K pairs for same company/period."""
+    filings = load_labeled_corpus()
+    tickers = {f.ticker for f in filings if "EX-99.1" in f.form}
+    assert len(tickers) >= 6
+    for t in ["MSFT", "WMT", "UNH", "XOM", "T", "GE"]:
+        assert t in tickers
+        forms = [f.form for f in filings if f.ticker == t]
+        assert "8-K EX-99.1" in forms
+        assert any(x in forms for x in ["10-K", "10-Q"])
+
+
+def test_adversarial_cases_coverage() -> None:
+    """FN-010: Adversarial cases (spanning pages, negatives, restatements, markers, scanned exhibits, adj net income) are present."""
+    filings = load_labeled_corpus()
+    all_adversarial = set()
+    for f in filings:
+        all_adversarial.update(f.adversarial_cases)
+
+    required_adversarial = {
+        "tables_spanning_pages",
+        "parentheses_negatives",
+        "restated_periods",
+        "footnote_markers",
+        "scanned_exhibits",
+        "adjusted_net_income",
+    }
+    assert required_adversarial.issubset(all_adversarial)
+
+
+def test_fetch_filing_by_accession(tmp_path: Path) -> None:
+    """FN-010: On-demand filing fetcher caches filings to disk."""
+    from eval.fetch_filings import fetch_filing_by_accession
+
+    cached = fetch_filing_by_accession(
+        accession_number="0001018724-23-000014",
+        form="10-K",
+        ticker="MSFT",
+        mock_if_unavailable=True,
+    )
+    assert cached.is_file()
+    assert cached.stat().st_size > 0
+

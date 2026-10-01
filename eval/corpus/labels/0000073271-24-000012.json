@@ -1,0 +1,114 @@
+{
+  "accession_number": "0000073271-24-000012",
+  "cik": "0000073271",
+  "ticker": "T",
+  "company_name": "AT&T Inc.",
+  "sector": "telecom",
+  "form": "10-K",
+  "period": "FY2023",
+  "fiscal_year": 2023,
+  "fiscal_quarter": null,
+  "filing_date": "2024-02-14",
+  "split": "dev",
+  "adversarial_cases": [
+    "tables_spanning_pages"
+  ],
+  "reported_metric_name": "Adjusted EBITDA",
+  "reported_total": 43400.0,
+  "reconciliation_lines": [
+    {
+      "label": "Net Income (Loss) Attributable to AT&T",
+      "value": "14,400",
+      "numeric_value": 14400.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000073271-24-000012",
+        "document": "t_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "net_income",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Financial Measures",
+      "double_labeled": true,
+      "second_annotator_label": "Net Income (Loss) Attributable to AT&T",
+      "second_annotator_value": "14,400",
+      "second_annotator_category": "net_income",
+      "second_annotator_agrees": true
+    },
+    {
+      "label": "Income tax expense",
+      "value": "4,200",
+      "numeric_value": 4200.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000073271-24-000012",
+        "document": "t_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "taxes",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Financial Measures",
+      "double_labeled": true,
+      "second_annotator_label": "Income tax expense",
+      "second_annotator_value": "4,200",
+      "second_annotator_category": "taxes",
+      "second_annotator_agrees": true
+    },
+    {
+      "label": "Interest expense",
+      "value": "6,800",
+      "numeric_value": 6800.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000073271-24-000012",
+        "document": "t_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "interest",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Financial Measures",
+      "double_labeled": true,
+      "second_annotator_label": "Interest expense",
+      "second_annotator_value": "6,800",
+      "second_annotator_category": "interest",
+      "second_annotator_agrees": true
+    },
+    {
+      "label": "Depreciation and amortization",
+      "value": "18,000",
+      "numeric_value": 18000.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000073271-24-000012",
+        "document": "t_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "depreciation_amortization",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Financial Measures",
+      "double_labeled": true,
+      "second_annotator_label": "Depreciation and amortization",
+      "second_annotator_value": "18,000",
+      "second_annotator_category": "depreciation_amortization",
+      "second_annotator_agrees": true
+    }
+  ],
+  "double_labeled": true,
+  "inter_annotator_agreement": 0.95
+}

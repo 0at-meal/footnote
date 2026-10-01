@@ -1,0 +1,68 @@
+{
+  "accession_number": "0000018230-24-000035",
+  "cik": "0000018230",
+  "ticker": "CAT",
+  "company_name": "Caterpillar Inc.",
+  "sector": "industrials",
+  "form": "10-K",
+  "period": "FY2023",
+  "fiscal_year": 2023,
+  "fiscal_quarter": null,
+  "filing_date": "2024-02-14",
+  "split": "dev",
+  "adversarial_cases": [
+    "tables_spanning_pages"
+  ],
+  "reported_metric_name": "Adjusted Operating Profit",
+  "reported_total": 13300.0,
+  "reconciliation_lines": [
+    {
+      "label": "Operating profit",
+      "value": "13,000",
+      "numeric_value": 13000.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000018230-24-000035",
+        "document": "cat_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "operating_income",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Financial Measures",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Restructuring costs",
+      "value": "300",
+      "numeric_value": 300.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000018230-24-000035",
+        "document": "cat_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "restructuring",
+      "is_gaap_seeded": false,
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Financial Measures",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    }
+  ],
+  "double_labeled": false,
+  "inter_annotator_agreement": null
+}

@@ -1,0 +1,89 @@
+{
+  "accession_number": "0001163165-24-000012",
+  "cik": "0001163165",
+  "ticker": "COP",
+  "company_name": "ConocoPhillips",
+  "sector": "energy",
+  "form": "10-Q",
+  "period": "Q1 2024",
+  "fiscal_year": 2024,
+  "fiscal_quarter": 1,
+  "filing_date": "2024-05-02",
+  "split": "dev",
+  "adversarial_cases": [],
+  "reported_metric_name": "Adjusted EBITDA",
+  "reported_total": 5200.0,
+  "reconciliation_lines": [
+    {
+      "label": "Net income attributable to ConocoPhillips",
+      "value": "2,550",
+      "numeric_value": 2550.0,
+      "period": "Q1 2024",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0001163165-24-000012",
+        "document": "cop_2024.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "net_income",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 2. Financial Discussion",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Income tax provision",
+      "value": "850",
+      "numeric_value": 850.0,
+      "period": "Q1 2024",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0001163165-24-000012",
+        "document": "cop_2024.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "taxes",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 2. Financial Discussion",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Depreciation, depletion and amortization",
+      "value": "1,800",
+      "numeric_value": 1800.0,
+      "period": "Q1 2024",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0001163165-24-000012",
+        "document": "cop_2024.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "depreciation_amortization",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 2. Financial Discussion",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    }
+  ],
+  "double_labeled": false,
+  "inter_annotator_agreement": null
+}

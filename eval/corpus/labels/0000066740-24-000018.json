@@ -1,0 +1,92 @@
+{
+  "accession_number": "0000066740-24-000018",
+  "cik": "0000066740",
+  "ticker": "MMM",
+  "company_name": "3M Company",
+  "sector": "industrials",
+  "form": "10-K",
+  "period": "FY2023",
+  "fiscal_year": 2023,
+  "fiscal_quarter": null,
+  "filing_date": "2024-02-07",
+  "split": "test",
+  "adversarial_cases": [
+    "restated_periods",
+    "tables_spanning_pages"
+  ],
+  "reported_metric_name": "Adjusted Operating Income",
+  "reported_total": 6250.0,
+  "reconciliation_lines": [
+    {
+      "label": "Operating income (loss)",
+      "value": "(9,133)",
+      "numeric_value": -9133.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000066740-24-000018",
+        "document": "mmm_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "operating_income",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Reconciliations",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Combat Arms earplugs settlement",
+      "value": "5,300",
+      "numeric_value": 5300.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000066740-24-000018",
+        "document": "mmm_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "litigation",
+      "is_gaap_seeded": false,
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Reconciliations",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Public water systems settlement",
+      "value": "10,083",
+      "numeric_value": 10083.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000066740-24-000018",
+        "document": "mmm_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "litigation",
+      "is_gaap_seeded": false,
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Reconciliations",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    }
+  ],
+  "double_labeled": false,
+  "inter_annotator_agreement": null
+}

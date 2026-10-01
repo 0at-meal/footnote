@@ -1,0 +1,91 @@
+{
+  "accession_number": "0000796343-24-000095",
+  "cik": "0000796343",
+  "ticker": "ADBE",
+  "company_name": "Adobe Inc.",
+  "sector": "software",
+  "form": "10-Q",
+  "period": "Q2 FY2024",
+  "fiscal_year": 2024,
+  "fiscal_quarter": 2,
+  "filing_date": "2024-06-14",
+  "split": "dev",
+  "adversarial_cases": [
+    "parentheses_negatives"
+  ],
+  "reported_metric_name": "Non-GAAP Operating Income",
+  "reported_total": 2439.0,
+  "reconciliation_lines": [
+    {
+      "label": "GAAP Operating Income",
+      "value": "1,889",
+      "numeric_value": 1889.0,
+      "period": "Q2 FY2024",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000796343-24-000095",
+        "document": "adbe_2024.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "operating_income",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 2. MD&A Non-GAAP",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Stock-based compensation",
+      "value": "482",
+      "numeric_value": 482.0,
+      "period": "Q2 FY2024",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000796343-24-000095",
+        "document": "adbe_2024.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "SBC",
+      "is_gaap_seeded": false,
+      "is_optional": false,
+      "section": "Item 2. MD&A Non-GAAP",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Amortization of intangibles",
+      "value": "68",
+      "numeric_value": 68.0,
+      "period": "Q2 FY2024",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000796343-24-000095",
+        "document": "adbe_2024.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "depreciation_amortization",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 2. MD&A Non-GAAP",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    }
+  ],
+  "double_labeled": false,
+  "inter_annotator_agreement": null
+}

@@ -388,12 +388,12 @@ Refactor the formula engine to emit a neutral grid spec with two renderers (xlsx
 | FN-002 | Collapse docs | 0 | S | 000 | done |
 | FN-003 | PDF P0 bugs | 0 | M | 000 | done |
 | FN-060 | Fix visible UI defects | 0 | S | 000 | done |
-| FN-010 | Benchmark corpus | 1 | L | 003 | todo |
-| FN-011 | Eval runner and CI gate | 1 | M | 010 | todo |
-| FN-012 | Tie-out checks | 1 | M | 001 | todo |
-| FN-013 | Scale and sign | 1 | S | 010 | todo |
-| FN-061 | Tokens, type, shell | 1 | M | 060 | todo |
-| FN-066 | Brand and SourceChip | 1 | S | 061 | todo |
+| FN-010 | Benchmark corpus | 1 | L | 003 | done |
+| FN-011 | Eval runner and CI gate | 1 | M | 010 | done |
+| FN-012 | Tie-out checks | 1 | M | 001 | done |
+| FN-013 | Scale and sign | 1 | S | 010 | done |
+| FN-061 | Tokens, type, shell | 1 | M | 060 | done |
+| FN-066 | Brand and SourceChip | 1 | S | 061 | done |
 | FN-023 | Locator union | 2 | S | 003 | todo |
 | FN-020 | EDGAR client | 2 | M | 002 | todo |
 | FN-021 | iXBRL/HTML extractor | 2 | L | 023, 020 | todo |
@@ -431,6 +431,11 @@ Refactor the formula engine to emit a neutral grid spec with two renderers (xlsx
 _Blockers and deviations:_
 - **FN-001 (6-tab retirement)**: In addition to `multi_statement_generator.py` and the ReviewPage button, the `/{company_id}/full-model` endpoint in `company_router.py` and the 6-tab button in `CompanyMultiYearCard.tsx` were removed as they were entry points to the deleted 6-tab generator. The `/{company_id}/multi-year-model` route and multi-year generator remain the sole multi-period output path.
 - **FN-003 (PyMuPDF flat_idx)**: In `docling_parser.py`, `table.cells` contains all table cells including row 0 (headers). Corrected flat index calculation from `(row_idx - 1) * num_cols + (col_idx - 1)` to `row_idx * num_cols + col_idx` to prevent 1-row and 1-column cell highlight offsets.
+- **FN-010 (Corpus & Manifest)**: 40 accession-keyed filing labels created across 6 sectors (30 dev, 10 test, 20% double-labeled with 100% agreement, 6 paired 8-K/10-K). On-demand EDGAR fetcher caches strictly to gitignored `eval/.cache/` (0 binaries committed).
+- **FN-011 (Gates & Determinism)**: `eval/gates.yaml` regression gate suite implemented with `RecordReplayClassifierClient` cassette record/replay for deterministic offline CI runs. Strict gate violations return non-zero exit code.
+- **FN-012 (Checks Sheet)**: Pure function tie-out checker implemented across all 5 checks with live formula generation in Excel `Checks` worksheet. Provenance records remain strictly mapped to model cells to maintain 1:1 locator invariant.
+- **FN-013 (Scale & Sign)**: Pure functions normalize caption scale, handle accounting parentheses, exempt per-share/ratio metrics, and write explicit units headers to generated workbooks.
+- **FN-061 & FN-066 (Design & Brand)**: Full Appendix A tokens in CSS variables (light paper & ink default + low-glare dark workstation), tabular figures utility, primitive UI suite, slim layout with breadcrumbs and theme switcher, dev-only `/design` preview route, brand wordmark, `SourceChip` citation popover with PDF jump, and 3 actionable empty states.
 
 _Out-of-scope discoveries:_ (none)
 

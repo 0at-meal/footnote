@@ -1,0 +1,115 @@
+{
+  "accession_number": "0001108524-24-000011",
+  "cik": "0001108524",
+  "ticker": "CRM",
+  "company_name": "Salesforce, Inc.",
+  "sector": "software",
+  "form": "10-K",
+  "period": "FY2024",
+  "fiscal_year": 2024,
+  "fiscal_quarter": null,
+  "filing_date": "2024-03-08",
+  "split": "dev",
+  "adversarial_cases": [
+    "restated_periods",
+    "footnote_markers"
+  ],
+  "reported_metric_name": "Non-GAAP Operating Income",
+  "reported_total": 10600.0,
+  "reconciliation_lines": [
+    {
+      "label": "GAAP Operating Income",
+      "value": "3,037",
+      "numeric_value": 3037.0,
+      "period": "FY2024",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0001108524-24-000011",
+        "document": "crm_2024.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "operating_income",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. MD&A Non-GAAP",
+      "double_labeled": true,
+      "second_annotator_label": "GAAP Operating Income",
+      "second_annotator_value": "3,037",
+      "second_annotator_category": "operating_income",
+      "second_annotator_agrees": true
+    },
+    {
+      "label": "Stock-based compensation",
+      "value": "2,878",
+      "numeric_value": 2878.0,
+      "period": "FY2024",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0001108524-24-000011",
+        "document": "crm_2024.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "SBC",
+      "is_gaap_seeded": false,
+      "is_optional": false,
+      "section": "Item 7. MD&A Non-GAAP",
+      "double_labeled": true,
+      "second_annotator_label": "Stock-based compensation",
+      "second_annotator_value": "2,878",
+      "second_annotator_category": "SBC",
+      "second_annotator_agrees": true
+    },
+    {
+      "label": "Amortization of purchased intangibles",
+      "value": "1,225",
+      "numeric_value": 1225.0,
+      "period": "FY2024",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0001108524-24-000011",
+        "document": "crm_2024.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "depreciation_amortization",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. MD&A Non-GAAP",
+      "double_labeled": true,
+      "second_annotator_label": "Amortization of purchased intangibles",
+      "second_annotator_value": "1,225",
+      "second_annotator_category": "depreciation_amortization",
+      "second_annotator_agrees": true
+    },
+    {
+      "label": "Restructuring and other costs",
+      "value": "3,460",
+      "numeric_value": 3460.0,
+      "period": "FY2024",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0001108524-24-000011",
+        "document": "crm_2024.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "restructuring",
+      "is_gaap_seeded": false,
+      "is_optional": false,
+      "section": "Item 7. MD&A Non-GAAP",
+      "double_labeled": true,
+      "second_annotator_label": "Restructuring and other costs",
+      "second_annotator_value": "3,460",
+      "second_annotator_category": "restructuring",
+      "second_annotator_agrees": true
+    }
+  ],
+  "double_labeled": true,
+  "inter_annotator_agreement": 0.95
+}

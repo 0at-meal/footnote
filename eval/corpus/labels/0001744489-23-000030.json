@@ -1,0 +1,46 @@
+{
+  "accession_number": "0001744489-23-000030",
+  "cik": "0001744489",
+  "ticker": "DIS",
+  "company_name": "The Walt Disney Company",
+  "sector": "telecom",
+  "form": "10-K",
+  "period": "FY2023",
+  "fiscal_year": 2023,
+  "fiscal_quarter": null,
+  "filing_date": "2023-11-21",
+  "split": "test",
+  "adversarial_cases": [
+    "parentheses_negatives",
+    "restated_periods"
+  ],
+  "reported_metric_name": "Total Segment Operating Income",
+  "reported_total": 12863.0,
+  "reconciliation_lines": [
+    {
+      "label": "Total Segment Operating Income",
+      "value": "12,863",
+      "numeric_value": 12863.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0001744489-23-000030",
+        "document": "dis_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "operating_income",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. Segment Results",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    }
+  ],
+  "double_labeled": false,
+  "inter_annotator_agreement": null
+}

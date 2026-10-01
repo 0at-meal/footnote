@@ -1,0 +1,114 @@
+{
+  "accession_number": "0001283699-24-000028",
+  "cik": "0001283699",
+  "ticker": "TMUS",
+  "company_name": "T-Mobile US, Inc.",
+  "sector": "telecom",
+  "form": "10-Q",
+  "period": "Q1 2024",
+  "fiscal_year": 2024,
+  "fiscal_quarter": 1,
+  "filing_date": "2024-04-25",
+  "split": "dev",
+  "adversarial_cases": [
+    "parentheses_negatives"
+  ],
+  "reported_metric_name": "Adjusted EBITDA",
+  "reported_total": 7600.0,
+  "reconciliation_lines": [
+    {
+      "label": "Net income",
+      "value": "2,400",
+      "numeric_value": 2400.0,
+      "period": "Q1 2024",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0001283699-24-000028",
+        "document": "tmus_2024.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "net_income",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 2. Financial Review",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Interest expense, net",
+      "value": "900",
+      "numeric_value": 900.0,
+      "period": "Q1 2024",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0001283699-24-000028",
+        "document": "tmus_2024.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "interest",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 2. Financial Review",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Income tax expense",
+      "value": "800",
+      "numeric_value": 800.0,
+      "period": "Q1 2024",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0001283699-24-000028",
+        "document": "tmus_2024.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "taxes",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 2. Financial Review",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Depreciation and amortization",
+      "value": "3,500",
+      "numeric_value": 3500.0,
+      "period": "Q1 2024",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0001283699-24-000028",
+        "document": "tmus_2024.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "depreciation_amortization",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 2. Financial Review",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    }
+  ],
+  "double_labeled": false,
+  "inter_annotator_agreement": null
+}

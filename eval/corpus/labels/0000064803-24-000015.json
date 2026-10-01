@@ -1,0 +1,92 @@
+{
+  "accession_number": "0000064803-24-000015",
+  "cik": "0000064803",
+  "ticker": "CVS",
+  "company_name": "CVS Health Corporation",
+  "sector": "healthcare_services",
+  "form": "10-K",
+  "period": "FY2023",
+  "fiscal_year": 2023,
+  "fiscal_quarter": null,
+  "filing_date": "2024-02-14",
+  "split": "dev",
+  "adversarial_cases": [
+    "tables_spanning_pages",
+    "parentheses_negatives"
+  ],
+  "reported_metric_name": "Adjusted Operating Income",
+  "reported_total": 17534.0,
+  "reconciliation_lines": [
+    {
+      "label": "Operating income",
+      "value": "13,743",
+      "numeric_value": 13743.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000064803-24-000015",
+        "document": "cvs_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "operating_income",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Reconciliations",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Amortization of intangible assets",
+      "value": "2,351",
+      "numeric_value": 2351.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000064803-24-000015",
+        "document": "cvs_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "depreciation_amortization",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Reconciliations",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Acquisition-related transaction costs",
+      "value": "1,440",
+      "numeric_value": 1440.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000064803-24-000015",
+        "document": "cvs_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "M&A/integration",
+      "is_gaap_seeded": false,
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Reconciliations",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    }
+  ],
+  "double_labeled": false,
+  "inter_annotator_agreement": null
+}

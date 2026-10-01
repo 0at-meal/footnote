@@ -1,0 +1,17 @@
+# Footnote CI Regression Gates Configuration (FN-011)
+version: "1.0"
+description: "Threshold gates for line-item accuracy, recall, and tie-outs"
+
+gates:
+  min_auto_accepted_exact_match: 0.98
+  min_recall: 0.90
+  min_precision: 0.85
+  min_sign_accuracy: 0.95
+  min_scale_accuracy: 0.95
+  min_total_tie_out_rate: 0.90
+  min_locator_accuracy: 0.80
+  min_category_accuracy: 0.85
+
+tolerance: 0.02
+cost_budget_per_filing_usd: 0.05
+latency_budget_per_filing_seconds: 30.0

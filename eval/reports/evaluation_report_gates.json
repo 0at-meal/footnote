@@ -1,0 +1,31 @@
+{
+  "passed": false,
+  "thresholds": {
+    "min_auto_accepted_exact_match": 0.98,
+    "min_recall": 0.9,
+    "min_precision": 0.85,
+    "min_sign_accuracy": 0.95,
+    "min_scale_accuracy": 0.95,
+    "min_total_tie_out_rate": 0.9,
+    "min_locator_accuracy": 0.8,
+    "min_category_accuracy": 0.85
+  },
+  "actuals": {
+    "min_auto_accepted_exact_match": 0.0,
+    "min_recall": 0.0,
+    "min_precision": 1.0,
+    "min_sign_accuracy": 1.0,
+    "min_scale_accuracy": 1.0,
+    "min_total_tie_out_rate": 1.0,
+    "min_category_accuracy": 0.1613,
+    "min_locator_accuracy": 0.0
+  },
+  "failures": [
+    "Gate 'min_auto_accepted_exact_match' failed: required >= 0.98 (floor 0.96), got 0.00",
+    "Gate 'min_recall' failed: required >= 0.90 (floor 0.88), got 0.00",
+    "Gate 'min_locator_accuracy' failed: required >= 0.80 (floor 0.78), got 0.00",
+    "Gate 'min_category_accuracy' failed: required >= 0.85 (floor 0.83), got 0.16"
+  ],
+  "cost_compliant": true,
+  "latency_compliant": true
+}

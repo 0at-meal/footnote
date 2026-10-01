@@ -1,0 +1,43 @@
+{
+  "accession_number": "0000909832-24-000022",
+  "cik": "0000909832",
+  "ticker": "COST",
+  "company_name": "Costco Wholesale Corporation",
+  "sector": "retail",
+  "form": "10-Q",
+  "period": "Q3 FY2024",
+  "fiscal_year": 2024,
+  "fiscal_quarter": 3,
+  "filing_date": "2024-06-07",
+  "split": "dev",
+  "adversarial_cases": [],
+  "reported_metric_name": "Adjusted Operating Income",
+  "reported_total": 2197.0,
+  "reconciliation_lines": [
+    {
+      "label": "Operating income",
+      "value": "2,197",
+      "numeric_value": 2197.0,
+      "period": "Q3 FY2024",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000909832-24-000022",
+        "document": "cost_2024.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "operating_income",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 1. Notes to Financials",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    }
+  ],
+  "double_labeled": false,
+  "inter_annotator_agreement": null
+}

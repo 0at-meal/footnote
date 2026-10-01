@@ -1,0 +1,68 @@
+{
+  "accession_number": "0001091667-24-000015",
+  "cik": "0001091667",
+  "ticker": "CHTR",
+  "company_name": "Charter Communications, Inc.",
+  "sector": "telecom",
+  "form": "10-K",
+  "period": "FY2023",
+  "fiscal_year": 2023,
+  "fiscal_quarter": null,
+  "filing_date": "2024-02-02",
+  "split": "test",
+  "adversarial_cases": [
+    "tables_spanning_pages"
+  ],
+  "reported_metric_name": "Adjusted EBITDA",
+  "reported_total": 21870.0,
+  "reconciliation_lines": [
+    {
+      "label": "Income from operations",
+      "value": "12,300",
+      "numeric_value": 12300.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0001091667-24-000015",
+        "document": "chtr_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "operating_income",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Measures",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Depreciation and amortization",
+      "value": "9,570",
+      "numeric_value": 9570.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0001091667-24-000015",
+        "document": "chtr_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "depreciation_amortization",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Measures",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    }
+  ],
+  "double_labeled": false,
+  "inter_annotator_agreement": null
+}

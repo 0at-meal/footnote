@@ -6,6 +6,7 @@ import { normalizeBboxToPixels } from '../../lib/pdf/coordinates'
 import DebtScheduleCard from '../DebtScheduleCard'
 import LeaseScheduleCard from '../footnote/LeaseScheduleCard'
 import ConcentrationCard from '../footnote/ConcentrationCard'
+import { SourceChip } from '../brand/SourceChip'
 import {
   ArrowLeft,
   Check,
@@ -973,7 +974,20 @@ export default function ReviewPage({
 
                     <div className="review-item-card__value-row">
                       <span className="review-item-card__value fn-tabular tabular-nums">{item.value}</span>
-                      <span className="review-item-card__page">Page {item.page}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span className="review-item-card__page">Page {item.page}</span>
+                        <SourceChip
+                          sourceFile={item.source_file || 'filing.pdf'}
+                          page={item.page}
+                          bbox={item.bbox}
+                          label={item.label}
+                          value={item.value}
+                          onJumpToSource={(p) => {
+                            setCurrentPage(p)
+                            handleSelectItem(item)
+                          }}
+                        />
+                      </div>
                     </div>
 
                     {item.error_detail && (

@@ -1,0 +1,68 @@
+{
+  "accession_number": "0000731766-24-000009",
+  "cik": "0000731766",
+  "ticker": "UNH",
+  "company_name": "UnitedHealth Group Incorporated",
+  "sector": "healthcare_services",
+  "form": "10-K",
+  "period": "FY2023",
+  "fiscal_year": 2023,
+  "fiscal_quarter": null,
+  "filing_date": "2024-02-23",
+  "split": "dev",
+  "adversarial_cases": [
+    "tables_spanning_pages"
+  ],
+  "reported_metric_name": "Adjusted EBITDA",
+  "reported_total": 36100.0,
+  "reconciliation_lines": [
+    {
+      "label": "Earnings from operations",
+      "value": "32,357",
+      "numeric_value": 32357.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000731766-24-000009",
+        "document": "unh_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "operating_income",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Financial Measures",
+      "double_labeled": true,
+      "second_annotator_label": "Earnings from operations",
+      "second_annotator_value": "32,357",
+      "second_annotator_category": "operating_income",
+      "second_annotator_agrees": true
+    },
+    {
+      "label": "Depreciation and amortization",
+      "value": "3,743",
+      "numeric_value": 3743.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000731766-24-000009",
+        "document": "unh_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "depreciation_amortization",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Financial Measures",
+      "double_labeled": true,
+      "second_annotator_label": "Depreciation and amortization",
+      "second_annotator_value": "3,743",
+      "second_annotator_category": "depreciation_amortization",
+      "second_annotator_agrees": true
+    }
+  ],
+  "double_labeled": true,
+  "inter_annotator_agreement": 1.0
+}

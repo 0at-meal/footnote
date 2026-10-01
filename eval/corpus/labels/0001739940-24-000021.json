@@ -1,0 +1,91 @@
+{
+  "accession_number": "0001739940-24-000021",
+  "cik": "0001739940",
+  "ticker": "CI",
+  "company_name": "The Cigna Group",
+  "sector": "healthcare_services",
+  "form": "10-Q",
+  "period": "Q1 2024",
+  "fiscal_year": 2024,
+  "fiscal_quarter": 1,
+  "filing_date": "2024-05-02",
+  "split": "dev",
+  "adversarial_cases": [
+    "adjusted_net_income"
+  ],
+  "reported_metric_name": "Adjusted Income from Operations",
+  "reported_total": 1928.0,
+  "reconciliation_lines": [
+    {
+      "label": "Shareholders' net income",
+      "value": "(277)",
+      "numeric_value": -277.0,
+      "period": "Q1 2024",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0001739940-24-000021",
+        "document": "ci_2024.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "net_income",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 2. Non-GAAP Measures",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Investment result adjustments",
+      "value": "1,800",
+      "numeric_value": 1800.0,
+      "period": "Q1 2024",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0001739940-24-000021",
+        "document": "ci_2024.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "other",
+      "is_gaap_seeded": false,
+      "is_optional": false,
+      "section": "Item 2. Non-GAAP Measures",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Amortization of acquired intangibles",
+      "value": "405",
+      "numeric_value": 405.0,
+      "period": "Q1 2024",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0001739940-24-000021",
+        "document": "ci_2024.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "depreciation_amortization",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 2. Non-GAAP Measures",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    }
+  ],
+  "double_labeled": false,
+  "inter_annotator_agreement": null
+}

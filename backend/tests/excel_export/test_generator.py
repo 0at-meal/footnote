@@ -70,7 +70,7 @@ def test_generate_workbook_success(tmp_path: Path) -> None:
     assert result.error_detail is None
     assert Path(result.file_path).exists()
     assert result.target_metric == "Adjusted EBITDA"
-    assert result.sheet_names == ["Source_Inputs", "Reconciliation"]
+    assert result.sheet_names == ["Source_Inputs", "Reconciliation", "Checks"]
     assert result.formula_cells_count > 0
     assert result.source_cells_count == 3
 
@@ -332,8 +332,8 @@ def test_banker_editable_two_column_structure_and_formulas(tmp_path: Path) -> No
 
     wb = openpyxl.load_workbook(result.file_path, data_only=False)
 
-    # 1. Exactly 2 sheets
-    assert wb.sheetnames == ["Source_Inputs", "Reconciliation"]
+    # 1. Sheets generated: Source_Inputs, Reconciliation, Checks (FN-012)
+    assert wb.sheetnames == ["Source_Inputs", "Reconciliation", "Checks"]
 
     # 2. Source_Inputs 2-column layout and provenance comments
     ws_inputs = wb["Source_Inputs"]

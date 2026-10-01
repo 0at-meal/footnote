@@ -42,12 +42,16 @@ if str(_backend_dir) not in sys.path:
 from app.classification.client import GroqClassifierClient
 
 from eval.corpus_loader import load_corpus, validate_corpus
-from eval.metrics import diff_corpus
+from eval.metrics import compute_eval_gate_metrics, diff_corpus, evaluate_gates
 from eval.models import (
     BenchmarkCorpus,
     BenchmarkCorpusManifest,
     CorpusAccuracyMetrics,
+    EvalGateMetrics,
+    GateResult,
+    LineItemDiff,
 )
+from eval.record_replay import RecordReplayClassifierClient
 from eval.report_generator import (
     generate_terminal_summary,
     save_reports,
@@ -123,10 +127,35 @@ def parse_args(args: Sequence[str] | None = None) -> argparse.Namespace:
         help="Omit granular line-item diff tables in Markdown report",
     )
     parser.add_argument(
+        "--split",
+        type=str,
+        default="dev",
+        choices=["dev", "test", "all"],
+        help="Evaluation corpus split to target ('dev', 'test', or 'all')",
+    )
+    parser.add_argument(
+        "--gates-file",
+        type=Path,
+        default=_repo_root / "eval" / "gates.yaml",
+        help="Path to gates.yaml threshold configuration",
+    )
+    parser.add_argument(
+        "--replay",
+        action="store_true",
+        default=True,
+        help="Replay recorded LLM responses for deterministic offline run (FN-011)",
+    )
+    parser.add_argument(
+        "--record",
+        action="store_true",
+        default=False,
+        help="Record live LLM responses into cache cassette for offline replay",
+    )
+    parser.add_argument(
         "--strict",
         action="store_true",
         default=False,
-        help="Enforce strict exit code 1 if accuracy < 90.0%% or failed extractions > 0",
+        help="Enforce strict exit code 1 if accuracy < 90.0%% or regression gate fails",
     )
     parser.add_argument(
         "--quiet",
@@ -148,6 +177,10 @@ def run_benchmark(
     include_diff_details: bool = True,
     strict: bool = False,
     quiet: bool = False,
+    split: str = "dev",
+    gates_file: Path | str | None = None,
+    replay: bool = True,
+    record: bool = False,
 ) -> tuple[CorpusAccuracyMetrics, int]:
     """
     Core programmatic entry point to run benchmark evaluations.
@@ -160,6 +193,7 @@ def run_benchmark(
 
     corpus_path = Path(corpus_dir).resolve()
     out_path = Path(output_dir).resolve()
+    out_path.mkdir(parents=True, exist_ok=True)
 
     if not corpus_path.exists():
         logger.error(f"Corpus directory not found at: {corpus_path}")
@@ -184,11 +218,11 @@ def run_benchmark(
         corpus_name = f"Footnote Benchmark (Single: {filing_id})"
     else:
         filings = all_filings
-        corpus_name = "Footnote Benchmark Corpus"
+        corpus_name = f"Footnote Benchmark Corpus ({split})"
 
     manifest = BenchmarkCorpusManifest(
         corpus_name=corpus_name,
-        corpus_version="1.0.0",
+        corpus_version="2.0.0",
         target_metric="Adjusted EBITDA",
         filing_ids=[f.metadata.filing_id for f in filings],
     )
@@ -199,16 +233,17 @@ def run_benchmark(
         f"({len(corpus.filings)} filings, metric: '{corpus.manifest.target_metric}')"
     )
 
-    # Initialize classifier client
+    # Initialize classifier client with Record/Replay support (FN-011)
     classifier_client: GroqClassifierClient
-    if (
-        use_mock_classifier
-        or os.getenv("FOOTNOTE_EVAL_MOCK_CLASSIFIER", "false").lower() == "true"
-    ):
-        logger.info(
-            "Using BenchmarkMockClassifierClient for deterministic classification."
+    if record:
+        logger.info("Using RecordReplayClassifierClient in RECORD mode (live LLM).")
+        classifier_client = RecordReplayClassifierClient(
+            mode="record",
+            real_client=get_default_classifier_client(),
         )
-        classifier_client = BenchmarkMockClassifierClient()
+    elif replay or use_mock_classifier or os.getenv("FOOTNOTE_EVAL_MOCK_CLASSIFIER", "false").lower() == "true":
+        logger.info("Using RecordReplayClassifierClient in REPLAY mode (deterministic/offline).")
+        classifier_client = RecordReplayClassifierClient(mode="replay")
     else:
         logger.info("Using default live classifier client.")
         classifier_client = get_default_classifier_client()
@@ -219,9 +254,41 @@ def run_benchmark(
     # Compute multi-layer diffs and metrics
     corpus_metrics = diff_corpus(corpus, corpus_exec, iou_threshold=iou_threshold)
 
+    # Extract all item diffs for gate calculation
+    all_diffs: list[LineItemDiff] = []
+    for fm in corpus_metrics.filing_metrics:
+        all_diffs.extend(fm.line_item_diffs)
+
+    gate_metrics = compute_eval_gate_metrics(
+        diffs=all_diffs,
+        execution_result=corpus_exec,
+        estimated_cost_usd=0.002 * len(corpus.filings),
+        mean_latency_seconds=corpus_exec.average_filing_runtime_seconds,
+    )
+    gate_result = evaluate_gates(gate_metrics, gates_path=gates_file)
+
     # Print terminal summary
     terminal_output = generate_terminal_summary(corpus_metrics)
     print("\n" + terminal_output + "\n")
+
+    # Print gates summary
+    status_str = "[PASS]" if gate_result.passed else "[FAIL]"
+    print("=" * 78)
+    print(f" CI REGRESSION GATE EVALUATION: {status_str}")
+    print("=" * 78)
+    print(f" Auto-accepted Exact Match:   {gate_metrics.auto_accepted_exact_match_rate * 100.0:.2f}% (Threshold: >= {gate_result.thresholds.get('min_auto_accepted_exact_match', 0.98) * 100.0:.1f}%)")
+    print(f" Line-Item Recall:            {gate_metrics.line_item_recall * 100.0:.2f}% (Threshold: >= {gate_result.thresholds.get('min_recall', 0.90) * 100.0:.1f}%)")
+    print(f" Line-Item Precision:         {gate_metrics.line_item_precision * 100.0:.2f}% (Threshold: >= {gate_result.thresholds.get('min_precision', 0.85) * 100.0:.1f}%)")
+    print(f" Sign Accuracy:               {gate_metrics.sign_accuracy * 100.0:.2f}% (Threshold: >= {gate_result.thresholds.get('min_sign_accuracy', 0.95) * 100.0:.1f}%)")
+    print(f" Scale Accuracy:              {gate_metrics.scale_accuracy * 100.0:.2f}% (Threshold: >= {gate_result.thresholds.get('min_scale_accuracy', 0.95) * 100.0:.1f}%)")
+    print(f" Total Tie-Out Rate:          {gate_metrics.total_tie_out_rate * 100.0:.2f}% (Threshold: >= {gate_result.thresholds.get('min_total_tie_out_rate', 0.90) * 100.0:.1f}%)")
+    print(f" Category Accuracy:           {gate_metrics.category_accuracy * 100.0:.2f}% (Threshold: >= {gate_result.thresholds.get('min_category_accuracy', 0.85) * 100.0:.1f}%)")
+    if gate_result.failures:
+        print("-" * 78)
+        print(" Regression Gate Failures:")
+        for failure in gate_result.failures:
+            print(f"   [!] {failure}")
+    print("=" * 78 + "\n")
 
     # Save reports
     json_path, md_path = save_reports(
@@ -230,8 +297,13 @@ def run_benchmark(
         base_filename=report_name,
         include_diff_details=include_diff_details,
     )
+    # Save gate results JSON
+    gates_json_path = out_path / f"{report_name}_gates.json"
+    gates_json_path.write_text(gate_result.model_dump_json(indent=2), encoding="utf-8")
+
     logger.info(f"JSON evaluation report saved to: {json_path}")
     logger.info(f"Markdown evaluation report saved to: {md_path}")
+    logger.info(f"Regression gates saved to: {gates_json_path}")
 
     # Determine exit code
     exit_code = 0
@@ -240,19 +312,9 @@ def run_benchmark(
             f"Pipeline execution encountered {corpus_exec.failed_filings} failed filing(s)."
         )
         exit_code = 1
-    elif strict:
-        if not corpus_metrics.target_accuracy_achieved:
-            logger.error(
-                f"Strict mode failure: Line-item accuracy ({corpus_metrics.corpus_line_item_accuracy_percentage:.2f}%) "
-                f"did not achieve target threshold (>= 90.0%)."
-            )
-            exit_code = 1
-        elif corpus_metrics.failed_extraction_filings_count > 0:
-            logger.error(
-                f"Strict mode failure: {corpus_metrics.failed_extraction_filings_count} filing(s) exceeded the >15.0% "
-                f"failed extraction threshold."
-            )
-            exit_code = 1
+    elif strict and not gate_result.passed:
+        logger.error("Strict CI gate failure: Regressions detected.")
+        exit_code = 1
 
     return corpus_metrics, exit_code
 
@@ -271,6 +333,10 @@ def main(args: Sequence[str] | None = None) -> int:
             include_diff_details=not parsed.no_diff_details,
             strict=parsed.strict,
             quiet=parsed.quiet,
+            split=parsed.split,
+            gates_file=parsed.gates_file,
+            replay=parsed.replay,
+            record=parsed.record,
         )
         return exit_code
     except Exception as e:  # noqa: BLE001
@@ -280,3 +346,4 @@ def main(args: Sequence[str] | None = None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+

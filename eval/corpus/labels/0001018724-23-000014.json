@@ -1,0 +1,137 @@
+{
+  "accession_number": "0001018724-23-000014",
+  "cik": "0001018724",
+  "ticker": "MSFT",
+  "company_name": "Microsoft Corporation",
+  "sector": "software",
+  "form": "10-K",
+  "period": "FY2023",
+  "fiscal_year": 2023,
+  "fiscal_quarter": null,
+  "filing_date": "2023-07-27",
+  "split": "dev",
+  "adversarial_cases": [
+    "footnote_markers"
+  ],
+  "reported_metric_name": "Adjusted EBITDA",
+  "reported_total": 102384.0,
+  "reconciliation_lines": [
+    {
+      "label": "GAAP Net Income",
+      "value": "72,361",
+      "numeric_value": 72361.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0001018724-23-000014",
+        "document": "msft_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "net_income",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 8. Note 19",
+      "double_labeled": true,
+      "second_annotator_label": "GAAP Net Income",
+      "second_annotator_value": "72,361",
+      "second_annotator_category": "net_income",
+      "second_annotator_agrees": true
+    },
+    {
+      "label": "Provision for income taxes",
+      "value": "16,950",
+      "numeric_value": 16950.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0001018724-23-000014",
+        "document": "msft_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "taxes",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 8. Note 19",
+      "double_labeled": true,
+      "second_annotator_label": "Provision for income taxes",
+      "second_annotator_value": "16,950",
+      "second_annotator_category": "taxes",
+      "second_annotator_agrees": true
+    },
+    {
+      "label": "Other income / (expense), net",
+      "value": "(1,025)",
+      "numeric_value": -1025.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": -1,
+      "locator": {
+        "type": "html",
+        "accession": "0001018724-23-000014",
+        "document": "msft_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "other",
+      "is_gaap_seeded": false,
+      "is_optional": false,
+      "section": "Item 8. Note 19",
+      "double_labeled": true,
+      "second_annotator_label": "Other income / (expense), net",
+      "second_annotator_value": "(1,025)",
+      "second_annotator_category": "other",
+      "second_annotator_agrees": true
+    },
+    {
+      "label": "Operating income / Depreciation & Amortization",
+      "value": "13,861",
+      "numeric_value": 13861.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0001018724-23-000014",
+        "document": "msft_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "depreciation_amortization",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 8. Note 19",
+      "double_labeled": true,
+      "second_annotator_label": "Operating income / Depreciation & Amortization",
+      "second_annotator_value": "13,861",
+      "second_annotator_category": "depreciation_amortization",
+      "second_annotator_agrees": true
+    },
+    {
+      "label": "Stock-based compensation",
+      "value": "237",
+      "numeric_value": 237.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0001018724-23-000014",
+        "document": "msft_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "SBC",
+      "is_gaap_seeded": false,
+      "is_optional": false,
+      "section": "Item 8. Note 19",
+      "double_labeled": true,
+      "second_annotator_label": "Stock-based compensation",
+      "second_annotator_value": "237",
+      "second_annotator_category": "SBC",
+      "second_annotator_agrees": true
+    }
+  ],
+  "double_labeled": true,
+  "inter_annotator_agreement": 1.0
+}

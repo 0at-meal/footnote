@@ -1,0 +1,91 @@
+{
+  "accession_number": "0001018724-24-000008",
+  "cik": "0001018724",
+  "ticker": "AMZN",
+  "company_name": "Amazon.com, Inc.",
+  "sector": "retail",
+  "form": "10-K",
+  "period": "FY2023",
+  "fiscal_year": 2023,
+  "fiscal_quarter": null,
+  "filing_date": "2024-02-02",
+  "split": "dev",
+  "adversarial_cases": [
+    "tables_spanning_pages"
+  ],
+  "reported_metric_name": "Free Cash Flow Less Lease Repayments",
+  "reported_total": 35500.0,
+  "reconciliation_lines": [
+    {
+      "label": "Net cash provided by operating activities",
+      "value": "84,946",
+      "numeric_value": 84946.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0001018724-24-000008",
+        "document": "amzn_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "net_income",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Financial Measures",
+      "double_labeled": true,
+      "second_annotator_label": "Net cash provided by operating activities",
+      "second_annotator_value": "84,946",
+      "second_annotator_category": "net_income",
+      "second_annotator_agrees": true
+    },
+    {
+      "label": "Purchases of property and equipment",
+      "value": "(48,387)",
+      "numeric_value": -48387.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": -1,
+      "locator": {
+        "type": "html",
+        "accession": "0001018724-24-000008",
+        "document": "amzn_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "other",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Financial Measures",
+      "double_labeled": true,
+      "second_annotator_label": "Purchases of property and equipment",
+      "second_annotator_value": "(48,387)",
+      "second_annotator_category": "other",
+      "second_annotator_agrees": true
+    },
+    {
+      "label": "Repayments of finance leases",
+      "value": "(1,059)",
+      "numeric_value": -1059.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": -1,
+      "locator": {
+        "type": "html",
+        "accession": "0001018724-24-000008",
+        "document": "amzn_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "other",
+      "is_gaap_seeded": false,
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Financial Measures",
+      "double_labeled": true,
+      "second_annotator_label": "Repayments of finance leases",
+      "second_annotator_value": "(1,059)",
+      "second_annotator_category": "other",
+      "second_annotator_agrees": true
+    }
+  ],
+  "double_labeled": true,
+  "inter_annotator_agreement": 0.98
+}

@@ -1,0 +1,68 @@
+{
+  "accession_number": "0000732712-24-000008",
+  "cik": "0000732712",
+  "ticker": "VZ",
+  "company_name": "Verizon Communications Inc.",
+  "sector": "telecom",
+  "form": "10-K",
+  "period": "FY2023",
+  "fiscal_year": 2023,
+  "fiscal_quarter": null,
+  "filing_date": "2024-02-09",
+  "split": "dev",
+  "adversarial_cases": [
+    "parentheses_negatives"
+  ],
+  "reported_metric_name": "Adjusted EBITDA",
+  "reported_total": 47800.0,
+  "reconciliation_lines": [
+    {
+      "label": "Operating income",
+      "value": "30,100",
+      "numeric_value": 30100.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000732712-24-000008",
+        "document": "vz_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "operating_income",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. MD&A Non-GAAP",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Depreciation and amortization",
+      "value": "17,700",
+      "numeric_value": 17700.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000732712-24-000008",
+        "document": "vz_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "depreciation_amortization",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. MD&A Non-GAAP",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    }
+  ],
+  "double_labeled": false,
+  "inter_annotator_agreement": null
+}

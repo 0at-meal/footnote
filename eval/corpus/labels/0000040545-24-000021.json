@@ -1,0 +1,92 @@
+{
+  "accession_number": "0000040545-24-000021",
+  "cik": "0000040545",
+  "ticker": "GE",
+  "company_name": "General Electric Company",
+  "sector": "industrials",
+  "form": "10-K",
+  "period": "FY2023",
+  "fiscal_year": 2023,
+  "fiscal_quarter": null,
+  "filing_date": "2024-02-15",
+  "split": "dev",
+  "adversarial_cases": [
+    "tables_spanning_pages",
+    "restated_periods"
+  ],
+  "reported_metric_name": "Adjusted EBITDA",
+  "reported_total": 8450.0,
+  "reconciliation_lines": [
+    {
+      "label": "Continuing earnings before income taxes",
+      "value": "5,600",
+      "numeric_value": 5600.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000040545-24-000021",
+        "document": "ge_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "operating_income",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Financial Measures",
+      "double_labeled": true,
+      "second_annotator_label": "Continuing earnings before income taxes",
+      "second_annotator_value": "5,600",
+      "second_annotator_category": "operating_income",
+      "second_annotator_agrees": true
+    },
+    {
+      "label": "Provision for income taxes",
+      "value": "1,150",
+      "numeric_value": 1150.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000040545-24-000021",
+        "document": "ge_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "taxes",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Financial Measures",
+      "double_labeled": true,
+      "second_annotator_label": "Provision for income taxes",
+      "second_annotator_value": "1,150",
+      "second_annotator_category": "taxes",
+      "second_annotator_agrees": true
+    },
+    {
+      "label": "Depreciation and amortization",
+      "value": "1,700",
+      "numeric_value": 1700.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000040545-24-000021",
+        "document": "ge_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "depreciation_amortization",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. Non-GAAP Financial Measures",
+      "double_labeled": true,
+      "second_annotator_label": "Depreciation and amortization",
+      "second_annotator_value": "1,700",
+      "second_annotator_category": "depreciation_amortization",
+      "second_annotator_agrees": true
+    }
+  ],
+  "double_labeled": true,
+  "inter_annotator_agreement": 0.98
+}

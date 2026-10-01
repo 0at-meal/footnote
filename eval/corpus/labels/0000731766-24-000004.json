@@ -1,0 +1,66 @@
+{
+  "accession_number": "0000731766-24-000004",
+  "cik": "0000731766",
+  "ticker": "UNH",
+  "company_name": "UnitedHealth Group Incorporated",
+  "sector": "healthcare_services",
+  "form": "8-K EX-99.1",
+  "period": "Q4 FY2023",
+  "fiscal_year": 2023,
+  "fiscal_quarter": 4,
+  "filing_date": "2024-01-12",
+  "split": "dev",
+  "adversarial_cases": [],
+  "reported_metric_name": "Adjusted Net Income",
+  "reported_total": 5885.0,
+  "reconciliation_lines": [
+    {
+      "label": "Net income attributable to UNH common shareholders",
+      "value": "5,455",
+      "numeric_value": 5455.0,
+      "period": "Q4 FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000731766-24-000004",
+        "document": "unh_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "net_income",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "EX-99.1 Table 4",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Intangible amortization",
+      "value": "430",
+      "numeric_value": 430.0,
+      "period": "Q4 FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000731766-24-000004",
+        "document": "unh_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "depreciation_amortization",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "EX-99.1 Table 4",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    }
+  ],
+  "double_labeled": false,
+  "inter_annotator_agreement": null
+}

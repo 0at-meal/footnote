@@ -386,3 +386,144 @@ class CorpusAccuracyMetrics(BaseModel):
         ...,
         description="Explicit formatted statement of corpus size and human review count per CONSTITUTION §6.13",
     )
+
+
+class StandardCategory(str, Enum):
+    net_income = "net_income"
+    operating_income = "operating_income"
+    interest = "interest"
+    taxes = "taxes"
+    depreciation_amortization = "depreciation_amortization"
+    sbc = "SBC"
+    restructuring = "restructuring"
+    impairment = "impairment"
+    ma_integration = "M&A/integration"
+    litigation = "litigation"
+    fx = "FX"
+    other = "other"
+
+
+class CorpusSplit(str, Enum):
+    dev = "dev"
+    test = "test"
+
+
+class BenchmarkReconciliationLine(BaseModel):
+    """
+    Schema per reconciliation line for FN-010 benchmark corpus.
+    Fields: label, value, period, scale, sign, locator, standard category, is_gaap_seeded, reported total.
+    """
+
+    label: str = Field(..., description="Raw line item label as reported in source filing")
+    value: str = Field(..., description="Raw formatted value string, e.g. '(1,234)' or '50,000'")
+    numeric_value: float = Field(..., description="Parsed numeric value as float")
+    period: str = Field(..., description="Fiscal period description, e.g. 'FY2023' or 'Q2 2024'")
+    scale: int = Field(default=1000, description="Reporting scale factor: 1, 1000 (thousands), 1000000 (millions)")
+    sign: int = Field(default=1, description="Reconciliation arithmetic sign: +1 (add-back) or -1 (deduction)")
+    locator: dict[str, Any] = Field(default_factory=dict, description="Source provenance locator (PDF bbox or HTML path)")
+    standard_category: StandardCategory = Field(default=StandardCategory.other, description="Standardized taxonomy category")
+    is_gaap_seeded: bool = Field(default=False, description="True if line is an auto-seeded XBRL GAAP line")
+    is_optional: bool = Field(default=False, description="Whether line is conditional/optional")
+    section: str | None = Field(default=None, description="Filing section description")
+    double_labeled: bool = Field(default=False, description="Whether line was reviewed by a second annotator")
+    second_annotator_label: str | None = Field(default=None, description="Second annotator assigned label")
+    second_annotator_value: str | None = Field(default=None, description="Second annotator assigned value")
+    second_annotator_category: StandardCategory | None = Field(default=None, description="Second annotator category")
+    second_annotator_agrees: bool | None = Field(default=None, description="True if second annotator agreed with primary annotation")
+
+
+class BenchmarkAccessionFiling(BaseModel):
+    """
+    Benchmark filing record keyed by SEC EDGAR accession number.
+    """
+
+    accession_number: str = Field(..., description="SEC EDGAR Accession Number e.g. 0001018724-24-000008")
+    cik: str = Field(..., description="10-digit SEC Central Index Key")
+    ticker: str = Field(..., description="Company ticker symbol")
+    company_name: str = Field(..., description="Company legal name")
+    sector: str = Field(..., description="Industry sector (software, retail, healthcare_services, energy, telecom, industrials)")
+    form: str = Field(..., description="SEC form type (10-K, 10-Q, 8-K EX-99.1)")
+    period: str = Field(..., description="Filing period descriptor, e.g. FY2023 or Q2 2024")
+    fiscal_year: int = Field(..., description="Fiscal year")
+    fiscal_quarter: int | None = Field(default=None, description="Fiscal quarter (1-4 or None for FY)")
+    filing_date: str = Field(..., description="Official SEC filing date (YYYY-MM-DD)")
+    split: CorpusSplit = Field(default=CorpusSplit.dev, description="dev (30) or locked test (10) split")
+    adversarial_cases: list[str] = Field(
+        default_factory=list,
+        description="Adversarial flags: tables_spanning_pages, parentheses_negatives, restated_periods, footnote_markers, scanned_exhibits, adjusted_net_income",
+    )
+    reported_metric_name: str = Field(default="Adjusted EBITDA", description="Target metric name")
+    reported_total: float = Field(..., description="Reported total value from the filing")
+    reconciliation_lines: list[BenchmarkReconciliationLine] = Field(..., min_length=1)
+    double_labeled: bool = Field(default=False, description="True if filing was double-labeled")
+    inter_annotator_agreement: float | None = Field(default=None, description="Percentage agreement between annotators (0.0 - 1.0)")
+
+
+class AccessionCorpusManifest(BaseModel):
+    """
+    Manifest of accession-keyed benchmark corpus filings.
+    """
+
+    corpus_name: str = Field(default="Footnote Benchmark Corpus", description="Name of benchmark corpus")
+    corpus_version: str = Field(default="2.0.0", description="Corpus version")
+    total_filings: int = Field(default=40, description="Total number of filings in corpus")
+    dev_count: int = Field(default=30, description="Number of filings in dev split")
+    test_count: int = Field(default=10, description="Number of filings in locked test split")
+    double_labeled_count: int = Field(default=8, description="Number of double-labeled filings")
+    filing_accessions: list[str] = Field(..., description="List of filing accession numbers")
+
+
+class ConfidenceBucket(BaseModel):
+    """
+    Confidence calibration bucket for evaluating model calibration.
+    """
+
+    bucket_name: str = Field(..., description="Name of bucket range e.g. '0.9-1.0'")
+    total_items: int = Field(default=0, ge=0)
+    exact_match_items: int = Field(default=0, ge=0)
+    accuracy: float = Field(default=0.0, ge=0.0, le=1.0)
+
+
+class CalibrationReport(BaseModel):
+    """
+    Report of accuracy per confidence score bucket.
+    """
+
+    buckets: list[ConfidenceBucket] = Field(default_factory=list)
+
+
+class EvalGateMetrics(BaseModel):
+    """
+    Comprehensive benchmark accuracy and CI gate metrics (FN-011).
+    """
+
+    line_item_recall: float = Field(default=0.0, ge=0.0, le=1.0)
+    line_item_precision: float = Field(default=0.0, ge=0.0, le=1.0)
+    value_exact_match_rate: float = Field(default=0.0, ge=0.0, le=1.0)
+    auto_accepted_exact_match_rate: float = Field(default=0.0, ge=0.0, le=1.0)
+    flagged_exact_match_rate: float = Field(default=0.0, ge=0.0, le=1.0)
+    sign_accuracy: float = Field(default=0.0, ge=0.0, le=1.0)
+    scale_accuracy: float = Field(default=0.0, ge=0.0, le=1.0)
+    total_tie_out_rate: float = Field(default=0.0, ge=0.0, le=1.0)
+    locator_accuracy: float = Field(default=0.0, ge=0.0, le=1.0)
+    category_accuracy: float = Field(default=0.0, ge=0.0, le=1.0)
+    auto_accepted_count: int = Field(default=0, ge=0)
+    flagged_count: int = Field(default=0, ge=0)
+    calibration: list[ConfidenceBucket] = Field(default_factory=list)
+    estimated_cost_usd: float = Field(default=0.0, ge=0.0)
+    mean_latency_seconds: float = Field(default=0.0, ge=0.0)
+
+
+class GateResult(BaseModel):
+    """
+    Regression evaluation result against gates.yaml thresholds.
+    """
+
+    passed: bool
+    thresholds: dict[str, float]
+    actuals: dict[str, float]
+    failures: list[str] = Field(default_factory=list)
+    cost_compliant: bool = True
+    latency_compliant: bool = True
+
+

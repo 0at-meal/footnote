@@ -13,7 +13,10 @@ import type {
   WorkflowPack,
 } from './types/job'
 import { DEFAULT_METRIC } from './types/job'
-import { FileSpreadsheet, X } from 'lucide-react'
+import { X } from 'lucide-react'
+import { AppShell } from './components/shell/AppShell'
+import { DesignPreviewPage } from './components/design/DesignPreviewPage'
+import { Wordmark } from './components/brand/Wordmark'
 import './App.css'
 
 /** Base URL for the FastAPI backend. Change for production deployment. */
@@ -29,6 +32,35 @@ function App() {
   const [activeAuditJobId, setActiveAuditJobId] = useState<string | null>(null)
   const [selectedCompany, setSelectedCompany] = useState<string>('')
   const [companies, setCompanies] = useState<CompanyWithJobs[]>([])
+  const [currentRoute, setCurrentRoute] = useState<'app' | 'design'>(() => {
+    if (typeof window !== 'undefined') {
+      if (window.location.pathname === '/design' || window.location.hash === '#/design') {
+        return 'design'
+      }
+    }
+    return 'app'
+  })
+
+  useEffect(() => {
+    const onPopState = () => {
+      if (window.location.pathname === '/design' || window.location.hash === '#/design') {
+        setCurrentRoute('design')
+      } else {
+        setCurrentRoute('app')
+      }
+    }
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [])
+
+  function handleNavigate(route: 'app' | 'design') {
+    setCurrentRoute(route)
+    if (route === 'design') {
+      window.history.pushState(null, '', '/design')
+    } else {
+      window.history.pushState(null, '', '/')
+    }
+  }
 
   function refreshCompanies() {
     fetch(`${API_BASE}/companies`)
@@ -203,34 +235,68 @@ function App() {
 
   // ── Render ───────────────────────────────────────────────────────────────
 
-  if (activeReviewJobId) {
+  if (currentRoute === 'design') {
     return (
-      <ReviewPage
-        jobId={activeReviewJobId}
-        apiBase={API_BASE}
-        onBack={() => setActiveReviewJobId(null)}
-        onAuditTrail={(jobId) => {
-          setActiveReviewJobId(null)
-          setActiveAuditJobId(jobId)
-        }}
-      />
+      <AppShell
+        currentRoute="design"
+        onNavigate={handleNavigate}
+        breadcrumbs={[
+          { label: 'Home', onClick: () => handleNavigate('app') },
+          { label: 'Design System (/design)', active: true },
+        ]}
+      >
+        <DesignPreviewPage />
+      </AppShell>
+    )
+  }
+
+  if (activeReviewJobId) {
+    const activeJob = persistedJobs.find((j) => j.job_id === activeReviewJobId)
+    return (
+      <AppShell
+        currentRoute="app"
+        onNavigate={handleNavigate}
+        breadcrumbs={[
+          { label: 'Home', onClick: () => setActiveReviewJobId(null) },
+          { label: `Review: ${activeJob?.filename || activeReviewJobId}`, active: true },
+        ]}
+      >
+        <ReviewPage
+          jobId={activeReviewJobId}
+          apiBase={API_BASE}
+          onBack={() => setActiveReviewJobId(null)}
+          onAuditTrail={(jobId) => {
+            setActiveReviewJobId(null)
+            setActiveAuditJobId(jobId)
+          }}
+        />
+      </AppShell>
     )
   }
 
   if (activeAuditJobId) {
     const activeAuditJob = persistedJobs.find((j) => j.job_id === activeAuditJobId)
     return (
-      <AuditTrailView
-        jobId={activeAuditJobId}
-        apiBase={API_BASE}
-        onBack={() => setActiveAuditJobId(null)}
-        onReview={(jobId) => {
-          setActiveAuditJobId(null)
-          setActiveReviewJobId(jobId)
-        }}
-        jobRecord={activeAuditJob}
-        modelReady={activeAuditJob?.model_ready}
-      />
+      <AppShell
+        currentRoute="app"
+        onNavigate={handleNavigate}
+        breadcrumbs={[
+          { label: 'Home', onClick: () => setActiveAuditJobId(null) },
+          { label: `Audit Trail: ${activeAuditJob?.filename || activeAuditJobId}`, active: true },
+        ]}
+      >
+        <AuditTrailView
+          jobId={activeAuditJobId}
+          apiBase={API_BASE}
+          onBack={() => setActiveAuditJobId(null)}
+          onReview={(jobId) => {
+            setActiveAuditJobId(null)
+            setActiveReviewJobId(jobId)
+          }}
+          jobRecord={activeAuditJob}
+          modelReady={activeAuditJob?.model_ready}
+        />
+      </AppShell>
     )
   }
 
@@ -250,18 +316,20 @@ function App() {
     : null
 
   return (
-    <div className="app-layout">
-      <header className="app-header">
-        <div className="app-header__logo">
-          <div className="app-header__logo-badge">
-            <FileSpreadsheet size={18} aria-hidden="true" />
+    <AppShell
+      currentRoute="app"
+      onNavigate={handleNavigate}
+      breadcrumbs={[{ label: 'Upload & Queue', active: true }]}
+    >
+      <div className="app-layout">
+        <header className="app-header">
+          <div className="app-header__logo">
+            <Wordmark size="md" />
           </div>
-          <span className="app-header__wordmark">footnote</span>
-        </div>
-        <p className="app-header__tagline">
-          Financial statement extraction &amp; model generation
-        </p>
-      </header>
+          <p className="app-header__tagline">
+            Financial statement extraction &amp; model generation
+          </p>
+        </header>
 
       <main className="app-main">
         <section className="app-section" aria-labelledby="upload-heading">
@@ -354,6 +422,7 @@ function App() {
         <p>Footnote © 2026</p>
       </footer>
     </div>
+  </AppShell>
   )
 }
 

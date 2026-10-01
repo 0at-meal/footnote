@@ -1,0 +1,114 @@
+{
+  "accession_number": "0001018724-23-000012",
+  "cik": "0001018724",
+  "ticker": "MSFT",
+  "company_name": "Microsoft Corporation",
+  "sector": "software",
+  "form": "8-K EX-99.1",
+  "period": "Q4 FY2023",
+  "fiscal_year": 2023,
+  "fiscal_quarter": 4,
+  "filing_date": "2023-07-25",
+  "split": "dev",
+  "adversarial_cases": [
+    "parentheses_negatives"
+  ],
+  "reported_metric_name": "Adjusted EBITDA",
+  "reported_total": 27350.0,
+  "reconciliation_lines": [
+    {
+      "label": "GAAP Net Income",
+      "value": "20,081",
+      "numeric_value": 20081.0,
+      "period": "Q4 FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0001018724-23-000012",
+        "document": "msft_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "net_income",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "EX-99.1 Press Release Table 3",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Income tax expense",
+      "value": "4,374",
+      "numeric_value": 4374.0,
+      "period": "Q4 FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0001018724-23-000012",
+        "document": "msft_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "taxes",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "EX-99.1 Press Release Table 3",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Depreciation & Amortization",
+      "value": "2,845",
+      "numeric_value": 2845.0,
+      "period": "Q4 FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0001018724-23-000012",
+        "document": "msft_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "depreciation_amortization",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "EX-99.1 Press Release Table 3",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Other expenses",
+      "value": "50",
+      "numeric_value": 50.0,
+      "period": "Q4 FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0001018724-23-000012",
+        "document": "msft_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "other",
+      "is_gaap_seeded": false,
+      "is_optional": false,
+      "section": "EX-99.1 Press Release Table 3",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    }
+  ],
+  "double_labeled": false,
+  "inter_annotator_agreement": null
+}

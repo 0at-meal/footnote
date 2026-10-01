@@ -1,0 +1,114 @@
+{
+  "accession_number": "0000027419-24-000014",
+  "cik": "0000027419",
+  "ticker": "TGT",
+  "company_name": "Target Corporation",
+  "sector": "retail",
+  "form": "10-K",
+  "period": "FY2023",
+  "fiscal_year": 2023,
+  "fiscal_quarter": null,
+  "filing_date": "2024-03-13",
+  "split": "dev",
+  "adversarial_cases": [
+    "footnote_markers"
+  ],
+  "reported_metric_name": "EBITDA",
+  "reported_total": 5711.0,
+  "reconciliation_lines": [
+    {
+      "label": "Net earnings",
+      "value": "4,138",
+      "numeric_value": 4138.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000027419-24-000014",
+        "document": "tgt_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "net_income",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. MD&A Non-GAAP",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Provision for income taxes",
+      "value": "861",
+      "numeric_value": 861.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000027419-24-000014",
+        "document": "tgt_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "taxes",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. MD&A Non-GAAP",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Net interest expense",
+      "value": "417",
+      "numeric_value": 417.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000027419-24-000014",
+        "document": "tgt_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "interest",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. MD&A Non-GAAP",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    },
+    {
+      "label": "Depreciation and amortization",
+      "value": "295",
+      "numeric_value": 295.0,
+      "period": "FY2023",
+      "scale": 1000000,
+      "sign": 1,
+      "locator": {
+        "type": "html",
+        "accession": "0000027419-24-000014",
+        "document": "tgt_2023.htm",
+        "element_path": "table//tr"
+      },
+      "standard_category": "depreciation_amortization",
+      "is_gaap_seeded": true,
+      "is_optional": false,
+      "section": "Item 7. MD&A Non-GAAP",
+      "double_labeled": false,
+      "second_annotator_label": null,
+      "second_annotator_value": null,
+      "second_annotator_category": null,
+      "second_annotator_agrees": null
+    }
+  ],
+  "double_labeled": false,
+  "inter_annotator_agreement": null
+}
