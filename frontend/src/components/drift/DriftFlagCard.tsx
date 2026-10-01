@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Check } from 'lucide-react'
 
 export interface RelabeledComponent {
   old_label: string
@@ -68,8 +69,8 @@ export default function DriftFlagCard({
     <div
       className="drift-flag-card"
       style={{
-        background: 'var(--surface-raised, #1e293b)',
-        border: '1px solid #eab308',
+        background: 'var(--fn-bg-surface)',
+        border: '1px solid var(--fn-status-warning-border)',
         borderRadius: '8px',
         padding: '1.25rem',
         marginTop: '1rem',
@@ -88,7 +89,7 @@ export default function DriftFlagCard({
       >
         <div>
           <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 600, color: '#facc15' }}>
-            ⚡ Historical Drift Detected: {currentFlag.target_metric} ({currentFlag.filing_year})
+            Historical Drift Detected: {currentFlag.target_metric} ({currentFlag.filing_year})
           </h3>
           <p style={{ margin: 0, fontSize: '0.8rem', color: '#94a3b8', marginTop: '2px' }}>
             Entity: {currentFlag.entity} — Definition modified from prior baseline
@@ -148,12 +149,12 @@ export default function DriftFlagCard({
                   ) : (
                     <button
                       type="button"
-                      className="review-btn review-btn--confirm"
-                      style={{ padding: '3px 8px', fontSize: '0.75rem' }}
+                      className="fn-btn fn-btn--primary fn-btn--sm review-btn review-btn--confirm"
                       disabled={confirmingIdx === idx}
                       onClick={() => void handleConfirmRelabel(idx, item)}
                     >
-                      {confirmingIdx === idx ? 'Confirming...' : 'Confirm Relabeling'}
+                      <Check size={11} aria-hidden="true" />
+                      <span>{confirmingIdx === idx ? 'Confirming...' : 'Confirm Relabeling'}</span>
                     </button>
                   )}
                 </div>

@@ -14,7 +14,7 @@ describe('ReviewPage Component', () => {
     vi.restoreAllMocks()
   })
 
-  it('renders review layout with Approve All & Generate Model button disabled when 0 items', () => {
+  it('renders review layout and header without 6-tab button', () => {
     vi.mocked(fetch).mockResolvedValue({
       ok: true,
       json: async () => ({ items: [] }),
@@ -30,8 +30,7 @@ describe('ReviewPage Component', () => {
 
     expect(html).toContain('Extraction Review')
     expect(html).toContain('job-test-123')
-    expect(html).toContain('Approve &amp; Generate Complete Financial Model (6 Tabs)')
-    expect(html).toContain('disabled=""')
+    expect(html).not.toContain('6 Tabs')
   })
 
   it('dispatches POST request to /models/{jobId}/generate on model generation trigger', async () => {
@@ -96,7 +95,7 @@ describe('ReviewPage Component', () => {
     expect(html).toContain('aria-selected="true"')
   })
 
-  it('renders CTA button disabled when items list is empty (Ticket D.2.3)', () => {
+  it('does not render 6-tab CTA button in review header (Ticket D.2.3)', () => {
     const htmlWithoutLocked = renderToStaticMarkup(
       <ReviewPage
         jobId="job-test-123"
@@ -104,46 +103,40 @@ describe('ReviewPage Component', () => {
         onBack={vi.fn()}
       />
     )
-    expect(htmlWithoutLocked).toContain('disabled=""')
-    expect(htmlWithoutLocked).toContain('Approve &amp; Generate Complete Financial Model (6 Tabs)')
+    expect(htmlWithoutLocked).not.toContain('6 Tabs')
   })
 
   it('renders statement readiness chips when items are present (Ticket D.2.2)', () => {
-    vi.mocked(fetch).mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        job_id: 'job-test-123',
-        total_items: 2,
-        items: [
-          {
-            id: '1',
-            value: '100',
-            label: 'Revenue',
-            page: 1,
-            bbox: { x0: 0, y0: 0, x1: 10, y1: 10 },
-            source_file: 'file.pdf',
-            confidence_band: 'auto_accepted',
-            confidence_score: 0.99,
-            normalized_label: 'Revenue',
-            taxonomy_status: 'matched',
-            status: 'locked',
-            flags: [],
-            statement_type: 'income_statement',
-            error_detail: null,
-          },
-        ],
-      }),
-    } as Response)
+    const mockItems = [
+      {
+        id: '1',
+        value: '100',
+        label: 'Revenue',
+        page: 1,
+        bbox: { x0: 0, y0: 0, x1: 10, y1: 10 },
+        source_file: 'file.pdf',
+        confidence_band: 'auto_accepted' as const,
+        confidence_score: 0.99,
+        normalized_label: 'Revenue',
+        taxonomy_status: 'matched',
+        status: 'locked' as const,
+        flags: [],
+        statement_type: 'income_statement' as const,
+        error_detail: null,
+      },
+    ]
 
     const html = renderToStaticMarkup(
       <ReviewPage
         jobId="job-test-123"
         apiBase="http://localhost:8000"
         onBack={vi.fn()}
+        initialItems={mockItems}
       />
     )
 
-    expect(html).toContain('Approve &amp; Generate Complete Financial Model (6 Tabs)')
+    expect(html).toContain('IS: Ready')
+    expect(html).not.toContain('6 Tabs')
   })
 
   it('correctly filters flagged items vs all reconciliation items (Ticket 3.4)', () => {
@@ -277,7 +270,7 @@ describe('ReviewPage Component', () => {
     expect(html).not.toContain('Degraded Extraction Quality')
   })
 
-  it('renders Generate Model button in empty Flagged tab when all items are reviewed/locked (Ticket 9.1)', () => {
+  it('renders empty Flagged tab when all items are reviewed/locked without 6-tab button (Ticket 9.1)', () => {
     const mockItems = [
       {
         id: '1',
@@ -308,7 +301,7 @@ describe('ReviewPage Component', () => {
 
     // Verify empty state text and action button
     expect(html).toContain('All items reviewed. Ready to generate the financial model.')
-    expect(html).toContain('Approve &amp; Generate Complete Financial Model (6 Tabs) →')
+    expect(html).not.toContain('6 Tabs')
   })
 })
 

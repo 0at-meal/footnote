@@ -32,7 +32,7 @@ describe('CompanyMultiYearCard Component', () => {
     expect(html).toBe('')
   })
 
-  it('renders 6-Tab Model button when 1 completed job exists', () => {
+  it('renders company section with notice when only 1 completed job exists', () => {
     const company: CompanyWithJobs = {
       company_id: 'comp-1',
       name: 'Single Filing Corp',
@@ -59,10 +59,11 @@ describe('CompanyMultiYearCard Component', () => {
 
     expect(html).toContain('Company Financial Models: Single Filing Corp (SFC)')
     expect(html).toContain('1 Filings Ready')
-    expect(html).toContain('Generate 6-Tab Model')
+    expect(html).toContain('Requires at least 2 completed filings')
+    expect(html).not.toContain('6-Tab')
   })
 
-  it('renders Multi-Year card with both 6-Tab and Multi-Year buttons when >= 2 jobs are completed', () => {
+  it('renders Multi-Year card with Build Multi-Year button when >= 2 jobs are completed', () => {
     const company: CompanyWithJobs = {
       company_id: 'comp-multi',
       name: 'Acme Holdings',
@@ -110,7 +111,7 @@ describe('CompanyMultiYearCard Component', () => {
     expect(html).toContain('Company Financial Models: Acme Holdings (ACME)')
     expect(html).toContain('3 Filings Ready')
     expect(html).toContain('Includes FY2021, FY2022, FY2023')
-    expect(html).toContain('Generate 6-Tab Model')
     expect(html).toContain('Build Multi-Year Model')
+    expect(html).not.toContain('6-Tab')
   })
 })

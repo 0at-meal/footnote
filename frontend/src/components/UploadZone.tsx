@@ -1,13 +1,13 @@
-import { useState, useRef } from 'react'
-import type { DragEvent, ChangeEvent } from 'react'
+import { useState, useRef, type DragEvent, type ChangeEvent, type ReactNode } from 'react'
+import { TrendingUp, PieChart, UploadCloud, AlertCircle } from 'lucide-react'
 import type { RejectedFile, WorkflowPack } from '../types/job'
 import { isPdf } from '../lib/validation'
 
-export const WORKFLOW_PACK_DETAILS: {
+const WORKFLOW_PACK_DETAILS: {
   id: WorkflowPack
   title: string
   subtitle: string
-  icon: string
+  icon: ReactNode
   disabled?: boolean
   badge?: string
 }[] = [
@@ -15,7 +15,7 @@ export const WORKFLOW_PACK_DETAILS: {
     id: 'non_gaap_bridge',
     title: 'Earnings Quality / Non-GAAP Bridge',
     subtitle: 'Adjusted EBITDA, Non-GAAP Net Income, Free Cash Flow bridges',
-    icon: '📊',
+    icon: <TrendingUp size={16} aria-hidden="true" />,
   },
   {
     id: 'capital_structure',
@@ -27,7 +27,7 @@ export const WORKFLOW_PACK_DETAILS: {
     id: 'cash_conversion',
     title: 'Valuation & Cash Conversion',
     subtitle: 'Operating Cash Flow, CapEx, Working Capital normalization',
-    icon: '📈',
+    icon: <PieChart size={16} aria-hidden="true" />,
     disabled: true,
     badge: 'Coming Soon',
   },
@@ -150,9 +150,9 @@ function UploadZone({
                 }}
                 style={{
                   padding: '0.75rem 1rem',
-                  borderRadius: '6px',
-                  border: isSelected ? '2px solid #2563eb' : '1px solid #334155',
-                  backgroundColor: isSelected ? 'rgba(37, 99, 235, 0.12)' : 'var(--surface, #1e293b)',
+                  borderRadius: 'var(--fn-radius-md)',
+                  border: isSelected ? '1px solid var(--fn-border-accent)' : '1px solid var(--fn-border-subtle)',
+                  backgroundColor: isSelected ? 'var(--fn-accent-bg)' : 'var(--fn-bg-surface)',
                   cursor: isDisabled ? 'not-allowed' : 'pointer',
                   opacity: isDisabled ? 0.55 : 1,
                   transition: 'all 0.15s ease',
@@ -164,7 +164,7 @@ function UploadZone({
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <span style={{ fontSize: '1.1rem' }}>{pack.icon}</span>
-                    <span style={{ fontWeight: 600, fontSize: '0.85rem', color: isSelected ? '#38bdf8' : '#e2e8f0' }}>
+                    <span style={{ fontWeight: 600, fontSize: '0.85rem', color: isSelected ? 'var(--fn-accent-text)' : 'var(--fn-text-primary)' }}>
                       {pack.title}
                     </span>
                   </div>
@@ -175,8 +175,8 @@ function UploadZone({
                         fontWeight: 600,
                         padding: '2px 6px',
                         borderRadius: '4px',
-                        background: '#334155',
-                        color: '#94a3b8',
+                        background: 'var(--fn-bg-elevated)',
+                        color: 'var(--fn-text-muted)',
                         textTransform: 'uppercase',
                         letterSpacing: '0.5px',
                       }}
@@ -202,21 +202,7 @@ function UploadZone({
         onDragLeave={handleDragLeave}
         aria-label="PDF upload area"
       >
-        <svg
-          className="upload-zone__icon"
-          width="48"
-          height="48"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M12 15V3m0 0L8.5 6.5M12 3l3.5 3.5" />
-          <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
-        </svg>
+        <UploadCloud className="upload-zone__icon" size={40} aria-hidden="true" />
 
         <p className="upload-zone__headline">
           {isDragOver ? 'Release to add files' : 'Drag & drop PDF files here'}
@@ -225,7 +211,7 @@ function UploadZone({
 
         <button
           type="button"
-          className="upload-zone__browse-btn"
+          className="fn-btn fn-btn--secondary fn-btn--md upload-zone__browse-btn"
           onClick={handleBrowseClick}
         >
           Browse files
@@ -252,10 +238,7 @@ function UploadZone({
           >
             {rejections.map((r, i) => (
               <li key={i} className="upload-zone__rejection-item">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M12 8v4m0 4h.01" />
-                </svg>
+                <AlertCircle size={14} aria-hidden="true" />
                 <span>
                   <strong>{r.filename}</strong> — {r.reason}
                 </span>

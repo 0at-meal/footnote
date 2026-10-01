@@ -22,7 +22,6 @@ from app.excel_export.models import (
     W3CAnnotationRecord,
     WorkbookGenerationResult,
 )
-from app.excel_export.multi_statement_generator import generate_multi_statement_workbook
 from app.excel_export.repository import ModelRepository
 from app.footnote.models import DebtSchedule, LeaseSchedule
 from app.footnote.repository import (
@@ -34,7 +33,6 @@ from app.formula_engine.reader import (
     read_formula_inputs_from_review,
 )
 from app.formula_engine.tree import (
-    build_comprehensive_model_tree,
     build_formula_tree,
 )
 from app.ingestion.repository import JobRepository
@@ -64,7 +62,7 @@ def generate_model_workbook(
     Routes to the appropriate generator based on the job's workflow pack:
     - capital_structure: Debt Schedule and Lease Waterfall (debt_schedule_generator)
     - non_gaap_bridge: Non-GAAP EBITDA / Adj EBITDA reconciliation bridge (bridge_generator)
-    - other / default: Multi-statement comprehensive model (multi_statement_generator)
+    - other: Returns an explicit unsupported error
     """
     job_repo = JobRepository(data_dir=model_repo.data_dir)
     job = job_repo.get_job(job_id)
@@ -145,17 +143,9 @@ def generate_model_workbook(
             output_dir=model_repo.data_dir,
         )
     else:
-        comp_tree = build_comprehensive_model_tree(batch)
-        if not comp_tree.is_valid:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=comp_tree.error_message
-                or "Comprehensive model tree is invalid (no confirmed line items).",
-            )
-        generation_result = generate_multi_statement_workbook(
-            company=None,
-            year_trees=[(job, comp_tree)],
-            output_dir=model_repo.data_dir,
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Workflow pack '{job.workflow_pack}' is not yet supported for model generation.",
         )
 
     model_repo.save_generation_result(job_id, generation_result)

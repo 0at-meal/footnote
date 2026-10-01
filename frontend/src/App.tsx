@@ -8,12 +8,12 @@ import CompanySelector from './components/CompanySelector'
 import CompanyMultiYearCard from './components/CompanyMultiYearCard'
 import type {
   StagedFile,
-  TargetMetric,
   JobRecord,
   CompanyWithJobs,
   WorkflowPack,
 } from './types/job'
 import { DEFAULT_METRIC } from './types/job'
+import { FileSpreadsheet, X } from 'lucide-react'
 import './App.css'
 
 /** Base URL for the FastAPI backend. Change for production deployment. */
@@ -82,25 +82,45 @@ function App() {
   // ── Staged file handlers ─────────────────────────────────────────────────
 
   function handleFilesAdded(files: File[]) {
-    const newFiles: StagedFile[] = files.map((file) => ({
-      id: crypto.randomUUID(),
-      file,
-      filename: file.name,
-      file_size_bytes: file.size,
-      target_metric: selectedWorkflowPack === 'capital_structure' ? 'Capital Structure' : DEFAULT_METRIC,
-      filing_year: null,
-      workflow_pack: selectedWorkflowPack,
-    }))
-    setStagedFiles((prev) => [...prev, ...newFiles])
+    const existingStaged = new Set(stagedFiles.map((sf) => `${sf.filename}_${sf.file_size_bytes}`))
+    const existingPersisted = new Set(persistedJobs.map((j) => `${j.filename}_${j.file_size_bytes}`))
+
+    const newFiles: StagedFile[] = []
+    const duplicateNames: string[] = []
+
+    for (const file of files) {
+      const fileKey = `${file.name}_${file.size}`
+      if (existingStaged.has(fileKey) || existingPersisted.has(fileKey)) {
+        duplicateNames.push(file.name)
+        continue
+      }
+      existingStaged.add(fileKey)
+      newFiles.push({
+        id: crypto.randomUUID(),
+        file,
+        filename: file.name,
+        file_size_bytes: file.size,
+        target_metric: selectedWorkflowPack === 'capital_structure' ? 'Capital Structure' : DEFAULT_METRIC,
+        filing_year: null,
+        workflow_pack: selectedWorkflowPack,
+      })
+    }
+
+    if (duplicateNames.length > 0) {
+      setSubmissionErrors((prev) => [
+        ...prev,
+        duplicateNames.length === 1
+          ? `Duplicate file skipped: "${duplicateNames[0]}" is already in the queue or processed.`
+          : `Duplicate files skipped: ${duplicateNames.map((n) => `"${n}"`).join(', ')} already in queue or processed.`,
+      ])
+    }
+
+    if (newFiles.length > 0) {
+      setStagedFiles((prev) => [...prev, ...newFiles])
+    }
   }
 
-  function handleMetricChange(id: string, metric: TargetMetric) {
-    setStagedFiles((prev) =>
-      prev.map((sf) =>
-        sf.id === id ? { ...sf, target_metric: metric } : sf,
-      ),
-    )
-  }
+
 
   function handleYearChange(id: string, year: number | null) {
     setStagedFiles((prev) =>
@@ -233,20 +253,9 @@ function App() {
     <div className="app-layout">
       <header className="app-header">
         <div className="app-header__logo">
-          <svg
-            width="28"
-            height="28"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-            <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
-          </svg>
+          <div className="app-header__logo-badge">
+            <FileSpreadsheet size={18} aria-hidden="true" />
+          </div>
           <span className="app-header__wordmark">footnote</span>
         </div>
         <p className="app-header__tagline">
@@ -309,11 +318,11 @@ function App() {
                 </strong>
                 <button
                   type="button"
-                  className="submission-errors__dismiss"
+                  className="submission-errors__dismiss fn-btn fn-btn--ghost fn-btn--sm"
                   onClick={() => setSubmissionErrors([])}
                   aria-label="Dismiss rejection errors"
                 >
-                  ✕
+                  <X size={14} aria-hidden="true" />
                 </button>
               </div>
               <ul className="submission-errors__list">
@@ -342,7 +351,7 @@ function App() {
       </main>
 
       <footer className="app-footer">
-        <p>Footnote — MVP · Single-user · Local extraction</p>
+        <p>Footnote © 2026</p>
       </footer>
     </div>
   )

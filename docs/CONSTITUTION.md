@@ -98,5 +98,5 @@ Do not cite a library's behavior from memory when writing extraction or formula-
 12. Never treat this file as editable during normal development work. Changing it requires an explicit, separate request to do so.
 13. Never present eval-harness accuracy numbers without also stating the benchmark size and how many items were manually corrected.
 14. Never assume a low-confidence extraction flag can be resolved by re-running with different parsing settings — surface it for human review rather than retrying silently until it looks clean.
-15. Never use the 6-tab `multi_statement_generator.py` as the default pipeline output path without first removing ADR-003's guard rail via an explicit ADR update approved by the human owner. *(Added: ADR-003, 2026-09-01)*
-16. Never wire `narrative/` (MD&A diffing, risk factor redlines) into the automated pipeline without an explicit ADR — it is deferred from the main pipeline by design. *(Added: fixes.md §14.2, 2026-09-02)*
+15. 6-tab multi-statement generator is retired (FN-001); ADRs are strictly reserved for irreversible architectural choices.
+16. Narrative intelligence is removed from the automated pipeline (FN-001); any re-introduction requires an irreversible decision entry in DECISIONS.md.

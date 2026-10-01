@@ -412,24 +412,24 @@ def test_parse_pdf_with_pymupdf_3x4_table_cell_bboxes(tmp_path: Path) -> None:
 
     # 2 data rows x 3 data columns = 6 items
     assert len(items) == 6
-    # Row 1, Col 1 ($100): flat_idx = (1-1)*4 + (1-1) = 0 -> mock_cells[0] = (0, 0, 100, 50)
+    # Row 1, Col 1 ($100): flat_idx = 1*4 + 1 = 5 -> mock_cells[5] = (100, 50, 200, 100)
     item_100 = next(i for i in items if i.value == "$100")
-    assert item_100.bbox.x0 == 0.0
-    assert item_100.bbox.y0 == 0.0
-    assert item_100.bbox.x1 == 100.0
-    assert item_100.bbox.y1 == 50.0
+    assert item_100.bbox.x0 == 100.0
+    assert item_100.bbox.y0 == 50.0
+    assert item_100.bbox.x1 == 200.0
+    assert item_100.bbox.y1 == 100.0
 
-    # Row 1, Col 2 ($110): flat_idx = 1 -> mock_cells[1] = (100, 0, 200, 50)
+    # Row 1, Col 2 ($110): flat_idx = 1*4 + 2 = 6 -> mock_cells[6] = (200, 50, 300, 100)
     item_110 = next(i for i in items if i.value == "$110")
-    assert item_110.bbox.x0 == 100.0
-    assert item_110.bbox.y0 == 0.0
+    assert item_110.bbox.x0 == 200.0
+    assert item_110.bbox.y0 == 50.0
 
-    # Row 2, Col 1 ($150): flat_idx = (2-1)*4 + (1-1) = 4 -> mock_cells[4] = (0, 50, 100, 100)
+    # Row 2, Col 1 ($150): flat_idx = 2*4 + 1 = 9 -> mock_cells[9] = (100, 100, 200, 150)
     item_150 = next(i for i in items if i.value == "$150")
-    assert item_150.bbox.x0 == 0.0
-    assert item_150.bbox.y0 == 50.0
-    assert item_150.bbox.x1 == 100.0
-    assert item_150.bbox.y1 == 100.0
+    assert item_150.bbox.x0 == 100.0
+    assert item_150.bbox.y0 == 100.0
+    assert item_150.bbox.x1 == 200.0
+    assert item_150.bbox.y1 == 150.0
 
 
 def test_is_reconciliation_table_statement_exclusions() -> None:

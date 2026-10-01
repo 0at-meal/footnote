@@ -1,0 +1,386 @@
+/* ============================================================
+   Footnote Design System Tokens & Base Utilities
+   Compliance-Grade Dark Theme for Financial Statement Review
+   ============================================================ */
+
+:root {
+  /* ── Canvas & Surface Hierarchy (Dark Theme Only) ── */
+  --fn-bg-app: #0b0c10;          /* Deep near-black canvas */
+  --fn-bg-surface: #12141c;      /* Primary panels, sidebars, cards */
+  --fn-bg-elevated: #181b26;     /* Elevated cards, table rows, inputs */
+  --fn-bg-active: #212536;       /* Selected / active list items */
+  --fn-bg-hover: #161822;        /* Subtle row / button hover */
+
+  /* ── Borders ── */
+  --fn-border-subtle: #232738;   /* Default panel dividers */
+  --fn-border-strong: #33394f;   /* Active boundaries, card outlines */
+  --fn-border-focus: #3b82f6;    /* Keyboard focus ring */
+
+  /* ── Typography & Text ── */
+  --fn-text-primary: #f1f5f9;    /* Headings, values, primary labels */
+  --fn-text-secondary: #94a3b8;  /* Form labels, descriptions, metadata */
+  --fn-text-muted: #64748b;      /* Footers, timestamps, placeholders */
+  --fn-text-inverse: #ffffff;    /* Text on solid accent buttons */
+
+  /* ── Interactive Accent (Single Open Palette: Financial Cobalt Blue) ── */
+  --fn-accent: #3b82f6;
+  --fn-accent-hover: #2563eb;
+  --fn-accent-bg: rgba(59, 130, 246, 0.12);
+  --fn-accent-border: rgba(59, 130, 246, 0.35);
+
+  /* ── Semantic Status Set (Used ONLY for status meaning) ── */
+  /* Success: Confirmed, Model Ready, Saved */
+  --fn-status-success: #22c55e;
+  --fn-status-success-bg: rgba(34, 197, 94, 0.12);
+  --fn-status-success-border: rgba(34, 197, 94, 0.28);
+
+  /* Warning: Needs Review, Awaiting Review, Flagged, Discrepancy */
+  --fn-status-warning: #f59e0b;
+  --fn-status-warning-bg: rgba(245, 158, 11, 0.12);
+  --fn-status-warning-border: rgba(245, 158, 11, 0.28);
+
+  /* Error: Extraction Error, Missing Record, Failed, Rejection */
+  --fn-status-error: #ef4444;
+  --fn-status-error-bg: rgba(239, 68, 68, 0.12);
+  --fn-status-error-border: rgba(239, 68, 68, 0.28);
+
+  /* Neutral: Queued, Pending, Locked */
+  --fn-status-neutral: #94a3b8;
+  --fn-status-neutral-bg: rgba(148, 163, 184, 0.10);
+  --fn-status-neutral-border: rgba(148, 163, 184, 0.22);
+
+  /* ── Typography Scale ── */
+  --fn-font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+  --fn-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --fn-text-xs: 11px;
+  --fn-text-sm: 13px;
+  --fn-text-base: 14px;
+  --fn-text-lg: 16px;
+  --fn-text-xl: 18px;
+
+  /* ── Sizing & Radii ── */
+  --fn-radius-sm: 4px;
+  --fn-radius-md: 6px;
+  --fn-radius-lg: 8px;
+  --fn-radius-pill: 9999px;
+
+  /* ── Control Heights ── */
+  --fn-control-h-sm: 26px;
+  --fn-control-h-md: 32px;
+  --fn-control-h-lg: 38px;
+
+  /* ── Legacy Variable Aliases for Backward-Compatibility ── */
+  --bg: var(--fn-bg-app);
+  --surface: var(--fn-bg-surface);
+  --border: var(--fn-border-subtle);
+  --text: var(--fn-text-secondary);
+  --text-h: var(--fn-text-primary);
+  --accent: var(--fn-accent);
+  --accent-bg: var(--fn-accent-bg);
+  --accent-border: var(--fn-accent-border);
+  --row-hover-bg: var(--fn-bg-hover);
+  --select-bg: var(--fn-bg-elevated);
+  --code-bg: var(--fn-bg-elevated);
+  --error: var(--fn-status-error);
+  --error-bg: var(--fn-status-error-bg);
+  --error-border: var(--fn-status-error-border);
+  --mono: var(--fn-font-mono);
+  --sans: var(--fn-font-sans);
+  --heading: var(--fn-font-sans);
+  --table-head-bg: var(--fn-bg-elevated);
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* ============================================================
+   Base Global Styles
+   ============================================================ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  background-color: var(--fn-bg-app);
+  color: var(--fn-text-primary);
+  font-family: var(--fn-font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  color-scheme: dark;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Tabular figures for financial numbers, tables, years, and metrics */
+.tabular-nums,
+.fn-tabular,
+.job-table td,
+.review-item-card__value,
+.audit-component-card__value,
+.model-table td {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   Button System
+   Small, fixed number of sizes & variants used consistently
+   ============================================================ */
+
+.fn-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: var(--fn-font-sans);
+  font-weight: 500;
+  border-radius: var(--fn-radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
+  user-select: none;
+  font-size: var(--fn-text-sm);
+  height: var(--fn-control-h-md);
+  padding: 0 12px;
+}
+
+.fn-btn:focus-visible {
+  outline: 2px solid var(--fn-border-focus);
+  outline-offset: 2px;
+}
+
+.fn-btn:disabled,
+.fn-btn[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Button Variants */
+
+/* Primary: Accent solid background, white text. Exactly ONE primary per screen/header. */
+.fn-btn--primary {
+  background-color: var(--fn-accent);
+  color: var(--fn-text-inverse);
+  border-color: var(--fn-accent);
+  font-weight: 600;
+}
+
+.fn-btn--primary:hover:not(:disabled) {
+  background-color: var(--fn-accent-hover);
+  border-color: var(--fn-accent-hover);
+}
+
+/* Secondary: Surface background, subtle border, primary text. */
+.fn-btn--secondary {
+  background-color: var(--fn-bg-surface);
+  color: var(--fn-text-primary);
+  border-color: var(--fn-border-subtle);
+}
+
+.fn-btn--secondary:hover:not(:disabled) {
+  background-color: var(--fn-bg-elevated);
+  border-color: var(--fn-border-strong);
+}
+
+/* Destructive: For deletion or removal. */
+.fn-btn--destructive {
+  background-color: transparent;
+  color: var(--fn-status-error);
+  border-color: transparent;
+}
+
+.fn-btn--destructive:hover:not(:disabled) {
+  background-color: var(--fn-status-error-bg);
+  border-color: var(--fn-status-error-border);
+}
+
+/* Ghost / Text button: transparent background */
+.fn-btn--ghost {
+  background-color: transparent;
+  color: var(--fn-text-secondary);
+  border-color: transparent;
+}
+
+.fn-btn--ghost:hover:not(:disabled) {
+  background-color: var(--fn-bg-hover);
+  color: var(--fn-text-primary);
+}
+
+/* Button Sizes */
+.fn-btn--sm {
+  height: var(--fn-control-h-sm);
+  padding: 0 8px;
+  font-size: var(--fn-text-xs);
+}
+
+.fn-btn--md {
+  height: var(--fn-control-h-md);
+  padding: 0 12px;
+  font-size: var(--fn-text-sm);
+}
+
+.fn-btn--lg {
+  height: var(--fn-control-h-lg);
+  padding: 0 18px;
+  font-size: var(--fn-text-base);
+}
+
+/* ============================================================
+   Status Badge System
+   Consolidated semantic status pill reusable everywhere
+   ============================================================ */
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: var(--fn-radius-sm);
+  font-size: var(--fn-text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  font-family: var(--fn-font-mono);
+}
+
+/* 1. Success States: Model Ready, Confirmed, Auto Accepted */
+.status-badge--done,
+.status-badge--model-ready,
+.status-badge--confirmed,
+.status-badge--auto_accepted {
+  background-color: var(--fn-status-success-bg);
+  color: var(--fn-status-success);
+  border-color: var(--fn-status-success-border);
+}
+
+/* 2. Warning States: Needs Review, Awaiting Review, Extracting, Flagged, Manual Required */
+.status-badge--needs-review,
+.status-badge--needs_review,
+.status-badge--awaiting-review,
+.status-badge--flagged,
+.status-badge--manual_required,
+.status-badge--pending_taxonomy_confirmation {
+  background-color: var(--fn-status-warning-bg);
+  color: var(--fn-status-warning);
+  border-color: var(--fn-status-warning-border);
+}
+
+.status-badge--extracting {
+  background-color: var(--fn-status-warning-bg);
+  color: var(--fn-status-warning);
+  border-color: var(--fn-status-warning-border);
+  animation: status-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes status-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+/* 3. Error States: Failed, Extraction Error, Missing Record */
+.status-badge--failed,
+.status-badge--extraction_error,
+.status-badge--source_record_missing,
+.audit-status-badge--missing {
+  background-color: var(--fn-status-error-bg);
+  color: var(--fn-status-error);
+  border-color: var(--fn-status-error-border);
+}
+
+/* 4. Neutral / Pending States: Pending, Queued, Locked */
+.status-badge--pending,
+.status-badge--queued,
+.status-badge--locked {
+  background-color: var(--fn-status-neutral-bg);
+  color: var(--fn-status-neutral);
+  border-color: var(--fn-status-neutral-border);
+}
+
+/* Statement Type Badges (IS, BS, CF, Bridge, KPI) - subdued dark mode */
+.statement-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--fn-radius-sm);
+  font-size: 10px;
+  font-weight: 600;
+  font-family: var(--fn-font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background-color: var(--fn-bg-elevated);
+  color: var(--fn-text-secondary);
+  border: 1px solid var(--fn-border-subtle);
+}
+
+.statement-badge--income_statement {
+  color: #60a5fa;
+  border-color: rgba(96, 165, 250, 0.3);
+}
+
+.statement-badge--balance_sheet {
+  color: #4ade80;
+  border-color: rgba(74, 222, 128, 0.3);
+}
+
+.statement-badge--cash_flow {
+  color: #c084fc;
+  border-color: rgba(192, 132, 252, 0.3);
+}
+
+.statement-badge--non_gaap_bridge {
+  color: #facc15;
+  border-color: rgba(250, 204, 21, 0.3);
+}
+
+.statement-badge--kpi {
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+/* Form Controls */
+input[type="text"],
+input[type="number"],
+select {
+  background-color: var(--fn-bg-elevated);
+  color: var(--fn-text-primary);
+  border: 1px solid var(--fn-border-subtle);
+  border-radius: var(--fn-radius-md);
+  font-family: var(--fn-font-sans);
+  font-size: var(--fn-text-sm);
+  transition: border-color 0.15s ease;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+select:focus {
+  outline: none;
+  border-color: var(--fn-border-focus);
+}
+
+/* Custom Scrollbar for Dark Theme */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--fn-bg-app);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--fn-border-strong);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--fn-text-muted);
+}

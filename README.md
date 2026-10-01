@@ -140,7 +140,6 @@ cp .env.example .env
 |---|---|---|---|
 | `GROQ_API_KEY` | Yes | None | Groq API key for LLM classification |
 | `ALLOWED_ORIGINS` | No | `http://localhost:5173,http://localhost:5174` | CORS allowed origins (comma-separated) |
-| `ENABLE_NARRATIVE` | No | `true` | Enable/disable narrative text diffing endpoints |
 
 ### 3. Start the backend
 
@@ -212,7 +211,6 @@ footnote/
 │   │   ├── audit_report/            # PDF audit report compilation and rendering
 │   │   ├── drift/                   # Cross-year metric drift detection (NetworkX + SQLite)
 │   │   ├── footnote/                # Debt schedule and lease schedule extraction (Item 8)
-│   │   └── narrative/               # MD&A / risk factor diffing (deferred from pipeline)
 │   ├── data/                        # Runtime data (jobs, extractions, models) — gitignored
 │   └── tests/                       # pytest suite (71 test files, mirrors app/ structure)
 ├── frontend/

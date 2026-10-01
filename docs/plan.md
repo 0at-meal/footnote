@@ -135,7 +135,7 @@ CompanyRecord, filing_year, multi-year generator, company API, drift integration
 ### Phase 5 — Validation & Hardening ⏸ DEFERRED
 Delivers F9 (eval harness). Frozen pending pilot client confirmation.
 
-### Future Phases (require explicit ADR + pilot client validation)
+### Future Phases (require irreversible decision approval in DECISIONS.md + pilot client validation)
 - Phase 6: EDGAR Direct Integration (F11)
 - Phase 7: Narrative Intelligence (F12, F13) — after `narrative/` is validated out of pipeline deferral
 

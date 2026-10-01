@@ -10,6 +10,7 @@ API docs:
 """
 
 import os
+
 os.environ["TORCHDYNAMO_DISABLE"] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 from pathlib import Path
@@ -34,7 +35,6 @@ from app.excel_export.router import router as excel_export_router
 from app.footnote.router import router as footnote_router
 from app.ingestion.company_router import router as company_router
 from app.ingestion.router import router as ingestion_router
-from app.narrative.router import router as narrative_router
 from app.review.router import router as review_router
 
 app = FastAPI(
@@ -70,10 +70,6 @@ app.include_router(excel_export_router)
 app.include_router(review_router)
 app.include_router(footnote_router)
 
-# Narrative text diffing is deferred from primary numeric spreading pipeline (Ticket 14.2)
-ENABLE_NARRATIVE = os.getenv("ENABLE_NARRATIVE", "true").lower() in ("true", "1")
-if ENABLE_NARRATIVE:
-    app.include_router(narrative_router)
 app.include_router(audit_trail_router)
 app.include_router(drift_router)
 app.include_router(audit_report_router)

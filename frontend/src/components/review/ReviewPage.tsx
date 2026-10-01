@@ -6,6 +6,18 @@ import { normalizeBboxToPixels } from '../../lib/pdf/coordinates'
 import DebtScheduleCard from '../DebtScheduleCard'
 import LeaseScheduleCard from '../footnote/LeaseScheduleCard'
 import ConcentrationCard from '../footnote/ConcentrationCard'
+import {
+  ArrowLeft,
+  Check,
+  Edit2,
+  Flag,
+  LockOpen,
+  Download,
+  Table2,
+  AlertCircle,
+  CheckCircle2,
+  Cpu,
+} from 'lucide-react'
 import './ReviewPage.css'
 
 interface Props {
@@ -102,7 +114,6 @@ export default function ReviewPage({
   const [taxonomyPromptItem, setTaxonomyPromptItem] = useState<ReviewItem | null>(null)
 
   // ── Model Generation State (Ticket 4.1) ─────────────────────────────────
-  const [isGeneratingModel, setIsGeneratingModel] = useState<boolean>(false)
   const [generateModelSuccess, setGenerateModelSuccess] = useState<{ totalCells: number; message: string } | null>(null)
   const [generateModelError, setGenerateModelError] = useState<string | null>(null)
   const [parserUsed, setParserUsed] = useState<string | null>(initialParserUsed)
@@ -451,7 +462,6 @@ export default function ReviewPage({
 
   // ── Model Generation Handler (Ticket 4.1) ────────────────────────────────
   async function handleGenerateModel() {
-    setIsGeneratingModel(true)
     setGenerateModelError(null)
     setGenerateModelSuccess(null)
 
@@ -473,56 +483,6 @@ export default function ReviewPage({
       })
     } catch (err) {
       setGenerateModelError(err instanceof Error ? err.message : 'Model generation failed')
-    } finally {
-      setIsGeneratingModel(false)
-    }
-  }
-
-  async function handleApproveBridgeAndGenerateModel() {
-    setIsGeneratingModel(true)
-    setGenerateModelError(null)
-    setGenerateModelSuccess(null)
-    try {
-      // 1. Batch confirm all target candidates (Ticket 4.1)
-      const batchRes = await fetch(`${apiBase}/review/${jobId}/confirm-batch`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          target_candidates_only: true,
-          auto_add_pending_taxonomy: true,
-        }),
-      })
-
-      if (!batchRes.ok) {
-        const detail = await batchRes.json().catch(() => ({ detail: 'Failed to batch approve items' }))
-        throw new Error(detail.detail || `Server error ${batchRes.status}`)
-      }
-
-      const batchData = await batchRes.json()
-      if (batchData.items) {
-        setItems(batchData.items)
-      }
-
-      // 2. Generate model
-      const genRes = await fetch(`${apiBase}/models/${jobId}/generate`, {
-        method: 'POST',
-      })
-
-      if (!genRes.ok) {
-        const detail = await genRes.json().catch(() => ({ detail: 'Model compilation failed' }))
-        throw new Error(detail.detail || `Server error ${genRes.status}`)
-      }
-
-      const genData = await genRes.json()
-      const totalCells = genData.total_cells_generated ?? (batchData.total_locked || 1)
-      setGenerateModelSuccess({
-        totalCells,
-        message: `Reconciliation items approved and Excel model generated (${batchData.total_locked || totalCells} items)`,
-      })
-    } catch (err) {
-      setGenerateModelError(err instanceof Error ? err.message : 'Batch approval & generation failed')
-    } finally {
-      setIsGeneratingModel(false)
     }
   }
 
@@ -533,62 +493,49 @@ export default function ReviewPage({
         <div className="review-header__left">
           <button
             type="button"
-            className="review-header__back-btn"
+            className="review-header__back-btn fn-btn fn-btn--ghost fn-btn--sm"
             onClick={onBack}
             aria-label="Back to queue"
           >
-            ← Back to Queue
+            <ArrowLeft size={14} aria-hidden="true" />
+            <span>← Back to Queue</span>
           </button>
-          <h1 className="review-header__title">
-            Extraction Review
+          <div className="review-header__title-group">
+            <h1 className="review-header__title">
+              Extraction Review
+            </h1>
             {items.length > 0 && (
-              <span className="section-title__badge">{items.length} items</span>
+              <span className="review-header__count-badge">{items.length} items</span>
             )}
+          </div>
+          <div className="review-header__traceability">
+            <div className="review-header__meta" title={`Compliance Job ID: ${jobId}`}>
+              <span>Job:</span> {jobId}
+            </div>
             {parserUsed && (
               <span
-                className="section-title__badge"
-                style={{
-                  backgroundColor: parserUsed === 'docling' ? '#064e3b' : '#1e293b',
-                  color: parserUsed === 'docling' ? '#6ee7b7' : '#94a3b8',
-                  border: `1px solid ${parserUsed === 'docling' ? '#059669' : '#475569'}`,
-                  marginLeft: '0.5rem',
-                  fontSize: '0.75rem',
-                  fontWeight: 500,
-                  textTransform: 'capitalize',
-                }}
+                className="status-badge status-badge--pending"
                 data-testid="parser-engine-badge"
               >
+                <Cpu size={12} aria-hidden="true" />
                 Engine: {parserUsed === 'pymupdf' ? 'PyMuPDF' : parserUsed}
               </span>
             )}
-          </h1>
+          </div>
         </div>
         <div className="review-header__right">
-          <div className="review-header__meta">
-            Job: <span>{jobId}</span>
-          </div>
           {lockedCount > 0 && (
             <button
               type="button"
-              className="review-btn review-btn--edit"
-              disabled={isGeneratingModel}
+              className="fn-btn fn-btn--secondary fn-btn--sm review-btn review-btn--edit"
               onClick={() => void handleGenerateModel()}
               aria-label="Generate Excel Model"
               title="Compile currently locked items into Excel model"
             >
-              {isGeneratingModel ? 'Generating Model...' : `Generate Excel Model (${lockedCount})`}
+              <Download size={13} aria-hidden="true" />
+              <span>{`Generate Excel Model (${lockedCount})`}</span>
             </button>
           )}
-          <button
-            type="button"
-            className="review-btn review-btn--generate"
-            disabled={items.length === 0 || isGeneratingModel}
-            onClick={() => void handleApproveBridgeAndGenerateModel()}
-            aria-label="Approve & Generate Complete Financial Model (6 Tabs)"
-            title="Batch approve all reconciliation items and compile Excel model (1-Click)"
-          >
-            {isGeneratingModel ? 'Approving & Generating Model...' : 'Approve & Generate Complete Financial Model (6 Tabs)'}
-          </button>
         </div>
       </header>
 
@@ -756,20 +703,24 @@ export default function ReviewPage({
               </button>
             )}
           </div>
-          {/* ?? Statement Readiness Indicators (Ticket D.2.2) ?? */}
+          {/* ── Statement Readiness Indicators (Ticket D.2.2) ── */}
           {items.length > 0 && (
-            <div className="review-readiness-chips" style={{ display: 'flex', gap: '8px', padding: '6px 12px', flexWrap: 'wrap', fontSize: '11px', background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
-              <span style={{ color: isNeedsReview ? '#d97706' : '#15803d', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 500 }}>
-                {isNeedsReview ? '?' : '?'} IS: {isNeedsReview ? 'Review needed' : 'Ready'}
+            <div className="review-readiness-chips">
+              <span className={`review-readiness-chip ${isNeedsReview ? 'review-readiness-chip--review' : 'review-readiness-chip--ready'}`}>
+                {isNeedsReview ? <AlertCircle size={12} aria-hidden="true" /> : <CheckCircle2 size={12} aria-hidden="true" />}
+                <span>IS: {isNeedsReview ? 'Review needed' : 'Ready'}</span>
               </span>
-              <span style={{ color: bridgeNeedsReview ? '#d97706' : '#15803d', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 500 }}>
-                {bridgeNeedsReview ? '?' : '?'} Bridge: {bridgeNeedsReview ? 'Review needed' : 'Ready'}
+              <span className={`review-readiness-chip ${bridgeNeedsReview ? 'review-readiness-chip--review' : 'review-readiness-chip--ready'}`}>
+                {bridgeNeedsReview ? <AlertCircle size={12} aria-hidden="true" /> : <CheckCircle2 size={12} aria-hidden="true" />}
+                <span>Bridge: {bridgeNeedsReview ? 'Review needed' : 'Ready'}</span>
               </span>
-              <span style={{ color: cfNeedsReview ? '#d97706' : '#15803d', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 500 }}>
-                {cfNeedsReview ? '?' : '?'} CF: {cfNeedsReview ? 'Review needed' : 'Ready'}
+              <span className={`review-readiness-chip ${cfNeedsReview ? 'review-readiness-chip--review' : 'review-readiness-chip--ready'}`}>
+                {cfNeedsReview ? <AlertCircle size={12} aria-hidden="true" /> : <CheckCircle2 size={12} aria-hidden="true" />}
+                <span>CF: {cfNeedsReview ? 'Review needed' : 'Ready'}</span>
               </span>
-              <span style={{ color: bsNeedsReview ? '#d97706' : '#15803d', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 500 }}>
-                {bsNeedsReview ? '?' : '?'} BS: {bsNeedsReview ? 'Review needed' : 'Ready'}
+              <span className={`review-readiness-chip ${bsNeedsReview ? 'review-readiness-chip--review' : 'review-readiness-chip--ready'}`}>
+                {bsNeedsReview ? <AlertCircle size={12} aria-hidden="true" /> : <CheckCircle2 size={12} aria-hidden="true" />}
+                <span>BS: {bsNeedsReview ? 'Review needed' : 'Ready'}</span>
               </span>
             </div>
           )}
@@ -801,20 +752,6 @@ export default function ReviewPage({
                     : 'No extracted items found.'
                   : 'No reconciliation items found.'}
               </p>
-              {activeTab === 'flagged' && items.length > 0 && (
-                <button
-                  type="button"
-                  className="review-btn review-btn--generate"
-                  disabled={isGeneratingModel}
-                  onClick={() => void handleApproveBridgeAndGenerateModel()}
-                  style={{ width: '100%', marginTop: '0.25rem', padding: '0.5rem 0.75rem', fontSize: '0.85rem' }}
-                  aria-label="Approve & Generate Complete Financial Model (6 Tabs) →"
-                >
-                  {isGeneratingModel
-                    ? 'Approving & Generating Model...'
-                    : 'Approve & Generate Complete Financial Model (6 Tabs) →'}
-                </button>
-              )}
             </div>
           )}
 
@@ -993,7 +930,7 @@ export default function ReviewPage({
                 <div key={groupIdx} className="review-table-group">
                   {group.tableName && (
                     <div className="review-table-header" title={`Table: ${group.tableName}`}>
-                      <span className="review-table-header__icon">📊</span>
+                      <span className="review-table-header__icon"><Table2 size={13} aria-hidden="true" /></span>
                       <span className="review-table-header__title">{group.tableName}</span>
                     </div>
                   )}
@@ -1035,7 +972,7 @@ export default function ReviewPage({
                     )}
 
                     <div className="review-item-card__value-row">
-                      <span className="review-item-card__value">{item.value}</span>
+                      <span className="review-item-card__value fn-tabular tabular-nums">{item.value}</span>
                       <span className="review-item-card__page">Page {item.page}</span>
                     </div>
 
@@ -1085,7 +1022,7 @@ export default function ReviewPage({
                         <div className="review-edit-buttons">
                           <button
                             type="button"
-                            className="review-btn review-btn--edit"
+                            className="fn-btn fn-btn--secondary fn-btn--sm review-btn review-btn--edit"
                             onClick={handleCancelEdit}
                             disabled={isActionPending}
                           >
@@ -1093,7 +1030,7 @@ export default function ReviewPage({
                           </button>
                           <button
                             type="button"
-                            className="review-btn review-btn--confirm"
+                            className="fn-btn fn-btn--primary fn-btn--sm review-btn review-btn--confirm"
                             onClick={() => void handleSaveEdit(item)}
                             disabled={isActionPending}
                           >
@@ -1109,26 +1046,13 @@ export default function ReviewPage({
                       >
                         <button
                           type="button"
-                          className="review-btn review-btn--unlock"
+                          className="fn-btn fn-btn--secondary fn-btn--sm review-btn review-btn--unlock"
                           disabled={isActionPending}
                           onClick={() => void handleUnlock(item)}
                           title="Unlock item to permit edits"
                         >
-                          <svg
-                            width="12"
-                            height="12"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            aria-hidden="true"
-                          >
-                            <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-                            <path d="M7 11V7a5 5 0 0 1 9.9-1" />
-                          </svg>
-                          Unlock
+                          <LockOpen size={12} aria-hidden="true" />
+                          <span>Unlock</span>
                         </button>
                       </div>
                     ) : (
@@ -1139,7 +1063,7 @@ export default function ReviewPage({
                       >
                         <button
                           type="button"
-                          className="review-btn review-btn--confirm"
+                          className="fn-btn fn-btn--secondary fn-btn--sm review-btn review-btn--confirm"
                           disabled={
                             item.status === 'extraction_error' ||
                             isActionPending
@@ -1151,25 +1075,28 @@ export default function ReviewPage({
                               : 'Confirm item and lock'
                           }
                         >
-                          Confirm
+                          <Check size={12} aria-hidden="true" />
+                          <span>Confirm</span>
                         </button>
                         <button
                           type="button"
-                          className="review-btn review-btn--edit"
+                          className="fn-btn fn-btn--secondary fn-btn--sm review-btn review-btn--edit"
                           disabled={isActionPending}
                           onClick={() => handleStartEdit(item)}
                         >
-                          Edit
+                          <Edit2 size={12} aria-hidden="true" />
+                          <span>Edit</span>
                         </button>
                         <button
                           type="button"
-                          className={`review-btn review-btn--flag ${item.status === 'flagged' ? 'review-btn--flagged' : ''}`}
+                          className={`fn-btn fn-btn--secondary fn-btn--sm review-btn review-btn--flag ${item.status === 'flagged' ? 'review-btn--flagged' : ''}`}
                           disabled={isActionPending}
                           onClick={() => void handleFlag(item)}
                         >
-                          {item.status === 'flagged' ? 'Flagged' : 'Flag'}
+                          <Flag size={12} aria-hidden="true" />
+                          <span>{item.status === 'flagged' ? 'Flagged' : 'Flag'}</span>
                         </button>
-                        </div>
+                      </div>
                       )}
                     </div>
                   )

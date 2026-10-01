@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ArrowRight, Loader2 } from 'lucide-react'
 import type { StagedFile } from '../types/job'
 
 interface Props {
@@ -38,16 +39,26 @@ function SubmitBar({ stagedFiles, onSubmit, isSubmitting }: Props) {
       <button
         id="submit-btn"
         type="button"
-        className="submit-bar__btn"
+        className="fn-btn fn-btn--primary fn-btn--lg submit-bar__btn"
         onClick={handleClick}
         disabled={isSubmitting}
         aria-busy={isSubmitting}
       >
-        {isSubmitting
-          ? 'Submitting…'
-          : hasFiles
-            ? `Submit ${count} file${count > 1 ? 's' : ''} for extraction`
-            : 'Submit for extraction'}
+        {isSubmitting ? (
+          <>
+            <Loader2 size={16} className="fn-spinner" aria-hidden="true" />
+            <span>Submitting…</span>
+          </>
+        ) : (
+          <>
+            <span>
+              {hasFiles
+                ? `Submit ${count} file${count > 1 ? 's' : ''} for extraction`
+                : 'Submit for extraction'}
+            </span>
+            <ArrowRight size={16} aria-hidden="true" />
+          </>
+        )}
       </button>
     </div>
   )

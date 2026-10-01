@@ -39,7 +39,7 @@ export default function CompanySelector({
           display: 'block',
           fontSize: '0.8125rem',
           fontWeight: 600,
-          color: '#374151',
+          color: 'var(--fn-text-primary)',
           marginBottom: '0.375rem',
         }}
       >
@@ -66,10 +66,10 @@ export default function CompanySelector({
             flex: 1,
             padding: '0.5rem 0.75rem',
             fontSize: '0.875rem',
-            borderRadius: '0.375rem',
-            border: '1px solid #d1d5db',
-            backgroundColor: '#ffffff',
-            color: '#111827',
+            borderRadius: 'var(--fn-radius-md)',
+            border: '1px solid var(--fn-border-subtle)',
+            backgroundColor: 'var(--fn-bg-elevated)',
+            color: 'var(--fn-text-primary)',
             outline: 'none',
           }}
           aria-label="Assign to Company"
@@ -85,16 +85,7 @@ export default function CompanySelector({
           <button
             type="button"
             onClick={() => onCompanyChange('')}
-            className="company-selector__clear-btn"
-            style={{
-              padding: '0.4rem 0.6rem',
-              fontSize: '0.75rem',
-              color: '#6b7280',
-              backgroundColor: '#f3f4f6',
-              border: '1px solid #d1d5db',
-              borderRadius: '0.375rem',
-              cursor: 'pointer',
-            }}
+            className="fn-btn fn-btn--ghost fn-btn--sm company-selector__clear-btn"
             aria-label="Clear company selection"
           >
             Clear

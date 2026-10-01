@@ -40,6 +40,18 @@
   }
 }
 
+.app-header__logo-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--fn-radius-md);
+  background: var(--fn-accent-bg);
+  border: 1px solid var(--fn-accent-border);
+  color: var(--fn-accent);
+}
+
 .app-header__logo {
   display: flex;
   align-items: center;
@@ -225,9 +237,11 @@
 
 .job-list {
   margin-bottom: 24px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  overflow: hidden;
+  border-radius: var(--fn-radius-lg);
+  border: 1px solid var(--fn-border-subtle);
+  background: var(--fn-bg-surface);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .job-list--empty {

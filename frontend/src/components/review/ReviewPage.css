@@ -1,5 +1,5 @@
 /* ============================================================
-   Extraction Review UI (Feature 5)
+   Extraction Review UI (Dark Theme & Design System)
    ============================================================ */
 
 .review-layout {
@@ -7,7 +7,8 @@
   flex-direction: column;
   height: 100svh;
   overflow: hidden;
-  background: var(--bg);
+  background-color: var(--fn-bg-app);
+  color: var(--fn-text-primary);
 }
 
 /* ── Review Header ────────────────────────────────────────── */
@@ -16,103 +17,114 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 24px;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg);
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--fn-border-subtle);
+  background-color: var(--fn-bg-surface);
   flex-shrink: 0;
   gap: 16px;
+  min-height: 52px;
 }
 
 .review-header__left {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .review-header__back-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-h);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  cursor: pointer;
-  transition: background-color 0.15s, border-color 0.15s;
-
-  &:hover {
-    background: var(--row-hover-bg);
-    border-color: var(--accent-border);
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
+  color: var(--fn-text-secondary);
 }
 
-.review-header__title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-h);
-  margin: 0;
+.review-header__back-btn:hover {
+  color: var(--fn-text-primary);
+  background-color: var(--fn-bg-hover);
+}
+
+.review-header__title-group {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
+.review-header__title {
+  font-size: var(--fn-text-lg);
+  font-weight: 600;
+  color: var(--fn-text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: -0.01em;
+}
+
+.review-header__count-badge {
+  background-color: var(--fn-bg-elevated);
+  border: 1px solid var(--fn-border-subtle);
+  color: var(--fn-text-secondary);
+  font-family: var(--fn-font-mono);
+  font-size: var(--fn-text-xs);
+  padding: 1px 6px;
+  border-radius: var(--fn-radius-sm);
+  font-weight: 500;
+}
+
+/* Traceability metadata group: secondary visual weight */
+.review-header__traceability {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 12px;
+  border-left: 1px solid var(--fn-border-subtle);
+}
+
 .review-header__meta {
-  font-size: 13px;
-  color: var(--text);
-  font-family: var(--mono);
+  font-size: var(--fn-text-xs);
+  color: var(--fn-text-muted);
+  font-family: var(--fn-font-mono);
+  background-color: var(--fn-bg-elevated);
+  padding: 2px 8px;
+  border-radius: var(--fn-radius-sm);
+  border: 1px solid var(--fn-border-subtle);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.review-header__meta span {
+  color: var(--fn-text-secondary);
 }
 
 .review-header__right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
-.review-btn--generate {
-  background: #15803d;
-  color: #ffffff;
-  border-color: #15803d;
-  font-weight: 600;
-  padding: 6px 14px;
-  font-size: 13px;
-
-  &:hover:not(:disabled) {
-    background: #166534;
-    border-color: #166534;
-  }
-}
-
-/* ── Generation Status Banner (Ticket 4.1) ────────────────── */
+/* ── Generation Status Banner ────────────────────────────── */
 
 .review-banner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 24px;
-  font-size: 13px;
-  border-bottom: 1px solid var(--border);
+  padding: 8px 20px;
+  font-size: var(--fn-text-sm);
+  border-bottom: 1px solid var(--fn-border-subtle);
   gap: 16px;
   flex-shrink: 0;
 }
 
 .review-banner--success {
-  background: color-mix(in srgb, #22c55e 12%, var(--bg));
-  border-color: color-mix(in srgb, #22c55e 30%, transparent);
-  color: #15803d;
+  background-color: var(--fn-status-success-bg);
+  border-bottom-color: var(--fn-status-success-border);
+  color: var(--fn-status-success);
 }
 
 .review-banner--error {
-  background: var(--error-bg);
-  border-color: var(--error-border);
-  color: var(--error);
+  background-color: var(--fn-status-error-bg);
+  border-bottom-color: var(--fn-status-error-border);
+  color: var(--fn-status-error);
 }
 
 .review-banner__content {
@@ -125,37 +137,27 @@
 .review-banner__actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .review-banner__link-btn {
   display: inline-flex;
   align-items: center;
-  padding: 4px 10px;
-  border-radius: 4px;
-  font-size: 12px;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: var(--fn-radius-sm);
+  font-size: var(--fn-text-xs);
   font-weight: 500;
-  background: #15803d;
-  color: #ffffff;
+  background-color: var(--fn-bg-surface);
+  color: var(--fn-text-primary);
   text-decoration: none;
-  border: 1px solid #15803d;
+  border: 1px solid var(--fn-border-strong);
   cursor: pointer;
-  transition: background-color 0.15s;
-
-  &:hover {
-    background: #166534;
-  }
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
-.review-banner__link-btn--secondary {
-  background: var(--surface);
-  color: var(--text-h);
-  border-color: var(--border);
-
-  &:hover {
-    background: var(--row-hover-bg);
-    border-color: var(--accent-border);
-  }
+.review-banner__link-btn:hover {
+  background-color: var(--fn-bg-elevated);
 }
 
 .review-banner__close-btn {
@@ -163,15 +165,17 @@
   border: none;
   color: inherit;
   cursor: pointer;
-  padding: 2px 6px;
-  font-size: 14px;
-  opacity: 0.7;
-  border-radius: 4px;
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--fn-radius-sm);
+  opacity: 0.75;
+  transition: opacity 0.15s ease;
+}
 
-  &:hover {
-    opacity: 1;
-    background: rgba(0, 0, 0, 0.05);
-  }
+.review-banner__close-btn:hover {
+  opacity: 1;
 }
 
 /* ── Split Body ───────────────────────────────────────────── */
@@ -180,24 +184,129 @@
   display: flex;
   flex: 1;
   overflow: hidden;
+  position: relative;
 }
 
 /* ── Left Item Sidebar ────────────────────────────────────── */
 
 .review-sidebar {
-  width: 450px;
+  width: 440px;
   min-width: 320px;
   max-width: 520px;
-  border-right: 1px solid var(--border);
+  border-right: 1px solid var(--fn-border-subtle);
   display: flex;
   flex-direction: column;
-  background: var(--surface);
+  background-color: var(--fn-bg-surface);
   flex-shrink: 0;
   height: 100%;
   min-height: 0;
   overflow: hidden;
 }
 
+.review-sidebar__header {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--fn-border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--fn-bg-surface);
+}
+
+.review-sidebar__heading {
+  font-size: var(--fn-text-sm);
+  font-weight: 600;
+  color: var(--fn-text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Scoped Filter Tabs ──────────────────────────────────── */
+
+.review-tabs {
+  display: flex;
+  background-color: var(--fn-bg-surface);
+  border-bottom: 1px solid var(--fn-border-subtle);
+  padding: 0 8px;
+  gap: 2px;
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.review-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 10px;
+  font-size: var(--fn-text-xs);
+  font-weight: 500;
+  color: var(--fn-text-secondary);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s ease, border-color 0.15s ease;
+  font-family: var(--fn-font-sans);
+}
+
+.review-tab:hover {
+  color: var(--fn-text-primary);
+}
+
+.review-tab--active {
+  color: var(--fn-accent);
+  border-bottom-color: var(--fn-accent);
+  font-weight: 600;
+}
+
+.review-tab__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: var(--fn-radius-sm);
+  background-color: var(--fn-bg-elevated);
+  color: var(--fn-text-muted);
+  font-family: var(--fn-font-mono);
+}
+
+.review-tab--active .review-tab__badge {
+  background-color: var(--fn-accent-bg);
+  color: var(--fn-accent);
+}
+
+/* Statement Readiness Status Strip */
+.review-readiness-chips {
+  display: flex;
+  gap: 12px;
+  padding: 6px 14px;
+  flex-wrap: wrap;
+  font-size: var(--fn-text-xs);
+  background-color: var(--fn-bg-elevated);
+  border-bottom: 1px solid var(--fn-border-subtle);
+  font-family: var(--fn-font-mono);
+}
+
+.review-readiness-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+}
+
+.review-readiness-chip--ready {
+  color: var(--fn-status-success);
+}
+
+.review-readiness-chip--review {
+  color: var(--fn-status-warning);
+}
+
+/* Scroll Container */
 .review-sidebar__scroll-container {
   flex: 1;
   min-height: 0;
@@ -205,108 +314,36 @@
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  padding: 8px 12px 24px;
+  padding: 8px 10px 20px;
   gap: 8px;
 }
 
-.review-sidebar__header {
-  padding: 14px 18px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.review-sidebar__heading {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-h);
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* ── Review Tabs (Ticket 3.1) ────────────────────────────── */
-
-.review-tabs {
-  display: flex;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  padding: 4px 8px 0;
-  gap: 4px;
-  overflow-x: auto;
-}
-
-.review-tab {
-  padding: 6px 10px;
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text);
-  background: transparent;
-  border: none;
-  border-bottom: 2px solid transparent;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: color 0.15s, border-color 0.15s;
-}
-
-.review-tab:hover {
-  color: var(--text-h);
-}
-
-.review-tab--active {
-  color: var(--accent);
-  border-bottom-color: var(--accent);
-  font-weight: 600;
-}
-
-.review-tab__badge {
-  display: inline-block;
-  margin-left: 6px;
-  padding: 1px 6px;
-  font-size: 10px;
-  font-weight: 600;
-  border-radius: 10px;
-  background: var(--row-hover-bg);
-  color: var(--text-h);
-}
-
-.review-tab--active .review-tab__badge {
-  background: color-mix(in srgb, var(--accent) 15%, transparent);
-  color: var(--accent);
-}
-
-.review-sidebar__list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-/* ── Table Grouping Headers (Ticket 3.2) ─────────────────── */
+/* ── Table Grouping Headers ──────────────────────────────── */
 
 .review-table-group {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .review-table-header {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 8px;
-  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
-  border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border));
-  border-radius: 6px;
-  font-size: 11px;
+  padding: 5px 8px;
+  background-color: var(--fn-bg-elevated);
+  border: 1px solid var(--fn-border-subtle);
+  border-radius: var(--fn-radius-sm);
+  font-size: var(--fn-text-xs);
   font-weight: 600;
-  color: var(--text-h);
+  color: var(--fn-text-secondary);
 }
 
 .review-table-header__icon {
-  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--fn-text-muted);
 }
 
 .review-table-header__title {
@@ -321,32 +358,35 @@
   gap: 6px;
 }
 
+/* ── Item Card ────────────────────────────────────────────── */
+
 .review-item-card {
-  padding: 12px 14px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--bg);
+  padding: 10px 12px;
+  border-radius: var(--fn-radius-md);
+  border: 1px solid var(--fn-border-subtle);
+  background-color: var(--fn-bg-surface);
   cursor: pointer;
-  transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
   text-align: left;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-}
-
-.review-item-card--candidate {
-  border-left: 3px solid #16a34a;
+  gap: 5px;
+  position: relative;
 }
 
 .review-item-card:hover {
-  border-color: var(--accent-border);
-  background: var(--row-hover-bg);
+  border-color: var(--fn-border-strong);
+  background-color: var(--fn-bg-hover);
+}
+
+.review-item-card--candidate {
+  border-left: 3px solid var(--fn-status-success);
 }
 
 .review-item-card--selected {
-  border-color: var(--accent);
-  background: var(--accent-bg);
-  box-shadow: 0 0 0 1px var(--accent);
+  border-color: var(--fn-accent);
+  background-color: var(--fn-bg-active);
+  box-shadow: 0 0 0 1px var(--fn-accent);
 }
 
 .review-item-card__top {
@@ -357,17 +397,17 @@
 }
 
 .review-item-card__label {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-h);
-  line-height: 1.3;
+  font-size: var(--fn-text-sm);
+  font-weight: 500;
+  color: var(--fn-text-primary);
+  line-height: 1.35;
+  word-break: break-word;
 }
 
 .review-item-card__normalized {
-  font-size: 11px;
-  color: var(--accent);
-  font-weight: 500;
-  margin-top: 1px;
+  font-size: var(--fn-text-xs);
+  color: var(--fn-text-muted);
+  font-family: var(--fn-font-mono);
 }
 
 .review-item-card__value-row {
@@ -375,120 +415,83 @@
   align-items: baseline;
   justify-content: space-between;
   gap: 8px;
+  margin-top: 2px;
 }
 
 .review-item-card__value {
-  font-family: var(--mono);
-  font-size: 14px;
+  font-family: var(--fn-font-mono);
+  font-size: var(--fn-text-base);
   font-weight: 600;
-  color: var(--text-h);
+  color: var(--fn-text-primary);
+  font-variant-numeric: tabular-nums;
 }
 
 .review-item-card__page {
-  font-size: 11px;
-  color: var(--text);
-  background: color-mix(in srgb, var(--text) 10%, transparent);
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-family: var(--mono);
+  font-size: var(--fn-text-xs);
+  color: var(--fn-text-muted);
+  background-color: var(--fn-bg-elevated);
+  padding: 1px 6px;
+  border-radius: var(--fn-radius-sm);
+  font-family: var(--fn-font-mono);
 }
 
 .review-item-card__error-detail {
-  font-size: 11px;
-  color: var(--error);
-  background: var(--error-bg);
-  border: 1px solid var(--error-border);
-  border-radius: 4px;
+  font-size: var(--fn-text-xs);
+  color: var(--fn-status-error);
+  background-color: var(--fn-status-error-bg);
+  border: 1px solid var(--fn-status-error-border);
+  border-radius: var(--fn-radius-sm);
   padding: 4px 8px;
 }
 
-/* ── Item Actions (Feature 5 Step 3) ──────────────────────── */
+/* ── Item Actions ─────────────────────────────────────────── */
 
 .review-item-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 6px;
-  padding-top: 8px;
-  border-top: 1px solid var(--border);
+  gap: 6px;
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid var(--fn-border-subtle);
   flex-wrap: wrap;
 }
 
-.review-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: 5px;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  border: 1px solid transparent;
-  transition: background-color 0.15s, border-color 0.15s, opacity 0.15s;
-
-  &:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 1px;
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-}
-
+/* Status variants for buttons */
 .review-btn--confirm {
-  background: color-mix(in srgb, #22c55e 15%, transparent);
-  color: #16a34a;
-  border-color: color-mix(in srgb, #22c55e 30%, transparent);
-
-  &:hover:not(:disabled) {
-    background: color-mix(in srgb, #22c55e 25%, transparent);
-  }
+  color: var(--fn-status-success);
+  border-color: var(--fn-status-success-border);
+  background-color: var(--fn-status-success-bg);
 }
 
-.review-btn--edit {
-  background: var(--surface);
-  color: var(--text-h);
-  border-color: var(--border);
-
-  &:hover:not(:disabled) {
-    background: var(--row-hover-bg);
-    border-color: var(--accent-border);
-  }
+.review-btn--confirm:hover:not(:disabled) {
+  background-color: rgba(34, 197, 94, 0.22);
 }
 
 .review-btn--flag {
-  background: color-mix(in srgb, #f59e0b 15%, transparent);
-  color: #d97706;
-  border-color: color-mix(in srgb, #f59e0b 30%, transparent);
+  color: var(--fn-status-warning);
+  border-color: var(--fn-status-warning-border);
+  background-color: var(--fn-status-warning-bg);
+}
 
-  &:hover:not(:disabled) {
-    background: color-mix(in srgb, #f59e0b 25%, transparent);
-  }
+.review-btn--flag:hover:not(:disabled) {
+  background-color: rgba(245, 158, 11, 0.22);
 }
 
 .review-btn--flagged {
-  background: #f59e0b;
-  color: #ffffff;
-  border-color: #d97706;
+  background-color: var(--fn-status-warning);
+  color: #000000;
+  border-color: var(--fn-status-warning);
+  font-weight: 600;
 }
 
 .review-btn--unlock {
-  background: var(--surface);
-  color: var(--accent);
-  border-color: var(--accent-border);
-
-  &:hover:not(:disabled) {
-    background: var(--accent-bg);
-    border-color: var(--accent);
-  }
+  color: var(--fn-text-secondary);
+  border-color: var(--fn-border-subtle);
 }
 
-.status-badge--locked {
-  background: color-mix(in srgb, #6366f1 15%, transparent);
-  color: #4f46e5;
+.review-btn--unlock:hover:not(:disabled) {
+  background-color: var(--fn-bg-hover);
+  color: var(--fn-text-primary);
 }
 
 /* ── Inline Edit Form ─────────────────────────────────────── */
@@ -498,10 +501,10 @@
   flex-direction: column;
   gap: 8px;
   margin-top: 6px;
-  padding: 8px;
-  background: var(--surface);
-  border: 1px solid var(--accent-border);
-  border-radius: 6px;
+  padding: 10px;
+  background-color: var(--fn-bg-elevated);
+  border: 1px solid var(--fn-accent-border);
+  border-radius: var(--fn-radius-md);
 }
 
 .review-edit-field {
@@ -511,25 +514,25 @@
 }
 
 .review-edit-label {
-  font-size: 11px;
+  font-size: var(--fn-text-xs);
   font-weight: 600;
-  color: var(--text);
+  color: var(--fn-text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.04em;
 }
 
 .review-edit-input {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  background-color: var(--fn-bg-surface);
+  border: 1px solid var(--fn-border-subtle);
+  border-radius: var(--fn-radius-sm);
   padding: 5px 8px;
-  font-size: 13px;
-  color: var(--text-h);
+  font-size: var(--fn-text-sm);
+  color: var(--fn-text-primary);
+}
 
-  &:focus {
-    outline: none;
-    border-color: var(--accent);
-  }
+.review-edit-input:focus {
+  outline: none;
+  border-color: var(--fn-accent);
 }
 
 .review-edit-buttons {
@@ -540,9 +543,20 @@
 }
 
 .review-edit-error {
-  font-size: 11px;
-  color: var(--error);
+  font-size: var(--fn-text-xs);
+  color: var(--fn-status-error);
   margin: 0;
+}
+
+/* ── Bulk Taxonomy Panel ──────────────────────────────────── */
+
+.review-bulk-taxonomy-panel {
+  background-color: var(--fn-bg-elevated);
+  border: 1px solid var(--fn-border-strong);
+  border-radius: var(--fn-radius-md);
+  padding: 10px 12px;
+  margin: 8px 10px;
+  font-size: var(--fn-text-sm);
 }
 
 /* ── Modal Dialog ─────────────────────────────────────────── */
@@ -550,21 +564,22 @@
 .review-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.7);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  backdrop-filter: blur(2px);
 }
 
 .review-modal {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  background-color: var(--fn-bg-surface);
+  border: 1px solid var(--fn-border-strong);
+  border-radius: var(--fn-radius-lg);
   padding: 24px;
   max-width: 440px;
   width: 90%;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -572,22 +587,22 @@
 
 .review-modal__title {
   margin: 0;
-  font-size: 16px;
+  font-size: var(--fn-text-lg);
   font-weight: 600;
-  color: var(--text-h);
+  color: var(--fn-text-primary);
 }
 
 .review-modal__body {
   margin: 0;
-  font-size: 13px;
-  color: var(--text);
-  line-height: 1.4;
+  font-size: var(--fn-text-sm);
+  color: var(--fn-text-secondary);
+  line-height: 1.5;
 }
 
 .review-modal__footer {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
+  gap: 8px;
   margin-top: 8px;
 }
 
@@ -597,7 +612,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: #2b2e38;
+  background-color: var(--fn-bg-app);
   overflow: hidden;
 }
 
@@ -606,16 +621,18 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 18px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  font-size: 13px;
-  color: var(--text-h);
+  background-color: var(--fn-bg-surface);
+  border-bottom: 1px solid var(--fn-border-subtle);
+  font-size: var(--fn-text-sm);
+  color: var(--fn-text-primary);
   flex-shrink: 0;
 }
 
 .review-viewer__page-info {
   font-weight: 500;
-  font-family: var(--mono);
+  font-family: var(--fn-font-mono);
+  font-size: var(--fn-text-xs);
+  color: var(--fn-text-secondary);
 }
 
 .review-viewer__stage {
@@ -625,21 +642,22 @@
   justify-content: center;
   align-items: flex-start;
   padding: 24px;
+  background-color: #08090d;
 }
 
 .review-viewer__canvas-wrap {
   position: relative;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
-  border-radius: 4px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+  border-radius: var(--fn-radius-sm);
   background: #ffffff;
 }
 
 .review-viewer__canvas {
   display: block;
-  border-radius: 4px;
+  border-radius: var(--fn-radius-sm);
 }
 
-/* ── Bounding Box Overlay (Feature 5 Step 2) ──────────────── */
+/* ── Bounding Box Overlay ─────────────────────────────────── */
 
 .review-viewer__overlay {
   position: absolute;
@@ -656,10 +674,7 @@
   pointer-events: auto;
   cursor: pointer;
   border-radius: 2px;
-  transition:
-    border-color 0.15s ease,
-    background-color 0.15s ease,
-    box-shadow 0.15s ease;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .review-bbox--inactive {
@@ -675,37 +690,26 @@
 }
 
 .review-bbox--active {
-  border: 2px solid var(--accent);
-  background-color: color-mix(in srgb, var(--accent) 24%, transparent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 40%, transparent);
+  border: 2px solid var(--fn-accent);
+  background-color: var(--fn-accent-bg);
+  box-shadow: 0 0 0 2px var(--fn-accent-border);
   z-index: 10;
 }
 
 .review-bbox--extraction_error {
-  border-color: var(--error);
-  background-color: var(--error-bg);
+  border-color: var(--fn-status-error);
+  background-color: var(--fn-status-error-bg);
 }
 
 .review-viewer__error {
   margin: auto;
   max-width: 480px;
-  background: var(--error-bg);
-  border: 1px solid var(--error-border);
-  border-radius: 8px;
+  background-color: var(--fn-status-error-bg);
+  border: 1px solid var(--fn-status-error-border);
+  border-radius: var(--fn-radius-lg);
   padding: 24px;
   text-align: center;
-  color: var(--error);
-}
-
-.review-viewer__error h3 {
-  margin: 0 0 8px;
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.review-viewer__error p {
-  margin: 0;
-  font-size: 13px;
+  color: var(--fn-status-error);
 }
 
 .review-viewer__loading {
@@ -714,65 +718,19 @@
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  color: #cbd5e1;
-  font-size: 14px;
+  color: var(--fn-text-secondary);
+  font-size: var(--fn-text-sm);
 }
 
 .review-viewer__spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid rgba(255, 255, 255, 0.2);
-  border-top-color: var(--accent);
+  width: 28px;
+  height: 28px;
+  border: 2.5px solid var(--fn-border-strong);
+  border-top-color: var(--fn-accent);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* ?? Statement Badges (Ticket D.1.2) ?????????????????????????? */
-
-.statement-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 1px 6px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  border: 1px solid transparent;
-}
-
-.statement-badge--income_statement {
-  background: #dbeafe;
-  color: #1d4ed8;
-  border-color: #bfdbfe;
-}
-
-.statement-badge--balance_sheet {
-  background: #d1fae5;
-  color: #065f46;
-  border-color: #a7f3d0;
-}
-
-.statement-badge--cash_flow {
-  background: #ede9fe;
-  color: #6d28d9;
-  border-color: #ddd6fe;
-}
-
-.statement-badge--non_gaap_bridge {
-  background: #fef3c7;
-  color: #92400e;
-  border-color: #fde68a;
-}
-
-.statement-badge--kpi {
-  background: #cffafe;
-  color: #0e7490;
-  border-color: #a5f3fc;
+  to { transform: rotate(360deg); }
 }

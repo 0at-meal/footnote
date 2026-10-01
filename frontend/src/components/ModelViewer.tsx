@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ArrowLeft, Download } from 'lucide-react'
 import './ModelViewer.css'
 
 export type ModelTab =
@@ -39,11 +40,12 @@ export default function ModelViewer({
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <button
             type="button"
-            className="review-header__back-btn"
+            className="fn-btn fn-btn--ghost fn-btn--sm review-header__back-btn"
             onClick={onBack}
             aria-label="Back"
           >
-            ? Back
+            <ArrowLeft size={14} aria-hidden="true" />
+            <span>Back</span>
           </button>
           <h1 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-h)' }}>
             {companyName} ? 6-Tab Financial Model
@@ -52,17 +54,12 @@ export default function ModelViewer({
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <a
             href={`${apiBase}/models/${jobId}/download`}
-            className="review-btn--generate"
-            style={{
-              textDecoration: 'none',
-              display: 'inline-flex',
-              alignItems: 'center',
-              borderRadius: '6px',
-            }}
+            className="fn-btn fn-btn--primary fn-btn--md review-btn--generate"
             download={`${jobId}_model.xlsx`}
             aria-label="Download Excel Model"
           >
-            Download .xlsx
+            <Download size={14} aria-hidden="true" />
+            <span>Download .xlsx</span>
           </a>
         </div>
       </header>
@@ -83,14 +80,14 @@ export default function ModelViewer({
       </nav>
 
       <main className="model-viewer__content">
-        <div style={{ padding: '12px', background: '#ffffff', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-          <h2 style={{ fontSize: '1rem', fontWeight: 600, color: '#1e293b', marginTop: 0, marginBottom: '12px' }}>
+        <div style={{ padding: '12px', background: 'var(--fn-bg-surface)', borderRadius: 'var(--fn-radius-lg)', border: '1px solid var(--fn-border-subtle)' }}>
+          <h2 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--fn-text-primary)', marginTop: 0, marginBottom: '12px' }}>
             {TABS.find((t) => t.id === activeTab)?.label}
           </h2>
-          <p style={{ color: '#64748b', fontSize: '0.875rem' }}>
+          <p style={{ color: 'var(--fn-text-muted)', fontSize: '0.875rem' }}>
             Interactive 6-tab financial statement model preview with live Excel formulas and provenance.
           </p>
-          <div style={{ display: 'flex', gap: '16px', fontSize: '0.75rem', marginTop: '12px', padding: '8px 12px', background: '#f8fafc', borderRadius: '6px' }}>
+          <div style={{ display: 'flex', gap: '16px', fontSize: '0.75rem', marginTop: '12px', padding: '8px 12px', background: 'var(--fn-bg-elevated)', borderRadius: 'var(--fn-radius-md)', border: '1px solid var(--fn-border-subtle)' }}>
             <span style={{ color: '#0000ff', fontWeight: 600 }}>? Blue: Hardcoded Input</span>
             <span style={{ color: '#15803d', fontWeight: 600 }}>? Green: Cross-Sheet Link</span>
             <span style={{ color: '#000000', fontWeight: 600 }}>? Black: Excel Formula</span>

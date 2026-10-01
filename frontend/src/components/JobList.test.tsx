@@ -167,7 +167,7 @@ describe('JobList Component', () => {
     )
 
     expect(html).toContain('title="No auto-accepted or confirmed records available"')
-    expect(html).toContain('ⓘ')
+    expect(html).toContain('lucide-info')
     expect(html).toContain('Awaiting Review')
   })
 

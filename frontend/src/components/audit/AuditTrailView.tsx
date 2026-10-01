@@ -10,6 +10,7 @@ import { loadPdf, renderPage, PDF_RENDER_SCALE, type PDFDocumentProxy } from '..
 import { normalizeBboxToPixels, type PixelBoundingBox } from '../../lib/pdf/coordinates'
 import { computeChainRollup } from '../../lib/pdf/audit_status'
 import { buildAuditReportDownloadUrl, buildAuditReportFilename } from '../../lib/audit_report'
+import { ArrowLeft, RotateCw, Download, Eye } from 'lucide-react'
 import './AuditTrailView.css'
 
 interface Props {
@@ -347,11 +348,12 @@ export default function AuditTrailView({
         <div className="audit-header__left">
           <button
             type="button"
-            className="audit-header__back-btn"
+            className="audit-header__back-btn fn-btn fn-btn--ghost fn-btn--sm"
             onClick={onBack}
             aria-label="Back to dashboard"
           >
-            ← Back
+            <ArrowLeft size={14} aria-hidden="true" />
+            <span>← Back</span>
           </button>
           <div>
             <h1 className="audit-header__title">Audit Trail &amp; Source Chain Lookup</h1>
@@ -362,87 +364,39 @@ export default function AuditTrailView({
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <button
               type="button"
-              className="audit-header__refresh-btn"
+              className="audit-header__refresh-btn fn-btn fn-btn--secondary fn-btn--sm"
               onClick={() => void loadProvenance()}
               disabled={isLoadingProvenance}
-              style={{
-                backgroundColor: 'transparent',
-                borderColor: '#475569',
-                color: '#94a3b8',
-                padding: '0.4rem 0.6rem',
-                borderRadius: '4px',
-                fontSize: '0.85rem',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.25rem',
-                cursor: isLoadingProvenance ? 'wait' : 'pointer',
-              }}
               title="Refresh audit trail & provenance data"
               aria-label="Refresh audit trail data"
             >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{
-                  animation: isLoadingProvenance ? 'spin 1s linear infinite' : 'none',
-                }}
+              <RotateCw
+                size={13}
+                className={isLoadingProvenance ? 'fn-spinner' : ''}
                 aria-hidden="true"
-              >
-                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
-              </svg>
-              {isLoadingProvenance ? 'Refreshing...' : 'Refresh'}
+              />
+              <span>{isLoadingProvenance ? 'Refreshing...' : 'Refresh'}</span>
             </button>
             {canDownload ? (
               <a
                 href={buildAuditReportDownloadUrl(apiBase, jobId)}
                 download={buildAuditReportFilename(jobId)}
-                className="audit-header__export-btn"
-                style={{
-                  backgroundColor: '#0f766e',
-                  borderColor: '#0f766e',
-                  color: '#ffffff',
-                  padding: '0.4rem 0.8rem',
-                  borderRadius: '4px',
-                  fontSize: '0.85rem',
-                  fontWeight: 500,
-                  textDecoration: 'none',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.375rem',
-                }}
+                className="audit-header__export-btn fn-btn fn-btn--secondary fn-btn--sm"
                 aria-label={`Export Audit Report PDF for ${jobId}`}
               >
-                Export Audit PDF
+                <Download size={13} aria-hidden="true" />
+                <span>Export Audit PDF</span>
               </a>
             ) : (
               <button
                 type="button"
                 disabled
-                className="audit-header__export-btn audit-header__export-btn--disabled"
-                style={{
-                  backgroundColor: '#334155',
-                  borderColor: '#475569',
-                  color: '#94a3b8',
-                  padding: '0.4rem 0.8rem',
-                  borderRadius: '4px',
-                  fontSize: '0.85rem',
-                  fontWeight: 500,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.375rem',
-                  cursor: 'not-allowed',
-                  opacity: 0.7,
-                }}
+                className="audit-header__export-btn audit-header__export-btn--disabled fn-btn fn-btn--secondary fn-btn--sm"
                 title="Generate a model first: go to Review and click 'Approve & Generate'"
                 aria-label="Export Audit PDF (disabled: generate a model first)"
               >
-                Export Audit PDF
+                <Download size={13} aria-hidden="true" />
+                <span>Export Audit PDF</span>
               </button>
             )}
           </div>
@@ -485,11 +439,11 @@ export default function AuditTrailView({
           {onReview && (
             <button
               type="button"
-              className="audit-empty-banner__action-btn"
+              className="audit-empty-banner__action-btn fn-btn fn-btn--primary fn-btn--sm"
               onClick={() => onReview(jobId)}
               aria-label="Go to Review → Approve & Generate"
             >
-              Go to Review → Approve &amp; Generate
+              <span>Go to Review → Approve &amp; Generate</span>
             </button>
           )}
         </div>
@@ -533,7 +487,7 @@ export default function AuditTrailView({
                   aria-label="Cell Coordinate"
                 />
 
-                <button type="submit" className="audit-query-btn" disabled={isLoadingChain}>
+                <button type="submit" className="audit-query-btn fn-btn fn-btn--primary fn-btn--sm" disabled={isLoadingChain}>
                   {isLoadingChain ? 'Resolving...' : 'Lookup'}
                 </button>
               </div>
@@ -590,7 +544,7 @@ export default function AuditTrailView({
                 />
                 <button
                   type="submit"
-                  className="audit-query-btn"
+                  className="audit-query-btn fn-btn fn-btn--secondary fn-btn--sm"
                   style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
                 >
                   Find ID
@@ -605,8 +559,8 @@ export default function AuditTrailView({
               style={{
                 padding: '1.25rem',
                 borderRadius: '8px',
-                background: 'var(--surface, #1e293b)',
-                border: '1px solid #334155',
+                background: 'var(--fn-bg-surface)',
+                border: '1px solid var(--fn-border-subtle)',
                 marginTop: '1rem',
               }}
             >
@@ -626,7 +580,7 @@ export default function AuditTrailView({
                   <line x1="12" y1="8" x2="12" y2="12" />
                   <line x1="12" y1="16" x2="12.01" y2="16" />
                 </svg>
-                <h3 style={{ margin: 0, fontSize: '1rem', color: '#f8fafc' }}>
+                <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--fn-text-primary)' }}>
                   Model Provenance Not Available
                 </h3>
               </div>
@@ -661,39 +615,22 @@ export default function AuditTrailView({
                 {onReview && (
                   <button
                     type="button"
-                    className="audit-empty-banner__action-btn"
+                    className="audit-empty-banner__action-btn fn-btn fn-btn--primary fn-btn--sm"
                     onClick={() => onReview(jobId)}
                     aria-label="Go to Review Tab →"
-                    style={{
-                      backgroundColor: '#2563eb',
-                      borderColor: '#2563eb',
-                      color: '#ffffff',
-                      padding: '0.4rem 0.8rem',
-                      borderRadius: '4px',
-                      fontSize: '0.85rem',
-                      fontWeight: 500,
-                      cursor: 'pointer',
-                    }}
                   >
-                    Go to Review Tab →
+                    <span>Go to Review Tab →</span>
                   </button>
                 )}
                 <button
                   type="button"
+                  className="fn-btn fn-btn--ghost fn-btn--sm"
                   onClick={() => void loadProvenance()}
                   disabled={isLoadingProvenance}
-                  style={{
-                    backgroundColor: 'transparent',
-                    border: 'none',
-                    color: '#38bdf8',
-                    textDecoration: 'underline',
-                    fontSize: '0.85rem',
-                    cursor: 'pointer',
-                    padding: '0.4rem 0',
-                  }}
                   aria-label="Check again"
                 >
-                  Check again
+                  <RotateCw size={12} aria-hidden="true" />
+                  <span>Check again</span>
                 </button>
               </div>
             </div>
@@ -737,7 +674,7 @@ export default function AuditTrailView({
                     )}
                     <button
                       type="button"
-                      className="audit-refresh-btn"
+                      className="audit-refresh-btn fn-btn fn-btn--ghost fn-btn--sm"
                       onClick={() => {
                         if (chain.sheet_name && chain.cell_coord) {
                           void resolveByCell(chain.sheet_name, chain.cell_coord)
@@ -748,7 +685,7 @@ export default function AuditTrailView({
                       title="Refresh live review status (EC-10)"
                       aria-label="Refresh live review status"
                     >
-                      ↻
+                      <RotateCw size={12} aria-hidden="true" />
                     </button>
                   </div>
                 </div>
@@ -792,7 +729,7 @@ export default function AuditTrailView({
                         </div>
 
                         <div className="audit-component-card__value-row">
-                          <span className="audit-component-card__value">{comp.value}</span>
+                          <span className="audit-component-card__value fn-tabular tabular-nums">{comp.value}</span>
                           <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
                             Page {comp.page}
                           </span>
@@ -811,7 +748,7 @@ export default function AuditTrailView({
                         <div className="audit-component-card__actions">
                           <button
                             type="button"
-                            className={`audit-pdf-link-btn ${
+                            className={`audit-pdf-link-btn fn-btn fn-btn--secondary fn-btn--sm ${
                               isSelected ? 'audit-pdf-link-btn--active' : ''
                             }`}
                             onClick={() => {
@@ -820,21 +757,8 @@ export default function AuditTrailView({
                             }}
                             aria-label={`View ${comp.label} in PDF page ${comp.page}`}
                           >
-                            <svg
-                              width="14"
-                              height="14"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              aria-hidden="true"
-                            >
-                              <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                              <circle cx="12" cy="12" r="3" />
-                            </svg>
-                            View in PDF (p. {comp.page})
+                            <Eye size={12} aria-hidden="true" />
+                            <span>View in PDF (p. {comp.page})</span>
                           </button>
                         </div>
                       </article>

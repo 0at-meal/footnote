@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { PieChart, Check, AlertTriangle } from 'lucide-react'
 
 export interface CustomerConcentration {
   customer_name: string
@@ -39,8 +40,6 @@ export default function ConcentrationCard({
 
   useEffect(() => {
     let isMounted = true
-    setIsLoading(true)
-    setError(null)
 
     fetch(`${apiBase}/footnote/${jobId}/concentration`)
       .then((res) => {
@@ -149,8 +148,8 @@ export default function ConcentrationCard({
     <div
       className="concentration-card"
       style={{
-        background: 'var(--surface-raised, #1e293b)',
-        border: summary.has_high_concentration ? '1px solid #f59e0b' : '1px solid #334155',
+        background: 'var(--fn-bg-surface)',
+        border: summary.has_high_concentration ? '1px solid var(--fn-status-warning-border)' : '1px solid var(--fn-border-subtle)',
         borderRadius: '8px',
         padding: '1.25rem',
         marginTop: '1rem',
@@ -170,21 +169,12 @@ export default function ConcentrationCard({
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 600, color: '#f8fafc' }}>
-              🎯 Customer & Supplier Concentration (ASC 280)
+              <PieChart size={16} aria-hidden="true" /> Customer & Supplier Concentration (ASC 280)
             </h3>
             {summary.has_high_concentration && (
-              <span
-                style={{
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  padding: '2px 6px',
-                  borderRadius: '4px',
-                  backgroundColor: 'rgba(245, 158, 11, 0.2)',
-                  color: '#fbbf24',
-                  border: '1px solid #f59e0b',
-                }}
-              >
-                ⚠️ High Concentration (&ge;15%)
+              <span className="status-badge status-badge--flagged">
+                <AlertTriangle size={11} aria-hidden="true" />
+                <span>High Concentration (&ge;15%)</span>
               </span>
             )}
           </div>
@@ -195,12 +185,12 @@ export default function ConcentrationCard({
 
         <button
           type="button"
-          className="review-btn review-btn--confirm"
+          className="fn-btn fn-btn--primary fn-btn--sm review-btn review-btn--confirm"
           disabled={isSaving || isConfirmed}
           onClick={() => void handleConfirm()}
-          style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem' }}
         >
-          {isConfirmed ? '✓ Confirmed' : isSaving ? 'Saving...' : 'Confirm Concentration'}
+          <Check size={12} aria-hidden="true" />
+          <span>{isConfirmed ? '✓ Confirmed' : isSaving ? 'Saving...' : 'Confirm Concentration'}</span>
         </button>
       </div>
 

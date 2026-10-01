@@ -1,6 +1,8 @@
 import type { StagedFile, TargetMetric, JobRecord, JobStatus } from '../types/job'
 import { WORKFLOW_PACK_LABELS } from '../types/job'
 import { buildAuditReportDownloadUrl, buildAuditReportFilename, canDownloadAuditReport } from '../lib/audit_report'
+import { Download, FileCheck, History, Trash2, FileText, Info } from 'lucide-react'
+import { formatFiscalPeriod } from '../lib/fiscal_period'
 
 interface Props {
   stagedFiles: StagedFile[]
@@ -53,7 +55,7 @@ function StatusBadge({
         style={{ cursor: 'help', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
       >
         Awaiting Review
-        <span style={{ fontSize: '0.75rem', opacity: 0.8 }} aria-hidden="true">ⓘ</span>
+        <Info size={12} style={{ opacity: 0.8 }} aria-hidden="true" />
       </span>
     )
   }
@@ -102,7 +104,6 @@ function JobList({
   stagedFiles,
   persistedJobs,
   apiBase = 'http://localhost:8000',
-  onMetricChange,
   onYearChange,
   onRemove,
   onReview,
@@ -155,7 +156,7 @@ function JobList({
                 <PdfIcon />
                 <span title={sf.filename}>{sf.filename}</span>
               </td>
-              <td className="job-table__size">{formatBytes(sf.file_size_bytes)}</td>
+              <td className="job-table__size fn-tabular tabular-nums">{formatBytes(sf.file_size_bytes)}</td>
               <td className="job-table__metric">
                 <span
                   style={{
@@ -165,9 +166,9 @@ function JobList({
                     borderRadius: '4px',
                     fontSize: '0.75rem',
                     fontWeight: 600,
-                    background: 'rgba(37, 99, 235, 0.15)',
-                    color: '#38bdf8',
-                    border: '1px solid rgba(56, 189, 248, 0.3)',
+                    background: 'var(--fn-accent-bg)',
+                    color: 'var(--fn-accent-text)',
+                    border: '1px solid var(--fn-accent-border)',
                   }}
                 >
                   {WORKFLOW_PACK_LABELS[sf.workflow_pack ?? 'non_gaap_bridge']}
@@ -187,13 +188,15 @@ function JobList({
                     )
                   }
                   aria-label={`Fiscal year for ${sf.filename}`}
-                  className="job-table__year-input"
+                  className="job-table__year-input fn-tabular tabular-nums"
                   style={{
                     width: '85px',
                     padding: '0.3rem 0.5rem',
                     fontSize: '0.8125rem',
                     borderRadius: '0.25rem',
-                    border: '1px solid #d1d5db',
+                    border: '1px solid var(--fn-border-subtle)',
+                    background: 'var(--fn-bg-elevated)',
+                    color: 'var(--fn-text-primary)',
                   }}
                 />
               </td>
@@ -203,22 +206,11 @@ function JobList({
               <td className="job-table__remove">
                 <button
                   type="button"
-                  className="job-table__remove-btn"
+                  className="fn-btn fn-btn--destructive fn-btn--sm job-table__remove-btn"
                   onClick={() => onRemove(sf.id)}
                   aria-label={`Remove ${sf.filename}`}
                 >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M18 6 6 18M6 6l12 12" />
-                  </svg>
+                  <Trash2 size={14} aria-hidden="true" />
                 </button>
               </td>
             </tr>
@@ -231,7 +223,7 @@ function JobList({
                 <PdfIcon />
                 <span title={job.filename}>{job.filename}</span>
               </td>
-              <td className="job-table__size">{formatBytes(job.file_size_bytes)}</td>
+              <td className="job-table__size fn-tabular tabular-nums">{formatBytes(job.file_size_bytes)}</td>
               <td className="job-table__metric">
                 <span
                   style={{
@@ -241,17 +233,17 @@ function JobList({
                     borderRadius: '4px',
                     fontSize: '0.75rem',
                     fontWeight: 600,
-                    background: 'rgba(100, 116, 139, 0.15)',
-                    color: '#94a3b8',
-                    border: '1px solid rgba(148, 163, 184, 0.25)',
+                    background: 'var(--fn-bg-elevated)',
+                    color: 'var(--fn-text-muted)',
+                    border: '1px solid var(--fn-border-subtle)',
                   }}
                 >
                   {WORKFLOW_PACK_LABELS[job.workflow_pack ?? 'non_gaap_bridge']}
                 </span>
               </td>
               <td className="job-table__year">
-                <span className="job-table__year-locked">
-                  {job.filing_year ? `FY${job.filing_year}` : '—'}
+                <span className="job-table__year-locked fn-tabular tabular-nums">
+                  {formatFiscalPeriod(job.filename, job.filing_year)}
                 </span>
               </td>
               <td className="job-table__status">
@@ -261,63 +253,50 @@ function JobList({
                   modelSkipReason={job.model_skip_reason}
                 />
               </td>
-              <td className="job-table__remove">
+              <td className="job-table__remove" style={{ whiteSpace: 'nowrap' }}>
                 <div style={{ display: 'flex', gap: '0.375rem', justifyContent: 'flex-end', alignItems: 'center' }}>
                   {job.status === 'done' && job.model_ready && (
                     <a
                       href={`${apiBase}/models/${job.job_id}/download`}
                       download={`${job.job_id}_model.xlsx`}
-                      className="job-table__review-btn"
-                      style={{
-                        backgroundColor: '#15803d',
-                        borderColor: '#15803d',
-                        color: '#ffffff',
-                        textDecoration: 'none',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                      }}
+                      className="fn-btn fn-btn--secondary fn-btn--sm job-table__review-btn"
                       aria-label={`Download Excel model for ${job.filename}`}
                     >
-                      Excel (.xlsx)
+                      <Download size={12} aria-hidden="true" />
+                      <span>Excel (.xlsx)</span>
                     </a>
                   )}
                   {job.status === 'done' && onReview && (
                     <button
                       type="button"
-                      className="job-table__review-btn"
+                      className="fn-btn fn-btn--primary fn-btn--sm job-table__review-btn"
                       onClick={() => onReview(job.job_id)}
                       aria-label={`Review ${job.filename}`}
                     >
-                      Review
+                      <FileCheck size={12} aria-hidden="true" />
+                      <span>Review</span>
                     </button>
                   )}
                   {job.status === 'done' && onAuditTrail && (
                     <button
                       type="button"
-                      className="job-table__review-btn"
-                      style={{ backgroundColor: '#0284c7', borderColor: '#0284c7', color: '#ffffff' }}
+                      className="fn-btn fn-btn--secondary fn-btn--sm job-table__review-btn"
                       onClick={() => onAuditTrail(job.job_id)}
                       aria-label={`Audit Trail for ${job.filename}`}
                     >
-                      Audit Trail
+                      <History size={12} aria-hidden="true" />
+                      <span>Audit Trail</span>
                     </button>
                   )}
                   {canDownloadAuditReport(job.status) && (
                     <a
                       href={buildAuditReportDownloadUrl(apiBase, job.job_id)}
                       download={buildAuditReportFilename(job.job_id)}
-                      className="job-table__review-btn"
-                      style={{
-                        backgroundColor: '#0f766e',
-                        borderColor: '#0f766e',
-                        color: '#ffffff',
-                        textDecoration: 'none',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                      }}
+                      className="fn-btn fn-btn--secondary fn-btn--sm job-table__review-btn"
                       aria-label={`Export Audit Report PDF for ${job.filename}`}
                     >
-                      Audit PDF
+                      <FileText size={12} aria-hidden="true" />
+                      <span>Audit PDF</span>
                     </a>
                   )}
                 </div>

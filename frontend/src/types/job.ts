@@ -5,6 +5,7 @@ export const TARGET_METRICS = [
   'EBITDA',
   'Net Income',
   'Free Cash Flow',
+  'Capital Structure',
 ] as const
 
 export type TargetMetric = (typeof TARGET_METRICS)[number]

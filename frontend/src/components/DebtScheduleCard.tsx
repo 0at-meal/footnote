@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { CreditCard, Check, Edit2 } from 'lucide-react'
 
 export interface DebtTranche {
   id: string
@@ -50,8 +51,6 @@ export default function DebtScheduleCard({
 
   useEffect(() => {
     let isMounted = true
-    setIsLoading(true)
-    setError(null)
 
     fetch(`${apiBase}/footnote/${jobId}/debt`)
       .then((res) => {
@@ -157,7 +156,7 @@ export default function DebtScheduleCard({
     <div
       className="debt-schedule-card"
       style={{
-        background: 'var(--surface-raised, #1e293b)',
+        background: 'var(--fn-bg-surface)',
         border: '1px solid var(--border-color, #334155)',
         borderRadius: '8px',
         padding: '1.25rem',
@@ -177,7 +176,7 @@ export default function DebtScheduleCard({
       >
         <div>
           <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 600, color: '#f8fafc' }}>
-            💳 {schedule.footnote_title}
+            <CreditCard size={15} aria-hidden="true" /> {schedule.footnote_title}
           </h3>
           <p style={{ margin: 0, fontSize: '0.8rem', color: '#94a3b8', marginTop: '2px' }}>
             Extracted {schedule.tranches.length} debt tranche
@@ -206,12 +205,12 @@ export default function DebtScheduleCard({
 
           <button
             type="button"
-            className="review-btn review-btn--confirm"
+            className="fn-btn fn-btn--primary fn-btn--sm review-btn review-btn--confirm"
             disabled={isSaving || isConfirmed}
             onClick={() => void handleConfirmSchedule()}
-            style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem' }}
           >
-            {isConfirmed ? '✓ Confirmed' : isSaving ? 'Saving...' : 'Confirm Debt Schedule'}
+            <Check size={12} aria-hidden="true" />
+            <span>{isConfirmed ? '✓ Confirmed' : isSaving ? 'Saving...' : 'Confirm Debt Schedule'}</span>
           </button>
         </div>
       </div>
@@ -228,12 +227,12 @@ export default function DebtScheduleCard({
         >
           <thead>
             <tr style={{ color: '#94a3b8', borderBottom: '1px solid #334155' }}>
-              <th style={{ padding: '6px 8px' }}>Instrument</th>
-              <th style={{ padding: '6px 8px', textAlign: 'right' }}>Principal</th>
-              <th style={{ padding: '6px 8px', textAlign: 'center' }}>Coupon / Spread</th>
-              <th style={{ padding: '6px 8px', textAlign: 'center' }}>Maturity</th>
-              <th style={{ padding: '6px 8px' }}>Seniority</th>
-              <th style={{ padding: '6px 8px', textAlign: 'right' }}>Action</th>
+              <th style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>Instrument</th>
+              <th style={{ padding: '6px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>Principal</th>
+              <th style={{ padding: '6px 8px', textAlign: 'center', whiteSpace: 'nowrap' }}>Coupon / Spread</th>
+              <th style={{ padding: '6px 8px', textAlign: 'center', whiteSpace: 'nowrap' }}>Maturity</th>
+              <th style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>Seniority</th>
+              <th style={{ padding: '6px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -248,11 +247,22 @@ export default function DebtScheduleCard({
                     cursor: onTrancheSelect ? 'pointer' : 'default',
                   }}
                 >
-                  <td style={{ padding: '8px', color: '#f8fafc', fontWeight: 500 }}>
+                  <td
+                    title={tranche.instrument_name}
+                    style={{
+                      padding: '8px',
+                      color: '#f8fafc',
+                      fontWeight: 500,
+                      maxWidth: '220px',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
                     {tranche.instrument_name}
                   </td>
 
-                  <td style={{ padding: '8px', textAlign: 'right', color: '#38bdf8' }}>
+                  <td className="fn-tabular tabular-nums" style={{ padding: '8px', textAlign: 'right', color: 'var(--fn-text-primary)' }}>
                     {isEditing ? (
                       <input
                         type="text"
@@ -274,7 +284,7 @@ export default function DebtScheduleCard({
                     )}
                   </td>
 
-                  <td style={{ padding: '8px', textAlign: 'center', color: '#34d399' }}>
+                  <td className="fn-tabular tabular-nums" style={{ padding: '8px', textAlign: 'center', color: 'var(--fn-text-primary)' }}>
                     {isEditing ? (
                       <input
                         type="text"
@@ -299,7 +309,7 @@ export default function DebtScheduleCard({
                     )}
                   </td>
 
-                  <td style={{ padding: '8px', textAlign: 'center', color: '#cbd5e1' }}>
+                  <td className="fn-tabular tabular-nums" style={{ padding: '8px', textAlign: 'center', color: 'var(--fn-text-secondary)' }}>
                     {isEditing ? (
                       <input
                         type="text"
@@ -365,14 +375,14 @@ export default function DebtScheduleCard({
                     ) : (
                       <button
                         type="button"
-                        className="review-btn review-btn--edit"
-                        style={{ padding: '2px 6px', fontSize: '0.75rem' }}
+                        className="fn-btn fn-btn--secondary fn-btn--sm review-btn review-btn--edit"
                         onClick={(e) => {
                           e.stopPropagation()
                           handleStartEdit(tranche)
                         }}
                       >
-                        Edit
+                        <Edit2 size={11} aria-hidden="true" />
+                        <span>Edit</span>
                       </button>
                     )}
                   </td>

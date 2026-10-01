@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Building2, Check, Edit2 } from 'lucide-react'
 
 export interface LeaseCommitmentYear {
   year_label: string
@@ -45,8 +46,6 @@ export default function LeaseScheduleCard({
 
   useEffect(() => {
     let isMounted = true
-    setIsLoading(true)
-    setError(null)
 
     fetch(`${apiBase}/footnote/${jobId}/lease`)
       .then((res) => {
@@ -166,7 +165,7 @@ export default function LeaseScheduleCard({
     <div
       className="lease-schedule-card"
       style={{
-        background: 'var(--surface-raised, #1e293b)',
+        background: 'var(--fn-bg-surface)',
         border: '1px solid var(--border-color, #334155)',
         borderRadius: '8px',
         padding: '1.25rem',
@@ -186,7 +185,7 @@ export default function LeaseScheduleCard({
       >
         <div>
           <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 600, color: '#f8fafc' }}>
-            🏢 {schedule.footnote_title}
+            <Building2 size={15} aria-hidden="true" /> {schedule.footnote_title}
           </h3>
           <p style={{ margin: 0, fontSize: '0.8rem', color: '#94a3b8', marginTop: '2px' }}>
             ASC 842 Undiscounted Future Commitments Waterfall
@@ -214,12 +213,12 @@ export default function LeaseScheduleCard({
 
           <button
             type="button"
-            className="review-btn review-btn--confirm"
+            className="fn-btn fn-btn--primary fn-btn--sm review-btn review-btn--confirm"
             disabled={isSaving || isConfirmed}
             onClick={() => void handleConfirmSchedule()}
-            style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem' }}
           >
-            {isConfirmed ? '✓ Confirmed' : isSaving ? 'Saving...' : 'Confirm Lease Schedule'}
+            <Check size={12} aria-hidden="true" />
+            <span>{isConfirmed ? '✓ Confirmed' : isSaving ? 'Saving...' : 'Confirm Lease Schedule'}</span>
           </button>
         </div>
       </div>
@@ -259,7 +258,7 @@ export default function LeaseScheduleCard({
                     {year.year_label}
                   </td>
 
-                  <td style={{ padding: '8px', textAlign: 'right', color: '#38bdf8' }}>
+                  <td className="fn-tabular tabular-nums" style={{ padding: '8px', textAlign: 'right', color: 'var(--fn-text-primary)' }}>
                     {isEditing ? (
                       <input
                         type="text"
@@ -283,7 +282,7 @@ export default function LeaseScheduleCard({
                     )}
                   </td>
 
-                  <td style={{ padding: '8px', textAlign: 'right', color: '#a78bfa' }}>
+                  <td className="fn-tabular tabular-nums" style={{ padding: '8px', textAlign: 'right', color: 'var(--fn-text-primary)' }}>
                     {isEditing ? (
                       <input
                         type="text"
@@ -307,11 +306,11 @@ export default function LeaseScheduleCard({
                     )}
                   </td>
 
-                  <td
+                  <td className="fn-tabular tabular-nums"
                     style={{
                       padding: '8px',
                       textAlign: 'right',
-                      color: '#34d399',
+                      color: 'var(--fn-text-primary)',
                       fontWeight: 600,
                     }}
                   >
@@ -347,14 +346,14 @@ export default function LeaseScheduleCard({
                     ) : (
                       <button
                         type="button"
-                        className="review-btn review-btn--edit"
-                        style={{ padding: '2px 6px', fontSize: '0.75rem' }}
+                        className="fn-btn fn-btn--secondary fn-btn--sm review-btn review-btn--edit"
                         onClick={(e) => {
                           e.stopPropagation()
                           handleStartEdit(idx, year)
                         }}
                       >
-                        Edit
+                        <Edit2 size={11} aria-hidden="true" />
+                        <span>Edit</span>
                       </button>
                     )}
                   </td>
@@ -367,12 +366,12 @@ export default function LeaseScheduleCard({
             <tfoot>
               <tr style={{ borderTop: '1px solid #475569', color: '#94a3b8' }}>
                 <td style={{ padding: '8px', fontWeight: 600 }}>Weighted-Avg Discount Rate</td>
-                <td style={{ padding: '8px', textAlign: 'right', color: '#38bdf8' }}>
+                <td className="fn-tabular tabular-nums" style={{ padding: '8px', textAlign: 'right', color: 'var(--fn-text-primary)' }}>
                   {schedule.operating_discount_rate !== null
                     ? `${schedule.operating_discount_rate}%`
                     : '—'}
                 </td>
-                <td style={{ padding: '8px', textAlign: 'right', color: '#a78bfa' }}>
+                <td className="fn-tabular tabular-nums" style={{ padding: '8px', textAlign: 'right', color: 'var(--fn-text-primary)' }}>
                   {schedule.finance_discount_rate !== null
                     ? `${schedule.finance_discount_rate}%`
                     : '—'}

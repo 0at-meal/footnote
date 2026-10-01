@@ -11,7 +11,6 @@ from app.excel_export.models import (
     W3CAnnotationRecord,
     WorkbookGenerationResult,
 )
-from app.excel_export.multi_statement_generator import generate_multi_statement_workbook
 from app.excel_export.provenance import (
     build_w3c_annotation_for_node,
     format_cell_comment,
@@ -35,7 +34,6 @@ __all__ = [
     "excel_export_router",
     "format_cell_comment",
     "format_cell_hyperlink_url",
-    "generate_multi_statement_workbook",
     "generate_workbook",
     "get_model_repository",
 ]
