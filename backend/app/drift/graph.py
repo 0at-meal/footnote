@@ -8,8 +8,6 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
-import networkx as nx  # type: ignore[import-untyped]
-
 from app.drift.models import (
     DriftComparisonResult,
     DriftEdge,
@@ -19,9 +17,34 @@ from app.drift.models import (
 )
 
 
+class SimpleDiGraph:
+    """Pure Python directed graph replacing NetworkX (FN-034)."""
+
+    def __init__(self) -> None:
+        self.nodes: dict[str, dict[str, Any]] = {}
+        self._adj: dict[str, dict[str, dict[str, Any]]] = {}
+
+    def add_node(self, node_for_adding: str, **attr: Any) -> None:
+        if node_for_adding not in self.nodes:
+            self.nodes[node_for_adding] = {}
+            self._adj[node_for_adding] = {}
+        self.nodes[node_for_adding].update(attr)
+
+    def has_node(self, n: str) -> bool:
+        return n in self.nodes
+
+    def add_edge(self, u_of_edge: str, v_of_edge: str, **attr: Any) -> None:
+        self.add_node(u_of_edge)
+        self.add_node(v_of_edge)
+        self._adj[u_of_edge][v_of_edge] = attr
+
+    def has_edge(self, u: str, v: str) -> bool:
+        return u in self._adj and v in self._adj[u]
+
+
 class HistoricalDriftGraph:
     """
-    Manages the historical drift graph using NetworkX DiGraph.
+    Manages the historical drift graph using pure Python data structures (FN-034).
 
     Invariants:
     - Append-only for definition nodes and transitions (spec §3).
@@ -30,7 +53,7 @@ class HistoricalDriftGraph:
     """
 
     def __init__(self) -> None:
-        self._graph = nx.DiGraph()
+        self._graph = SimpleDiGraph()
         # Mapping from (entity, target_metric) to the latest MetricDefinitionNode ID
         self._latest_nodes: dict[tuple[str, str], str] = {}
         # Explicit edge registry to preserve multi-edge/continuation records cleanly

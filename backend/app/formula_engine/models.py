@@ -87,6 +87,26 @@ class FormulaInputNode(BaseModel):
         default=None,
         description="Financial statement type category from taxonomy",
     )
+    confidence_band: str | None = Field(
+        default=None,
+        description="Confidence band: auto_accepted, needs_review, manual_required (FN-030)",
+    )
+    confidence_score: float | None = Field(
+        default=None,
+        description="Confidence score between 0.0 and 1.0",
+    )
+    flags: list[str] = Field(
+        default_factory=list,
+        description="Diagnostic flags for review",
+    )
+    review_status: str | None = Field(
+        default=None,
+        description="Review status: auto_accepted, confirmed, needs_review, manual_required",
+    )
+    is_confirmed: bool = Field(
+        default=False,
+        description="Whether user confirmed or auto-accepted this item",
+    )
 
 
 class FormulaInputError(BaseModel):

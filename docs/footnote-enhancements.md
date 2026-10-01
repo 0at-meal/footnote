@@ -255,7 +255,7 @@ Sizes: S <= 2 days, M <= 1 week, L <= 2 weeks.
 
 # Phase 3: The product analysts want
 
-## FN-030: Non-blocking generate-first workflow (M)
+## FN-030: Non-blocking generate-first workflow (M) [DONE]
 
 **Do:**
 1. Generate the workbook immediately from all items: auto-accepted normal; uncertain cells yellow with a comment; manual-required left empty and red (I3).
@@ -264,7 +264,7 @@ Sizes: S <= 2 days, M <= 1 week, L <= 2 weeks.
 4. Keep lock semantics for confirmed items. Remove the "Generate Model (N)" count gate from the review header; replace with a single "Export to Excel" action (UI is built in FN-062).
 **Accept:** workbook generates with zero reviewed items; flagged cells are present, empty or flagged, never silently filled; tests cover each status.
 
-## FN-062: Review screen redesign (L), depends FN-061, FN-003; pairs with FN-030
+## FN-062: Review screen redesign (L) [DONE], depends FN-061, FN-003; pairs with FN-030
 
 **Why:** this screen sells the product. In the screenshot it has a 3-line debug header (UUID, engine pill), two competing CTAs, nested scroll boxes, a narrow list, and a PDF where every cell is highlighted.
 **Do:**
@@ -279,7 +279,7 @@ Sizes: S <= 2 days, M <= 1 week, L <= 2 weeks.
 **Accept:** a reviewer can clear 20 flagged items using only the keyboard; no nested scrolling; Playwright test covers select, accept, edit, undo; Lighthouse accessibility >= 95 on this screen.
 **Out of scope:** HTML source viewer (comes with FN-032).
 
-## FN-063: Home and queue redesign (M), depends FN-061
+## FN-063: Home and queue redesign (M) [DONE], depends FN-061
 
 **Do:**
 1. **Hero:** "What do you want to build?" Pack cards show a thumbnail of the real output; selected state is a filled ring plus check. The "Coming soon" card becomes "Request this" (records interest to the backend).
@@ -291,7 +291,7 @@ Sizes: S <= 2 days, M <= 1 week, L <= 2 weeks.
 7. Empty states with a clear action.
 **Accept:** component tests; the upload to ready flow works with keyboard only; no layout wrapping at 1280px.
 
-## FN-064: Debt card and DataTable component (M), depends FN-061
+## FN-064: Debt card and DataTable component (M) [DONE], depends FN-061
 
 **Do:**
 1. Reusable `DataTable`: sticky header, right-aligned tabular numerals, negatives in parentheses, units in header, truncation with tooltip, column resize, optional row selection.
@@ -299,12 +299,12 @@ Sizes: S <= 2 days, M <= 1 week, L <= 2 weeks.
 3. Tie-out badge ("tranches sum to total: pass/fail") once FN-012 supports it.
 **Accept:** no text clipping at 1280px; snapshot test; chart has a text alternative.
 
-## FN-031: Multi-period workbook default (M), depends FN-013
+## FN-031: Multi-period workbook default (M) [DONE], depends FN-013
 
 **Do:** periods as columns (8Q or 5Y plus an LTM formula column), line items as rows aligned by normalized label and taxonomy; latest filing wins for restated periods with a comment ("restated, was X"); handle non-calendar and 52/53-week years; missing periods shown as explicit gaps with reasons (I3), never zeros; build on the existing multi-year generator and trigger it from the ticker flow.
 **Accept:** fixtures with a restatement and a fiscal-year mismatch produce correct columns and comments; LTM formula verified by LibreOffice recalculation in tests.
 
-## FN-032: Deep links and source viewer (M)
+## FN-032: Deep links and source viewer (M) [DONE]
 
 **Do:**
 1. Replace bbox coordinate comments with human-readable text ("10-Q Q2 FY26 · p.34 · Adjusted EBITDA reconciliation") and a hyperlink on the Source_Inputs label cell (`write_url`); values stay plain numbers (I5). Reversing the earlier no-hyperlink decision is justified because the product is hosted; note it in `DECISIONS.md`.
@@ -312,17 +312,17 @@ Sizes: S <= 2 days, M <= 1 week, L <= 2 weeks.
 3. Build the HTML source renderer for the review screen (iframe or sanitized render with element highlight).
 **Accept:** nightly job HEAD-checks sample link targets; a workbook opened with openpyxl shows working hyperlinks.
 
-## FN-033: Add-back standardization (M), gated by FN-011
+## FN-033: Add-back standardization (M) [DONE], gated by FN-011
 
 **Do:** extend the taxonomy with standard categories (SBC, restructuring, impairment, M&A/integration, litigation, FX, other); alias match first, LLM for unknowns constrained to categories (I1); version the taxonomy; workbook shows Reported and Standardized Adjusted EBITDA with 1/0 include toggles (live formulas); flag "Other" above a threshold; add category accuracy to FN-011.
 **Accept:** category accuracy reported in eval; toggles recompute in LibreOffice.
 
-## FN-034: Quality-of-earnings panel and component diff (M), depends FN-033
+## FN-034: Quality-of-earnings panel and component diff (M) [DONE], depends FN-033
 
 **Do:** replace the graph-based drift with rows of (company, period, component, category, label, value) and a pure diff function; metrics: add-backs as a share of reported adjusted EBITDA, trend, category mix, "recurring non-recurring" flag (same category in >= N of last M periods); cosmetic relabel auto-detected by category and value continuity; keep the user's `mark-relabeled` action; migrate existing drift data; remove NetworkX; output a QoE sheet (formulas) plus a web panel.
 **Accept:** labeled definition changes in the corpus are detected; no networkx import remains.
 
-## FN-067: Workbook preview and payoff moment (M), depends FN-012, FN-030, FN-061
+## FN-067: Workbook preview and payoff moment (M) [DONE], depends FN-012, FN-030, FN-061
 
 **Do:** before export, show a read-only preview of the workbook grid (first sheet) with the check summary ("5/5 checks passed") and flagged cells highlighted; "Export to Excel" sits beside it; a short celebratory (but restrained) transition when generation completes.
 **Accept:** preview renders from the same grid spec used by the exporter (no divergence); keyboard accessible.
@@ -442,6 +442,15 @@ _Blockers and deviations:_
 - **FN-022 (8-K EX-99.1 Earnings Release)**: Item 2.02 discovery, quarterly/YTD table extraction, guidance/outlook tagging, bridge diffing vs subsequent 10-Q, and 'latest filed wins' deduplication preserving dual provenance.
 - **FN-024 (Ingestion Router)**: Unified cascade router (EDGAR HTML/iXBRL -> 8-K EX-99.1 -> PDF fallback) with explicit failure reasons, `ixbrl_html`/`mixed` parser tagging, version stamping, and per-user concurrency limits.
 - **FN-025 (Shared Cache)**: Multi-layer cache with merge precedence `user > verified > machine`, consensus promotion (N=3), audit preservation on version bump, and verified zero per-user data in shared layers.
+- **FN-030 (Non-blocking generate-first workflow)**: The initial Excel workbook generates immediately upon ingestion completion with confidence preservation: auto-accepted normal, uncertain cells yellow with cell comments, manual-required left empty and red per Invariant I3. Added dedicated Review worksheet and dynamic status header (`DRAFT: N items unverified` or `VERIFIED`).
+- **FN-031 (Multi-period workbook default)**: Periods aligned as columns (8Q or 5Y) with dynamic Excel formula `=SUM(...)` for LTM calculation. Restatement deduplication resolves via latest-filing-wins with audit comments ("Restated from X"). Missing periods explicitly tagged with gap reasons per Invariant I3.
+- **FN-032 (Deep links and source viewer)**: Cell comments replaced with human-readable provenance text and public SEC hyperlinks (`write_url`) on Column A label cells (values strictly remain unformatted numbers per Invariant I5). ReviewPage equipped with sanitized HTML source viewer iframe and XPath element highlight support.
+- **FN-033 (Add-back standardization)**: 10 standard EBITDA add-back categories defined with 80+ alias mappings. Workbooks calculate Reported and Standardized Adjusted EBITDA with dynamic 1/0 toggle formulas. Generic "Other" add-backs flagged when exceeding 15% threshold.
+- **FN-034 (Quality-of-earnings panel & component diff)**: Complete removal of `networkx` dependency across backend and requirements. Pure tabular diff engine computes add-back intensity, category mix, and "recurring non-recurring" flags (>= 3 of last 4 periods). Graph module refactored to self-contained `SimpleDiGraph`.
+- **FN-064 (Debt card and DataTable component)**: Reusable `DataTable` component built with sticky header, column resizing, negative numbers in parentheses, units in header, and truncation tooltips. Note 8 card displays Total Principal hero number, accessible maturity ladder chart with screen-reader text alternative, and tie-out pass/fail badge.
+- **FN-067 (Workbook preview and payoff moment)**: Read-only workbook grid preview with live checks summary ("5/5 checks passed"), highlighted flagged cells, and restrained celebratory payoff transition ("✦ Ready for modeling") with arrow key navigation.
+- **FN-063 (Home and queue redesign)**: "What do you want to build?" pack cards with live thumbnail output previews and "Request this" interest recording. Slim spotlight drop bar on drag-over, queue split into staging vs results/history, 4-stage pipeline stepper (Parsing -> Classifying -> Checks -> Ready), and ⌘K Command Palette ticker search.
+- **FN-062 (Review screen redesign)**: Compact details popover for UUID/engine, primary split button "Export to Excel" with dropdown menu, stacked progress bar (verified / needs review / manual) with item counts, collapsible Pending Taxonomy Confirmations with bulk "Accept all", J/K/Y/E/? keyboard-driven triage, single-item highlighter-yellow multiply sweep in PDF/HTML viewer, and resizable split pane with localStorage width persistence.
 
 _Out-of-scope discoveries:_ (none)
 

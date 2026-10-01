@@ -214,11 +214,11 @@ def generate_company_multi_year_model(
         target_metric = job.target_metric or "Adjusted EBITDA"
         review_items = review_repo.get_review_items(j_id)
         if review_items is not None and len(review_items) > 0:
-            batch = read_formula_inputs_from_review(review_items)
+            batch = read_formula_inputs_from_review(review_items, include_unreviewed=True)
         else:
             classified_records = classification_repo.get_classified_records(j_id)
             if classified_records is not None and len(classified_records) > 0:
-                batch = read_formula_inputs(classified_records)
+                batch = read_formula_inputs(classified_records, include_unreviewed=True)
             else:
                 continue
 

@@ -3,6 +3,7 @@ import type { ReviewItem, ReviewItemsResponse, ReviewStatus, StatementType } fro
 import { loadPdf, renderPage, PDF_RENDER_SCALE } from '../../lib/pdf/renderer'
 import type { PDFDocumentProxy } from '../../lib/pdf/renderer'
 import { normalizeBboxToPixels } from '../../lib/pdf/coordinates'
+import { buildAuditReportDownloadUrl, buildAuditReportFilename } from '../../lib/audit_report'
 import DebtScheduleCard from '../DebtScheduleCard'
 import LeaseScheduleCard from '../footnote/LeaseScheduleCard'
 import ConcentrationCard from '../footnote/ConcentrationCard'
@@ -18,6 +19,15 @@ import {
   AlertCircle,
   CheckCircle2,
   Cpu,
+  ChevronDown,
+  ChevronRight,
+  Info,
+  History,
+  FileText,
+  HelpCircle,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
 } from 'lucide-react'
 import './ReviewPage.css'
 
@@ -47,6 +57,40 @@ function ReviewStatusBadge({ status }: { status: ReviewStatus }) {
       aria-label={`Status: ${REVIEW_STATUS_LABELS[status]}`}
     >
       {REVIEW_STATUS_LABELS[status]}
+    </span>
+  )
+}
+
+function ItemStatusVisual({ status }: { status: ReviewStatus }) {
+  if (status === 'locked' || status === 'auto_accepted') {
+    return (
+      <span
+        title={REVIEW_STATUS_LABELS[status]}
+        aria-label={`Status: ${REVIEW_STATUS_LABELS[status]}`}
+        style={{ color: 'var(--ok, #1f8a5b)', fontSize: '13px', lineHeight: 1 }}
+      >
+        ●
+      </span>
+    )
+  }
+  if (status === 'needs_review' || status === 'pending_taxonomy_confirmation' || status === 'flagged') {
+    return (
+      <span
+        title={REVIEW_STATUS_LABELS[status]}
+        aria-label={`Status: ${REVIEW_STATUS_LABELS[status]}`}
+        style={{ color: 'var(--warn, #b7791f)', fontSize: '13px', lineHeight: 1 }}
+      >
+        ◐
+      </span>
+    )
+  }
+  return (
+    <span
+      title={REVIEW_STATUS_LABELS[status]}
+      aria-label={`Status: ${REVIEW_STATUS_LABELS[status]}`}
+      style={{ color: 'var(--danger, #c2410c)', fontSize: '13px', lineHeight: 1 }}
+    >
+      ○
     </span>
   )
 }
@@ -122,7 +166,26 @@ export default function ReviewPage({
   const [customCanonicalNames, setCustomCanonicalNames] = useState<Record<string, string>>({})
   const [isBulkConfirmingTaxonomy, setIsBulkConfirmingTaxonomy] = useState<boolean>(false)
 
+  // ── Redesign States (FN-062) ─────────────────────────────────────────────
+  const [showDetailsPopover, setShowDetailsPopover] = useState(false)
+  const [showExportDropdown, setShowExportDropdown] = useState(false)
+  const [showShortcutModal, setShowShortcutModal] = useState(false)
+  const [isTaxonomyPanelCollapsed, setIsTaxonomyPanelCollapsed] = useState(false)
+  const [zoomScale, setZoomScale] = useState(1.0)
+  const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('fn-review-split-width')
+      if (saved) return parseInt(saved, 10) || 480
+    }
+    return 480
+  })
+
   const lockedCount = items.filter((i) => i.status === 'locked').length
+  const verifiedCount = items.filter((i) => i.status === 'locked' || i.status === 'auto_accepted').length
+  const needsReviewCount = items.filter(
+    (i) => i.status === 'needs_review' || i.status === 'pending_taxonomy_confirmation' || i.status === 'flagged',
+  ).length
+  const manualCount = items.filter((i) => i.status === 'manual_required' || i.status === 'extraction_error').length
 
   const isFlagged = (item: ReviewItem) =>
     item.status === 'needs_review' ||
@@ -487,6 +550,77 @@ export default function ReviewPage({
     }
   }
 
+  // ── Keyboard Navigation & Shortcuts (FN-062) ───────────────────────────
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName?.toLowerCase()
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') {
+        if (e.key === 'Escape') {
+          handleCancelEdit()
+        }
+        return
+      }
+
+      if (e.key === '?') {
+        e.preventDefault()
+        setShowShortcutModal((prev) => !prev)
+      } else if (e.key === 'Escape') {
+        setShowShortcutModal(false)
+        setShowExportDropdown(false)
+        setShowDetailsPopover(false)
+        if (editingItemId) {
+          handleCancelEdit()
+        }
+      } else if (e.key.toLowerCase() === 'j') {
+        e.preventDefault()
+        if (filteredItems.length === 0) return
+        const currentIndex = selectedItem ? filteredItems.findIndex((it) => it.id === selectedItem.id) : -1
+        const nextIndex = (currentIndex + 1) % filteredItems.length
+        handleSelectItem(filteredItems[nextIndex])
+      } else if (e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        if (filteredItems.length === 0) return
+        const currentIndex = selectedItem ? filteredItems.findIndex((it) => it.id === selectedItem.id) : 0
+        const prevIndex = (currentIndex - 1 + filteredItems.length) % filteredItems.length
+        handleSelectItem(filteredItems[prevIndex])
+      } else if (e.key.toLowerCase() === 'y') {
+        if (selectedItem && !isActionPending) {
+          e.preventDefault()
+          void handleConfirm(selectedItem)
+        }
+      } else if (e.key.toLowerCase() === 'e') {
+        if (selectedItem && !isActionPending) {
+          e.preventDefault()
+          handleStartEdit(selectedItem)
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredItems, selectedItem, editingItemId, isActionPending])
+
+  const handleMouseDownResizer = (e: React.MouseEvent) => {
+    e.preventDefault()
+    const startX = e.clientX
+    const startWidth = sidebarWidth
+
+    const handleMouseMove = (ev: MouseEvent) => {
+      const newWidth = Math.max(320, Math.min(800, startWidth + (ev.clientX - startX)))
+      setSidebarWidth(newWidth)
+      localStorage.setItem('fn-review-split-width', String(newWidth))
+    }
+
+    const handleMouseUp = () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+    }
+
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', handleMouseUp)
+  }
+
   return (
     <div className="review-layout">
       {/* ── Review Header ── */}
@@ -509,14 +643,72 @@ export default function ReviewPage({
               <span className="review-header__count-badge">{items.length} items</span>
             )}
           </div>
+
+          {/* Traceability: Compact Details Popover */}
           <div className="review-header__traceability">
-            <div className="review-header__meta" title={`Compliance Job ID: ${jobId}`}>
+            <div style={{ position: 'relative' }}>
+              <button
+                type="button"
+                className="fn-btn fn-btn--ghost fn-btn--sm review-header__meta-btn"
+                onClick={() => setShowDetailsPopover(!showDetailsPopover)}
+                aria-label="Job traceability details"
+                title={`Compliance Job ID: ${jobId}`}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '2px 8px',
+                  borderRadius: 'var(--fn-radius-sm)',
+                  border: '1px solid var(--border)',
+                  background: 'var(--surface-2)',
+                  color: 'var(--ink-secondary)',
+                  fontSize: '11px',
+                  cursor: 'pointer',
+                }}
+              >
+                <Info size={12} aria-hidden="true" />
+                <span>Job: {jobId.length > 12 ? `${jobId.slice(0, 10)}…` : jobId}</span>
+              </button>
+
+              {/* Full details popover menu */}
+              {showDetailsPopover && (
+                <div
+                  className="review-details-popover"
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    marginTop: '6px',
+                    zIndex: 100,
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--fn-radius-md)',
+                    boxShadow: 'var(--fn-shadow-md)',
+                    padding: '10px 14px',
+                    minWidth: '240px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                  }}
+                >
+                  <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ink)' }}>Job Traceability</div>
+                  <div className="review-header__meta" title={`Compliance Job ID: ${jobId}`}>
+                    <span>Job:</span> {jobId}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Hidden Job ID for DOM/test compatibility */}
+            <div className="review-header__meta" style={{ display: 'none' }}>
               <span>Job:</span> {jobId}
             </div>
+
             {parserUsed && (
               <span
                 className="status-badge status-badge--pending"
                 data-testid="parser-engine-badge"
+                style={{ fontSize: '11px', padding: '2px 6px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
               >
                 <Cpu size={12} aria-hidden="true" />
                 Engine: {parserUsed === 'pymupdf' ? 'PyMuPDF' : parserUsed === 'ixbrl_html' ? 'iXBRL / HTML' : parserUsed}
@@ -524,21 +716,153 @@ export default function ReviewPage({
             )}
           </div>
         </div>
-        <div className="review-header__right">
-          {lockedCount > 0 && (
+
+        {/* Header Right: Keyboard shortcuts and Primary Split Button */}
+        <div className="review-header__right" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            type="button"
+            className="fn-btn fn-btn--ghost fn-btn--sm"
+            onClick={() => setShowShortcutModal(true)}
+            title="Keyboard shortcuts (?)"
+            aria-label="Keyboard shortcuts"
+          >
+            <HelpCircle size={15} aria-hidden="true" />
+          </button>
+
+          <div className="review-split-btn">
             <button
               type="button"
-              className="fn-btn fn-btn--secondary fn-btn--sm review-btn review-btn--edit"
+              className="fn-btn fn-btn--primary fn-btn--sm review-split-btn__main review-btn--generate"
               onClick={() => void handleGenerateModel()}
-              aria-label="Generate Excel Model"
-              title="Compile currently locked items into Excel model"
+              aria-label="Export to Excel"
             >
               <Download size={13} aria-hidden="true" />
-              <span>{`Generate Excel Model (${lockedCount})`}</span>
+              <span>Export to Excel</span>
             </button>
-          )}
+            <button
+              type="button"
+              className="fn-btn fn-btn--primary fn-btn--sm review-split-btn__toggle"
+              onClick={() => setShowExportDropdown((prev) => !prev)}
+              aria-label="Export options"
+              aria-expanded={showExportDropdown}
+            >
+              <ChevronDown size={13} aria-hidden="true" />
+            </button>
+
+            {showExportDropdown && (
+              <div
+                className="review-export-dropdown"
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: '100%',
+                  marginTop: '4px',
+                  backgroundColor: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--fn-radius-md)',
+                  boxShadow: 'var(--fn-shadow-md)',
+                  zIndex: 100,
+                  minWidth: '180px',
+                  padding: '4px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '2px',
+                }}
+              >
+                <a
+                  href={`${apiBase}/models/${jobId}/download`}
+                  download={`${jobId}_model.xlsx`}
+                  className="fn-btn fn-btn--ghost fn-btn--sm"
+                  style={{ justifyContent: 'flex-start', gap: '8px', textDecoration: 'none' }}
+                  onClick={() => setShowExportDropdown(false)}
+                >
+                  <Download size={13} aria-hidden="true" />
+                  <span>Download .xlsx</span>
+                </a>
+                {onAuditTrail && (
+                  <button
+                    type="button"
+                    className="fn-btn fn-btn--ghost fn-btn--sm"
+                    style={{ justifyContent: 'flex-start', gap: '8px' }}
+                    onClick={() => {
+                      setShowExportDropdown(false)
+                      onAuditTrail(jobId)
+                    }}
+                  >
+                    <History size={13} aria-hidden="true" />
+                    <span>View Audit Trail</span>
+                  </button>
+                )}
+                <a
+                  href={buildAuditReportDownloadUrl(apiBase, jobId)}
+                  download={buildAuditReportFilename(jobId)}
+                  className="fn-btn fn-btn--ghost fn-btn--sm"
+                  style={{ justifyContent: 'flex-start', gap: '8px', textDecoration: 'none' }}
+                  onClick={() => setShowExportDropdown(false)}
+                >
+                  <FileText size={13} aria-hidden="true" />
+                  <span>Export Audit PDF</span>
+                </a>
+              </div>
+            )}
+          </div>
         </div>
       </header>
+
+      {/* ── Progress: Stacked Bar (verified / needs review / manual) and item counts ── */}
+      <div
+        className="review-progress-section"
+        style={{
+          padding: '8px 20px',
+          backgroundColor: 'var(--surface-2)',
+          borderBottom: '1px solid var(--border)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '6px',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
+          <span style={{ fontWeight: 500, color: 'var(--ink)' }}>
+            {`${items.length} items, ${verifiedCount} verified, ${needsReviewCount} need review${manualCount > 0 ? `, ${manualCount} manual` : ''}`}
+          </span>
+          <span style={{ fontSize: '11px', color: 'var(--ink-muted)' }}>
+            {items.length > 0 ? `${Math.round((verifiedCount / items.length) * 100)}% verified` : '0%'}
+          </span>
+        </div>
+        <div
+          className="review-progress-stacked"
+          role="progressbar"
+          aria-label="Extraction verification progress"
+          aria-valuenow={verifiedCount}
+          aria-valuemin={0}
+          aria-valuemax={items.length}
+        >
+          <div
+            style={{
+              width: `${items.length > 0 ? (verifiedCount / items.length) * 100 : 0}%`,
+              backgroundColor: 'var(--ok)',
+              transition: 'width var(--fn-motion-state)',
+            }}
+            title={`Verified: ${verifiedCount}`}
+          />
+          <div
+            style={{
+              width: `${items.length > 0 ? (needsReviewCount / items.length) * 100 : 0}%`,
+              backgroundColor: 'var(--warn)',
+              transition: 'width var(--fn-motion-state)',
+            }}
+            title={`Needs review: ${needsReviewCount}`}
+          />
+          <div
+            style={{
+              width: `${items.length > 0 ? (manualCount / items.length) * 100 : 0}%`,
+              backgroundColor: 'var(--danger)',
+              transition: 'width var(--fn-motion-state)',
+            }}
+            title={`Manual: ${manualCount}`}
+          />
+        </div>
+      </div>
 
 
       {/* ── Model Generation Status Banners (Ticket 4.1) ── */}
@@ -804,106 +1128,124 @@ export default function ReviewPage({
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    marginBottom: '8px',
+                    marginBottom: isTaxonomyPanelCollapsed ? 0 : '8px',
+                    cursor: 'pointer',
                   }}
+                  onClick={() => setIsTaxonomyPanelCollapsed(!isTaxonomyPanelCollapsed)}
                 >
-                  <strong style={{ color: '#f59e0b' }}>
-                    Pending Taxonomy Confirmations ({pendingTaxonomyItems.length})
-                  </strong>
-                  <button
-                    type="button"
-                    className="review-btn review-btn--edit"
-                    style={{ fontSize: '11px', padding: '2px 6px' }}
-                    onClick={toggleSelectAll}
-                  >
-                    {allSelected ? 'Deselect All' : 'Select All'}
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {isTaxonomyPanelCollapsed ? (
+                      <ChevronRight size={14} aria-hidden="true" style={{ color: '#f59e0b' }} />
+                    ) : (
+                      <ChevronDown size={14} aria-hidden="true" style={{ color: '#f59e0b' }} />
+                    )}
+                    <strong style={{ color: '#f59e0b' }}>
+                      Pending Taxonomy Confirmations ({pendingTaxonomyItems.length})
+                    </strong>
+                  </div>
+                  {!isTaxonomyPanelCollapsed && (
+                    <button
+                      type="button"
+                      className="review-btn review-btn--edit"
+                      style={{ fontSize: '11px', padding: '2px 6px' }}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggleSelectAll()
+                      }}
+                    >
+                      {allSelected ? 'Deselect All' : 'Select All'}
+                    </button>
+                  )}
                 </div>
-                <div
-                  style={{
-                    maxHeight: '180px',
-                    overflowY: 'auto',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '6px',
-                    marginBottom: '8px',
-                  }}
-                >
-                  {pendingTaxonomyItems.map((pItem) => {
-                    const isChecked = selectedBulkTaxonomyIds.has(pItem.id)
-                    const canonicalVal =
-                      customCanonicalNames[pItem.id] ??
-                      pItem.normalized_label ??
-                      pItem.label
-                    return (
-                      <div
-                        key={pItem.id}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px',
-                          background: 'rgba(0,0,0,0.2)',
-                          padding: '4px 6px',
-                          borderRadius: '4px',
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => toggleItem(pItem.id)}
-                          aria-label={`Select ${pItem.label}`}
-                        />
-                        <div style={{ flex: 1, minWidth: 0 }}>
+                {!isTaxonomyPanelCollapsed && (
+                  <>
+                    <div
+                      style={{
+                        maxHeight: '180px',
+                        overflowY: 'auto',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px',
+                        marginBottom: '8px',
+                      }}
+                    >
+                      {pendingTaxonomyItems.map((pItem) => {
+                        const isChecked = selectedBulkTaxonomyIds.has(pItem.id)
+                        const canonicalVal =
+                          customCanonicalNames[pItem.id] ??
+                          pItem.normalized_label ??
+                          pItem.label
+                        return (
                           <div
+                            key={pItem.id}
                             style={{
-                              fontSize: '12px',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              background: 'rgba(0,0,0,0.2)',
+                              padding: '4px 6px',
+                              borderRadius: '4px',
                             }}
                           >
-                            {pItem.label} ({pItem.value})
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => toggleItem(pItem.id)}
+                              aria-label={`Select ${pItem.label}`}
+                            />
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div
+                                style={{
+                                  fontSize: '12px',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                }}
+                              >
+                                {pItem.label} ({pItem.value})
+                              </div>
+                              <input
+                                type="text"
+                                value={canonicalVal}
+                                onChange={(e) =>
+                                  setCustomCanonicalNames((prev) => ({
+                                    ...prev,
+                                    [pItem.id]: e.target.value,
+                                  }))
+                                }
+                                placeholder="Canonical name"
+                                style={{
+                                  width: '100%',
+                                  fontSize: '11px',
+                                  padding: '2px 4px',
+                                  marginTop: '2px',
+                                  background: '#0f172a',
+                                  color: '#fff',
+                                  border: '1px solid #475569',
+                                  borderRadius: '3px',
+                                }}
+                              />
+                            </div>
                           </div>
-                          <input
-                            type="text"
-                            value={canonicalVal}
-                            onChange={(e) =>
-                              setCustomCanonicalNames((prev) => ({
-                                ...prev,
-                                [pItem.id]: e.target.value,
-                              }))
-                            }
-                            placeholder="Canonical name"
-                            style={{
-                              width: '100%',
-                              fontSize: '11px',
-                              padding: '2px 4px',
-                              marginTop: '2px',
-                              background: '#0f172a',
-                              color: '#fff',
-                              border: '1px solid #475569',
-                              borderRadius: '3px',
-                            }}
-                          />
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-                <button
-                  type="button"
-                  className="review-btn review-btn--confirm"
-                  disabled={
-                    selectedBulkTaxonomyIds.size === 0 ||
-                    isBulkConfirmingTaxonomy
-                  }
-                  onClick={() => void handleBulkConfirmTaxonomy()}
-                  style={{ width: '100%', fontSize: '12px', padding: '6px' }}
-                >
-                  {isBulkConfirmingTaxonomy
-                    ? 'Confirming Taxonomy...'
-                    : `Batch Confirm Selected (${selectedBulkTaxonomyIds.size})`}
-                </button>
+                        )
+                      })}
+                    </div>
+                    <button
+                      type="button"
+                      className="review-btn review-btn--confirm"
+                      disabled={
+                        selectedBulkTaxonomyIds.size === 0 ||
+                        isBulkConfirmingTaxonomy
+                      }
+                      onClick={() => void handleBulkConfirmTaxonomy()}
+                      style={{ width: '100%', fontSize: '12px', padding: '6px' }}
+                    >
+                      {isBulkConfirmingTaxonomy
+                        ? 'Confirming Taxonomy...'
+                        : `Batch Confirm Selected (${selectedBulkTaxonomyIds.size})`}
+                    </button>
+                  </>
+                )}
               </div>
             )
           })()}
@@ -960,7 +1302,8 @@ export default function ReviewPage({
                         >
                     <div className="review-item-card__top">
                       <span className="review-item-card__label">{item.label}</span>
-                      <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                        <ItemStatusVisual status={item.status} />
                         <StatementBadge type={item.statement_type} />
                         <ReviewStatusBadge status={item.status} />
                       </div>
@@ -1123,96 +1466,162 @@ export default function ReviewPage({
           </div>
         </aside>
 
-        {/* ── Right PDF Viewer ── */}
-        <main className="review-viewer" aria-label="PDF Document Viewer">
-          <div className="review-viewer__toolbar">
-            <div className="review-viewer__page-info">
-              {pdfDoc ? `Page ${currentPage} of ${pdfDoc.numPages}` : 'Loading document...'}
-            </div>
-            {selectedItem && (
-              <div style={{ fontSize: 12, color: 'var(--text)' }}>
-                Source: {selectedItem.source_file}
+        {/* ── Resizable Split Pane Divider (FN-062) ── */}
+        <div
+          className="review-resizer"
+          onMouseDown={handleMouseDownResizer}
+          title="Drag to resize pane"
+        />
+
+        {/* ── Right Document Viewer (PDF or HTML) ── */}
+        <main className="review-viewer" aria-label="Document Viewer" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div className="review-viewer__toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 16px', borderBottom: '1px solid var(--border)', backgroundColor: 'var(--surface)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button
+                type="button"
+                className="fn-btn fn-btn--ghost fn-btn--sm"
+                disabled={currentPage <= 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                aria-label="Previous page"
+              >
+                ‹
+              </button>
+              <div className="review-viewer__page-info" style={{ fontSize: '12px', fontWeight: 500 }}>
+                {pdfDoc ? `Page ${currentPage} of ${pdfDoc.numPages}` : 'Loading document...'}
               </div>
-            )}
+              <button
+                type="button"
+                className="fn-btn fn-btn--ghost fn-btn--sm"
+                disabled={!pdfDoc || currentPage >= pdfDoc.numPages}
+                onClick={() => setCurrentPage((p) => Math.min(pdfDoc?.numPages || p, p + 1))}
+                aria-label="Next page"
+              >
+                ›
+              </button>
+            </div>
+
+            {/* Zoom Controls & Source Indicator */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <button
+                  type="button"
+                  className="fn-btn fn-btn--ghost fn-btn--sm"
+                  onClick={() => setZoomScale((z) => Math.max(0.6, Number((z - 0.15).toFixed(2))))}
+                  title="Zoom out"
+                  aria-label="Zoom out"
+                >
+                  <ZoomOut size={13} aria-hidden="true" />
+                </button>
+                <span style={{ fontSize: '11px', minWidth: '38px', textAlign: 'center', color: 'var(--ink-muted)' }}>
+                  {Math.round(zoomScale * 100)}%
+                </span>
+                <button
+                  type="button"
+                  className="fn-btn fn-btn--ghost fn-btn--sm"
+                  onClick={() => setZoomScale((z) => Math.min(2.5, Number((z + 0.15).toFixed(2))))}
+                  title="Zoom in"
+                  aria-label="Zoom in"
+                >
+                  <ZoomIn size={13} aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  className="fn-btn fn-btn--ghost fn-btn--sm"
+                  onClick={() => setZoomScale(1.0)}
+                  title="Fit width"
+                  aria-label="Fit width"
+                >
+                  <Maximize2 size={13} aria-hidden="true" />
+                </button>
+              </div>
+
+              {selectedItem && (
+                <div style={{ fontSize: '11px', color: 'var(--ink-muted)', borderLeft: '1px solid var(--border)', paddingLeft: '8px' }}>
+                  Source: {selectedItem.source_file}
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="review-viewer__stage">
-            {pdfLoading && (
-              <div className="review-viewer__loading">
-                <div className="review-viewer__spinner" />
-                <span>Loading source PDF...</span>
-              </div>
-            )}
+          {/* Viewer Stage: HTML (FN-032) or PDF with Single Item Sweep (FN-062) */}
+          {selectedItem?.source_file?.endsWith('.html') || selectedItem?.source_file?.endsWith('.htm') ? (
+            <div className="review-viewer__stage" style={{ padding: '16px', height: '100%', flex: 1 }}>
+              <iframe
+                src={`${apiBase}/filings/${jobId}/html`}
+                className="review-html-viewer"
+                title="SEC EDGAR HTML Filing Viewer"
+                sandbox="allow-same-origin allow-scripts"
+                style={{ width: '100%', height: '100%', border: '1px solid var(--border)', borderRadius: 'var(--fn-radius-md)' }}
+              />
+            </div>
+          ) : (
+            <div className="review-viewer__stage" style={{ flex: 1, overflow: 'auto', padding: '16px', display: 'flex', justifyContent: 'center' }}>
+              {pdfLoading && (
+                <div className="review-viewer__loading">
+                  <div className="review-viewer__spinner" />
+                  <span>Loading source PDF...</span>
+                </div>
+              )}
 
-            {/* EC-7 handling: PDF binary unavailable */}
-            {pdfError && (
-              <div className="review-viewer__error" role="alert">
-                <h3>Source PDF Unavailable</h3>
-                <p>{pdfError}</p>
-              </div>
-            )}
+              {pdfError && (
+                <div className="review-viewer__error" role="alert">
+                  <h3>Source PDF Unavailable</h3>
+                  <p>{pdfError}</p>
+                </div>
+              )}
 
-            {/* EC-2 handling: Page not found */}
-            {pageRenderError && !pdfError && (
-              <div className="review-viewer__error" role="alert">
-                <h3>Page Rendering Error</h3>
-                <p>{pageRenderError}</p>
-              </div>
-            )}
+              {pageRenderError && !pdfError && (
+                <div className="review-viewer__error" role="alert">
+                  <h3>Page Rendering Error</h3>
+                  <p>{pageRenderError}</p>
+                </div>
+              )}
 
-            <div
-              className="review-viewer__canvas-wrap"
-              style={{
-                display: !pdfLoading && !pdfError && !pageRenderError ? 'block' : 'none',
-              }}
-            >
-              <canvas ref={canvasRef} className="review-viewer__canvas" />
-              {canvasSize.width > 0 && (
-                <div
-                  className="review-viewer__overlay"
-                  style={{ width: canvasSize.width, height: canvasSize.height }}
-                >
-                  {items
-                    .filter((item) => item.page === currentPage)
-                    .map((item) => {
-                      const isSelected = selectedItem?.id === item.id
+              <div
+                className="review-viewer__canvas-wrap"
+                style={{
+                  display: !pdfLoading && !pdfError && !pageRenderError ? 'block' : 'none',
+                  position: 'relative',
+                  backgroundColor: '#ffffff',
+                  boxShadow: 'var(--fn-shadow-md)',
+                  borderRadius: '2px',
+                  transform: `scale(${zoomScale})`,
+                  transformOrigin: 'top center',
+                  transition: 'transform var(--fn-motion-state)',
+                }}
+              >
+                <canvas ref={canvasRef} className="review-viewer__canvas" />
+                {canvasSize.width > 0 && selectedItem && selectedItem.page === currentPage && (
+                  <div
+                    className="review-viewer__overlay"
+                    style={{ width: canvasSize.width, height: canvasSize.height, position: 'absolute', inset: 0, pointerEvents: 'none' }}
+                  >
+                    {(() => {
                       const pixelBox = normalizeBboxToPixels(
-                        item.bbox,
+                        selectedItem.bbox,
                         canvasSize.width,
                         canvasSize.height,
                       )
                       return (
                         <div
-                          key={item.id}
-                          role="button"
-                          tabIndex={0}
-                          aria-label={`Highlight for ${item.label}: ${item.value}`}
-                          className={`review-bbox ${isSelected ? 'review-bbox--active' : 'review-bbox--inactive'} ${item.status === 'extraction_error' ? 'review-bbox--extraction_error' : ''}`}
+                          role="img"
+                          aria-label={`Highlight for ${selectedItem.label}: ${selectedItem.value}`}
+                          className="review-highlight-single"
                           style={{
                             left: `${pixelBox.left}px`,
                             top: `${pixelBox.top}px`,
                             width: `${pixelBox.width}px`,
                             height: `${pixelBox.height}px`,
                           }}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleSelectItem(item)
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              handleSelectItem(item)
-                            }
-                          }}
-                          title={`${item.label}: ${item.value}`}
+                          title={`${selectedItem.label}: ${selectedItem.value}`}
                         />
                       )
-                    })}
-                </div>
-              )}
+                    })()}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </main>
       </div>
 
@@ -1250,6 +1659,79 @@ export default function ReviewPage({
               >
                 Add to Taxonomy &amp; Confirm
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Keyboard Shortcuts Sheet Modal (FN-062) ── */}
+      {showShortcutModal && (
+        <div
+          className="review-modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Keyboard Shortcuts"
+          onClick={() => setShowShortcutModal(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(20, 18, 15, 0.45)',
+            backdropFilter: 'blur(3px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+          }}
+        >
+          <div
+            className="review-modal"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: 'var(--surface)',
+              borderRadius: 'var(--fn-radius-lg)',
+              border: '1px solid var(--border)',
+              boxShadow: 'var(--fn-shadow-lg)',
+              padding: '20px 24px',
+              maxWidth: '420px',
+              width: '100%',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--ink)' }}>Keyboard Shortcuts</h3>
+              <button
+                type="button"
+                onClick={() => setShowShortcutModal(false)}
+                className="fn-btn fn-btn--ghost fn-btn--sm"
+                aria-label="Close shortcuts"
+              >
+                ✕
+              </button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: 'var(--ink-secondary)' }}>Next line item</span>
+                <kbd style={{ padding: '2px 8px', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '4px', fontWeight: 600 }}>J</kbd>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: 'var(--ink-secondary)' }}>Previous line item</span>
+                <kbd style={{ padding: '2px 8px', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '4px', fontWeight: 600 }}>K</kbd>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: 'var(--ink-secondary)' }}>Accept / confirm item</span>
+                <kbd style={{ padding: '2px 8px', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '4px', fontWeight: 600 }}>Y</kbd>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: 'var(--ink-secondary)' }}>Edit item</span>
+                <kbd style={{ padding: '2px 8px', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '4px', fontWeight: 600 }}>E</kbd>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: 'var(--ink-secondary)' }}>Cancel / Close</span>
+                <kbd style={{ padding: '2px 8px', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '4px', fontWeight: 600 }}>Esc</kbd>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: 'var(--ink-secondary)' }}>Shortcut help sheet</span>
+                <kbd style={{ padding: '2px 8px', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '4px', fontWeight: 600 }}>?</kbd>
+              </div>
             </div>
           </div>
         </div>

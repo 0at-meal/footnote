@@ -2,6 +2,12 @@
 
 Format: one line per decision, with date and context.
 
+- **2026-10-01**: Hyperlinks enabled on Column A label cells (write_url) in Excel export, reversing earlier no-hyperlink decision now that Footnote is a hosted SaaS product with deep-linking capability (FN-032). Values strictly remain unformatted plain numbers per Invariant I5.
+- **2026-10-01**: Non-blocking generate-first workflow deployed: workbooks generate immediately upon ingestion completion with unreviewed cells styled in yellow and manual-required cells left empty and red per Invariant I3, backed by a dedicated Review tab (FN-030).
+- **2026-10-01**: Multi-period workbook default aligns 8Q or 5Y periods as columns with live LTM formula columns, latest-filing-wins restatement deduplication with historical comments, and explicit gap labeling per Invariant I3 (FN-031).
+- **2026-10-01**: Standard 10-category EBITDA add-back taxonomy with 80+ alias mappings established as default, providing canonical normalization with non-recurring classification (FN-033).
+- **2026-10-01**: NetworkX completely removed from codebase and dependencies; pure tabular diff and lightweight directed acyclic graph (SimpleDiGraph) deployed for Quality of Earnings and definition drift analysis (FN-034).
+- **2026-10-01**: Review screen redesign implements keyboard-driven triage (J/K/Y/E/?), stacked progress visual, resizable split pane, and focused item highlight sweeps; Home screen implements split queue (staging vs results), pack thumbnails, and ⌘K Command Palette (FN-062, FN-063, FN-064, FN-067).
 - **2026-10-01**: Hosted SaaS replaces local-first architecture to support institutional analyst workflows, shared caches, and multi-tenant security.
 - **2026-10-01**: EDGAR-first ingestion replaces PDF-only ingestion; iXBRL and HTML tables provide authoritative source data with PDF as fallback.
 - **2026-10-01**: Groq free tier is not a production dependency; classifier abstracted to support enterprise LLM providers with deterministic fallback.

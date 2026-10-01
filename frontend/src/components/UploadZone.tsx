@@ -1,35 +1,40 @@
 import { useState, useRef, type DragEvent, type ChangeEvent, type ReactNode } from 'react'
-import { TrendingUp, PieChart, UploadCloud, AlertCircle } from 'lucide-react'
+import { TrendingUp, CreditCard, PieChart, UploadCloud, AlertCircle, Check, Sparkles } from 'lucide-react'
 import type { RejectedFile, WorkflowPack } from '../types/job'
 import { isPdf } from '../lib/validation'
 
-const WORKFLOW_PACK_DETAILS: {
+interface WorkflowPackConfig {
   id: WorkflowPack
   title: string
   subtitle: string
   icon: ReactNode
   disabled?: boolean
-  badge?: string
-}[] = [
+  isComingSoon?: boolean
+  thumbnailLines: string[]
+}
+
+const WORKFLOW_PACK_CONFIGS: WorkflowPackConfig[] = [
   {
     id: 'non_gaap_bridge',
     title: 'Earnings Quality / Non-GAAP Bridge',
     subtitle: 'Adjusted EBITDA, Non-GAAP Net Income, Free Cash Flow bridges',
     icon: <TrendingUp size={16} aria-hidden="true" />,
+    thumbnailLines: ['Operating Income (EBIT)', '+ Depr & Amortization', '+ Stock-Based Comp', '= Adjusted EBITDA'],
   },
   {
     id: 'capital_structure',
     title: 'Capital Structure & Debt Sizing',
     subtitle: 'Note 8 debt tranches, interest rates, maturities, ASC 842 leases',
-    icon: '🏛️',
+    icon: <CreditCard size={16} aria-hidden="true" />,
+    thumbnailLines: ['5.25% Senior Notes 2028', 'Term Loan B (SOFR+3%)', 'Revolving Credit Facility', '= Total Debt $2.5B'],
   },
   {
     id: 'cash_conversion',
     title: 'Valuation & Cash Conversion',
     subtitle: 'Operating Cash Flow, CapEx, Working Capital normalization',
     icon: <PieChart size={16} aria-hidden="true" />,
-    disabled: true,
-    badge: 'Coming Soon',
+    isComingSoon: true,
+    thumbnailLines: ['Operating Cash Flow', '- Capex / Maintenance', 'Δ Working Capital', '= Normalized FCF'],
   },
 ]
 
@@ -47,6 +52,7 @@ function UploadZone({
   const [internalPack, setInternalPack] = useState<WorkflowPack>(selectedWorkflowPack)
   const [isDragOver, setIsDragOver] = useState(false)
   const [rejections, setRejections] = useState<RejectedFile[]>([])
+  const [requestedPacks, setRequestedPacks] = useState<Set<string>>(new Set())
   const inputRef = useRef<HTMLInputElement>(null)
 
   const activePack = onSelectWorkflowPack ? selectedWorkflowPack : internalPack
@@ -59,6 +65,11 @@ function UploadZone({
     }
   }
 
+  function handleRequestPack(packId: string, e: React.MouseEvent) {
+    e.stopPropagation()
+    setRequestedPacks((prev) => new Set(prev).add(packId))
+  }
+
   function processFiles(fileList: FileList | File[]) {
     const files = Array.from(fileList)
     const accepted: File[] = []
@@ -68,7 +79,7 @@ function UploadZone({
       if (isPdf(file)) {
         accepted.push(file)
       } else {
-        rejected.push({ filename: file.name, reason: 'unsupported file type' })
+        rejected.push({ filename: file.name, reason: 'unsupported file type (must be PDF)' })
       }
     }
 
@@ -112,107 +123,267 @@ function UploadZone({
   }
 
   return (
-    <div className="upload-section">
-      <div className="workflow-packs-selector" style={{ marginBottom: '1.25rem' }}>
-        <div style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text, #f8fafc)' }}>
-            Select Targeted Workflow Pack
-          </label>
-          <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-            Routes ingestion parser and model generator
-          </span>
-        </div>
+    <div className="upload-section" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      {/* ── Hero: "What do you want to build?" ── */}
+      <div className="fn-hero-section">
+        <h2
+          style={{
+            fontFamily: 'var(--fn-font-serif)',
+            fontSize: '1.5rem',
+            fontWeight: 700,
+            color: 'var(--ink)',
+            marginBottom: '0.25rem',
+          }}
+        >
+          What do you want to build?
+        </h2>
+        <p style={{ fontSize: '0.85rem', color: 'var(--ink-muted)', margin: 0 }}>
+          Select a financial model pack to configure automatic extraction rules and tie-outs.
+        </p>
+
+        {/* ── Workflow Pack Cards with Real Output Thumbnails ── */}
         <div
           role="radiogroup"
           aria-label="Workflow Pack Options"
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-            gap: '0.75rem',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+            gap: '1rem',
+            marginTop: '1rem',
           }}
         >
-          {WORKFLOW_PACK_DETAILS.map((pack) => {
+          {WORKFLOW_PACK_CONFIGS.map((pack) => {
             const isSelected = activePack === pack.id
-            const isDisabled = Boolean(pack.disabled)
+            const isRequested = requestedPacks.has(pack.id)
+
             return (
               <div
                 key={pack.id}
                 role="radio"
                 aria-checked={isSelected}
-                aria-disabled={isDisabled}
-                tabIndex={isDisabled ? -1 : 0}
-                onClick={() => !isDisabled && handlePackChange(pack.id)}
+                tabIndex={pack.isComingSoon ? -1 : 0}
+                onClick={() => {
+                  if (!pack.isComingSoon) {
+                    handlePackChange(pack.id)
+                  }
+                }}
                 onKeyDown={(e) => {
-                  if (!isDisabled && (e.key === ' ' || e.key === 'Enter')) {
+                  if (!pack.isComingSoon && (e.key === ' ' || e.key === 'Enter')) {
                     e.preventDefault()
                     handlePackChange(pack.id)
                   }
                 }}
                 style={{
-                  padding: '0.75rem 1rem',
-                  borderRadius: 'var(--fn-radius-md)',
-                  border: isSelected ? '1px solid var(--fn-border-accent)' : '1px solid var(--fn-border-subtle)',
-                  backgroundColor: isSelected ? 'var(--fn-accent-bg)' : 'var(--fn-bg-surface)',
-                  cursor: isDisabled ? 'not-allowed' : 'pointer',
-                  opacity: isDisabled ? 0.55 : 1,
-                  transition: 'all 0.15s ease',
+                  position: 'relative',
+                  padding: '1.1rem',
+                  borderRadius: 'var(--fn-radius-lg)',
+                  border: isSelected ? '2px solid var(--accent)' : '1px solid var(--border)',
+                  backgroundColor: isSelected ? 'rgba(43, 75, 238, 0.04)' : 'var(--surface)',
+                  boxShadow: isSelected
+                    ? '0 0 0 2px var(--accent), var(--fn-shadow-md)'
+                    : 'var(--fn-shadow-sm)',
+                  cursor: pack.isComingSoon ? 'default' : 'pointer',
+                  transition: 'all var(--fn-motion-state)',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '0.25rem',
+                  gap: '0.75rem',
+                  overflow: 'hidden',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '1.1rem' }}>{pack.icon}</span>
-                    <span style={{ fontWeight: 600, fontSize: '0.85rem', color: isSelected ? 'var(--fn-accent-text)' : 'var(--fn-text-primary)' }}>
-                      {pack.title}
-                    </span>
-                  </div>
-                  {pack.badge && (
-                    <span
+                {/* Header with Title and Selected Ring / Check */}
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div
                       style={{
-                        fontSize: '0.65rem',
-                        fontWeight: 600,
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                        background: 'var(--fn-bg-elevated)',
-                        color: 'var(--fn-text-muted)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px',
+                        padding: '6px',
+                        borderRadius: 'var(--fn-radius-sm)',
+                        backgroundColor: isSelected ? 'rgba(43, 75, 238, 0.12)' : 'var(--surface-2)',
+                        color: isSelected ? 'var(--accent)' : 'var(--ink-secondary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                       }}
                     >
-                      {pack.badge}
-                    </span>
+                      {pack.icon}
+                    </div>
+                    <div>
+                      <h3
+                        style={{
+                          margin: 0,
+                          fontSize: '0.9rem',
+                          fontWeight: 600,
+                          color: 'var(--ink)',
+                        }}
+                      >
+                        {pack.title}
+                      </h3>
+                      <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: 'var(--ink-muted)' }}>
+                        {pack.subtitle}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Selected Indicator: Filled Ring + Check */}
+                  {isSelected && (
+                    <div
+                      style={{
+                        flexShrink: 0,
+                        width: '22px',
+                        height: '22px',
+                        borderRadius: '50%',
+                        backgroundColor: 'var(--accent)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#fff',
+                        boxShadow: '0 2px 4px rgba(43, 75, 238, 0.3)',
+                      }}
+                      aria-label="Selected"
+                    >
+                      <Check size={13} strokeWidth={3} aria-hidden="true" />
+                    </div>
+                  )}
+
+                  {/* "Request this" Button for Coming Soon */}
+                  {pack.isComingSoon && (
+                    <button
+                      type="button"
+                      onClick={(e) => handleRequestPack(pack.id, e)}
+                      disabled={isRequested}
+                      style={{
+                        flexShrink: 0,
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        padding: '3px 8px',
+                        borderRadius: 'var(--fn-radius-sm)',
+                        background: isRequested ? 'var(--surface-2)' : 'rgba(43, 75, 238, 0.08)',
+                        color: isRequested ? 'var(--ok)' : 'var(--accent)',
+                        border: '1px solid var(--border)',
+                        cursor: isRequested ? 'default' : 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                      }}
+                    >
+                      {isRequested ? (
+                        <>
+                          <Check size={11} aria-hidden="true" />
+                          <span>Requested</span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles size={11} aria-hidden="true" />
+                          <span>Request this</span>
+                        </>
+                      )}
+                    </button>
                   )}
                 </div>
-                <span style={{ fontSize: '0.75rem', color: '#94a3b8', lineHeight: 1.3 }}>
-                  {pack.subtitle}
-                </span>
+
+                {/* Real Output Thumbnail Preview */}
+                <div
+                  style={{
+                    backgroundColor: 'var(--surface-2)',
+                    borderRadius: 'var(--fn-radius-sm)',
+                    border: '1px solid var(--border)',
+                    padding: '8px 10px',
+                    fontSize: '11px',
+                    fontFamily: 'var(--fn-font-mono)',
+                    color: 'var(--ink-secondary)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px',
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: '10px',
+                      color: 'var(--ink-muted)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em',
+                      marginBottom: '2px',
+                    }}
+                  >
+                    Output Preview
+                  </div>
+                  {pack.thumbnailLines.map((line, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        borderBottom: idx < pack.thumbnailLines.length - 1 ? '1px dashed var(--border)' : 'none',
+                        paddingBottom: '2px',
+                        fontWeight: line.startsWith('=') ? 600 : 400,
+                        color: line.startsWith('=') ? 'var(--ink)' : 'inherit',
+                      }}
+                    >
+                      <span>{line}</span>
+                      <span>──</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )
           })}
         </div>
       </div>
 
+      {/* ── Slim Drop Bar that Expands with Spotlight on Drag-Over ── */}
       <div
-        className={`upload-zone${isDragOver ? ' upload-zone--drag-over' : ''}`}
+        className={`upload-zone upload-zone--slim${isDragOver ? ' upload-zone--drag-over' : ''}`}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
-        aria-label="PDF upload area"
+        aria-label="Filing upload bar"
+        style={{
+          border: isDragOver ? '2px dashed var(--accent)' : '1px dashed var(--border)',
+          borderRadius: 'var(--fn-radius-md)',
+          backgroundColor: isDragOver ? 'rgba(43, 75, 238, 0.05)' : 'var(--surface)',
+          boxShadow: isDragOver ? '0 0 0 3px rgba(43, 75, 238, 0.15)' : 'var(--fn-shadow-sm)',
+          padding: isDragOver ? '1.5rem 1rem' : '0.85rem 1.25rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '1rem',
+          transition: 'all var(--fn-motion-state)',
+          cursor: 'pointer',
+        }}
+        onClick={handleBrowseClick}
       >
-        <UploadCloud className="upload-zone__icon" size={40} aria-hidden="true" />
-
-        <p className="upload-zone__headline">
-          {isDragOver ? 'Release to add files' : 'Drag & drop PDF files here'}
-        </p>
-        <p className="upload-zone__sub">or</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div
+            style={{
+              padding: '8px',
+              borderRadius: '50%',
+              backgroundColor: isDragOver ? 'rgba(43, 75, 238, 0.15)' : 'var(--surface-2)',
+              color: isDragOver ? 'var(--accent)' : 'var(--ink-muted)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <UploadCloud size={20} aria-hidden="true" />
+          </div>
+          <div>
+            <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--ink)' }}>
+              {isDragOver ? 'Release to stage filing for extraction' : 'Drop 10-K or 10-Q filing here or browse files'}
+            </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--ink-muted)' }}>
+              Auto-detects company and fiscal period
+            </div>
+          </div>
+        </div>
 
         <button
           type="button"
-          className="fn-btn fn-btn--secondary fn-btn--md upload-zone__browse-btn"
-          onClick={handleBrowseClick}
+          className="fn-btn fn-btn--secondary fn-btn--sm"
+          onClick={(e) => {
+            e.stopPropagation()
+            handleBrowseClick()
+          }}
         >
           Browse files
         </button>
@@ -227,29 +398,47 @@ function UploadZone({
           style={{ display: 'none' }}
           aria-label="Select PDF files"
         />
-
-        <p className="upload-zone__hint">PDF only · Max 100 MB per file</p>
-
-        {rejections.length > 0 && (
-          <ul
-            className="upload-zone__rejections"
-            role="alert"
-            aria-live="assertive"
-          >
-            {rejections.map((r, i) => (
-              <li key={i} className="upload-zone__rejection-item">
-                <AlertCircle size={14} aria-hidden="true" />
-                <span>
-                  <strong>{r.filename}</strong> — {r.reason}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
       </div>
+
+      {/* ── Rejection Alerts ── */}
+      {rejections.length > 0 && (
+        <ul
+          className="upload-zone__rejections"
+          role="alert"
+          aria-live="assertive"
+          style={{
+            margin: 0,
+            padding: '8px 12px',
+            backgroundColor: 'rgba(194, 65, 12, 0.1)',
+            border: '1px solid var(--danger)',
+            borderRadius: 'var(--fn-radius-md)',
+            listStyle: 'none',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '4px',
+          }}
+        >
+          {rejections.map((r, i) => (
+            <li
+              key={i}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '0.8rem',
+                color: 'var(--danger)',
+              }}
+            >
+              <AlertCircle size={14} aria-hidden="true" />
+              <span>
+                <strong>{r.filename}</strong> — {r.reason}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }
 
 export default UploadZone
-

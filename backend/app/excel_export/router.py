@@ -108,12 +108,12 @@ def generate_model_workbook(
     review_items = review_repo.get_review_items(job_id)
 
     if review_items is not None and len(review_items) > 0:
-        batch = read_formula_inputs_from_review(review_items)
+        batch = read_formula_inputs_from_review(review_items, include_unreviewed=True)
     else:
         classification_repo = ClassificationRepository(data_dir=model_repo.data_dir)
         classified_records = classification_repo.get_classified_records(job_id)
         if classified_records is not None and len(classified_records) > 0:
-            batch = read_formula_inputs(classified_records)
+            batch = read_formula_inputs(classified_records, include_unreviewed=True)
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

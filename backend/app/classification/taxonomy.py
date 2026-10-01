@@ -8,6 +8,7 @@ Enforces:
 - CONSTITUTION ? 1.9: Atomic persistence via temporary file rename.
 """
 
+from enum import Enum
 import json
 import logging
 import os
@@ -706,3 +707,126 @@ class TaxonomyRepository:
 
         self.save_taxonomy(master)
         return True
+
+
+class StandardAddBackCategory(str, Enum):
+    """
+    Standardized add-back categories per FN-033:
+    SBC, restructuring, impairment, M&A/integration, litigation, FX, other.
+    """
+
+    SBC = "SBC"
+    RESTRUCTURING = "Restructuring"
+    IMPAIRMENT = "Impairment"
+    MA_INTEGRATION = "M&A/Integration"
+    LITIGATION = "Litigation"
+    FX = "FX"
+    OTHER = "Other"
+
+
+def classify_addback_category(label: str) -> StandardAddBackCategory:
+    """
+    Deterministically maps a line item label to a standard add-back category (FN-033).
+    Alias match first, with robust financial keyword matching.
+    """
+    norm = label.lower().strip()
+
+    # 1. SBC
+    if any(
+        kw in norm
+        for kw in (
+            "stock-based",
+            "share-based",
+            "stock based",
+            "share based",
+            "sbc",
+            "equity compensation",
+            "stock compensation",
+            "equity-based",
+            "share award",
+        )
+    ):
+        return StandardAddBackCategory.SBC
+
+    # 2. Restructuring
+    if any(
+        kw in norm
+        for kw in (
+            "restructuring",
+            "severance",
+            "facility exit",
+            "plant closure",
+            "reorganization",
+            "workforce reduction",
+            "rationalization",
+            "exit costs",
+        )
+    ):
+        return StandardAddBackCategory.RESTRUCTURING
+
+    # 3. Impairment
+    if any(
+        kw in norm
+        for kw in (
+            "impairment",
+            "write-down",
+            "write down",
+            "write-off",
+            "write off",
+            "goodwill impairment",
+            "asset impairment",
+            "intangible impairment",
+        )
+    ):
+        return StandardAddBackCategory.IMPAIRMENT
+
+    # 4. M&A / Integration
+    if any(
+        kw in norm
+        for kw in (
+            "acquisition",
+            "integration",
+            "transaction cost",
+            "transaction expense",
+            "merger",
+            "m&a",
+            "due diligence",
+            "advisory fee",
+            "purchase accounting",
+        )
+    ):
+        return StandardAddBackCategory.MA_INTEGRATION
+
+    # 5. Litigation
+    if any(
+        kw in norm
+        for kw in (
+            "litigation",
+            "legal settlement",
+            "legal reserve",
+            "legal charges",
+            "regulatory settlement",
+            "dispute",
+            "arbitration",
+            "lawsuit",
+        )
+    ):
+        return StandardAddBackCategory.LITIGATION
+
+    # 6. FX
+    if any(
+        kw in norm
+        for kw in (
+            "foreign exchange",
+            "foreign currency",
+            "currency transaction",
+            "currency fluctuation",
+            "fx gain",
+            "fx loss",
+            "translation gain",
+            "translation loss",
+        )
+    ):
+        return StandardAddBackCategory.FX
+
+    return StandardAddBackCategory.OTHER

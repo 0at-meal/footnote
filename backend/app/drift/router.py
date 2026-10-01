@@ -237,3 +237,90 @@ def mark_component_relabeled(
             detail=f"Drift flag or relabeled component not found for job '{job_id}'",
         )
     return updated_flag
+
+
+from app.drift.qoe_diff import QoEDiffReport, QoERow, diff_qoe_components
+from app.classification.taxonomy import classify_addback_category
+
+
+@router.get(
+    "/jobs/{job_id}/qoe",
+    response_model=QoEDiffReport,
+    summary="Generate Quality of Earnings (QoE) diff report for a job (FN-034)",
+)
+def get_job_qoe_report(
+    job_id: str,
+    job_repo: Annotated[JobRepository, Depends(get_job_repository)],
+    review_repo: Annotated[ReviewRepository, Depends(get_review_repository)],
+) -> QoEDiffReport:
+    """
+    Computes Quality of Earnings (QoE) metrics:
+    - Add-backs as share of reported Adjusted EBITDA
+    - Category mix (SBC, Restructuring, Impairment, etc.)
+    - Recurring non-recurring flag
+    - Cosmetic relabels and additions/removals
+    """
+    job = job_repo.get_job(job_id)
+    if job is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Job '{job_id}' not found",
+        )
+
+    items = review_repo.get_review_items(job_id) or []
+    company_name = job.filename.split("_")[0] if "_" in job.filename else "Company"
+    period_str = getattr(job, "period", None) or (f"FY{job.filing_year}" if job.filing_year else "Current")
+
+    current_rows: list[QoERow] = []
+    reported_ebitda: float | None = None
+
+    for item in items:
+        lbl = item.normalized_label or item.label
+        val_clean = str(item.value or item.extracted_value or "0").replace(",", "").replace("$", "").strip()
+        try:
+            val = float(val_clean)
+        except ValueError:
+            val = 0.0
+
+        if "ebitda" in lbl.lower() and not ("adjustment" in lbl.lower() or "addback" in lbl.lower()):
+            reported_ebitda = val
+
+        cat = classify_addback_category(lbl).value
+        current_rows.append(
+            QoERow(
+                company=company_name,
+                period=period_str,
+                component=item.id,
+                category=cat,
+                label=lbl,
+                value=val,
+            )
+        )
+
+    # Search for prior job for the same company if available
+    prior_rows: list[QoERow] | None = None
+    if job.company_id:
+        all_jobs = job_repo.list_jobs(company_id=job.company_id)
+        other_jobs = [j for j in all_jobs if j.job_id != job_id and j.status.value == "done"]
+        if other_jobs:
+            # Pick the most recent prior job
+            prior_job = sorted(other_jobs, key=lambda j: j.submitted_at)[-1]
+            prior_items = review_repo.get_review_items(prior_job.job_id) or []
+            prior_period = getattr(prior_job, "period", None) or (f"FY{prior_job.filing_year}" if prior_job.filing_year else "Prior")
+            prior_rows = [
+                QoERow(
+                    company=company_name,
+                    period=prior_period,
+                    component=pi.id,
+                    category=classify_addback_category(pi.normalized_label or pi.label).value,
+                    label=pi.normalized_label or pi.label,
+                    value=float(str(pi.value or "0").replace(",", "").replace("$", "").strip() or 0.0),
+                )
+                for pi in prior_items
+            ]
+
+    return diff_qoe_components(
+        current_rows=current_rows,
+        prior_rows=prior_rows,
+        reported_ebitda=reported_ebitda,
+    )

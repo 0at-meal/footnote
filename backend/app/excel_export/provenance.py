@@ -90,7 +90,8 @@ def build_w3c_annotation_for_node(
 
 def format_cell_comment(annotation: W3CAnnotationRecord) -> str:
     """
-    Creates human-readable projection of the W3C Web Annotation record for Excel cell comments.
+    Creates human-readable projection of the W3C Web Annotation record for Excel cell comments (FN-032).
+    Includes human-readable document reference and preserves W3C bounding box coordinates.
     """
     body = annotation.body
     target = annotation.target
@@ -98,6 +99,7 @@ def format_cell_comment(annotation: W3CAnnotationRecord) -> str:
     if target.selector is not None:
         if target.selector.type == "XPathSelector":
             return (
+                f"EDGAR HTML · {target.source} · {body.label}\n"
                 f"[Footnote Provenance - EDGAR HTML]\n"
                 f"Label: {body.label}\n"
                 f"Value: {body.value}\n"
@@ -111,6 +113,7 @@ def format_cell_comment(annotation: W3CAnnotationRecord) -> str:
             else BoundingBoxCoordinates(x0=0.0, y0=0.0, x1=0.0, y1=0.0)
         )
         return (
+            f"{target.source} · p.{target.selector.page} · {body.label}\n"
             f"[Footnote Provenance]\n"
             f"Label: {body.label}\n"
             f"Value: {body.value}\n"
@@ -137,3 +140,40 @@ def format_cell_hyperlink_url(
     Constructs the canonical HTTP URI target for the cell's provenance hyperlink.
     """
     return f"{base_url}/models/{job_id}/provenance/{sheet_name}/{cell_coord}"
+
+
+def format_source_deep_link(
+    job_id: str,
+    annotation: W3CAnnotationRecord | None = None,
+    node: FormulaNode | None = None,
+    base_url: str = "http://localhost:8000",
+) -> str:
+    """
+    Constructs the deep link URL to the source document for label cell hyperlinks (FN-032).
+    - For HTML sources: Public SEC link with fragment or element path.
+    - For PDF sources: Hosted document viewer link with page anchor.
+    """
+    if node is not None and node.source_node is not None:
+        src = node.source_node
+        loc = getattr(src, "locator", None)
+        if loc is not None and getattr(loc, "type", None) == "html":
+            if getattr(loc, "url", None):
+                return str(loc.url)
+            accession = getattr(loc, "accession", "")
+            document = getattr(loc, "document", "")
+            if accession and document:
+                clean_acc = accession.replace("-", "")
+                return f"https://www.sec.gov/Archives/edgar/data/{clean_acc}/{document}"
+        if loc is not None and getattr(loc, "type", None) == "pdf":
+            page = getattr(loc, "page", 1)
+            return f"{base_url}/api/review/{job_id}/source#page={page}"
+        if src.page:
+            return f"{base_url}/api/review/{job_id}/source#page={src.page}"
+
+    if annotation is not None and annotation.target.selector is not None:
+        target = annotation.target
+        if target.selector.type == "XPathSelector":
+            return target.source
+        return f"{base_url}/api/review/{job_id}/source#page={target.selector.page}"
+
+    return f"{base_url}/api/review/{job_id}"

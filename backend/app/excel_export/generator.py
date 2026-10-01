@@ -32,6 +32,7 @@ from app.excel_export.provenance import (
     build_w3c_annotation_for_node,
     format_cell_comment,
     format_cell_hyperlink_url,
+    format_source_deep_link,
 )
 from app.extraction.scale_and_sign import (
     UnitScale,
@@ -95,13 +96,13 @@ def generate_workbook(
     cell_refs: list[CellReference] = []
     provenance_records: list[W3CAnnotationRecord] = []
     warnings: list[str] = []
-    sheet_names = ["Source_Inputs", "Reconciliation", "Checks"]
+    sheet_names = ["Source_Inputs", "Reconciliation", "Checks", "Review"]
 
     workbook: Any = None
     try:
         workbook = xlsxwriter.Workbook(str(tmp_file))
 
-        # Define IB-compliant format styles (CONSTITUTION §2.5)
+        # Define IB-compliant format styles (CONSTITUTION §2.5, FN-030, FN-032)
         fmt_header = workbook.add_format(
             {
                 "bold": True,
@@ -188,8 +189,80 @@ def generate_workbook(
         )
         fmt_text = workbook.add_format({"align": "left", "font_size": 10, "border": 1})
 
+        # FN-030 & FN-032 styling tokens
+        fmt_label_link = workbook.add_format(
+            {
+                "font_color": "#2B4BEE",
+                "underline": True,
+                "align": "left",
+                "font_size": 10,
+                "border": 1,
+            }
+        )
+        fmt_needs_review_num = workbook.add_format(
+            {
+                "font_color": "#000000",
+                "bg_color": "#FEF08A",  # Yellow for uncertain (FN-030)
+                "font_size": 10,
+                "num_format": _IB_CURRENCY_FORMAT,
+                "align": "right",
+                "border": 1,
+            }
+        )
+        fmt_needs_review = workbook.add_format(
+            {
+                "font_color": "#000000",
+                "bg_color": "#FEF08A",
+                "font_size": 10,
+                "align": "right",
+                "border": 1,
+            }
+        )
+        fmt_manual_required = workbook.add_format(
+            {
+                "font_color": "#991B1B",
+                "bg_color": "#FEE2E2",  # Red for manual required (FN-030, I3)
+                "font_size": 10,
+                "border": 1,
+                "align": "right",
+            }
+        )
+        fmt_draft_status = workbook.add_format(
+            {
+                "bold": True,
+                "font_color": "#92400E",
+                "bg_color": "#FEF3C7",
+                "font_size": 10,
+                "align": "center",
+                "border": 1,
+            }
+        )
+        fmt_verified_status = workbook.add_format(
+            {
+                "bold": True,
+                "font_color": "#166534",
+                "bg_color": "#DCFCE7",
+                "font_size": 10,
+                "align": "center",
+                "border": 1,
+            }
+        )
+
+        # Count unverified items for FN-030 status header
+        unverified_leaves = [
+            leaf
+            for leaf in tree.leaves
+            if leaf.source_node is not None
+            and (
+                getattr(leaf.source_node, "review_status", None)
+                in ("needs_review", "manual_required")
+                or not getattr(leaf.source_node, "is_confirmed", False)
+            )
+        ]
+        unverified_count = len(unverified_leaves)
+
         # ----------------------------------------------------
-        # 1. Populate Sheet 'Source_Inputs' (Ticket 1.3.1)
+        # 1. Populate Sheet 'Source_Inputs' (Ticket 1.3.1, FN-030, FN-032)
         # ----------------------------------------------------
         ws_inputs = workbook.add_worksheet("Source_Inputs")
         ws_inputs.set_column("A:A", 40)
@@ -201,58 +274,126 @@ def generate_workbook(
 
         # Leaf node rows mapping: node_id -> row_idx
         source_cell_map: dict[str, int] = {}
+        review_sheet_rows: list[dict[str, Any]] = []
+
         for row_idx, leaf in enumerate(tree.leaves, start=1):
             source_node = leaf.source_node
             raw_val = source_node.value if source_node else ""
             source_file = source_node.source_file if source_node else ""
             page = source_node.page if source_node else 1
+            review_status = (
+                getattr(source_node, "review_status", None) or "auto_accepted"
+            )
+            is_manual_required = review_status == "manual_required"
+            is_needs_review = review_status == "needs_review"
 
-            ws_inputs.write(row_idx, 0, leaf.label, fmt_text)
+            # FN-032: Deep link hyperlink on the Source_Inputs label cell (Col A)
+            deep_link = format_source_deep_link(
+                job_id, node=leaf, base_url=base_url
+            )
+            ws_inputs.write_url(
+                row_idx,
+                0,
+                deep_link,
+                cell_format=fmt_label_link,
+                string=leaf.label,
+                tip=f"Source: {source_file} (p. {page})",
+            )
 
-            parsed_num, is_num = _parse_numeric_value(raw_val)
+            # FN-032 / Invariant I5: Values in Column B stay plain numbers
             val_col = 1
             val_coord = _to_cell_coord(row_idx, val_col)
+            parsed_num, is_num = _parse_numeric_value(raw_val)
 
             # Build canonical W3C Web Annotation record (plan §6.1 item 7)
             anno = build_w3c_annotation_for_node(
                 job_id, "Source_Inputs", val_coord, leaf
             )
             provenance_records.append(anno)
-
-            # Format 1 comment and 1 hyperlink URL (AC-6, AC-7)
             comment_text = format_cell_comment(anno)
-            hyperlink_url = format_cell_hyperlink_url(
-                job_id, "Source_Inputs", val_coord, base_url=base_url
-            )
-
-            # Write comment (AC-6)
-            ws_inputs.write_comment(
-                row_idx,
-                val_col,
-                comment_text,
-                {"visible": False, "width": 240, "height": 110},
-            )
 
             is_hardcode = source_node.is_hardcode if source_node else False
-            val_format = fmt_hardcode_num if is_hardcode else fmt_source_num
 
-            display_str = (
-                f"{parsed_num:,.2f}" if (is_num and parsed_num is not None) else raw_val
-            )
-            if not is_num:
-                warnings.append(
-                    f"Row {row_idx + 1} item '{leaf.label}' raw value '{raw_val}' is not a valid number (EC-2)"
+            if is_manual_required:
+                # Invariant I3: manual-required left empty and red
+                ws_inputs.write_blank(row_idx, val_col, fmt_manual_required)
+                manual_comment = (
+                    f"[Manual Input Required] No extraction value confirmed for {leaf.label}.\n"
+                    f"{comment_text}"
                 )
+                ws_inputs.write_comment(
+                    row_idx,
+                    val_col,
+                    manual_comment,
+                    {"visible": False, "width": 260, "height": 120},
+                )
+                display_str = ""
+                review_sheet_rows.append(
+                    {
+                        "cell": f"Source_Inputs!{val_coord}",
+                        "label": leaf.label,
+                        "status": "manual_required",
+                        "value": "[EMPTY]",
+                        "confidence": f"{getattr(source_node, 'confidence_score', 0.0) or 0.0:.0%}",
+                        "reason": ", ".join(getattr(source_node, "flags", []))
+                        or "Manual verification required",
+                        "link": deep_link,
+                    }
+                )
+            elif is_needs_review:
+                # FN-030: Uncertain cells yellow with comment
+                if is_num and parsed_num is not None:
+                    ws_inputs.write_number(
+                        row_idx, val_col, parsed_num, fmt_needs_review_num
+                    )
+                    display_str = f"{parsed_num:,.2f}"
+                else:
+                    ws_inputs.write(row_idx, val_col, raw_val, fmt_needs_review)
+                    display_str = raw_val
 
-            # Write hyperlink with formatted display value (AC-6, AC-7)
-            ws_inputs.write_url(
-                row_idx,
-                val_col,
-                hyperlink_url,
-                cell_format=val_format,
-                string=display_str,
-                tip=f"Source: {source_file} (p. {page})",
-            )
+                uncertain_comment = (
+                    f"[Needs Review - Uncertain Item]\n"
+                    f"Confidence: {getattr(source_node, 'confidence_score', 0.0) or 0.0:.0%}\n"
+                    f"{comment_text}"
+                )
+                ws_inputs.write_comment(
+                    row_idx,
+                    val_col,
+                    uncertain_comment,
+                    {"visible": False, "width": 260, "height": 120},
+                )
+                review_sheet_rows.append(
+                    {
+                        "cell": f"Source_Inputs!{val_coord}",
+                        "label": leaf.label,
+                        "status": "needs_review",
+                        "value": display_str,
+                        "confidence": f"{getattr(source_node, 'confidence_score', 0.0) or 0.0:.0%}",
+                        "reason": ", ".join(getattr(source_node, "flags", []))
+                        or "Low confidence / unconfirmed",
+                        "link": deep_link,
+                    }
+                )
+            else:
+                # Auto-accepted or confirmed normal
+                val_format = fmt_hardcode_num if is_hardcode else fmt_source_num
+                if is_num and parsed_num is not None:
+                    ws_inputs.write_number(row_idx, val_col, parsed_num, val_format)
+                    display_str = f"{parsed_num:,.2f}"
+                else:
+                    ws_inputs.write(row_idx, val_col, raw_val, val_format)
+                    display_str = raw_val
+
+                if not is_num and raw_val:
+                    warnings.append(
+                        f"Row {row_idx + 1} item '{leaf.label}' raw value '{raw_val}' is not a valid number (EC-2)"
+                    )
+                ws_inputs.write_comment(
+                    row_idx,
+                    val_col,
+                    comment_text,
+                    {"visible": False, "width": 240, "height": 110},
+                )
 
             source_cell_map[leaf.node_id] = row_idx
 
@@ -272,16 +413,27 @@ def generate_workbook(
             )
 
         # ----------------------------------------------------
-        # 2. Populate Sheet 'Reconciliation' (Ticket 1.3.2)
+        # 2. Populate Sheet 'Reconciliation' (Ticket 1.3.2, FN-030)
         # ----------------------------------------------------
         ws_recon = workbook.add_worksheet("Reconciliation")
         ws_recon.set_column("A:A", 40)
         ws_recon.set_column("B:B", 20)
 
-        # Title & Units Header (FN-013)
+        # Title & Status Header Banner (FN-030)
         ws_recon.write(0, 0, f"{tree.target_metric} Reconciliation", fmt_title)
-        fmt_units_header = workbook.add_format({"italic": True, "font_size": 9, "font_color": "#555555"})
-        ws_recon.write(1, 0, format_workbook_units_header(UnitScale.THOUSANDS), fmt_units_header)
+        if unverified_count > 0:
+            ws_recon.write(
+                0, 1, f"DRAFT: {unverified_count} items unverified", fmt_draft_status
+            )
+        else:
+            ws_recon.write(0, 1, "VERIFIED", fmt_verified_status)
+
+        fmt_units_header = workbook.add_format(
+            {"italic": True, "font_size": 9, "font_color": "#555555"}
+        )
+        ws_recon.write(
+            1, 0, format_workbook_units_header(UnitScale.THOUSANDS), fmt_units_header
+        )
 
         # Headers (Row 2): Column A: Line Item, Column B: Value
         ws_recon.write(2, 0, "Line Item", fmt_header)
@@ -533,6 +685,63 @@ def generate_workbook(
         ws_checks.write(6, 3, "", fmt_total)
         ws_checks.write(6, 4, "", fmt_total)
         ws_checks.write_formula(6, 5, '=IF(COUNTIF(F4:F6, "FAIL")=0, "PASS", "FAIL")', fmt_total)
+
+        # ----------------------------------------------------
+        # 4. Populate Sheet 'Review' (FN-030)
+        # ----------------------------------------------------
+        ws_review = workbook.add_worksheet("Review")
+        ws_review.set_column("A:A", 18)
+        ws_review.set_column("B:B", 35)
+        ws_review.set_column("C:C", 16)
+        ws_review.set_column("D:D", 16)
+        ws_review.set_column("E:E", 14)
+        ws_review.set_column("F:F", 35)
+        ws_review.set_column("G:G", 40)
+
+        ws_review.write(0, 0, "Workbook Verification & Audit Review Log", fmt_title)
+        review_subtitle = (
+            f"Draft status: {unverified_count} unverified items"
+            if unverified_count > 0
+            else "Verified: All items confirmed"
+        )
+        ws_review.write(1, 0, review_subtitle, fmt_units_header)
+
+        ws_review.write(2, 0, "Cell", fmt_header)
+        ws_review.write(2, 1, "Line Item", fmt_header)
+        ws_review.write(2, 2, "Status", fmt_header)
+        ws_review.write(2, 3, "Value ($)", fmt_header_num)
+        ws_review.write(2, 4, "Confidence", fmt_header)
+        ws_review.write(2, 5, "Reason / Flag", fmt_header)
+        ws_review.write(2, 6, "Source Link", fmt_header)
+
+        if len(review_sheet_rows) == 0:
+            ws_review.write(3, 0, "-", fmt_text)
+            ws_review.write(3, 1, "All line items confirmed. Zero unverified items.", fmt_text)
+            ws_review.write(3, 2, "VERIFIED", fmt_verified_status)
+            ws_review.write(3, 3, "-", fmt_text)
+            ws_review.write(3, 4, "100%", fmt_text)
+            ws_review.write(3, 5, "None", fmt_text)
+            ws_review.write(3, 6, "-", fmt_text)
+        else:
+            for r_idx, r_item in enumerate(review_sheet_rows, start=3):
+                ws_review.write(r_idx, 0, r_item["cell"], fmt_text)
+                ws_review.write(r_idx, 1, r_item["label"], fmt_text)
+                status_fmt = (
+                    fmt_manual_required
+                    if r_item["status"] == "manual_required"
+                    else fmt_needs_review
+                )
+                ws_review.write(r_idx, 2, r_item["status"], status_fmt)
+                ws_review.write(r_idx, 3, r_item["value"], fmt_text)
+                ws_review.write(r_idx, 4, r_item["confidence"], fmt_text)
+                ws_review.write(r_idx, 5, r_item["reason"], fmt_text)
+                ws_review.write_url(
+                    r_idx,
+                    6,
+                    r_item["link"],
+                    cell_format=fmt_label_link,
+                    string="Open Source Viewer",
+                )
 
         workbook.close()
         workbook = None

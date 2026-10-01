@@ -90,14 +90,67 @@ def generate_multi_year_workbook(
             error_detail="No valid jobs/formula trees provided for multi-year model generation.",
         )
 
-    # Sort jobs by filing_year ascending
-    sorted_jobs = sorted(
-        valid_jobs,
-        key=lambda pair: (
-            pair[0].filing_year if pair[0].filing_year is not None else 0,
-            pair[0].submitted_at,
-        ),
-    )
+    # Deduplicate periods with "latest filing wins" and detect restatements (FN-031)
+    def _period_key(job_rec: JobRecord) -> str:
+        p_val = getattr(job_rec, "period", None)
+        if p_val and p_val.strip():
+            return p_val.strip()
+        if job_rec.filing_year is not None:
+            return f"FY{job_rec.filing_year}"
+        return f"FY({job_rec.filename})"
+
+    grouped_by_period: dict[str, list[tuple[JobRecord, FormulaTree]]] = {}
+    for j_pair in valid_jobs:
+        p_key = _period_key(j_pair[0])
+        grouped_by_period.setdefault(p_key, []).append(j_pair)
+
+    restatements: dict[tuple[str, str], str] = {}
+    deduped_jobs: list[tuple[JobRecord, FormulaTree]] = []
+
+    for p_key, pairs in grouped_by_period.items():
+        # Sort filings for this period by submitted_at ascending
+        pairs_sorted = sorted(pairs, key=lambda p: p[0].submitted_at)
+        latest_pair = pairs_sorted[-1]
+        deduped_jobs.append(latest_pair)
+
+        if len(pairs_sorted) > 1:
+            # Check for restated values across line items
+            latest_tree = latest_pair[1]
+            latest_vals = {
+                (leaf.source_node.normalized_label if leaf.source_node and leaf.source_node.normalized_label else leaf.label): (
+                    leaf.source_node.value if leaf.source_node else ""
+                )
+                for leaf in latest_tree.leaves
+            }
+            for prior_pair in pairs_sorted[:-1]:
+                prior_tree = prior_pair[1]
+                for p_leaf in prior_tree.leaves:
+                    p_lbl = (
+                        p_leaf.source_node.normalized_label
+                        if p_leaf.source_node and p_leaf.source_node.normalized_label
+                        else p_leaf.label
+                    )
+                    p_val = p_leaf.source_node.value if p_leaf.source_node else ""
+                    if p_lbl in latest_vals and latest_vals[p_lbl] != p_val and p_val:
+                        restatements[(p_key, p_lbl)] = p_val
+
+    # Sort deduplicated period jobs chronologically
+    def _sort_period_tuple(pair: tuple[JobRecord, FormulaTree]) -> tuple[int, int, str]:
+        j = pair[0]
+        year = j.filing_year or 0
+        pk = _period_key(j).upper()
+        q_order = 0
+        if "Q1" in pk:
+            q_order = 1
+        elif "Q2" in pk:
+            q_order = 2
+        elif "Q3" in pk:
+            q_order = 3
+        elif "Q4" in pk:
+            q_order = 4
+        return (year, q_order, j.submitted_at)
+
+    sorted_jobs = sorted(deduped_jobs, key=_sort_period_tuple)
 
     target_metric: str = (
         sorted_jobs[0][1].target_metric
@@ -105,7 +158,10 @@ def generate_multi_year_workbook(
         else "Adjusted EBITDA"
     )
 
-    # Collect unique normalized labels across all years while preserving discovery order
+    # Detect if any periods are quarterly to generate LTM column (FN-031)
+    has_quarters = any("Q" in _period_key(j).upper() for j, _ in sorted_jobs)
+
+    # Collect unique normalized labels across all periods preserving discovery order
     ordered_labels: list[str] = []
     year_leaf_maps: list[dict[str, FormulaNode]] = []
 
@@ -174,6 +230,15 @@ def generate_multi_year_workbook(
                 "border": 1,
             }
         )
+        fmt_formula_num = workbook.add_format(
+            {
+                "font_color": "#000000",  # Black font for formula cells
+                "font_size": 10,
+                "num_format": _IB_CURRENCY_FORMAT,
+                "align": "right",
+                "border": 1,
+            }
+        )
         fmt_total = workbook.add_format(
             {
                 "bold": True,
@@ -198,35 +263,42 @@ def generate_multi_year_workbook(
 
         ws = workbook.add_worksheet(sheet_name)
         ws.set_column("A:A", 40)
-        for col_idx in range(1, len(sorted_jobs) + 1):
+        num_period_cols = len(sorted_jobs)
+        for col_idx in range(1, num_period_cols + 1):
             col_letter = _col_to_letter(col_idx)
             ws.set_column(f"{col_letter}:{col_letter}", 18)
 
+        ltm_col_idx = num_period_cols + 1 if has_quarters else None
+        if ltm_col_idx is not None:
+            ltm_letter = _col_to_letter(ltm_col_idx)
+            ws.set_column(f"{ltm_letter}:{ltm_letter}", 18)
+
         # Row 0: Company Title
         title_text = (
-            f"{company.name} ({company.ticker}) -- Multi-Year {target_metric} Model"
+            f"{company.name} ({company.ticker}) -- Multi-Period {target_metric} Model"
             if company.ticker
-            else f"{company.name} -- Multi-Year {target_metric} Model"
+            else f"{company.name} -- Multi-Period {target_metric} Model"
         )
         ws.write(0, 0, title_text, fmt_title)
 
         # Row 1: Headers
         ws.write(1, 0, "Line Item", fmt_header)
         for idx, (job, _) in enumerate(sorted_jobs, start=1):
-            header_text = (
-                f"FY{job.filing_year}"
-                if job.filing_year is not None
-                else f"FY({job.filename})"
-            )
+            header_text = _period_key(job)
             ws.write(1, idx, header_text, fmt_header_num)
+
+        if ltm_col_idx is not None:
+            ws.write(1, ltm_col_idx, "LTM", fmt_header_num)
 
         # Rows 2..(2 + len(ordered_labels) - 1): Line item data rows
         start_data_row = 2
         for offset, label in enumerate(ordered_labels):
             row_idx = start_data_row + offset
+            excel_row_num = row_idx + 1  # 1-indexed for Excel formula
             ws.write(row_idx, 0, label, fmt_text)
 
             for col_idx, (job, _) in enumerate(sorted_jobs, start=1):
+                pk = _period_key(job)
                 leaf_node: FormulaNode | None = year_leaf_maps[col_idx - 1].get(label)
                 if leaf_node is not None and leaf_node.source_node is not None:
                     source_node = leaf_node.source_node
@@ -240,11 +312,17 @@ def generate_multi_year_workbook(
                     provenance_records.append(anno)
                     comment_text = format_cell_comment(anno)
 
+                    # Add restatement note if restated (FN-031)
+                    if (pk, label) in restatements:
+                        comment_text = (
+                            f"Restated, was {restatements[(pk, label)]}\n{comment_text}"
+                        )
+
                     ws.write_comment(
                         row_idx,
                         col_idx,
                         comment_text,
-                        {"visible": False, "width": 240, "height": 110},
+                        {"visible": False, "width": 250, "height": 110},
                     )
 
                     if is_num and parsed_num is not None:
@@ -270,19 +348,41 @@ def generate_multi_year_workbook(
                         )
                     )
                 else:
-                    # Absent in this year: cell is left blank (no write / blank cell)
+                    # Invariant I3: Missing periods shown as explicit gaps, never zeros
                     pass
+
+            # If LTM column active: write =SUM(...) across trailing quarters
+            if ltm_col_idx is not None:
+                q_start_col = max(1, num_period_cols - 3)
+                q_end_col = num_period_cols
+                start_q_letter = _col_to_letter(q_start_col)
+                end_q_letter = _col_to_letter(q_end_col)
+                ltm_formula = f"=SUM({start_q_letter}{excel_row_num}:{end_q_letter}{excel_row_num})"
+                ltm_coord = _to_cell_coord(row_idx, ltm_col_idx)
+                ws.write_formula(row_idx, ltm_col_idx, ltm_formula, fmt_formula_num)
+                cell_refs.append(
+                    CellReference(
+                        sheet_name=sheet_name,
+                        row=row_idx,
+                        col=ltm_col_idx,
+                        coordinate=ltm_coord,
+                        node_id=None,
+                        formula=ltm_formula,
+                        is_formula=True,
+                        is_hardcode=False,
+                        source_node_id=None,
+                        annotation_id=None,
+                    )
+                )
 
         # Final row: Total row
         total_row_idx = start_data_row + len(ordered_labels)
         ws.write(total_row_idx, 0, f"{target_metric} Total", fmt_total_label)
 
         excel_start_row = start_data_row + 1  # 1-indexed for Excel
-        excel_end_row = (
-            total_row_idx  # 1-indexed for Excel (the row right before total)
-        )
+        excel_end_row = total_row_idx  # 1-indexed for Excel (the row right before total)
 
-        for col_idx in range(1, len(sorted_jobs) + 1):
+        for col_idx in range(1, num_period_cols + 1):
             col_letter = _col_to_letter(col_idx)
             formula_str = (
                 f"=SUM({col_letter}{excel_start_row}:{col_letter}{excel_end_row})"
@@ -299,6 +399,28 @@ def generate_multi_year_workbook(
                     coordinate=total_coord,
                     node_id=None,
                     formula=formula_str,
+                    is_formula=True,
+                    is_hardcode=False,
+                    source_node_id=None,
+                    annotation_id=None,
+                )
+            )
+
+        if ltm_col_idx is not None:
+            ltm_letter = _col_to_letter(ltm_col_idx)
+            ltm_total_formula = (
+                f"=SUM({ltm_letter}{excel_start_row}:{ltm_letter}{excel_end_row})"
+            )
+            ltm_total_coord = _to_cell_coord(total_row_idx, ltm_col_idx)
+            ws.write_formula(total_row_idx, ltm_col_idx, ltm_total_formula, fmt_total)
+            cell_refs.append(
+                CellReference(
+                    sheet_name=sheet_name,
+                    row=total_row_idx,
+                    col=ltm_col_idx,
+                    coordinate=ltm_total_coord,
+                    node_id=None,
+                    formula=ltm_total_formula,
                     is_formula=True,
                     is_hardcode=False,
                     source_node_id=None,

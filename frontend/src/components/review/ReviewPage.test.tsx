@@ -303,5 +303,104 @@ describe('ReviewPage Component', () => {
     expect(html).toContain('All items reviewed. Ready to generate the financial model.')
     expect(html).not.toContain('6 Tabs')
   })
+
+  it('renders stacked progress bar with verified and need review counts (FN-062)', () => {
+    const mockItems = [
+      {
+        id: '1',
+        value: '500',
+        label: 'Stock-Based Compensation',
+        page: 1,
+        bbox: { x0: 0, y0: 0, x1: 10, y1: 10 },
+        source_file: 'file.pdf',
+        confidence_band: 'auto_accepted' as const,
+        confidence_score: 0.99,
+        normalized_label: 'Stock-Based Compensation',
+        taxonomy_status: 'matched',
+        status: 'locked' as const,
+        flags: [],
+        statement_type: 'non_gaap_bridge' as const,
+        error_detail: null,
+      },
+      {
+        id: '2',
+        value: '120',
+        label: 'Restructuring Expense',
+        page: 1,
+        bbox: { x0: 0, y0: 10, x1: 10, y1: 20 },
+        source_file: 'file.pdf',
+        confidence_band: 'needs_review' as const,
+        confidence_score: 0.81,
+        normalized_label: 'Restructuring Expense',
+        taxonomy_status: 'matched',
+        status: 'needs_review' as const,
+        flags: [],
+        statement_type: 'non_gaap_bridge' as const,
+        error_detail: null,
+      },
+    ]
+
+    const html = renderToStaticMarkup(
+      <ReviewPage
+        jobId="job-progress-123"
+        apiBase="http://localhost:8000"
+        onBack={vi.fn()}
+        initialItems={mockItems}
+      />
+    )
+
+    expect(html).toContain('2 items, 1 verified, 1 need review')
+    expect(html).toContain('review-progress-stacked')
+    expect(html).toContain('50% verified')
+  })
+
+  it('renders primary split button for Export to Excel and resizer handle (FN-062)', () => {
+    const html = renderToStaticMarkup(
+      <ReviewPage
+        jobId="job-split-btn"
+        apiBase="http://localhost:8000"
+        onBack={vi.fn()}
+      />
+    )
+
+    expect(html).toContain('review-split-btn')
+    expect(html).toContain('Export to Excel')
+    expect(html).toContain('review-resizer')
+  })
+
+  it('renders HTML source viewer iframe when source_file is HTML (FN-032)', () => {
+    const mockItems = [
+      {
+        id: '1',
+        value: '750',
+        label: 'Adjusted EBITDA',
+        page: 1,
+        bbox: { x0: 0, y0: 0, x1: 10, y1: 10 },
+        source_file: 'filing.html',
+        confidence_band: 'auto_accepted' as const,
+        confidence_score: 0.99,
+        normalized_label: 'Adjusted EBITDA',
+        taxonomy_status: 'matched',
+        status: 'locked' as const,
+        flags: [],
+        statement_type: 'non_gaap_bridge' as const,
+        error_detail: null,
+      },
+    ]
+
+    const html = renderToStaticMarkup(
+      <ReviewPage
+        jobId="job-html-source"
+        apiBase="http://localhost:8000"
+        onBack={vi.fn()}
+        initialItems={mockItems}
+      />
+    )
+
+    expect(html).toContain('review-html-viewer')
+    expect(html).toContain('src="http://localhost:8000/filings/job-html-source/html"')
+    expect(html).toContain('SEC EDGAR HTML Filing Viewer')
+  })
 })
+
 

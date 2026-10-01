@@ -13,10 +13,11 @@ import type {
   WorkflowPack,
 } from './types/job'
 import { DEFAULT_METRIC } from './types/job'
-import { X } from 'lucide-react'
+import { X, Search } from 'lucide-react'
 import { AppShell } from './components/shell/AppShell'
 import { DesignPreviewPage } from './components/design/DesignPreviewPage'
 import { Wordmark } from './components/brand/Wordmark'
+import { CommandPalette } from './components/search/CommandPalette'
 import './App.css'
 
 /** Base URL for the FastAPI backend. Change for production deployment. */
@@ -32,6 +33,7 @@ function App() {
   const [activeAuditJobId, setActiveAuditJobId] = useState<string | null>(null)
   const [selectedCompany, setSelectedCompany] = useState<string>('')
   const [companies, setCompanies] = useState<CompanyWithJobs[]>([])
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
   const [currentRoute, setCurrentRoute] = useState<'app' | 'design'>(() => {
     if (typeof window !== 'undefined') {
       if (window.location.pathname === '/design' || window.location.hash === '#/design') {
@@ -40,6 +42,17 @@ function App() {
     }
     return 'app'
   })
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setIsCommandPaletteOpen((prev) => !prev)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   useEffect(() => {
     const onPopState = () => {
@@ -322,23 +335,66 @@ function App() {
       breadcrumbs={[{ label: 'Upload & Queue', active: true }]}
     >
       <div className="app-layout">
-        <header className="app-header">
-          <div className="app-header__logo">
-            <Wordmark size="md" />
+        <header className="app-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <div className="app-header__logo">
+              <Wordmark size="md" />
+            </div>
+            <p className="app-header__tagline">
+              Financial statement extraction &amp; model generation
+            </p>
           </div>
-          <p className="app-header__tagline">
-            Financial statement extraction &amp; model generation
-          </p>
+
+          {/* ⌘K Command Palette / Ticker Search Trigger */}
+          <button
+            type="button"
+            onClick={() => setIsCommandPaletteOpen(true)}
+            aria-label="Open command palette (⌘K)"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '6px 14px',
+              borderRadius: 'var(--fn-radius-md)',
+              border: '1px solid var(--border)',
+              background: 'var(--surface)',
+              color: 'var(--ink-muted)',
+              fontSize: '0.8125rem',
+              cursor: 'pointer',
+              boxShadow: 'var(--fn-shadow-sm)',
+            }}
+          >
+            <Search size={14} aria-hidden="true" style={{ color: 'var(--accent)' }} />
+            <span>Search filings or companies...</span>
+            <kbd
+              style={{
+                fontSize: '10px',
+                padding: '2px 5px',
+                borderRadius: '3px',
+                background: 'var(--surface-2)',
+                border: '1px solid var(--border)',
+                fontWeight: 600,
+                color: 'var(--ink-secondary)',
+              }}
+            >
+              ⌘K
+            </kbd>
+          </button>
         </header>
+
+        <CommandPalette
+          isOpen={isCommandPaletteOpen}
+          onClose={() => setIsCommandPaletteOpen(false)}
+          companies={companies}
+          onSelectCompany={(companyName) => setSelectedCompany(companyName)}
+          onUploadClick={() => {
+            const input = document.getElementById('file-input')
+            input?.click()
+          }}
+        />
 
       <main className="app-main">
         <section className="app-section" aria-labelledby="upload-heading">
-          <h2 id="upload-heading" className="section-title">
-            Upload Filings
-          </h2>
-          <p className="section-desc">
-            Select or drag and drop PDF 10-K / 10-Q filings to begin extraction.
-          </p>
           <UploadZone
             onFilesAdded={handleFilesAdded}
             selectedWorkflowPack={selectedWorkflowPack}
@@ -347,14 +403,16 @@ function App() {
         </section>
 
         <section className="app-section" aria-labelledby="queue-heading">
-          <h2 id="queue-heading" className="section-title">
-            Upload Queue
-            {(stagedFiles.length + persistedJobs.length) > 0 && (
-              <span className="section-title__badge">
-                {stagedFiles.length + persistedJobs.length}
-              </span>
-            )}
-          </h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <h2 id="queue-heading" className="section-title" style={{ margin: 0 }}>
+              Filing Queue
+              {(stagedFiles.length + persistedJobs.length) > 0 && (
+                <span className="section-title__badge">
+                  {stagedFiles.length + persistedJobs.length}
+                </span>
+              )}
+            </h2>
+          </div>
 
           {/* Assign to Company selector */}
           <CompanySelector
@@ -410,11 +468,15 @@ function App() {
             onReview={(jobId) => setActiveReviewJobId(jobId)}
             onAuditTrail={(jobId) => setActiveAuditJobId(jobId)}
           />
-          <SubmitBar
-            stagedFiles={stagedFiles}
-            onSubmit={() => void handleSubmit()}
-            isSubmitting={isSubmitting}
-          />
+
+          {/* Submit button only rendered when staged files are present */}
+          {stagedFiles.length > 0 && (
+            <SubmitBar
+              stagedFiles={stagedFiles}
+              onSubmit={() => void handleSubmit()}
+              isSubmitting={isSubmitting}
+            />
+          )}
         </section>
       </main>
 

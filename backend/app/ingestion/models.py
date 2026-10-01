@@ -62,6 +62,8 @@ class JobRecord(BaseModel):
     """Explanation if Excel model auto-generation was skipped (e.g. no auto-accepted records)."""
     filing_year: int | None = None
     """User-selected fiscal year for the filing (e.g. 2023)."""
+    period: str | None = None
+    """Fiscal period context string (e.g. 'Q1 2024', 'FY2023')."""
     company_id: str | None = None
     """UUIDv4 of the associated CompanyRecord, if assigned."""
     session_id: str | None = None
