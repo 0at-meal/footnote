@@ -90,10 +90,11 @@ pytest==9.1.1
 python-dateutil==2.9.0.post0
 python-docx==1.2.0
 python-dotenv==1.2.2
+python-multipart==0.0.32
 python-oxmsg==0.0.2
 python-pptx==1.0.2
 pytokens==0.4.1
-pywin32==312
+pywin32==312; sys_platform == "win32"
 PyYAML==6.0.3
 pyyaml_env_tag==1.1
 rapidocr==3.9.2

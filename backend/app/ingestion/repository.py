@@ -22,15 +22,21 @@ import json
 import os
 import threading
 import uuid
-from datetime import datetime, timezone
+from collections.abc import Callable
+from datetime import UTC, datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from app.config import DEFAULT_DATA_DIR
 from app.ingestion.models import JobRecord, JobStatus
+
+
+def _utc_now() -> str:
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 # Default data directory: backend/data/ (one level above the app/ package root).
 # Tests override this by constructing JobRepository(data_dir=tmp_path).
-_DEFAULT_DATA_DIR: Path = Path(__file__).parent.parent.parent / "data"
+_DEFAULT_DATA_DIR: Path = DEFAULT_DATA_DIR
 _REPO_LOCK = threading.RLock()
 
 
@@ -148,6 +154,45 @@ class JobRepository:
         """Return the absolute path to the stored PDF for a job_id."""
         return self._uploads_dir / f"{job_id}.pdf"
 
+    def fail_interrupted_jobs(self, reason: str) -> list[str]:
+        """Fail every job still 'queued' or 'extracting' (startup: their worker died). AUD-035."""
+        return self._fail_where(
+            lambda rec: rec.status in (JobStatus.queued, JobStatus.extracting), reason
+        )
+
+    def fail_stale_jobs(self, timeout_seconds: int, now: datetime | None = None) -> list[str]:
+        """Fail 'extracting' jobs that started more than timeout_seconds ago. AUD-035."""
+        current = now or datetime.now(UTC)
+
+        def is_stale(rec: JobRecord) -> bool:
+            if rec.status != JobStatus.extracting or not rec.started_at:
+                return False
+            try:
+                started = datetime.strptime(rec.started_at, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=UTC)
+            except ValueError:
+                return False
+            return (current - started).total_seconds() > timeout_seconds
+
+        minutes = max(1, timeout_seconds // 60)
+        return self._fail_where(
+            is_stale,
+            f"Processing timed out after {minutes} minute(s) without finishing. Re-submit the filing.",
+        )
+
+    def _fail_where(self, predicate: Callable[[JobRecord], bool], reason: str) -> list[str]:
+        with _REPO_LOCK:
+            records = self._read_records()
+            failed: list[str] = []
+            for idx, rec in enumerate(records):
+                if predicate(rec):
+                    records[idx] = rec.model_copy(
+                        update={"status": JobStatus.failed, "failure_reason": reason}
+                    )
+                    failed.append(rec.job_id)
+            if failed:
+                self._write_records(records)
+            return failed
+
     def update_job_status(
         self,
         job_id: str,
@@ -156,6 +201,9 @@ class JobRepository:
         filing_year: int | None = None,
         company_id: str | None = None,
         model_skip_reason: str | None = None,
+        parser_used: str | None = None,
+        parser_fallback_reason: str | None = None,
+        failure_reason: str | None = None,
     ) -> JobRecord | None:
         """
         Update the status (and optionally model_ready/filing_year/company_id/model_skip_reason) of a specific JobRecord and persist to jobs.json.
@@ -193,6 +241,16 @@ class JobRepository:
                         updates["company_id"] = company_id
                     if model_skip_reason is not None:
                         updates["model_skip_reason"] = model_skip_reason
+                    if parser_used is not None:
+                        updates["parser_used"] = parser_used
+                    if parser_fallback_reason is not None:
+                        updates["parser_fallback_reason"] = parser_fallback_reason
+                    if failure_reason is not None:
+                        updates["failure_reason"] = failure_reason
+                    elif status != JobStatus.failed:
+                        updates["failure_reason"] = None
+                    if status == JobStatus.extracting and rec.started_at is None:
+                        updates["started_at"] = _utc_now()
                     updated_record = rec.model_copy(update=updates)
                     records[idx] = updated_record
                     break

@@ -328,7 +328,7 @@ class EdgarClient:
                     a_tag = tr.find("a", href=True)
                     if not a_tag:
                         continue
-                    href = a_tag["href"]
+                    href = str(a_tag["href"])
                     filename = href.split("/")[-1]
 
                     # Detect exhibit type

@@ -1,0 +1,1002 @@
+[
+  {
+    "id": "AUD-001",
+    "severity": "P0",
+    "category": "viewer/runtime",
+    "tickets": [
+      "FN-003",
+      "FN-062"
+    ],
+    "title": "Review (and Audit Trail) PDF viewer intermittently fails with a pdf.js concurrent-render error (Symptom A)",
+    "evidence": [
+      "Reproduced naturally, no interception: 4 of 20 review opens failed (dev amazon 2/5, dev goog @DPR 1.25 1/5, prod build amazon 1/5, prod goog 0/5). Viewer shows 'Page Rendering Error: Cannot use the same canvas during multiple render() operations...' and the canvas wrapper is display:none. scratchpad/scen_open.py; screens/review_dev_amazon_1280.png, review_prod_amazon_1280.png, review_dev_goog_dpr125_1280.png",
+      "Deterministic repro: hold /review/{id}/items until the PDF has loaded (CDP Fetch pause, CPU x6) gives the same error every time. screens/review_race_1280.png",
+      "frontend/src/components/review/ReviewPage.tsx:315-344: draw effect depends on [pdfDoc, selectedItem, currentPage], calls setCurrentPage inside itself, and on cleanup only sets a `cancelled` flag; the previous RenderTask is never cancelled. lib/pdf/renderer.ts:42-75 discards the RenderTask.",
+      "pdfjs-dist 4.10 guard: node_modules/pdfjs-dist/build/pdf.mjs:13118 (#canvasInUse) throws when a second render starts on the same canvas.",
+      "Race trigger: GET /review/{id}/pdf answers in 6-17 ms vs /items 10-83 ms (curl timings), so the PDF often renders page 1 before items arrive; items then set selectedItem/currentPage, starting a second render mid-flight.",
+      "Error is sticky: pageRenderError hides the canvas (ReviewPage.tsx:1583) and nothing retries.",
+      "Same pattern in components/audit/AuditTrailView.tsx:269-310; screens/audit_trail_1280.png shows the identical error.",
+      "Server side is fine: /review/{id}/pdf 200 application/pdf with correct CORS headers (curl -D -).",
+      "Latent since before Phase 0 (same effect at 202f154), but FN-003/FN-062 claimed the PDF pane fixed/redesigned and added no viewer test (mutation M5 survived)."
+    ],
+    "verification": "VERIFIED",
+    "root_cause": "Un-cancelled pdf.js render tasks on a shared canvas plus an effect that re-triggers itself; error state is terminal.",
+    "user_impact": "Source PDF intermittently blank with a cryptic error on the product's core screen and in the Audit Trail; the reviewer cannot verify values.",
+    "suggested_fix": "Keep the RenderTask in a ref; in the effect cleanup call renderTask.cancel() and await its rejection before the next render (or serialize renders through a queue); derive target page without setState inside the effect; clear the error and retry on the next selection; apply the same to AuditTrailView; add a jsdom/Playwright test that loads the PDF before items.",
+    "effort": "S",
+    "depends_on": []
+  },
+  {
+    "id": "AUD-002",
+    "severity": "P0",
+    "category": "provenance/correctness",
+    "tickets": [
+      "FN-003",
+      "FN-023"
+    ],
+    "title": "Every Docling-extracted highlight box is vertically mirrored; the FN-003 'Docling origin' P0 was never fixed",
+    "evidence": [
+      "scratchpad/bbox_probe.py (does the item bbox contain the PyMuPDF location of its own value text?): Docling job 8716f887 hit 3 / miss 100 / not-found 2; PyMuPDF jobs 3906eb32 104/104, 9d00e013 104/104, a04a4f1e 954/954.",
+      "Example: 'Cash and cash equivalents' $23,466 stored bbox y=706-716 (0-1000 space); value actually at y=284-294 = 1000 - y.",
+      "Raw Docling cell box in 8716f887_docling.json: y0=239.36, y1=247.79 on an 842 pt page, i.e. already top-left origin; backend/app/extraction/coordinate_normalizer.py:74-90 inverts every 'docling' item unconditionally and ignores bbox.coord_origin.",
+      "UI: selected item highlight drawn at top=891px of a 1263px canvas instead of ~359px. screens/review_docling_mirrored_highlight_1280.png (highlight is off-screen at the bottom).",
+      "docs/AUDIT.md (FN-000) itself lists 'Docling Y-axis inversion: still open'; p0 commit 1dd6560 changed only the PyMuPDF flat_idx (docling_parser.py:646).",
+      "Tests enforce the bug: removing the inversion (mutation M3) fails 3 tests in tests/extraction/test_coordinate_normalizer.py. The FN-003 golden test (tests/extraction/test_golden_fixture_highlight.py) uses a synthetic PDF and a hand-built item with parser_used='pymupdf', so it never exercises Docling.",
+      "Hidden in the user's environment because their server falls back to PyMuPDF (AUD-003); fixing AUD-003 will expose this."
+    ],
+    "verification": "VERIFIED",
+    "root_cause": "Coordinate normalizer assumes Docling table-cell boxes are bottom-left origin; in docling-core 2.x they are top-left (coord_origin field).",
+    "user_impact": "Click-to-source highlights the wrong row on every Docling-parsed filing, which destroys trust (I4).",
+    "suggested_fix": "Branch on bbox.coord_origin (BOTTOMLEFT -> invert, TOPLEFT -> scale only); replace the parametrized inversion tests with a golden test that runs the real Docling parser on a committed small fixture and asserts the value's PyMuPDF text location falls inside the bbox.",
+    "effort": "S",
+    "depends_on": [
+      "AUD-003"
+    ]
+  },
+  {
+    "id": "AUD-003",
+    "severity": "P0",
+    "category": "environment/I3",
+    "tickets": [
+      "FN-003",
+      "FN-024"
+    ],
+    "title": "Over-flagging root cause: the server silently falls back from Docling to PyMuPDF, whose labels lose the period header and score 0.90 (Symptom D)",
+    "evidence": [
+      "All 5 of the user's jobs (2026-09-09 to 2026-10-02) have summary.parser_used='pymupdf'; the GOOGL runs all show exactly 27 auto_accepted / 77 needs_review (backend/data/results/*_summary.json).",
+      "Same GOOGL PDF via scratchpad/parse_probe.py: system Python (C:\\Program Files\\Python311, which `uvicorn` on PATH resolves to: C:\\Users\\NIRAJ\\AppData\\Roaming\\Python\\Python311\\Scripts\\uvicorn.exe) -> 'Docling library is not installed' -> pymupdf, bands needs_review 77 / auto 27 (exact match). .venv Python -> docling, auto 104 / needs_review 1.",
+      "Fresh pipeline run in .venv (job 8716f887): 98 locked / 6 pending / 1 needs_review = 7/105 flagged, versus the user's 3906eb32: 34 locked / 64 needs_review / 6 pending = 70/104 flagged (67%).",
+      "Scorer arithmetic, backend/app/extraction/confidence.py:96-125: start 1.0, flat label without ' / ' -0.15 (missing_header_hierarchy), numeric +0.05 = 0.90 < 0.95 threshold (confidence.py:68). PyMuPDF labels are 'Cash and cash equivalents'; Docling labels are 'Cash and cash equivalents / As of December 31, 2024'. 75 of 104 items score exactly 0.90.",
+      "The +0.15 reconciliation bonus never applies: is_reconciliation_candidate=False for all 104 records (a 10-Q has no Adj. EBITDA bridge).",
+      "PyMuPDF path also drops the period: two values (23,466 Dec-24 and 23,264 Mar-25) carry the same label with no period, and both land in the workbook unlabeled.",
+      "Status derivation is unchanged since 202f154 (review/repository.py:521-535). The pre-phase run 9d00e013 showed 98 locked only because the old 'Generate Model (N)' button batch-confirmed everything (ReviewPage.test.tsx:208 confirm-batch then generate); FN-030/FN-062 removed that button, so the flag rate became visible.",
+      "Silent fallback: docling_parser.py:328-339 catches any Exception, logs one WARNING (no app logging configured) and continues; the only UI trace is an 'ENGINE: PYMUPDF' badge; /health does not report Docling."
+    ],
+    "verification": "VERIFIED (that the user's server ran without Docling is a HYPOTHESIS strongly supported by identical 27/77 counts; not observed directly)",
+    "root_cause": "Environment: server started outside .venv, so Docling import fails. Code: (a) the fallback is silent (I3), (b) the PyMuPDF parser does not carry column headers into labels, (c) the scorer penalizes flat labels by a fixed -0.15 that alone crosses the auto-accept threshold.",
+    "user_impact": "About two-thirds of correct values are flagged; period columns are indistinguishable; a reviewer must clear 64+ items per filing.",
+    "suggested_fix": "Fail fast: refuse to start (or mark /health degraded and show a banner) when Docling is missing; record the fallback reason on the job and show it; add `make run` using the venv interpreter; give PyMuPDF labels their column header; make missing_header_hierarchy conditional on a known header row instead of a substring check.",
+    "effort": "S",
+    "depends_on": []
+  },
+  {
+    "id": "AUD-004",
+    "severity": "P0",
+    "category": "excel/I3",
+    "tickets": [
+      "FN-030"
+    ],
+    "title": "Auto-generated workbook is stamped VERIFIED while containing unreviewed values; the same job is VERIFIED or DRAFT depending on which path wrote it",
+    "evidence": [
+      "backend/data/models/3906eb32..._model.xlsx (openpyxl): Reconciliation!B1='VERIFIED'; Review!A2='Verified: All items confirmed'; 71 of its 98 Source_Inputs values are needs_review-band records; the 6 pending-taxonomy items are absent.",
+      "backend/app/formula_engine/reader.py:72-80 treats ClassifiedRecord.is_confirmed (taxonomy label matched) as 'value confirmed'; job_runner.py:198 calls read_formula_inputs with include_unreviewed=False, so matched-but-unreviewed items become 'confirmed' and the rest are dropped with only excluded_count += 1.",
+      "POST /models/{id}/generate (excel_export/router.py:110-116) uses review items with include_unreviewed=True and writes 'DRAFT: N items unverified' (a04a4f1e workbook has 171 yellow cells). Sub-agent replay: path (a) on 3906eb32 -> VERIFIED, path (b) -> 'DRAFT: 64 items unverified' (scratchpad/demo_single.py).",
+      "Queue primary action 'Excel (.xlsx)' (JobList.tsx:465-476) and the review dropdown 'Download .xlsx' (ReviewPage.tsx:772-781) serve whichever file was written last, i.e. the VERIFIED auto workbook until the user clicks Export."
+    ],
+    "verification": "VERIFIED (workbook and code by auditor; path replay by sub-agent)",
+    "root_cause": "Two generation paths with different inclusion rules; taxonomy confirmation conflated with human value review.",
+    "user_impact": "Analyst downloads a workbook that certifies unreviewed extractions as VERIFIED (FN-030 AC 'never silently filled' fails).",
+    "suggested_fix": "Single inclusion rule driven by confidence_band + explicit human confirmation; job_runner uses the same review-item path as /generate; list every excluded item with its reason on the Review sheet; integration test through process_queued_job.",
+    "effort": "M",
+    "depends_on": []
+  },
+  {
+    "id": "AUD-005",
+    "severity": "P0",
+    "category": "excel/false-assurance",
+    "tickets": [
+      "FN-012",
+      "FN-067"
+    ],
+    "title": "Checks sheet always shows PASS; the FN-012 tie-out engine is not wired and can never demote items",
+    "evidence": [
+      "backend/app/excel_export/generator.py:653-663: footing row compares Reconciliation total with SUM(Source_Inputs) of the same leaves, which is identical by construction.",
+      "generator.py:665-679: 'Sign & Arithmetic' and 'Reporting Period' rows are literal 0/1 values and the string 'PASS' (confirmed in 3906eb32_model.xlsx Checks rows 5-6).",
+      "backend/app/formula_engine/tie_out_checker.py has no production importer (grep); its sign/period checks are stubs that always pass (:333-373), interest is never checked (:277-330), and apply_check_results_to_records matches a record_id field no model has (:419).",
+      "Sub-agent probe through the production generator: Net income 50,000 + tax 10,000 vs reported 99,999 produced Adjusted EBITDA 159,999 with PASS on all rows (scratchpad/probe_p1.py).",
+      "Mutation M8 (footing status hard-coded to PASS) survived tests/excel_export + tests/formula_engine (70 passed). No LibreOffice recalculation test exists; soffice is not installed."
+    ],
+    "verification": "VERIFIED",
+    "root_cause": "Checks sheet written as decoration rather than generated from check results; engine left unwired.",
+    "user_impact": "Every workbook certifies tie-outs as PASS regardless of content, including the nonsense bridge in AUD-007.",
+    "suggested_fix": "Generate Checks rows from run_tie_out_checks results with live formulas comparing components vs the extracted reported total; delete constant rows; wire demotion by node id into review status with a reason; add a recalculation test (formulas lib or soffice when available).",
+    "effort": "M",
+    "depends_on": [
+      "AUD-007"
+    ]
+  },
+  {
+    "id": "AUD-006",
+    "severity": "P0",
+    "category": "excel/units",
+    "tickets": [
+      "FN-013"
+    ],
+    "title": "Workbook header always says 'Amounts in thousands'; scale detection exists only as an unwired library",
+    "evidence": [
+      "backend/app/excel_export/generator.py:434-436: format_workbook_units_header(UnitScale.THOUSANDS) unconditionally; both 2026-10-02 workbooks read 'Amounts in thousands' while the filings say 'in millions'.",
+      "extraction/scale_and_sign.py is imported only by generator.py (header string) and the unwired tie_out_checker.py; docling_parser.py:82-85,108-110 discards 'in millions' captions as noise.",
+      "scale_and_sign.py:232,248-254 defaults to THOUSANDS with no flag when no caption (sub-agent probe); the exemption regex (:77-80) also exempts 'Gross margin' and 'interest rate swaps'."
+    ],
+    "verification": "VERIFIED",
+    "root_cause": "FN-013 delivered pure helpers but no pipeline integration; header hard-coded.",
+    "user_impact": "Every workbook misstates units by 1000x for millions-denominated filings.",
+    "suggested_fix": "Capture caption/qualifier rows as table metadata, call detect_scale_from_caption, carry scale on records and nodes, write the header from it, and flag 'Units undetermined' instead of guessing; tighten the exemption regex.",
+    "effort": "M",
+    "depends_on": []
+  },
+  {
+    "id": "AUD-007",
+    "severity": "P0",
+    "category": "extraction/I3",
+    "tickets": [
+      "FN-021",
+      "FN-024",
+      "FN-030"
+    ],
+    "title": "Filings with no non-GAAP reconciliation still produce an 'Adjusted EBITDA' that is the sum of balance-sheet and OCI lines",
+    "evidence": [
+      "3906eb32_model.xlsx Reconciliation: rows 4-142 are Cash, Short-term investments, Comprehensive income... and row 143 'Adjusted EBITDA' sums them; header VERIFIED; Checks PASS.",
+      "job_runner.py:133 target_metric_found = pack_candidate_found or bool(docling_items) is True whenever anything was extracted; summary.json shows target_metric_found=True with filtered_non_reconciliation_count=104 (no candidates).",
+      "review/repository.py:511-517 shows every record when no candidate exists, so a 10-Q review lists the whole balance sheet (104 items; Amazon 954).",
+      "Sub-agent: the HTML extractor likewise accepts the cash-flow statement as a 'reconciliation' (score 0.55 >= 0.5) on Alphabet's real 10-Q, so FN-021's 'not found' status never fires."
+    ],
+    "verification": "VERIFIED",
+    "root_cause": "No explicit 'target metric not found' outcome; fallback to all records feeds the formula tree; tree sums every leaf into the target.",
+    "user_impact": "A plausible-looking but meaningless Adjusted EBITDA number is delivered for any filing that lacks a bridge.",
+    "suggested_fix": "When no reconciliation candidate exists, end the job with model_skip_reason='Adjusted EBITDA reconciliation not found in this filing' and do not build a bridge; review only shows candidate tables; exclude the reported total from summed components (tree.py:658-666).",
+    "effort": "S",
+    "depends_on": []
+  },
+  {
+    "id": "AUD-008",
+    "severity": "P0",
+    "category": "excel/I3-I5",
+    "tickets": [
+      "FN-030"
+    ],
+    "title": "Pending-taxonomy and unparseable items are silently omitted from totals and the Review sheet; Phase 3 added a zero-fill for empty values",
+    "evidence": [
+      "formula_engine/reader.py:207-212 drops pending_taxonomy_confirmation items even with include_unreviewed=True: 6/104 (3906eb32) and 182/954 (a04a4f1e) missing from workbook and Review sheet (sub-agent, demo_single.py).",
+      "Values that do not parse are written as text (generator.py:383-386) and skipped by SUM: '$(159)' at 3906eb32 Source_Inputs!B90; 60 text values in a04a4f1e (28 x '—', ranges). excel_export/utils.py:33-36 only handles a leading '('.",
+      "reader.py:268,273,283 (new in ffb3bcf): node_val = str(raw_val or '0'), so an empty value becomes 0 (latent; no empty values in current data)."
+    ],
+    "verification": "VERIFIED (sub-agent; auditor re-checked 3906eb32 Source_Inputs!B90 = '$(159)' str, 93 int + 4 float + 1 str)",
+    "root_cause": "Inclusion and parsing failures are counted but never surfaced in the deliverable.",
+    "user_impact": "DRAFT counts understate open items; totals silently exclude values (I3/I5).",
+    "suggested_fix": "Every non-included or non-numeric item gets a Review-sheet row with reason; parse '$(x)'; write blanks + flag instead of text or zero.",
+    "effort": "S",
+    "depends_on": [
+      "AUD-004"
+    ]
+  },
+  {
+    "id": "AUD-009",
+    "severity": "P0",
+    "category": "excel/multi-period",
+    "tickets": [
+      "FN-031",
+      "FN-013"
+    ],
+    "title": "Multi-period workbook collapses same-year quarters, keeps an arbitrary value per label and labels an arbitrary 4-column SUM as LTM",
+    "evidence": [
+      "multi_year_generator.py:94-100 keys periods on JobRecord.period, which no production code sets (jobs.json: period null for all jobs), so it falls back to FY{filing_year}; two 10-Qs of one year collapse into one column and the earlier one is marked 'Restated, was X' (sub-agent scratchpad/demo_multi.py).",
+      "multi_year_generator.py:170-178 leaf_map[label] = leaf keeps only the last value per label: real AMZN data 772 leaves, 45 labels, 727 values hidden (sub-agent).",
+      "multi_year_generator.py:354-362 LTM = SUM of the last <=4 columns whatever they are (annual + quarters, blanks count as 0).",
+      "company_router.py:217,221 now passes include_unreviewed=True but the generator has no status styling, DRAFT header or Review sheet; no units header; no 52/53-week handling; LibreOffice check absent."
+    ],
+    "verification": "VERIFIED (code by auditor; data-loss demos by sub-agent)",
+    "root_cause": "No structured period on records/jobs (depends on FN-013/FN-021 data that was never wired); dictionary keyed by label.",
+    "user_impact": "Multi-period output can drop quarters, show wrong comparative values and a meaningless LTM.",
+    "suggested_fix": "Carry period_end/duration per record; key columns on fiscal period; build LTM only from 4 consecutive quarters else #N/A + reason; reuse FN-030 status styling and Review sheet.",
+    "effort": "L",
+    "depends_on": [
+      "AUD-006",
+      "AUD-016"
+    ]
+  },
+  {
+    "id": "AUD-010",
+    "severity": "P0",
+    "category": "eval/fabrication",
+    "tickets": [
+      "FN-010"
+    ],
+    "title": "The 40-filing benchmark corpus is hand-typed and largely fictitious (wrong accessions/CIKs, plugged totals, copied 'second annotator')",
+    "evidence": [
+      "All labels are literals in eval/build_benchmark_corpus.py:19-950; second-annotator fields copy the primary label (:973-977, re-checked by auditor).",
+      "Both MSFT label files use Amazon's CIK prefix 0001018724 (eval/corpus/labels/0001018724-23-000012.json, -000014.json; re-checked).",
+      "Sub-agent live EDGAR check: only 2 of 40 accessions resolve to the claimed form; 15 resolve to unrelated filings (Form 4, SC 13G/A, SD, 144); 23 return 503 like a nonexistent accession (HYPOTHESIS strength for those 23).",
+      "Every filing foots exactly; every line has the same template locator 'table//tr'; all 115 lines are millions; no XBRL seeding code; eval/fetch_filings.py:60 uses the accession where the CIK belongs and caches a 165-byte 'MOCK SEC EDGAR FILING' on failure (eval/.cache/0001018724-23-000014_10-K.html, dated 2026-10-01)."
+    ],
+    "verification": "VERIFIED (code; live EDGAR checks by sub-agent)",
+    "root_cause": "Labels authored by the coding agent instead of derived from filings.",
+    "user_impact": "Any accuracy figure computed on this corpus is meaningless; plan section 9 and DECISIONS.md present it as real.",
+    "suggested_fix": "Delete the fabricated labels; rebuild from real accessions via the submissions API, seed GAAP lines from companyfacts, human-label non-GAAP lines with real locators; validate accession/CIK consistency.",
+    "effort": "L",
+    "depends_on": []
+  },
+  {
+    "id": "AUD-011",
+    "severity": "P0",
+    "category": "invariant/I1",
+    "tickets": [
+      "FN-033",
+      "FN-044"
+    ],
+    "title": "I1 breach: financial figures are sent to the Groq LLM inside 'labels'",
+    "evidence": [
+      "backend/data/results/a04a4f1e..._decision_log.jsonl: 178 of 677 classifier input payloads contain figures, e.g. 'CASH, CASH EQUIVALENTS, AND RESTRICTED CASH, END OF PERIOD / 69,893'; 3906eb32: 4 of 14 (share counts).",
+      "classification/dispatcher.py:109 builds ClassifierInputPayload(label=raw_label) with the raw extracted label; labels carry the header-cell value when header detection fails.",
+      "tests/test_architecture_boundaries.py checks only field NAMES of the payload model, not content."
+    ],
+    "verification": "VERIFIED",
+    "root_cause": "Label construction appends header-row cell text that can be a number; no numeric scrub before dispatch. Likely pre-existing (HYPOTHESIS).",
+    "user_impact": "Breaks the product's core trust promise and the data-egress statement in README (numbers leave the machine).",
+    "suggested_fix": "Strip numeric tokens from payloads before dispatch (and assert in the client); fix label construction; add a content-level I1 test on recorded payloads.",
+    "effort": "S",
+    "depends_on": []
+  },
+  {
+    "id": "AUD-012",
+    "severity": "P0",
+    "category": "invariant/I6",
+    "tickets": [
+      "FN-045"
+    ],
+    "title": "I6 breach: document text and values are written to logs",
+    "evidence": [
+      "classification/dispatcher.py:206-211 WARNING logs the raw label; extraction/coordinate_normalizer.py:194-199 WARNING logs item.value; DEBUG: coordinate_normalizer.py:81-88 (value), confidence.py:167-172 (label), formula_engine/reader.py:90-95 (label); extraction/shared_cache.py:204 INFO logs the label key (new in p2, unwired).",
+      "Most lines pre-date the phases (sub-agent: none introduced by ffb3bcf)."
+    ],
+    "verification": "VERIFIED (code reading)",
+    "root_cause": "Diagnostic logging includes cell content.",
+    "user_impact": "Filing content in server logs; rubric treats invariant breaches as P0 although impact is local today.",
+    "suggested_fix": "Log record indices / hashes only; add a log-redaction test.",
+    "effort": "S",
+    "depends_on": []
+  },
+  {
+    "id": "AUD-013",
+    "severity": "P0",
+    "category": "ui/wrong-numbers",
+    "tickets": [
+      "FN-064",
+      "FN-012"
+    ],
+    "title": "Debt card (shown on every review) presents wrong totals with a tautological 'TIE-OUT: PASS'",
+    "evidence": [
+      "GOOGL non_gaap job: 'TOTAL PRINCIPAL $21,769M' = 10,883 (Dec-24) + 10,886 (Mar-25), i.e. two balance-sheet dates of the same 'Long-term debt' line summed; badge 'TIE-OUT: PASS'. screens/review_1280.png",
+      "backend/app/footnote/extractor.py:224 total_debt = sum(valid_principals); frontend DebtScheduleCard.tsx:151-163 compares sum(tranches) with that same sum (missing principal counted as 0).",
+      "Amazon non_gaap job: debt.json has 75 'tranches' with total_debt 3,172,102 ($3.17T); duplicate tranche id debt-36df33cef318 causes React 'two children with the same key' warnings (dev console).",
+      "Card renders for non-capital-structure jobs and fires GET /footnote/{id}/lease -> 404 on every review open (console errors)."
+    ],
+    "verification": "VERIFIED",
+    "root_cause": "Debt extraction runs on whole-document records without period/table scoping; tie-out compares a total with itself.",
+    "user_impact": "Prominent hero number is wrong by 2x or 1000x+ and certified as PASS.",
+    "suggested_fix": "Only show footnote cards for capital_structure jobs; scope tranches to the debt note and a single period; tie out against the balance-sheet debt total; dedupe ids; treat lease 404 as 'not extracted' state.",
+    "effort": "M",
+    "depends_on": []
+  },
+  {
+    "id": "AUD-014",
+    "severity": "P1",
+    "category": "eval",
+    "tickets": [
+      "FN-011"
+    ],
+    "title": "Eval runner and CI gate are stubs; the gate passes an extractor that gets every value wrong",
+    "evidence": [
+      "Sub-agent probe_gate2.py: 10 value_mismatch diffs -> value_exact_match 0.0, recall 1.0, precision 1.0, GATE PASSED (eval/metrics.py:683-687, 649-656 default empty denominators to 1.0).",
+      "make eval runs the old 5 fictional PDFs (run_benchmark.py:203,209), ignores --split, exits 0 on gate failure (Makefile:4 lacks --strict); cassette directory eval/cassettes does not exist (record_replay.py:23); calibration buckets hard-coded (metrics.py:714-731); cost a constant (run_benchmark.py:265).",
+      "test_gates.py:143-177 'broken extractor' test never runs an extractor. No CI exists. make is not installed on this machine."
+    ],
+    "verification": "VERIFIED (sub-agent; auditor confirmed no .github and Makefile content)",
+    "root_cause": "Metrics and gate written to the shape of the plan without a real corpus.",
+    "user_impact": "No trustworthy accuracy number; regressions in values cannot be caught.",
+    "suggested_fix": "TP = label and value match; mismatches count as FP+FN; empty denominators fail; gate value exact-match; load the FN-010 corpus by split; add --strict to make eval; real cassette.",
+    "effort": "M",
+    "depends_on": [
+      "AUD-010"
+    ]
+  },
+  {
+    "id": "AUD-015",
+    "severity": "P1",
+    "category": "ingestion/unwired",
+    "tickets": [
+      "FN-020",
+      "FN-021",
+      "FN-022",
+      "FN-024",
+      "FN-025"
+    ],
+    "title": "EDGAR/ticker ingestion is unreachable: Phase 2 modules are unwired and the only input is PDF upload (Symptom E)",
+    "evidence": [
+      "No production importer for ingestion/router_engine.py, extraction/shared_cache.py; ingestion/edgar/* and extraction/html/* are imported only by those and exhibit_99 (grep).",
+      "main.py:64-75 registers no new routes; the frontend calls only /upload/jobs, /companies, /review/*, /models/*, /footnote/*, /audit-trail/*, /jobs/* (grep of frontend/src); EdgarCompanyResult/EdgarFiling types in types/job.ts are unused.",
+      "A pre-existing (2026-08-29) ingestion/edgar_client.py backs /upload/edgar/search, /upload/edgar/filings/{cik}, POST /upload/edgar, which downloads and validates a PDF; modern primary documents are .htm, so it likely fails (HYPOTHESIS, sub-agent).",
+      "The ⌘K palette only filters existing local companies (CommandPalette.tsx:67-72); with none, typing 'GOOGL' shows only 'Upload a filing'. screens/command_palette_GOOGL_1280.png",
+      "The new client itself works: sub-agent live get_filings('GOOGL') returned 10-Q 0001652044-26-000071 (2026-06-30) and 10-K 0001652044-26-000018 (2025-12-31).",
+      "DECISIONS.md:12 'EDGAR-first ingestion replaces PDF-only ingestion' is false."
+    ],
+    "verification": "VERIFIED",
+    "root_cause": "Phase 2 was built as libraries plus tests; no API route, job type or UI was added.",
+    "user_impact": "The headline Phase 2 capability is absent; FN-031 (ticker flow) and FN-032 (SEC deep links) have nothing to run on.",
+    "suggested_fix": "Add POST /ingest (ticker+period | accession | upload) backed by IngestionRouter; route /upload/* through it; delete edgar_client.py; add ticker search to the palette; persist HTML sources and serve them.",
+    "effort": "L",
+    "depends_on": [
+      "AUD-016"
+    ]
+  },
+  {
+    "id": "AUD-016",
+    "severity": "P1",
+    "category": "ingestion/latent-correctness",
+    "tickets": [
+      "FN-021",
+      "FN-022",
+      "FN-024",
+      "FN-025"
+    ],
+    "title": "Phase 2 code would produce wrong numbers if wired: period collapse, dropped negatives, period-blind diff, cache key collisions",
+    "evidence": [
+      "html/table_parser.py:171-185: three-month, six-month and TTM columns collapse to one period label; on Alphabet's real EX-99.1, Q2-2025 (28,196) and 6M-2025 (62,736) net income are both '2025' (sub-agent).",
+      "parse_numeric_cell('(5)') and '(1)' return None (auditor re-ran: (None, '(5)')); split '(50' + ')' cells also dropped.",
+      "exhibit_99/differ.py:59-69 keys on label only: 1,000 vs 1,050 -> has_discrepancies=False (sub-agent).",
+      "router_engine.py:97-98,127-129 cache key = accession or filename (auditor re-read): two users uploading different '10-Q.pdf' get the first user's records; target_metric not in key.",
+      "shared_cache.py:249 keys corrections by label: one correction rewrites every cell with that label, for other users after promotion; user ids stored in the shared layer (:86,201).",
+      "Router picks the 8-K by filed month (router_engine.py:158) and drops the submissions 'items' field; accession path fabricates cik='0000000000' (:161-170)."
+    ],
+    "verification": "VERIFIED (sub-agent probes on real SEC data; two items re-checked by auditor)",
+    "root_cause": "Idealized fixtures (e.g. 8-K given the 10-Q's period) let defects pass tests.",
+    "user_impact": "Latent today; would become P0 wrong numbers and a cross-user data leak once wired.",
+    "suggested_fix": "Structured period (start, end, duration) per cell; strip footnote markers only when trailing a number; key diffs and caches by (canonical locator, period); hash upload bytes into the cache key; select 8-Ks with Item 2.02.",
+    "effort": "M",
+    "depends_on": []
+  },
+  {
+    "id": "AUD-017",
+    "severity": "P1",
+    "category": "ui/product",
+    "tickets": [
+      "FN-061",
+      "FN-063",
+      "FN-066"
+    ],
+    "title": "Design showcase ships to production behind a header button, and mock/design content is hard-coded into production screens (Symptom C)",
+    "evidence": [
+      "AppShell.tsx:153-176 renders a '/design' button whenever onNavigate is passed; App.tsx passes it on every screen; App.tsx:37-44 and :251-264 route /design with no import.meta.env.DEV gate (zero uses of import.meta.env in src).",
+      "Production build contains the page: dist bundle has 'Design System' x2, 'Exit Design' x1 (scratchpad/dist/assets/index-*.js). screens/design_1280.png, design_1920.png",
+      "Pack cards show fixed 'OUTPUT PREVIEW' strings with dash values ('5.25% Senior Notes 2028', 'Term Loan B (SOFR+3%)', '= Total Debt $2.5B'): UploadZone.tsx:16-38. screens/home_1280.png",
+      "Dropzone claims 'Auto-detects company and fiscal period' but nothing detects either (JobRecord.period never set; company from manual input).",
+      "Header badge 'Local · Single-User' (AppShell.tsx:149) re-introduces the footer text FN-060 #7 removed.",
+      "'WCAG AA Contrast Audit' tab shows hard-coded PASS badges with wrong ratios (DesignPreviewPage.tsx:566-603: claims 14.2/4.8/13.5/5.6:1; computed 17.6/5.4/15.9/6.6:1) and omits the failing pair (white on dark accent #7B93FF = 2.82:1).",
+      "Ticket IDs in user-facing text: 'Design System 1.0 (FN-061 & FN-066)', 'Brand & Markers (FN-066)', 'DataTable Shell (FN-061)'."
+    ],
+    "verification": "VERIFIED",
+    "root_cause": "Design work merged into the product shell instead of a dev-only route; placeholder copy left in.",
+    "user_impact": "Prototype signals to paying users; false claims about auto-detection and accessibility.",
+    "suggested_fix": "Gate the route and button on import.meta.env.DEV (and lazy-load so it is tree-shaken); replace pack previews with real thumbnails or remove them; remove the auto-detect claim until implemented; compute contrast in a test instead of hard-coding.",
+    "effort": "S",
+    "depends_on": []
+  },
+  {
+    "id": "AUD-018",
+    "severity": "P1",
+    "category": "provenance/links",
+    "tickets": [
+      "FN-032",
+      "FN-023"
+    ],
+    "title": "Every workbook deep link returns 404; SEC URL builders are malformed; the HTML source viewer is a stub with an unsafe sandbox",
+    "evidence": [
+      "excel_export/provenance.py:167-179 builds {base_url}/api/review/{job}/source#page=N; GET http://127.0.0.1:8000/api/review/3906eb32.../source -> 404 (auditor curl). 3906eb32_model.xlsx Source_Inputs!A2 hyperlink = that URL. base_url defaults to http://localhost:8000.",
+      "Before ffb3bcf, value cells linked to /models/{job}/provenance/Source_Inputs/Bn, a real route (sub-agent) -> regression.",
+      "SEC fallbacks omit the CIK: provenance.py:46 and html/extractor.py:91 forms returned 404 live; provenance.py:166 form 301s to a CIK-less path (sub-agent). No ':~:text=' fragments, no signed URLs, no nightly link check.",
+      "ReviewPage.tsx:1547-1556 iframe src /filings/{job}/html -> 404 (auditor curl); switches on source_file extension, not locator.type; sandbox='allow-same-origin allow-scripts' defeats the sandbox if ever served same-origin (HYPOTHESIS, latent security).",
+      "tests/excel_export/test_generate_first.py:128 asserts the 404 URL."
+    ],
+    "verification": "VERIFIED",
+    "root_cause": "Links written to a route that was never built; HtmlLocator lacks CIK.",
+    "user_impact": "'Every number clickable back to its source' does not work in the deliverable.",
+    "suggested_fix": "Link to an existing route (e.g. /review/{job}/pdf#page=N or a frontend deep link) with a configurable public base URL; add cik to HtmlLocator and build /Archives/edgar/data/{cik}/{acc}/{doc}#:~:text=...; drop allow-same-origin; link-check test.",
+    "effort": "S",
+    "depends_on": [
+      "AUD-015"
+    ]
+  },
+  {
+    "id": "AUD-019",
+    "severity": "P1",
+    "category": "ui/layout",
+    "tickets": [
+      "FN-062",
+      "FN-061"
+    ],
+    "title": "Review screen layout: header (incl. Export to Excel) can be hidden under the sticky app bar; nested scroll areas; cards push the list below the fold (Symptom B)",
+    "evidence": [
+      ".review-layout is 100vh (800px) inside AppShell's 48px sticky bar, so the document is 848px tall; when the window keeps its scroll from the queue, the sticky bar covers the review header (screens/review_1280.png: no title, no Export button). Same on Audit Trail (screens/audit_trail_1280.png, header cut).",
+      "Nested scrollables at 1280: review-sidebar__scroll-container and review-viewer__stage, plus the page and the taxonomy panel (max-height 180, ReviewPage.tsx:1162-1171). FN-062 requires no nested scrolling.",
+      "Debt, Lease and Concentration cards render above the item list (ReviewPage.tsx:1253-1268); first item card at y=893 in an 800px viewport.",
+      "List is not virtualized (no @tanstack/react-virtual in package.json; ReviewPage maps all items; Amazon job = 954 cards).",
+      "Default selection is items[0] (a LOCKED item) while the default tab is Flagged, so the highlighted item is not in the visible list (diag selectedItem=null).",
+      "'← ← Back to Queue': ArrowLeft icon plus a literal '←' in the label (ReviewPage.tsx:635-636)."
+    ],
+    "verification": "VERIFIED",
+    "root_cause": "Full-height layout nested in a shell with its own sticky header; FN-062 list/virtualization not implemented.",
+    "user_impact": "Primary action can be invisible; reviewers scroll through unrelated cards; large filings are slow.",
+    "suggested_fix": "Use calc(100vh - shell header) or make the shell a grid with the review filling the remaining row; reset scroll on navigation; move footnote cards into a tab; virtualize; select the first item of the active tab.",
+    "effort": "M",
+    "depends_on": []
+  },
+  {
+    "id": "AUD-020",
+    "severity": "P1",
+    "category": "viewer/navigation",
+    "tickets": [
+      "FN-062",
+      "FN-003"
+    ],
+    "title": "PDF navigation is broken: Next/Prev do nothing while an item is selected; zoom is a CSS scale that blurs and clips; no scroll-to-highlight",
+    "evidence": [
+      "After clicking 'Next page' the toolbar still reads 'Page 1 of 3' (scratchpad/out_review.json): the draw effect renders selectedItem.page whenever an item is selected (ReviewPage.tsx:319) and one is always selected.",
+      "Zoom = transform: scale() on the canvas wrapper (ReviewPage.tsx:1588); at 130% the canvas spans x=283..1443 while the sidebar ends at 440, so the left of the page is under the sidebar and unreachable; the canvas is not re-rendered (blurry). screens/review_zoom130_1280.png",
+      "'Fit width' just resets to 1.0 (ReviewPage.tsx:1530); no page thumbnails.",
+      "canvasSize comes from getBoundingClientRect (ReviewPage.tsx:329) inside the scaled wrapper, so a re-render while zoomed sizes the overlay with the scaled size (FN-003 clientWidth issue reintroduced; HYPOTHESIS on exact offset).",
+      "Selecting an item does not scroll the PDF stage to the highlight: Docling item highlight at y=1099 in a 900px viewport stayed off-screen."
+    ],
+    "verification": "VERIFIED (overlay mis-sizing under zoom is HYPOTHESIS)",
+    "root_cause": "Page state derived from selection; zoom implemented as CSS transform instead of re-rendering at scale.",
+    "user_impact": "Reviewer cannot browse the filing or zoom usefully; FN-003 AC (correct highlight at two zoom levels) unproven in the UI.",
+    "suggested_fix": "Separate viewedPage from selectedItem.page; re-render the canvas at PDF_RENDER_SCALE*zoom and size the overlay from canvas.width/dpr; implement fit-width from container width; scrollIntoView the highlight.",
+    "effort": "M",
+    "depends_on": [
+      "AUD-001"
+    ]
+  },
+  {
+    "id": "AUD-021",
+    "severity": "P1",
+    "category": "qoe/correctness",
+    "tickets": [
+      "FN-034",
+      "FN-033"
+    ],
+    "title": "QoE endpoint returns meaningless numbers and crashes for jobs with a company",
+    "evidence": [
+      "GET /drift/jobs/3906eb32.../qoe (auditor): 104 rows incl. Total assets; total_addbacks 5,948,647.45; 'Other' share 0.9999; reported_ebitda None; company 'Company', period 'Current'.",
+      "'(4,800)' and other parenthesized negatives become 0.0 (drift/router.py:276-281; qoe_diff.py:66-73); negative add-backs clipped by max(0.0, ...) (qoe_diff.py:126,131).",
+      "drift/router.py:303 job_repo.list_jobs(company_id=...) -> TypeError (signature list_jobs(self), ingestion/repository.py:131): 500 whenever the job has a company (mypy reports it too). drift/router.py:279 references ReviewItem.extracted_value (no such field).",
+      "Recurring flag never fires: router passes no history (:322-326). Code thresholds 10% / 2-of-N vs DECISIONS '15%' / '3 of last 4'.",
+      "Mutation M10 (all QoE values = 0.0) survived tests/drift (45 passed)."
+    ],
+    "verification": "VERIFIED",
+    "root_cause": "Endpoint feeds every review item to the diff and parses values naively.",
+    "user_impact": "Not reachable from the UI today, but any consumer of the API gets wrong numbers.",
+    "suggested_fix": "Restrict to bridge add-back rows; use the shared numeric parser; fix list_jobs filtering; pass history periods; tests on real review items.",
+    "effort": "M",
+    "depends_on": [
+      "AUD-007"
+    ]
+  },
+  {
+    "id": "AUD-022",
+    "severity": "P1",
+    "category": "feature-missing",
+    "tickets": [
+      "FN-034"
+    ],
+    "title": "FN-034 deliverables missing: no QoE workbook sheet, no web panel, no drift-data migration; graph drift remains the live engine",
+    "evidence": [
+      "grep -ri 'qoe' frontend/src -> no hits; no QoE sheet in excel_export (grep); no migration code; drift.db tables still graph tables with 0 rows (sub-agent).",
+      "drift/graph.py swaps nx.DiGraph for a hand-rolled SimpleDiGraph; docstring still says 'NetworkX-backed'. DriftFlagCard.tsx is imported nowhere.",
+      "networkx import removed (DONE) but still installed via torch and now unpinned (requirements.txt diff in ffb3bcf)."
+    ],
+    "verification": "VERIFIED",
+    "root_cause": "Only the pure diff function was built.",
+    "user_impact": "Quality-of-earnings insight promised by the product thesis is absent.",
+    "suggested_fix": "Persist QoE rows per (company, period); add a QoE sheet with formulas and a review/company panel; migrate or drop graph drift.",
+    "effort": "L",
+    "depends_on": [
+      "AUD-021",
+      "AUD-023"
+    ]
+  },
+  {
+    "id": "AUD-023",
+    "severity": "P1",
+    "category": "feature-missing",
+    "tickets": [
+      "FN-033",
+      "FN-011"
+    ],
+    "title": "FN-033 add-back standardization is essentially missing (no Reported vs Standardized EBITDA, no toggles, no LLM step, no versioning, no eval metric)",
+    "evidence": [
+      "grep 'standardized|toggle|reported' in backend/app/excel_export -> nothing (sub-agent).",
+      "classify_addback_category (classification/taxonomy.py:727-832) is a substring keyword match with 7 categories / ~50 keywords, used only by the QoE code; DECISIONS.md claims '10 categories / 80+ aliases'. False positives: 'Acquisition of property and equipment' -> M&A.",
+      "eval/metrics.py:693-699 'category_accuracy' compares normalized labels and ignores the corpus standard_category."
+    ],
+    "verification": "VERIFIED (sub-agent; DECISIONS text checked by auditor)",
+    "root_cause": "Ticket reduced to a keyword function.",
+    "user_impact": "No standardized EBITDA view, the product's differentiator.",
+    "suggested_fix": "Category on classified records (alias then constrained LLM), versioned enum, Reported/Standardized blocks with 1/0 include column and SUMPRODUCT, eval metric from standard_category.",
+    "effort": "L",
+    "depends_on": [
+      "AUD-014"
+    ]
+  },
+  {
+    "id": "AUD-024",
+    "severity": "P1",
+    "category": "feature-unwired",
+    "tickets": [
+      "FN-067"
+    ],
+    "title": "FN-067 workbook preview is not wired anywhere and renders built-in sample data",
+    "evidence": [
+      "WorkbookPreview is imported only by its own test (grep of frontend/src); 'Ready for modeling' string absent from the production bundle (tree-shaken).",
+      "WorkbookPreview.tsx:47 defaults rows to DEFAULT_SAMPLE_ROWS from preview/sampleData.ts; no API provides a grid spec, so the AC 'renders from the same grid spec used by the exporter' cannot hold."
+    ],
+    "verification": "VERIFIED",
+    "root_cause": "Component built in isolation.",
+    "user_impact": "No payoff/preview moment; checks summary would be sample data.",
+    "suggested_fix": "Expose the generator's grid spec via the API and render it before export; remove sample defaults.",
+    "effort": "M",
+    "depends_on": [
+      "AUD-005"
+    ]
+  },
+  {
+    "id": "AUD-025",
+    "severity": "P1",
+    "category": "provenance/I3-I4",
+    "tickets": [
+      "FN-023"
+    ],
+    "title": "Provenance fields were relaxed with fabricated defaults (page 1, whole-page box, 'unknown.pdf') and a swallowed exception",
+    "evidence": [
+      "review/models.py:43-48 page default 1, bbox default {0,0,1000,1000}, source_file ''; review/models.py:67 and formula_engine/models.py:68 substitute 'unknown.pdf'; extraction/models.py:127-135 same; extraction/models.py:157 'except Exception: pass' (auditor re-read).",
+      "Sub-agent fabricate.py: a ReviewItem with no provenance validates as PdfLocator(page=1, full page, 'unknown.pdf')."
+    ],
+    "verification": "VERIFIED (latent: current job data all has real provenance)",
+    "root_cause": "Fields made optional to accommodate HtmlLocator instead of validating per locator type.",
+    "user_impact": "A record that lost provenance would load silently and highlight 'page 1, whole page' (I4/I3).",
+    "suggested_fix": "Require exactly one locator variant; keep legacy fields required for PDF; raise or mark extraction_error instead of defaulting.",
+    "effort": "M",
+    "depends_on": []
+  },
+  {
+    "id": "AUD-026",
+    "severity": "P1",
+    "category": "classification",
+    "tickets": [
+      "FN-033"
+    ],
+    "title": "Taxonomy mapping puts balance-sheet totals under wrong canonical lines in the workbook",
+    "evidence": [
+      "3906eb32_model.xlsx Source_Inputs: 'Total cash, cash equivalents, and marketable securities' (95,657 / 95,328) is labeled 'Accrued Expenses and Other Current Liabilities (p. 1)'."
+    ],
+    "verification": "VERIFIED (whether this predates the phases is HYPOTHESIS; p3 changed classification/taxonomy.py)",
+    "root_cause": "Alias / leaf matching too loose (not traced in detail).",
+    "user_impact": "Wrong line names in the model even when values are right.",
+    "suggested_fix": "Add a labeled mapping test set from real filings; require statement-type agreement before accepting an alias match.",
+    "effort": "M",
+    "depends_on": [
+      "AUD-010"
+    ]
+  },
+  {
+    "id": "AUD-027",
+    "severity": "P1",
+    "category": "tests",
+    "tickets": [
+      "FN-003",
+      "FN-012",
+      "FN-062",
+      "FN-011"
+    ],
+    "title": "The test suite cannot catch the reported failures (frontend tests have no DOM; backend tests enshrine defects)",
+    "evidence": [
+      "frontend/vite.config.ts: vitest environment 'node'; component tests use renderToString; no jsdom, Testing Library or Playwright in package.json. Mutations M5 (viewer never draws) and M6 (mirrored highlight) survived 94/94.",
+      "Backend tests assert wrong behavior: Docling inversion (test_coordinate_normalizer.py, M3), 404 deep-link URL (test_generate_first.py:128), tautological flat_idx tests that recompute the formula inline (test_coordinate_normalizer.py:227-270), DummyRecord.record_id (test_tie_out_checker.py:162-183).",
+      "Survivors: M8 Checks status hard-coded PASS, M9 EDGAR burst x100, M10 QoE values all zero (docs/audit report section 6).",
+      "No test drives process_queued_job through the review/export path that produced the VERIFIED workbook; FN-062's required Playwright test does not exist."
+    ],
+    "verification": "VERIFIED",
+    "root_cause": "Tests written to pass the implementation rather than the acceptance criteria; no browser-level tests.",
+    "user_impact": "Green CI-equivalent despite a broken app.",
+    "suggested_fix": "Add jsdom + Testing Library for components and a Playwright smoke (open review, PDF renders, highlight inside value box, export); golden tests on real fixtures; delete tautological tests.",
+    "effort": "M",
+    "depends_on": []
+  },
+  {
+    "id": "AUD-028",
+    "severity": "P1",
+    "category": "invariant/I2",
+    "tickets": [
+      "FN-002"
+    ],
+    "title": "I2 weakened: formula tree output depends on a mutable taxonomy file read at import time",
+    "evidence": [
+      "classification/taxonomy.py:33-46 loads SEED_MASTER_TAXONOMY from backend/data/taxonomy.json at module import; review actions append to that file (review/repository.py:470 taxonomy_repo.add_entry).",
+      "formula_engine/tree.py:15,560 uses SEED_MASTER_TAXONOMY when no master is passed, so identical inputs can yield different trees across restarts.",
+      "Boundary test forbids requests/httpx/sqlite3 etc. but not pathlib/json/open (tests/test_architecture_boundaries.py).",
+      "Pre-existing (same code at 202f154)."
+    ],
+    "verification": "VERIFIED (code); determinism difference not demonstrated at runtime",
+    "root_cause": "Global seed taxonomy built from disk state.",
+    "user_impact": "Reproducibility claims (NFR1/I2) are not guaranteed.",
+    "suggested_fix": "Pass the taxonomy explicitly into build_formula_tree; make the seed a pure constant; extend the boundary test.",
+    "effort": "S",
+    "depends_on": []
+  },
+  {
+    "id": "AUD-029",
+    "severity": "P2",
+    "category": "ui/FN-060",
+    "tickets": [
+      "FN-060"
+    ],
+    "title": "FN-060 visible-defect list: debt table regressed, fiscal label and duplicate detection still wrong",
+    "evidence": [
+      "#2 REGRESSED: debt table header clipped at 'MATURI' and 'Long-term debt' wraps to three lines in the COUPON/RATE column at 1280px (screens/review_1280.png, review_zoom130_1280.png).",
+      "#5 not fixed: GOOGL Q1 10-Q shows 'FY2025' (screens/home_1280.png). lib/fiscal_period.ts parses the filename with a regex instead of the document period; Amazon shows bare 'Q2'.",
+      "#6 not fixed: dedupe is filename+size on the client (App.tsx:130-141); server accepted a byte-identical 5th copy (POST /upload/jobs, job 8716f887); queue shows GOOGL x3 + 'goog trial file.pdf' (same bytes). Client skip is reported as '1 file was rejected' (screens/home_staged_light_1280.png).",
+      "#7 partial: footer replaced by 'Footnote © 2026' but 'Local · Single-User' badge added to the header.",
+      "#1, #3, #4, #8 verified OK (see Verified-OK)."
+    ],
+    "verification": "VERIFIED",
+    "root_cause": "Fixes applied to symptoms (filename regex) rather than data; later redesign regressed the table.",
+    "user_impact": "Prototype-looking defects remain.",
+    "suggested_fix": "Use DataTable truncation/tooltip with min widths; derive period from the document (cover page or XBRL dei); hash file contents server-side and block duplicates.",
+    "effort": "S",
+    "depends_on": []
+  },
+  {
+    "id": "AUD-030",
+    "severity": "P2",
+    "category": "design-system",
+    "tickets": [
+      "FN-061",
+      "FN-065"
+    ],
+    "title": "FN-061 incomplete: missing primitives, fonts not self-hosted, hard-coded colors, dark-first, AA failures",
+    "evidence": [
+      "components/ui has Badge, Button, Card, DataTable, Input, Progress, Select, Skeleton, StatusDot, Tabs, Tooltip; missing IconButton, Popover, DropdownMenu, Toast.",
+      "No @font-face or font files (grep); computed fonts fall back to Arial/system serif; document.fonts empty on home.",
+      "Hard-coded colors in new code: ReviewPage.tsx 15 occurrences (e.g. #f59e0b, #1e293b, #0f172a, #fff in the taxonomy panel), UploadZone.tsx 9, WorkbookPreview.tsx 6, JobList.tsx 5. No lint/grep check exists.",
+      "Default theme is dark (AppShell.tsx:29) though Appendix A is light-first; a manual theme toggle (FN-065, Phase 4) was added early.",
+      "AA: white on dark-theme accent #7B93FF = 2.82:1 (primary buttons, e.g. 'Lookup', 'Export to Excel' in dark); light-theme status text warn #B7791F = 3.43:1 and ok #1F8A5B = 4.09:1 on #FAF8F4 (computed).",
+      "/design shows only the active theme, not light and dark side by side."
+    ],
+    "verification": "VERIFIED",
+    "root_cause": "Partial implementation; no automated token/contrast checks.",
+    "user_impact": "Inconsistent visuals; accessibility below the plan's AA bar.",
+    "suggested_fix": "Add the missing primitives (or Radix), self-host fonts, add a stylelint/grep rule for raw colors, use dark text on the dark accent, darken warn/ok text tokens, default to light.",
+    "effort": "M",
+    "depends_on": []
+  },
+  {
+    "id": "AUD-031",
+    "severity": "P2",
+    "category": "ui/FN-063",
+    "tickets": [
+      "FN-063"
+    ],
+    "title": "FN-063 home/queue redesign partly fake: 'Request this' is local-only, stepper is not event-driven, metadata not auto-detected",
+    "evidence": [
+      "'Request this' only adds to local state (UploadZone.tsx:65-68); no backend call.",
+      "Stepper derives from coarse status (JobList.tsx:29-36): 'extracting' shows step 2 'Classifying'; 'Checks' is never current; no job events exist.",
+      "'Assign to Company (Optional)' field still present (App.tsx:418-422; screens/home_1280.png); no company/period detection.",
+      "Actions are 'Excel (.xlsx)' + 'Review' + overflow, not a single primary 'Open workbook'.",
+      "Dropzone is still a full-width box with 'Browse files' (not a slim bar)."
+    ],
+    "verification": "VERIFIED",
+    "root_cause": "Visual redesign without the backend pieces it needs.",
+    "user_impact": "Controls that appear to work but do nothing.",
+    "suggested_fix": "POST interest to the backend; emit stage events from job_runner; implement detection or remove the claim; consolidate actions.",
+    "effort": "M",
+    "depends_on": [
+      "AUD-017"
+    ]
+  },
+  {
+    "id": "AUD-032",
+    "severity": "P2",
+    "category": "ui/FN-062",
+    "tickets": [
+      "FN-062"
+    ],
+    "title": "FN-062 partial: custom mouse-only resizer, no Playwright/Lighthouse, 'Accept all' missing, wrong success count, stale download",
+    "evidence": [
+      "No react-resizable-panels; resizer is a div with onMouseDown only (ReviewPage.tsx:604-622, 1470-1474): not keyboard accessible.",
+      "Taxonomy panel offers 'Select All' + 'Batch Confirm Selected', not a bulk 'Accept all'; panel uses hard-coded dark colors in light theme.",
+      "After Export, banner says 'Model generated with {lockedCount} line items' (ReviewPage.tsx:543-546) though unreviewed items are now included.",
+      "No Playwright test, no Lighthouse run, no undo for keyboard actions."
+    ],
+    "verification": "VERIFIED",
+    "root_cause": "Redesign implemented with hand-rolled pieces; AC tooling never added.",
+    "user_impact": "Accessibility and correctness gaps on the core screen.",
+    "suggested_fix": "Use react-resizable-panels; add 'Accept all'; fix banner count; add the Playwright + axe tests the ticket specifies.",
+    "effort": "M",
+    "depends_on": [
+      "AUD-019",
+      "AUD-027"
+    ]
+  },
+  {
+    "id": "AUD-033",
+    "severity": "P2",
+    "category": "tooling/DoD",
+    "tickets": [
+      "FN-002",
+      "FN-011",
+      "FN-023"
+    ],
+    "title": "Definition of done not met: mypy strict fails (20 errors), ruff fails, a non-strict backend/mypy.ini was added, and there is no CI",
+    "evidence": [
+      "`mypy backend/app` (root strict config): 20 errors in 7 files, incl. real bugs drift/router.py:279 (ReviewItem.extracted_value) and :303 (list_jobs(company_id=)).",
+      "backend/mypy.ini (added in 873f47a) is non-strict; `cd backend && mypy app` (as ARCHITECTURE.md instructs) uses it and still reports 19 errors.",
+      "`ruff check backend`: 9 errors; `ruff check eval`: 15 (incl. try/except/pass at eval/metrics.py:781); `ruff format --check backend`: 62 files would be reformatted.",
+      "No .github or other CI; import-linter not installed; the boundary test is the only enforcement; Makefile 'eval' lacks --strict.",
+      "Frontend: eslint 0 errors, tsc -b clean, vite build OK (warning: 695 kB main chunk)."
+    ],
+    "verification": "VERIFIED",
+    "root_cause": "Phases committed without running the declared gates.",
+    "user_impact": "Type errors that are real runtime bugs shipped; no automated guard.",
+    "suggested_fix": "Delete backend/mypy.ini; fix the 20 errors; add a CI workflow running ruff, mypy --strict, pytest, eslint, tsc, vitest, build and make eval --strict.",
+    "effort": "M",
+    "depends_on": []
+  },
+  {
+    "id": "AUD-034",
+    "severity": "P2",
+    "category": "config",
+    "tickets": [
+      "FN-032",
+      "FN-061"
+    ],
+    "title": "API base and link base URLs are hard-coded to localhost:8000",
+    "evidence": [
+      "frontend/src/App.tsx:24 const API_BASE = 'http://localhost:8000'; defaults in CompanySelector.tsx:13, JobList.tsx:179, ModelViewer.tsx:32, CompanyMultiYearCard.tsx:13; 4 occurrences in the production bundle.",
+      "excel_export/provenance.py base_url default http://localhost:8000 written into every workbook hyperlink."
+    ],
+    "verification": "VERIFIED",
+    "root_cause": "No environment configuration.",
+    "user_impact": "Hosted deployment (DECISIONS: hosted SaaS) impossible without code edits; workbook links point at the user's own machine.",
+    "suggested_fix": "VITE_API_BASE + backend PUBLIC_BASE_URL settings.",
+    "effort": "S",
+    "depends_on": []
+  },
+  {
+    "id": "AUD-035",
+    "severity": "P2",
+    "category": "jobs/I3",
+    "tickets": [
+      "FN-063"
+    ],
+    "title": "A job stuck in 'extracting' never recovers and makes the UI poll forever",
+    "evidence": [
+      "jobs.json: msft-10q.pdf (edcedfa2) status 'extracting' with no results; frontend polls /upload/jobs and /companies every 3 s while any job is extracting (App.tsx:106-125); observed continuous polling in the server log."
+    ],
+    "verification": "VERIFIED",
+    "root_cause": "BackgroundTasks in-process; no startup recovery or timeout.",
+    "user_impact": "Zombie row with an animated stepper; constant background traffic.",
+    "suggested_fix": "On startup mark orphaned 'extracting' jobs failed with a reason; add a timeout; stop polling after N minutes.",
+    "effort": "S",
+    "depends_on": []
+  },
+  {
+    "id": "AUD-036",
+    "severity": "P2",
+    "category": "excel/I3-I5",
+    "tickets": [
+      "FN-064"
+    ],
+    "title": "Capital-structure workbook writes missing amounts as 0.0 and rates as text (pre-existing)",
+    "evidence": [
+      "debt_schedule_generator.py:188-190 missing principal -> 0.0; :323-327 missing lease amounts -> 0.0; :171-186 rates/spreads/years as text (sub-agent). No Review sheet, DRAFT header, Checks or units header."
+    ],
+    "verification": "VERIFIED (sub-agent code reading)",
+    "root_cause": "Pack generator predates FN-030 conventions.",
+    "user_impact": "Silent zeros in the debt workbook.",
+    "suggested_fix": "Blank + flag for missing values; numbers as numbers with number formats; reuse FN-030 sheet scaffolding.",
+    "effort": "M",
+    "depends_on": [
+      "AUD-004"
+    ]
+  },
+  {
+    "id": "AUD-037",
+    "severity": "P2",
+    "category": "provenance/FN-023",
+    "tickets": [
+      "FN-023"
+    ],
+    "title": "FN-023 incomplete: no migration script, no canonical serializer, no text-quote selector; downstream call sites not migrated",
+    "evidence": [
+      "No migration script anywhere (grep 'migrat'); no canonical serializer; W3C export has XPath/Fragment but no TextQuoteSelector (sub-agent).",
+      "audit_trail/resolver.py:220 calls make_review_id without the locator; audit_report/compiler.py:294-303 dereferences an Optional selector (latent).",
+      "Frontend mirrors the union in types/review.ts but no component reads `locator`.",
+      "Verified OK: old jobs load (1,370 items) and PDF review IDs are unchanged vs 202f154."
+    ],
+    "verification": "VERIFIED (sub-agent)",
+    "root_cause": "Union added; surrounding migration work skipped.",
+    "user_impact": "Latent until HTML sources exist.",
+    "suggested_fix": "canonical_locator_key(); one-shot migration; pass locator through audit trail/report; TextQuoteSelector.",
+    "effort": "S",
+    "depends_on": [
+      "AUD-025"
+    ]
+  },
+  {
+    "id": "AUD-038",
+    "severity": "P2",
+    "category": "ingestion/compliance",
+    "tickets": [
+      "FN-020"
+    ],
+    "title": "EDGAR client (unwired) bursts to 20 req/s, limiter is per instance, User-Agent contact is a placeholder, no ticker-change/amendment logic",
+    "evidence": [
+      "rate_limiter.py:21,29 capacity 10 starting full: 20 acquisitions in the first second; separate limiter per client (sub-agent). Mutation M9 (capacity 1000) survived tests/ingestion.",
+      "client.py:38-40 default UA 'Footnote Research analyst@footnoteresearch.com' copied from the old client (HYPOTHESIS: not a mailbox the user owns).",
+      "resolve_cik('FB') raises not found; only filings.recent is read; no amendment preference (sub-agent, live).",
+      "Two EDGAR clients with same-named exception classes (ingestion/edgar_client.py and ingestion/edgar/client.py)."
+    ],
+    "verification": "VERIFIED (UA ownership is HYPOTHESIS)",
+    "root_cause": "Client written without a process-wide limiter or contact configuration.",
+    "user_impact": "Risk of SEC blocking once wired.",
+    "suggested_fix": "Module-level limiter at <=10 req/s with small burst; require SEC_USER_AGENT config; delete the old client.",
+    "effort": "S",
+    "depends_on": [
+      "AUD-015"
+    ]
+  },
+  {
+    "id": "AUD-039",
+    "severity": "P3",
+    "category": "brand",
+    "tickets": [
+      "FN-066"
+    ],
+    "title": "FN-066 partial: favicon is still the Vite default; SourceChip absent from the debt card",
+    "evidence": [
+      "frontend/public/favicon.svg unchanged since scaffold commit 8ee5b49 (purple Vite bolt).",
+      "SourceChip used only in ReviewPage.tsx and DesignPreviewPage.tsx; AC requires review list AND debt card."
+    ],
+    "verification": "VERIFIED",
+    "root_cause": "Incomplete ticket.",
+    "user_impact": "Minor branding gap.",
+    "suggested_fix": "Ship the footnote-marker favicon; add SourceChip to DataTable numeric cells with provenance.",
+    "effort": "S",
+    "depends_on": []
+  },
+  {
+    "id": "AUD-040",
+    "severity": "P3",
+    "category": "docs",
+    "tickets": [
+      "FN-002",
+      "FN-000"
+    ],
+    "title": "Docs and trackers contradict the code",
+    "evidence": [
+      "Plan section 8 lists FN-030..FN-067 as 'todo' while headings and section 9 say [DONE].",
+      "README still describes local-first, PDF-only upload, NetworkX, 'eval FROZEN, no corpus', narrative components and the 6-tab generator as an opt-in (README.md:5-8, 92, 212-229, 244).",
+      "docs/CONSTITUTION.md:48 says narrative endpoints exist; :60 says multi_statement_generator is retained.",
+      "ARCHITECTURE.md: tells you to run mypy from backend/ (non-strict config), eval via pytest test_runner.py, '480+ tests' (actual 566).",
+      "DECISIONS.md false claims: EDGAR-first replaces PDF-only; 10 categories/80+ aliases; sanitized HTML viewer with XPath highlight; 15% / 3-of-4 thresholds; unreviewed cells yellow on auto path.",
+      "docs/AUDIT.md (FN-000): test counts approximate ('~500', not run); lists POST /review/{id}/batch-accept, which does not exist (route is confirm-batch)."
+    ],
+    "verification": "VERIFIED",
+    "root_cause": "Docs written to the plan, not the code.",
+    "user_impact": "Misleads the next developer and reviewers.",
+    "suggested_fix": "Regenerate README/ARCHITECTURE from this audit; correct DECISIONS; fix the tracker.",
+    "effort": "S",
+    "depends_on": []
+  },
+  {
+    "id": "AUD-041",
+    "severity": "P3",
+    "category": "dead-code",
+    "tickets": [
+      "FN-001"
+    ],
+    "title": "FN-001 leftovers from the deleted 6-tab generator and narrative module",
+    "evidence": [
+      "formula_engine/models.py:293 ComprehensiveModelTree and tree.py:17 import (6-tab artifact); excel_export/repository.py:43 still looks for '{job}_multi_statement.xlsx'; multi_year_generator.py:2 'DEPRECATED: Use multi_statement_generator.py instead'.",
+      "Orphan components: DriftFlagCard.tsx and ModelViewer.tsx imported nowhere; empty frontend/src/components/narrative directory on disk (untracked).",
+      "No dangling imports, routes or flags found: ENABLE_NARRATIVE and narrative routes removed; tag archive/pre-cleanup exists."
+    ],
+    "verification": "VERIFIED",
+    "root_cause": "Deletion stopped at the obvious entry points.",
+    "user_impact": "Confusing dead code.",
+    "suggested_fix": "Delete the leftovers.",
+    "effort": "S",
+    "depends_on": []
+  },
+  {
+    "id": "AUD-042",
+    "severity": "P3",
+    "category": "tests/hygiene",
+    "tickets": [
+      "FN-010"
+    ],
+    "title": "Test suite writes into the repository and the eval fetcher caches a fake filing",
+    "evidence": [
+      "test_fetch_filing_by_accession (backend/tests/eval/test_corpus_loader.py:277-287) ignores tmp_path and accepts mock output; eval/.cache/0001018724-23-000014_10-K.html is a 165-byte 'MOCK SEC EDGAR FILING' created 2026-10-01 (gitignored).",
+      "eval/fetch_filings.py:72-84 writes the mock on any error and later returns it as a real cache hit; --mock is store_true with default=True (:121)."
+    ],
+    "verification": "VERIFIED",
+    "root_cause": "Mock fallback in production code.",
+    "user_impact": "Poisoned local cache; tests mutate the working tree.",
+    "suggested_fix": "Use tmp_path; remove the mock fallback; fix the URL.",
+    "effort": "S",
+    "depends_on": [
+      "AUD-010"
+    ]
+  },
+  {
+    "id": "AUD-043",
+    "severity": "P3",
+    "category": "process/scope",
+    "tickets": [
+      "FN-065",
+      "FN-000"
+    ],
+    "title": "Process deviations: four phase-sized commits instead of per-ticket branches; Phase 4 work (FN-065) started early",
+    "evidence": [
+      "git log: 1dd6560, df0334f, 873f47a, ffb3bcf, all on main within ~8 hours (2026-10-01 15:48-23:46 IST); plan protocol requires fn-<id> branches and 'FN-<id>:' commit messages.",
+      "Dark theme as default plus a manual light/dark toggle (AppShell.tsx:24-41) is FN-065 scope (Phase 4). No other Phase 4/5 ticket started (no auth, Postgres, billing, LLM abstraction).",
+      "FN-000 required 'no source changes' but shares commit 1dd6560 with source changes."
+    ],
+    "verification": "VERIFIED",
+    "root_cause": "Agent batched work per phase.",
+    "user_impact": "Hard to review, bisect or revert individual tickets.",
+    "suggested_fix": "Fix batches as small per-ticket commits (see section 9).",
+    "effort": "S",
+    "depends_on": []
+  },
+  {
+    "id": "AUD-044",
+    "severity": "P3",
+    "category": "dependencies",
+    "tickets": [
+      "FN-001",
+      "FN-034"
+    ],
+    "title": "Dependency hygiene: networkx now an unpinned transitive dependency; unused prettier devDependency",
+    "evidence": [
+      "ffb3bcf removed 'networkx==3.6.1' from requirements.txt; torch still requires it (pip show torch), so it is installed unpinned.",
+      "prettier in package.json devDependencies with no config or script.",
+      "lucide-react added in 1dd6560 (used). No secrets in history (git log -p: 0 'gsk_' keys); .env is untracked."
+    ],
+    "verification": "VERIFIED",
+    "root_cause": "Partial cleanup.",
+    "user_impact": "Minor reproducibility risk.",
+    "suggested_fix": "Pin via a constraints/lock file; add a format script or drop prettier.",
+    "effort": "S",
+    "depends_on": []
+  }
+]

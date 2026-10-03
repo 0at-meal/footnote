@@ -10,7 +10,6 @@ interface WorkflowPackConfig {
   icon: ReactNode
   disabled?: boolean
   isComingSoon?: boolean
-  thumbnailLines: string[]
 }
 
 const WORKFLOW_PACK_CONFIGS: WorkflowPackConfig[] = [
@@ -19,14 +18,12 @@ const WORKFLOW_PACK_CONFIGS: WorkflowPackConfig[] = [
     title: 'Earnings Quality / Non-GAAP Bridge',
     subtitle: 'Adjusted EBITDA, Non-GAAP Net Income, Free Cash Flow bridges',
     icon: <TrendingUp size={16} aria-hidden="true" />,
-    thumbnailLines: ['Operating Income (EBIT)', '+ Depr & Amortization', '+ Stock-Based Comp', '= Adjusted EBITDA'],
   },
   {
     id: 'capital_structure',
     title: 'Capital Structure & Debt Sizing',
     subtitle: 'Note 8 debt tranches, interest rates, maturities, ASC 842 leases',
     icon: <CreditCard size={16} aria-hidden="true" />,
-    thumbnailLines: ['5.25% Senior Notes 2028', 'Term Loan B (SOFR+3%)', 'Revolving Credit Facility', '= Total Debt $2.5B'],
   },
   {
     id: 'cash_conversion',
@@ -34,7 +31,6 @@ const WORKFLOW_PACK_CONFIGS: WorkflowPackConfig[] = [
     subtitle: 'Operating Cash Flow, CapEx, Working Capital normalization',
     icon: <PieChart size={16} aria-hidden="true" />,
     isComingSoon: true,
-    thumbnailLines: ['Operating Cash Flow', '- Capex / Maintenance', 'Δ Working Capital', '= Normalized FCF'],
   },
 ]
 
@@ -281,48 +277,6 @@ function UploadZone({
                 </div>
 
                 {/* Real Output Thumbnail Preview */}
-                <div
-                  style={{
-                    backgroundColor: 'var(--surface-2)',
-                    borderRadius: 'var(--fn-radius-sm)',
-                    border: '1px solid var(--border)',
-                    padding: '8px 10px',
-                    fontSize: '11px',
-                    fontFamily: 'var(--fn-font-mono)',
-                    color: 'var(--ink-secondary)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '4px',
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: '10px',
-                      color: 'var(--ink-muted)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.04em',
-                      marginBottom: '2px',
-                    }}
-                  >
-                    Output Preview
-                  </div>
-                  {pack.thumbnailLines.map((line, idx) => (
-                    <div
-                      key={idx}
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        borderBottom: idx < pack.thumbnailLines.length - 1 ? '1px dashed var(--border)' : 'none',
-                        paddingBottom: '2px',
-                        fontWeight: line.startsWith('=') ? 600 : 400,
-                        color: line.startsWith('=') ? 'var(--ink)' : 'inherit',
-                      }}
-                    >
-                      <span>{line}</span>
-                      <span>──</span>
-                    </div>
-                  ))}
-                </div>
               </div>
             )
           })}
@@ -370,9 +324,6 @@ function UploadZone({
           <div>
             <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--ink)' }}>
               {isDragOver ? 'Release to stage filing for extraction' : 'Drop 10-K or 10-Q filing here or browse files'}
-            </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--ink-muted)' }}>
-              Auto-detects company and fiscal period
             </div>
           </div>
         </div>

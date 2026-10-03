@@ -47,8 +47,6 @@ from eval.models import (
     BenchmarkCorpus,
     BenchmarkCorpusManifest,
     CorpusAccuracyMetrics,
-    EvalGateMetrics,
-    GateResult,
     LineItemDiff,
 )
 from eval.record_replay import RecordReplayClassifierClient
@@ -57,7 +55,6 @@ from eval.report_generator import (
     save_reports,
 )
 from eval.runner import (
-    BenchmarkMockClassifierClient,
     get_default_classifier_client,
     run_benchmark_corpus,
 )

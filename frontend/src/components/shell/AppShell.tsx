@@ -12,6 +12,15 @@ export interface AppShellProps {
   breadcrumbs?: BreadcrumbItem[]
   currentRoute?: 'app' | 'design'
   onNavigate?: (route: 'app' | 'design') => void
+  /** Show the dev-only design-system link (D7). App passes import.meta.env.DEV. */
+  showDesignLink?: boolean
+  /** Persistent service warning (e.g. degraded PDF parser, D1). Shown on every screen. */
+  serviceWarning?: string | null
+  /**
+   * Full-height workspace screens (review, audit trail): the shell is exactly one viewport tall
+   * and the content fills the space below the bar, so the page itself never scrolls (AUD-019).
+   */
+  fill?: boolean
   children: React.ReactNode
 }
 
@@ -19,6 +28,9 @@ export const AppShell: React.FC<AppShellProps> = ({
   breadcrumbs = [],
   currentRoute = 'app',
   onNavigate,
+  showDesignLink = false,
+  serviceWarning = null,
+  fill = false,
   children,
 }) => {
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -26,7 +38,8 @@ export const AppShell: React.FC<AppShellProps> = ({
       const savedTheme = localStorage.getItem('fn-theme') as 'light' | 'dark' | null
       if (savedTheme) return savedTheme
     }
-    return 'dark'
+    // Appendix A: light-first "paper and ink"; dark is the second theme (D7).
+    return 'light'
   })
 
   useEffect(() => {
@@ -46,7 +59,7 @@ export const AppShell: React.FC<AppShellProps> = ({
       style={{
         display: 'flex',
         flexDirection: 'column',
-        minHeight: '100vh',
+        ...(fill ? { height: '100svh', overflow: 'hidden' } : { minHeight: '100vh' }),
         backgroundColor: 'var(--bg)',
         color: 'var(--ink)',
       }}
@@ -134,23 +147,8 @@ export const AppShell: React.FC<AppShellProps> = ({
 
         {/* Right side controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {/* User/Environment status badge */}
-          <span
-            style={{
-              fontSize: '11px',
-              fontFamily: 'var(--fn-font-mono)',
-              padding: '2px 8px',
-              borderRadius: 'var(--fn-radius-sm)',
-              backgroundColor: 'var(--surface-2)',
-              color: 'var(--ink-muted)',
-              border: '1px solid var(--border)',
-            }}
-          >
-            Local · Single-User
-          </span>
-
           {/* Design System Preview link / toggle */}
-          {onNavigate && (
+          {import.meta.env.DEV && showDesignLink && onNavigate && (
             <button
               type="button"
               onClick={() => onNavigate(currentRoute === 'design' ? 'app' : 'design')}
@@ -200,8 +198,14 @@ export const AppShell: React.FC<AppShellProps> = ({
         </div>
       </header>
 
+      {serviceWarning && (
+        <div role="alert" aria-label="Service degraded" className="fn-service-banner">
+          <strong>Degraded mode.</strong> {serviceWarning}
+        </div>
+      )}
+
       {/* Main Content Area */}
-      <div style={{ flex: 1 }}>{children}</div>
+      <div style={fill ? { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' } : { flex: 1 }}>{children}</div>
     </div>
   )
 }

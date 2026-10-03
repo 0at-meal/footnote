@@ -22,8 +22,21 @@ import {
 } from '../ui'
 import { Wordmark } from '../brand/Wordmark'
 import { SourceChip } from '../brand/SourceChip'
+import { contrastRatio, formatRatio, meetsAA } from '../../lib/contrast'
 import { EmptyState } from '../brand/EmptyState'
 import { CheckCircle2, ArrowRight, DollarSign, Search } from 'lucide-react'
+
+/** Token pairs checked on this page; ratios are computed at render time (AUD-017). */
+const CONTRAST_PAIRS: { name: string; fg: string; bg: string; kind: 'text' | 'large-or-ui' }[] = [
+  { name: 'Light: ink on canvas', fg: '#14120F', bg: '#FAF8F4', kind: 'text' },
+  { name: 'Light: muted ink on canvas', fg: '#6B665E', bg: '#FAF8F4', kind: 'text' },
+  { name: 'Light: warn text on canvas', fg: '#B7791F', bg: '#FAF8F4', kind: 'text' },
+  { name: 'Light: ok text on canvas', fg: '#1F8A5B', bg: '#FAF8F4', kind: 'text' },
+  { name: 'Light: white on accent button', fg: '#FFFFFF', bg: '#2B4BEE', kind: 'text' },
+  { name: 'Dark: ink on canvas', fg: '#ECEAE5', bg: '#0E0F12', kind: 'text' },
+  { name: 'Dark: muted ink on canvas', fg: '#9A978F', bg: '#0E0F12', kind: 'text' },
+  { name: 'Dark: white on accent button', fg: '#FFFFFF', bg: '#7B93FF', kind: 'text' },
+]
 
 export const DesignPreviewPage: React.FC = () => {
   const [btnLoading, setBtnLoading] = useState(false)
@@ -563,45 +576,26 @@ export const DesignPreviewPage: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', borderBottom: '1px solid var(--border)' }}>
-                  <div>
-                    <strong>Light Theme: Primary Ink on Paper Canvas</strong>
-                    <div style={{ fontSize: '12px', color: 'var(--ink-muted)' }}>#14120F on #FAF8F4</div>
-                  </div>
-                  <Badge variant="ok">14.2:1 (PASS - AAA)</Badge>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', borderBottom: '1px solid var(--border)' }}>
-                  <div>
-                    <strong>Light Theme: Secondary Ink on Paper Canvas</strong>
-                    <div style={{ fontSize: '12px', color: 'var(--ink-muted)' }}>#6B665E on #FAF8F4</div>
-                  </div>
-                  <Badge variant="ok">4.8:1 (PASS - AA)</Badge>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', borderBottom: '1px solid var(--border)' }}>
-                  <div>
-                    <strong>Dark Theme: Primary Ink on Dark Canvas</strong>
-                    <div style={{ fontSize: '12px', color: 'var(--ink-muted)' }}>#ECEAE5 on #0E0F12</div>
-                  </div>
-                  <Badge variant="ok">13.5:1 (PASS - AAA)</Badge>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', borderBottom: '1px solid var(--border)' }}>
-                  <div>
-                    <strong>Dark Theme: Muted Ink on Dark Canvas</strong>
-                    <div style={{ fontSize: '12px', color: 'var(--ink-muted)' }}>#9A978F on #0E0F12</div>
-                  </div>
-                  <Badge variant="ok">5.6:1 (PASS - AA)</Badge>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px' }}>
-                  <div>
-                    <strong>Keyboard Focus Ring Indicator</strong>
-                    <div style={{ fontSize: '12px', color: 'var(--ink-muted)' }}>2px solid accent with 2px offset (visible on all surfaces)</div>
-                  </div>
-                  <Badge variant="ok">Compliant</Badge>
-                </div>
+                {CONTRAST_PAIRS.map((pair) => {
+                  const ratio = contrastRatio(pair.fg, pair.bg)
+                  const ok = meetsAA(ratio, pair.kind)
+                  return (
+                    <div
+                      key={pair.name}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', borderBottom: '1px solid var(--border)' }}
+                    >
+                      <div>
+                        <strong>{pair.name}</strong>
+                        <div style={{ fontSize: '12px', color: 'var(--ink-muted)' }}>
+                          {pair.fg} on {pair.bg} ({pair.kind === 'text' ? 'text, needs 4.5:1' : 'large text / UI, needs 3:1'})
+                        </div>
+                      </div>
+                      <Badge variant={ok ? 'ok' : 'danger'}>
+                        {formatRatio(ratio)} ({ok ? 'PASS' : 'FAIL'} AA)
+                      </Badge>
+                    </div>
+                  )
+                })}
               </div>
             </CardContent>
           </Card>

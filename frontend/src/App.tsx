@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import UploadZone from './components/UploadZone'
 import JobList from './components/JobList'
 import SubmitBar from './components/SubmitBar'
@@ -11,17 +11,38 @@ import type {
   JobRecord,
   CompanyWithJobs,
   WorkflowPack,
+  HealthStatus,
 } from './types/job'
 import { DEFAULT_METRIC } from './types/job'
 import { X, Search } from 'lucide-react'
 import { AppShell } from './components/shell/AppShell'
-import { DesignPreviewPage } from './components/design/DesignPreviewPage'
 import { Wordmark } from './components/brand/Wordmark'
 import { CommandPalette } from './components/search/CommandPalette'
+import { getApiBase } from './lib/config'
 import './App.css'
 
-/** Base URL for the FastAPI backend. Change for production deployment. */
-const API_BASE = 'http://localhost:8000'
+/**
+ * Design-system showcase: dev builds only (FN-061, D7). In production builds
+ * `import.meta.env.DEV` is the literal `false`, so this lazy import is removed from the bundle.
+ */
+const DesignPreviewPage = import.meta.env.DEV
+  ? lazy(() =>
+      import('./components/design/DesignPreviewPage').then((m) => ({ default: m.DesignPreviewPage })),
+    )
+  : null
+
+function isDesignPath(): boolean {
+  return (
+    import.meta.env.DEV &&
+    typeof window !== 'undefined' &&
+    (window.location.pathname === '/design' || window.location.hash === '#/design')
+  )
+}
+
+/** Queue auto-refresh: every 3 s while a job is active, for at most 20 minutes (AUD-035). */
+const POLL_INTERVAL_MS = 3000
+const MAX_POLL_WINDOW_MS = 20 * 60 * 1000
+
 
 function App() {
   const [stagedFiles, setStagedFiles] = useState<StagedFile[]>([])
@@ -34,14 +55,10 @@ function App() {
   const [selectedCompany, setSelectedCompany] = useState<string>('')
   const [companies, setCompanies] = useState<CompanyWithJobs[]>([])
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
-  const [currentRoute, setCurrentRoute] = useState<'app' | 'design'>(() => {
-    if (typeof window !== 'undefined') {
-      if (window.location.pathname === '/design' || window.location.hash === '#/design') {
-        return 'design'
-      }
-    }
-    return 'app'
-  })
+  const [serviceWarning, setServiceWarning] = useState<string | null>(null)
+  const [currentRoute, setCurrentRoute] = useState<'app' | 'design'>(() =>
+    isDesignPath() ? 'design' : 'app',
+  )
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -56,17 +73,14 @@ function App() {
 
   useEffect(() => {
     const onPopState = () => {
-      if (window.location.pathname === '/design' || window.location.hash === '#/design') {
-        setCurrentRoute('design')
-      } else {
-        setCurrentRoute('app')
-      }
+      setCurrentRoute(isDesignPath() ? 'design' : 'app')
     }
     window.addEventListener('popstate', onPopState)
     return () => window.removeEventListener('popstate', onPopState)
   }, [])
 
   function handleNavigate(route: 'app' | 'design') {
+    if (route === 'design' && !import.meta.env.DEV) return
     setCurrentRoute(route)
     if (route === 'design') {
       window.history.pushState(null, '', '/design')
@@ -76,7 +90,7 @@ function App() {
   }
 
   function refreshCompanies() {
-    fetch(`${API_BASE}/companies`)
+    fetch(`${getApiBase()}/companies`)
       .then((res) => res.json())
       .then((data: CompanyWithJobs[]) => {
         if (Array.isArray(data)) {
@@ -88,9 +102,23 @@ function App() {
       })
   }
 
+  // ── On mount: degraded-parser check (D1) ─────────────────────────────────
+  useEffect(() => {
+    fetch(`${getApiBase()}/health`)
+      .then((res) => res.json())
+      .then((data: HealthStatus) => {
+        if (data.status === 'degraded') {
+          setServiceWarning(data.degraded_reason || 'The backend reports a degraded state.')
+        }
+      })
+      .catch(() => {
+        // Backend offline is reported by the queue fetch below.
+      })
+  }, [])
+
   // ── On mount: restore persisted jobs and companies from backend ─────────
   useEffect(() => {
-    fetch(`${API_BASE}/upload/jobs`)
+    fetch(`${getApiBase()}/upload/jobs`)
       .then((res) => res.json())
       .then((data: { jobs: JobRecord[] }) => {
         setPersistedJobs(data.jobs)
@@ -103,14 +131,28 @@ function App() {
   }, [])
 
   // ── Auto-polling for active jobs status (spec AC-7, AC-8) ───────────────
+  // Bounded (AUD-035): a job that never leaves 'extracting' must not poll forever. The backend
+  // also fails such jobs after JOB_TIMEOUT_SECONDS; this is the client-side backstop.
+  const pollStartRef = useRef<number | null>(null)
+  const [pollingPaused, setPollingPaused] = useState(false)
   useEffect(() => {
     const hasActiveJobs = persistedJobs.some(
       (j) => j.status === 'queued' || j.status === 'extracting',
     )
-    if (!hasActiveJobs) return
+    if (!hasActiveJobs) {
+      pollStartRef.current = null
+      return
+    }
+    if (pollingPaused) return
+    if (pollStartRef.current === null) pollStartRef.current = Date.now()
 
     const intervalId = setInterval(() => {
-      fetch(`${API_BASE}/upload/jobs`)
+      if (Date.now() - (pollStartRef.current ?? Date.now()) > MAX_POLL_WINDOW_MS) {
+        clearInterval(intervalId)
+        setPollingPaused(true)
+        return
+      }
+      fetch(`${getApiBase()}/upload/jobs`)
         .then((res) => res.json())
         .then((data: { jobs: JobRecord[] }) => {
           setPersistedJobs(data.jobs)
@@ -119,10 +161,15 @@ function App() {
           // Non-fatal background refresh error
         })
       refreshCompanies()
-    }, 3000)
+    }, POLL_INTERVAL_MS)
 
     return () => clearInterval(intervalId)
-  }, [persistedJobs])
+  }, [persistedJobs, pollingPaused])
+
+  function resumePolling() {
+    pollStartRef.current = null
+    setPollingPaused(false)
+  }
 
   // ── Staged file handlers ─────────────────────────────────────────────────
 
@@ -200,7 +247,7 @@ function App() {
         form.append('workflow_packs', sf.workflow_pack ?? selectedWorkflowPack)
       }
 
-      const res = await fetch(`${API_BASE}/upload/jobs`, {
+      const res = await fetch(`${getApiBase()}/upload/jobs`, {
         method: 'POST',
         body: form,
       })
@@ -248,17 +295,21 @@ function App() {
 
   // ── Render ───────────────────────────────────────────────────────────────
 
-  if (currentRoute === 'design') {
+  if (currentRoute === 'design' && DesignPreviewPage) {
     return (
       <AppShell
+        serviceWarning={serviceWarning}
         currentRoute="design"
         onNavigate={handleNavigate}
+        showDesignLink={import.meta.env.DEV}
         breadcrumbs={[
           { label: 'Home', onClick: () => handleNavigate('app') },
           { label: 'Design System (/design)', active: true },
         ]}
       >
-        <DesignPreviewPage />
+        <Suspense fallback={null}>
+          <DesignPreviewPage />
+        </Suspense>
       </AppShell>
     )
   }
@@ -267,8 +318,11 @@ function App() {
     const activeJob = persistedJobs.find((j) => j.job_id === activeReviewJobId)
     return (
       <AppShell
+        serviceWarning={serviceWarning}
+        fill
         currentRoute="app"
         onNavigate={handleNavigate}
+        showDesignLink={import.meta.env.DEV}
         breadcrumbs={[
           { label: 'Home', onClick: () => setActiveReviewJobId(null) },
           { label: `Review: ${activeJob?.filename || activeReviewJobId}`, active: true },
@@ -276,7 +330,7 @@ function App() {
       >
         <ReviewPage
           jobId={activeReviewJobId}
-          apiBase={API_BASE}
+          apiBase={getApiBase()}
           onBack={() => setActiveReviewJobId(null)}
           onAuditTrail={(jobId) => {
             setActiveReviewJobId(null)
@@ -291,8 +345,11 @@ function App() {
     const activeAuditJob = persistedJobs.find((j) => j.job_id === activeAuditJobId)
     return (
       <AppShell
+        serviceWarning={serviceWarning}
+        fill
         currentRoute="app"
         onNavigate={handleNavigate}
+        showDesignLink={import.meta.env.DEV}
         breadcrumbs={[
           { label: 'Home', onClick: () => setActiveAuditJobId(null) },
           { label: `Audit Trail: ${activeAuditJob?.filename || activeAuditJobId}`, active: true },
@@ -300,7 +357,7 @@ function App() {
       >
         <AuditTrailView
           jobId={activeAuditJobId}
-          apiBase={API_BASE}
+          apiBase={getApiBase()}
           onBack={() => setActiveAuditJobId(null)}
           onReview={(jobId) => {
             setActiveAuditJobId(null)
@@ -330,8 +387,10 @@ function App() {
 
   return (
     <AppShell
+        serviceWarning={serviceWarning}
       currentRoute="app"
       onNavigate={handleNavigate}
+        showDesignLink={import.meta.env.DEV}
       breadcrumbs={[{ label: 'Upload & Queue', active: true }]}
     >
       <div className="app-layout">
@@ -418,14 +477,14 @@ function App() {
           <CompanySelector
             selectedCompany={selectedCompany}
             onCompanyChange={setSelectedCompany}
-            apiBase={API_BASE}
+            apiBase={getApiBase()}
           />
 
           {/* Multi-Year Model Generation Card */}
           {activeCompanyWithLatestJobs && (
             <CompanyMultiYearCard
               company={activeCompanyWithLatestJobs}
-              apiBase={API_BASE}
+              apiBase={getApiBase()}
             />
           )}
 
@@ -459,10 +518,19 @@ function App() {
             </div>
           )}
 
+          {pollingPaused && (
+            <div className="fn-poll-notice" role="status">
+              Auto-refresh paused after 20 minutes because a job has not finished.{' '}
+              <button type="button" className="fn-btn fn-btn--ghost fn-btn--sm" onClick={resumePolling}>
+                Resume
+              </button>
+            </div>
+          )}
+
           <JobList
             stagedFiles={stagedFiles}
             persistedJobs={persistedJobs}
-            apiBase={API_BASE}
+            apiBase={getApiBase()}
             onYearChange={handleYearChange}
             onRemove={handleRemove}
             onReview={(jobId) => setActiveReviewJobId(jobId)}

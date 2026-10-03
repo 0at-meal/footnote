@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from app.classification.models import ClassifierRawResponse
+from app.extraction.docling_parser import ParseReport
 from app.extraction.models import (
     ConfidenceBand,
     DoclingBbox,
@@ -99,7 +100,7 @@ def test_process_queued_job_runs_full_pipeline(
     )
 
     with (
-        patch("app.job_runner.parse_pdf", return_value=sample_docling) as mock_parse,
+        patch("app.job_runner.parse_pdf_with_report", return_value=(sample_docling, ParseReport())) as mock_parse,
         patch(
             "app.job_runner.normalize_coordinates", return_value=sample_normalized
         ) as mock_norm,
@@ -156,7 +157,7 @@ def test_process_queued_job_failure_updates_status_to_failed(
 
     with (
         patch(
-            "app.job_runner.parse_pdf", side_effect=RuntimeError("Docling model crash")
+            "app.job_runner.parse_pdf_with_report", side_effect=RuntimeError("Docling model crash")
         ),
         pytest.raises(RuntimeError, match="Docling model crash"),
     ):

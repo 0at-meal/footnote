@@ -62,7 +62,7 @@ export type RejectedFile = {
  * Lifecycle states for a persisted job (mirrors backend JobStatus enum).
  * Values are frozen per CONSTITUTION §2.3 — do not rename.
  */
-export type JobStatus = 'queued' | 'extracting' | 'done' | 'failed'
+export type JobStatus = 'queued' | 'extracting' | 'done' | 'failed' | 'not_found'
 
 /**
  * A backend-persisted job record returned by POST /upload/jobs and GET /upload/jobs.
@@ -91,6 +91,20 @@ export type JobRecord = {
   company_id?: string | null
   /** Selected workflow pack for bounded extraction (Step 7). */
   workflow_pack?: WorkflowPack
+  /** Parser that produced the items: 'docling', 'pymupdf' or 'mixed' (D1). */
+  parser_used?: string | null
+  /** Why the PyMuPDF fallback was used instead of Docling, if it was (I3). */
+  parser_fallback_reason?: string | null
+  /** User-visible reason when status is 'failed' (I3). */
+  failure_reason?: string | null
+}
+
+/** GET /health response (D1 degraded-mode reporting). */
+export type HealthStatus = {
+  status: 'ok' | 'degraded'
+  docling_available?: boolean
+  parser_mode?: string
+  degraded_reason?: string | null
 }
 
 /**

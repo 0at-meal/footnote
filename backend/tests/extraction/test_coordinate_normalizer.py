@@ -12,7 +12,10 @@ from app.extraction.coordinate_normalizer import (
     normalize_coordinates,
     normalize_item_bbox,
 )
+from app.extraction.docling_parser import _parse_pdf_with_pymupdf
 from app.extraction.models import DoclingBbox, DoclingItem
+
+from tests.fixtures.synthetic.pdfs import SYNTHETIC_BALANCE_SHEET, write_synthetic_pdf
 
 
 def make_sample_pdf(
@@ -178,12 +181,10 @@ def test_count_image_only_pages_missing_file(tmp_path: Path) -> None:
         (200.0, 400.0, 800.0, 500.0, 750.0),
     ],
 )
-def test_normalize_item_bbox_docling_y_inversion_parametrized(
+def test_normalize_item_bbox_bottom_left_origin_is_inverted(
     y0: float, y1: float, page_height: float, expected_y0: float, expected_y1: float
 ) -> None:
-    """
-    Parametrized Docling path test: verifies Y-axis inversion across multiple coordinate sets.
-    """
+    """A box declared BOTTOMLEFT (PDF user space) is inverted into top-left screen space."""
     item = DoclingItem(
         value="50",
         label="Revenue",
@@ -191,10 +192,30 @@ def test_normalize_item_bbox_docling_y_inversion_parametrized(
         bbox=DoclingBbox(x0=10.0, y0=y0, x1=200.0, y1=y1),
         source_file="test.pdf",
         parser_used="docling",
+        coord_origin="BOTTOMLEFT",
     )
     norm = normalize_item_bbox(item, page_width=600.0, page_height=page_height)
     assert abs(norm.bbox.y0 - expected_y0) <= 0.05
     assert abs(norm.bbox.y1 - expected_y1) <= 0.05
+
+
+def test_normalize_item_bbox_docling_top_left_cell_is_not_inverted() -> None:
+    """
+    Docling table-cell boxes are TOPLEFT. Replaces a test that asserted every Docling box is
+    inverted, which enshrined the mirrored-highlight defect (AUD-002).
+    """
+    item = DoclingItem(
+        value="1,250",
+        label="Cash",
+        page=1,
+        bbox=DoclingBbox(x0=362.13, y0=239.36, x1=418.40, y1=247.79),
+        source_file="test.pdf",
+        parser_used="docling",
+        coord_origin="TOPLEFT",
+    )
+    norm = normalize_item_bbox(item, page_width=595.0, page_height=842.0)
+    assert abs(norm.bbox.y0 - 284.27) <= 0.05
+    assert abs(norm.bbox.y1 - 294.29) <= 0.05
 
 
 @pytest.mark.parametrize(
@@ -224,49 +245,29 @@ def test_normalize_item_bbox_pymupdf_no_inversion_parametrized(
     assert abs(norm.bbox.y1 - expected_y1) <= 0.05
 
 
-@pytest.mark.parametrize(
-    "row_idx,col_idx,expected_flat_idx",
-    [
-        (1, 1, 5),
-        (1, 2, 6),
-        (1, 3, 7),
-        (2, 1, 9),
-        (2, 2, 10),
-        (2, 3, 11),
-    ],
-)
-def test_pymupdf_flat_idx_3x4_mock_table(
-    row_idx: int, col_idx: int, expected_flat_idx: int
-) -> None:
+def test_pymupdf_path_bboxes_contain_their_value_text(tmp_path: Path) -> None:
     """
-    Test per-cell flat index mapping for data cells in a 3x4 table with 12 cells
-    using the 0-based indexing formula: row_idx * num_cols + col_idx (FN-003 fix).
-    """
-    num_cols = 4
-    flat_idx = row_idx * num_cols + col_idx
-    assert flat_idx == expected_flat_idx
+    Real PyMuPDF parse + normalisation of a SYNTHETIC table: every item's 0-1000 box must contain
+    the location of its own value text as found independently by PyMuPDF's text search.
 
-
-def test_pymupdf_3x4_table_unique_bboxes() -> None:
+    Replaces two tautological tests that recomputed the flat-index formula inline (AUD-027).
     """
-    Verify a 3x4 table produces distinct bounding boxes for every data cell.
-    """
-    num_rows = 3
-    num_cols = 4
-    # 12 distinct cells (row 0 is header, rows 1-2 are data)
-    mock_cells = [
-        (float(c * 100), float(r * 50), float((c + 1) * 100), float((r + 1) * 50))
-        for r in range(num_rows)
-        for c in range(num_cols)
-    ]
-    data_bboxes = []
-    for r in range(1, num_rows):
-        for c in range(1, num_cols):
-            flat_idx = r * num_cols + c
-            bbox = mock_cells[flat_idx]
-            data_bboxes.append(bbox)
+    pdf = write_synthetic_pdf(tmp_path / "synthetic_balance_sheet.pdf", [SYNTHETIC_BALANCE_SHEET])
+    items = _parse_pdf_with_pymupdf(pdf, pdf.name, "")
+    normalized = normalize_coordinates(pdf, items)
+    assert len(normalized) == 12
 
-    assert len(data_bboxes) == 6  # 2 data rows x 3 data cols
-    assert len(set(data_bboxes)) == 6  # All 6 must be strictly distinct
-    # Data row 1, col 1 is cell 5: (100.0, 50.0, 200.0, 100.0)
-    assert data_bboxes[0] == (100.0, 50.0, 200.0, 100.0)
+    doc = pymupdf.open(str(pdf))
+    page = doc[0]
+    w, h = page.rect.width, page.rect.height
+    misses = []
+    for item in normalized:
+        hits = page.search_for(item.value)
+        assert hits, item.value
+        centres = [((r.x0 + r.x1) / 2 / w * 1000, (r.y0 + r.y1) / 2 / h * 1000) for r in hits]
+        b = item.bbox
+        if not any(b.x0 <= cx <= b.x1 and b.y0 <= cy <= b.y1 for cx, cy in centres):
+            misses.append((item.label, item.value, b))
+    doc.close()
+    assert misses == []
+    assert len({(n.bbox.x0, n.bbox.y0) for n in normalized}) == 12  # one distinct box per cell

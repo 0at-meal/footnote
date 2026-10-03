@@ -34,6 +34,8 @@ export type PdfLocator = {
 
 export type HtmlLocator = {
   type: 'html'
+  /** SEC CIK of the filer; needed for a valid sec.gov Archives URL (D9). */
+  cik?: string | null
   accession: string
   document: string
   element_path: string

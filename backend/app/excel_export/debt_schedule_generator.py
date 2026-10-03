@@ -15,6 +15,7 @@ from typing import Any
 
 import xlsxwriter
 
+from app.config import DEFAULT_DATA_DIR, public_base_url
 from app.excel_export.models import (
     BoundingBoxCoordinates,
     CellReference,
@@ -34,7 +35,7 @@ from app.footnote.models import DebtSchedule, LeaseSchedule
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_DATA_DIR: Path = Path(__file__).parent.parent.parent / "data"
+_DEFAULT_DATA_DIR: Path = DEFAULT_DATA_DIR
 
 
 def generate_capital_structure_workbook(
@@ -42,11 +43,12 @@ def generate_capital_structure_workbook(
     lease_schedule: LeaseSchedule,
     job_id: str,
     output_dir: Path | None = None,
-    base_url: str = "http://localhost:8000",
+    base_url: str | None = None,
 ) -> WorkbookGenerationResult:
     """
     Serializes DebtSchedule and LeaseSchedule into a clean, deterministic 2-tab Excel model.
     """
+    base_url = base_url or public_base_url()
     target_dir = (output_dir or _DEFAULT_DATA_DIR) / "models"
     target_dir.mkdir(parents=True, exist_ok=True)
 

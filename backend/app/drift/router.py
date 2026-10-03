@@ -239,8 +239,8 @@ def mark_component_relabeled(
     return updated_flag
 
 
-from app.drift.qoe_diff import QoEDiffReport, QoERow, diff_qoe_components
 from app.classification.taxonomy import classify_addback_category
+from app.drift.qoe_diff import QoEDiffReport, QoERow, diff_qoe_components
 
 
 @router.get(
@@ -276,7 +276,7 @@ def get_job_qoe_report(
 
     for item in items:
         lbl = item.normalized_label or item.label
-        val_clean = str(item.value or item.extracted_value or "0").replace(",", "").replace("$", "").strip()
+        val_clean = str(item.value or "0").replace(",", "").replace("$", "").strip()
         try:
             val = float(val_clean)
         except ValueError:
@@ -300,11 +300,11 @@ def get_job_qoe_report(
     # Search for prior job for the same company if available
     prior_rows: list[QoERow] | None = None
     if job.company_id:
-        all_jobs = job_repo.list_jobs(company_id=job.company_id)
+        all_jobs = [j for j in job_repo.list_jobs() if j.company_id == job.company_id]
         other_jobs = [j for j in all_jobs if j.job_id != job_id and j.status.value == "done"]
         if other_jobs:
             # Pick the most recent prior job
-            prior_job = sorted(other_jobs, key=lambda j: j.submitted_at)[-1]
+            prior_job = max(other_jobs, key=lambda j: j.submitted_at)
             prior_items = review_repo.get_review_items(prior_job.job_id) or []
             prior_period = getattr(prior_job, "period", None) or (f"FY{prior_job.filing_year}" if prior_job.filing_year else "Prior")
             prior_rows = [

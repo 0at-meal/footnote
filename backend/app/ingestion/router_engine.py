@@ -189,6 +189,7 @@ class IngestionRouter:
                     url=doc.url,
                     target_metric=request.target_metric,
                     workflow_pack=request.workflow_pack,
+                    cik=primary_filing.cik,
                 )
                 if html_res.status == "success" and html_res.records:
                     html_records = html_res.records
@@ -259,6 +260,7 @@ class IngestionRouter:
                         filename=ex99.filename,
                         accession=release_filing.accession,
                         url=doc99.url,
+                        cik=release_filing.cik,
                         target_metric=request.target_metric,
                     )
                     if release_records:

@@ -14,6 +14,7 @@ Enforces:
 """
 
 from typing import Any
+
 from pydantic import BaseModel, Field
 
 from app.classification.taxonomy import (
@@ -72,9 +73,10 @@ def create_qoe_rows_from_leaves(
         except ValueError:
             val = 0.0
 
-        lbl = (
+        lbl = str(
             getattr(src, "normalized_label", None)
             or getattr(leaf, "label", "")
+            or ""
         )
         cat = classify_addback_category(lbl).value
         comp_id = getattr(leaf, "node_id", f"comp_{lbl.lower().replace(' ', '_')}")

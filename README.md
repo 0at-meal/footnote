@@ -100,6 +100,15 @@ flowchart LR
 
 ---
 
+## Running locally
+
+Start the backend with `python tools/run_backend.py`: it always uses the `.venv` interpreter.
+Without Docling the server refuses to start; set `ALLOW_PYMUPDF_FALLBACK=1` to run in a degraded,
+clearly labelled PyMuPDF mode. `python tools/run_backend.py --check` reports the interpreter and
+Docling status. Configuration variables are documented in `.env.example`.
+
+---
+
 ## Project Structure
 
 ```

@@ -13,6 +13,8 @@ import os
 
 os.environ["TORCHDYNAMO_DISABLE"] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
@@ -30,14 +32,31 @@ from pydantic import BaseModel, Field
 from app.audit_report.router import router as audit_report_router
 from app.audit_trail.router import router as audit_trail_router
 from app.classification.router import router as classification_router
+from app.config import DEFAULT_DATA_DIR
 from app.drift.router import router as drift_router
 from app.excel_export.router import router as excel_export_router
 from app.footnote.router import router as footnote_router
 from app.ingestion.company_router import router as company_router
+from app.ingestion.repository import JobRepository
 from app.ingestion.router import router as ingestion_router
 from app.review.router import router as review_router
+from app.startup import check_parser_dependencies, parser_status
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    # D1: refuse to start without Docling unless ALLOW_PYMUPDF_FALLBACK=1.
+    check_parser_dependencies()
+    # AUD-035: background workers do not survive a restart; fail their jobs with a reason.
+    JobRepository().fail_interrupted_jobs(
+        "Processing was interrupted because the server stopped before the job finished. "
+        "Re-submit the filing."
+    )
+    yield
+
 
 app = FastAPI(
+    lifespan=lifespan,
     title="Footnote",
     version="0.1.0",
     description=(
@@ -84,6 +103,15 @@ class HealthResponse(BaseModel):
     data_dir_writable: bool = Field(
         default=True, description="True if data storage directory is writable"
     )
+    docling_available: bool = Field(
+        default=True, description="False when Docling cannot be imported (D1)"
+    )
+    parser_mode: str = Field(
+        default="docling", description="'docling' or 'pymupdf_fallback' (degraded)"
+    )
+    degraded_reason: str | None = Field(
+        default=None, description="Why the service is degraded, shown in the UI banner"
+    )
 
 
 @app.get(
@@ -92,7 +120,7 @@ class HealthResponse(BaseModel):
     summary="Health check endpoint for team deployment readiness (Step K)",
 )
 def health_check() -> HealthResponse:
-    data_dir = Path(__file__).parent.parent / "data"
+    data_dir = DEFAULT_DATA_DIR
     data_dir.mkdir(parents=True, exist_ok=True)
     test_file = data_dir / ".health_check.tmp"
     data_writable = False
@@ -113,11 +141,16 @@ def health_check() -> HealthResponse:
     except (sqlite3.Error, OSError):
         db_ok = False
 
+    parsers = parser_status()
+    healthy = data_writable and db_ok and parsers.docling_available
     return HealthResponse(
-        status="ok" if (data_writable and db_ok) else "degraded",
+        status="ok" if healthy else "degraded",
         version="0.1.0",
         db_ok=db_ok,
         data_dir_writable=data_writable,
+        docling_available=parsers.docling_available,
+        parser_mode=parsers.parser_mode,
+        degraded_reason=parsers.degraded_reason,
     )
 
 

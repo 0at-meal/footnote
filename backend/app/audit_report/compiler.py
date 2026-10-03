@@ -26,6 +26,7 @@ from app.audit_report.models import (
     ReportMetadata,
 )
 from app.audit_trail.resolver import AuditTrailResolver
+from app.config import DEFAULT_DATA_DIR
 from app.drift.repository import DriftRepository
 from app.extraction.models import ScoredRecord
 from app.extraction.repository import ExtractionRepository
@@ -36,7 +37,7 @@ from app.review.repository import ReviewRepository
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_DATA_DIR: Path = Path(__file__).parent.parent.parent / "data"
+_DEFAULT_DATA_DIR: Path = DEFAULT_DATA_DIR
 
 
 class ModelNotCompleteError(Exception):
@@ -292,11 +293,9 @@ class AuditReportCompiler:
             if r.node_id.startswith("hardcode_"):
                 source_file = r.target.source
                 page = r.target.selector.page if r.target.selector else 1
-                coords = (
-                    r.target.selector.refinedBy.coordinates
-                    if r.target.selector
-                    else None
-                )
+                # refinedBy is absent for XPath targets and a TextQuoteSelector for HTML (AUD-037).
+                refined = r.target.selector.refinedBy if r.target.selector else None
+                coords = getattr(refined, "coordinates", None)
                 bbox_dict = (
                     {"x0": coords.x0, "y0": coords.y0, "x1": coords.x1, "y1": coords.y1}
                     if coords

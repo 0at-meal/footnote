@@ -9,6 +9,7 @@ import logging
 import os
 from pathlib import Path
 
+from app.config import DEFAULT_DATA_DIR
 from app.drift.graph import HistoricalDriftGraph
 from app.drift.models import (
     DriftComparisonResult,
@@ -18,7 +19,7 @@ from app.drift.storage import DriftGraphStore
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_DATA_DIR: Path = Path(__file__).parent.parent.parent / "data"
+_DEFAULT_DATA_DIR: Path = DEFAULT_DATA_DIR
 
 
 class DriftRepository:

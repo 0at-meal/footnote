@@ -19,6 +19,7 @@ from typing import Any
 
 import xlsxwriter
 
+from app.config import DEFAULT_DATA_DIR
 from app.excel_export.models import (
     CellReference,
     W3CAnnotationRecord,
@@ -33,7 +34,7 @@ from app.ingestion.models import CompanyRecord, JobRecord
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_DATA_DIR: Path = Path(__file__).parent.parent.parent / "data"
+_DEFAULT_DATA_DIR: Path = DEFAULT_DATA_DIR
 from app.excel_export.utils import (
     IB_CURRENCY_FORMAT as _IB_CURRENCY_FORMAT,
 )
@@ -92,7 +93,7 @@ def generate_multi_year_workbook(
 
     # Deduplicate periods with "latest filing wins" and detect restatements (FN-031)
     def _period_key(job_rec: JobRecord) -> str:
-        p_val = getattr(job_rec, "period", None)
+        p_val: str | None = job_rec.period
         if p_val and p_val.strip():
             return p_val.strip()
         if job_rec.filing_year is not None:

@@ -36,6 +36,7 @@ class Exhibit99Extractor:
         accession: str,
         url: str | None = None,
         target_metric: str = "Adjusted EBITDA",
+        cik: str | None = None,
     ) -> list[ExtractedRecord]:
         """
         Extracts records from an EX-99.1 document, routing by format.
@@ -50,6 +51,7 @@ class Exhibit99Extractor:
                 document_name=filename,
                 url=url,
                 target_metric=target_metric,
+                cik=cik,
             )
             records = result.records
         elif fmt == ExhibitFormat.PDF:

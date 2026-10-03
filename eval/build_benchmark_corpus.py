@@ -5,6 +5,7 @@ Generates JSON labels keyed by SEC EDGAR accession number.
 
 import json
 from pathlib import Path
+
 from eval.models import (
     AccessionCorpusManifest,
     BenchmarkAccessionFiling,
@@ -961,7 +962,7 @@ def create_corpus_data() -> list[BenchmarkAccessionFiling]:
                 scale=scale,
                 sign=sign,
                 locator={
-                    "type": "html" if "EX-99" not in spec["form"] else "html",
+                    "type": "html",
                     "accession": spec["accession_number"],
                     "document": f"{spec['ticker'].lower()}_{spec['fiscal_year']}.htm",
                     "element_path": "table//tr",

@@ -21,10 +21,11 @@ from app.classification.models import (
     TaxonomyStatus,
 )
 from app.classification.taxonomy import check_label_against_taxonomy
+from app.config import DEFAULT_DATA_DIR
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_DATA_DIR: Path = Path(__file__).parent.parent.parent / "data"
+_DEFAULT_DATA_DIR: Path = DEFAULT_DATA_DIR
 
 
 def build_log_entries(

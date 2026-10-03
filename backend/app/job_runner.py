@@ -31,7 +31,7 @@ from app.extraction.coordinate_normalizer import (
     count_image_only_pages,
     normalize_coordinates,
 )
-from app.extraction.docling_parser import parse_pdf
+from app.extraction.docling_parser import parse_pdf_with_report
 from app.extraction.flagger import create_extraction_summary
 from app.extraction.repository import ExtractionRepository
 from app.formula_engine.reader import read_formula_inputs
@@ -86,7 +86,7 @@ def process_queued_job(
         workflow_pack = getattr(job, "workflow_pack", "non_gaap_bridge") or "non_gaap_bridge"
 
         # Stage 1: Docling structural parse (bounded extraction per workflow pack, Ticket 7.2)
-        docling_items = parse_pdf(
+        docling_items, parse_report = parse_pdf_with_report(
             pdf_path,
             job.filename,
             target_metric=target_metric,
@@ -100,10 +100,17 @@ def process_queued_job(
         parser_used: Literal["docling", "pymupdf", "mixed"] = "docling"
         if len(parsers_in_items) > 1:
             parser_used = "mixed"
-        elif "pymupdf" in parsers_in_items:
+        elif "pymupdf" in parsers_in_items or parse_report.parser_used == "pymupdf":
             parser_used = "pymupdf"
         else:
             parser_used = "docling"
+        # D1 / I3: stamp the parser and any fallback reason on the job so the UI can show it.
+        repo.update_job_status(
+            job_id,
+            JobStatus.extracting,
+            parser_used=parser_used,
+            parser_fallback_reason=parse_report.fallback_reason,
+        )
 
         # Stage 2: PyMuPDF 0-1000 coordinate normalization
         normalized_items = normalize_coordinates(pdf_path, docling_items)
@@ -130,7 +137,8 @@ def process_queued_job(
                 getattr(it, "is_reconciliation_candidate", False)
                 for it in docling_items
             )
-        target_metric_found = pack_candidate_found or bool(docling_items)
+        # I3: 'found' means a candidate table exists, not merely that something was extracted.
+        target_metric_found = pack_candidate_found
         summary = create_extraction_summary(
             scored_records,
             image_only_page_count=image_only_page_count,
@@ -138,6 +146,19 @@ def process_queued_job(
             target_metric_found=target_metric_found,
         )
         extraction_repo.save_extraction_summary(job_id, summary)
+
+        # D2: a non-GAAP bridge job with no reconciliation table ends here, explicitly.
+        # No classification, no bridge, no workbook; the review lists nothing.
+        if workflow_pack == "non_gaap_bridge" and not pack_candidate_found:
+            classification_repo.save_classified_records(job_id, [])
+            repo.update_job_status(
+                job_id,
+                JobStatus.not_found,
+                model_ready=False,
+                model_skip_reason=f"{target_metric} reconciliation not found in this filing",
+            )
+            logger.info("Job %s: no %s reconciliation table found", job_id, target_metric)
+            return
 
         # Stage 6: Two-Level Classification & Taxonomy Normalization (Feature 3)
         client = classifier_client or GroqClassifierClient()
@@ -147,7 +168,12 @@ def process_queued_job(
         reconciliation_candidates = [
             r for r in scored_records if r.is_reconciliation_candidate
         ]
-        if not reconciliation_candidates and scored_records:
+        if (
+            not reconciliation_candidates
+            and scored_records
+            and workflow_pack != "non_gaap_bridge"
+        ):
+            # Other packs (capital structure, cash conversion) still classify every record.
             reconciliation_candidates = list(scored_records)
 
         filtered_out_count = len(scored_records) - len(reconciliation_candidates)
@@ -330,6 +356,10 @@ def process_queued_job(
             model_skip_reason,
         )
     except Exception as err:
-        logger.error("Error processing job %s: %s", job_id, err)
-        repo.update_job_status(job_id, JobStatus.failed)
+        logger.error("Error processing job %s: %s", job_id, type(err).__name__)
+        repo.update_job_status(
+            job_id,
+            JobStatus.failed,
+            failure_reason=f"{type(err).__name__}: {str(err)[:300]}",
+        )
         raise

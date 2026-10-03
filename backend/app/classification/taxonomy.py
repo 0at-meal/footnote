@@ -8,11 +8,11 @@ Enforces:
 - CONSTITUTION ? 1.9: Atomic persistence via temporary file rename.
 """
 
-from enum import Enum
 import json
 import logging
 import os
 import re
+from enum import Enum
 from pathlib import Path
 
 from pydantic import ValidationError
@@ -24,10 +24,11 @@ from app.classification.models import (
     TaxonomyItem,
     TaxonomyStatus,
 )
+from app.config import DEFAULT_DATA_DIR
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_DATA_DIR: Path = Path(__file__).parent.parent.parent / "data"
+_DEFAULT_DATA_DIR: Path = DEFAULT_DATA_DIR
 
 
 def _build_default_seed_taxonomy() -> MasterTaxonomy:

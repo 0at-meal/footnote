@@ -5,6 +5,7 @@ import { buildAuditReportDownloadUrl, buildAuditReportFilename, canDownloadAudit
 import { Download, FileCheck, History, Trash2, FileText, Info, MoreHorizontal, CheckCircle2 } from 'lucide-react'
 import { formatFiscalPeriod } from '../lib/fiscal_period'
 import { EmptyState } from './brand/EmptyState'
+import { getApiBase } from '../lib/config'
 
 interface Props {
   stagedFiles: StagedFile[]
@@ -33,6 +34,8 @@ function StatusStepper({
   else if (status === 'extracting') currentStepIdx = 1
   else if (status === 'done') {
     currentStepIdx = modelReady ? 4 : 3
+  } else if (status === 'not_found') {
+    currentStepIdx = 4
   }
 
   return (
@@ -82,6 +85,21 @@ function StatusStepper({
               <Info size={12} style={{ opacity: 0.8 }} aria-hidden="true" />
             </span>
           )
+        ) : status === 'not_found' ? (
+          <span
+            className="status-badge status-badge--not-found"
+            aria-label="Status: Not found"
+            style={{
+              fontSize: '11px',
+              padding: '2px 8px',
+              borderRadius: '4px',
+              background: 'var(--surface-2)',
+              color: 'var(--ink-secondary)',
+              border: '1px solid var(--border-strong, var(--border))',
+            }}
+          >
+            Not found
+          </span>
         ) : status === 'extracting' ? (
           <span
             className="status-badge status-badge--extracting"
@@ -114,6 +132,12 @@ function StatusStepper({
           </span>
         )}
       </div>
+
+      {status === 'not_found' && modelSkipReason && (
+        <div className="job-table__note job-table__note--warn" data-testid="not-found-reason">
+          {modelSkipReason}
+        </div>
+      )}
 
       {/* ── Stepper Indicator: Parsing -> Classifying -> Checks -> Ready ── */}
       <div
@@ -176,7 +200,7 @@ function PdfIcon() {
 function JobList({
   stagedFiles,
   persistedJobs,
-  apiBase = 'http://localhost:8000',
+  apiBase = getApiBase(),
   onYearChange,
   onRemove,
   onReview,
@@ -429,6 +453,16 @@ function JobList({
                             {job.filename}
                           </span>
                         </div>
+                        {job.parser_fallback_reason && (
+                          <div className="job-table__note job-table__note--warn" data-testid="parser-fallback-note">
+                            Parsed with PyMuPDF fallback: {job.parser_fallback_reason}
+                          </div>
+                        )}
+                        {job.status === 'failed' && job.failure_reason && (
+                          <div className="job-table__note job-table__note--danger" data-testid="failure-reason-note">
+                            Failed: {job.failure_reason}
+                          </div>
+                        )}
                       </td>
                       <td className="job-table__metric" style={{ padding: '10px 12px' }}>
                         <span

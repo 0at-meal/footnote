@@ -23,6 +23,7 @@ from typing import Any
 
 import xlsxwriter
 
+from app.config import DEFAULT_DATA_DIR, public_base_url
 from app.excel_export.models import (
     CellReference,
     W3CAnnotationRecord,
@@ -42,7 +43,7 @@ from app.formula_engine.models import FormulaNodeType, FormulaTree
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_DATA_DIR: Path = Path(__file__).parent.parent.parent / "data"
+_DEFAULT_DATA_DIR: Path = DEFAULT_DATA_DIR
 
 from app.excel_export.utils import (
     IB_CURRENCY_FORMAT as _IB_CURRENCY_FORMAT,
@@ -57,7 +58,7 @@ def generate_workbook(
     tree: FormulaTree,
     job_id: str,
     output_dir: Path | None = None,
-    base_url: str = "http://localhost:8000",
+    base_url: str | None = None,
 ) -> WorkbookGenerationResult:
     """
     Serializes a FormulaTree into a fresh .xlsx workbook with exact provenance tagging.
@@ -66,6 +67,7 @@ def generate_workbook(
     - Sheet 'Source_Inputs': Tabular listing of extracted confirmed items with raw values.
     - Sheet 'Reconciliation': Calculated financial model with dynamic cross-sheet formulas.
     """
+    base_url = base_url or public_base_url()
     target_dir = (output_dir or _DEFAULT_DATA_DIR) / "models"
     target_dir.mkdir(parents=True, exist_ok=True)
 
@@ -291,14 +293,18 @@ def generate_workbook(
             deep_link = format_source_deep_link(
                 job_id, node=leaf, base_url=base_url
             )
-            ws_inputs.write_url(
-                row_idx,
-                0,
-                deep_link,
-                cell_format=fmt_label_link,
-                string=leaf.label,
-                tip=f"Source: {source_file} (p. {page})",
-            )
+            if deep_link is not None:
+                ws_inputs.write_url(
+                    row_idx,
+                    0,
+                    deep_link,
+                    cell_format=fmt_label_link,
+                    string=leaf.label,
+                    tip=f"Source: {source_file} (p. {page})",
+                )
+            else:
+                # No valid source URL (e.g. HTML source without a CIK): no link rather than a 404 (AUD-018).
+                ws_inputs.write_string(row_idx, 0, leaf.label, fmt_text)
 
             # FN-032 / Invariant I5: Values in Column B stay plain numbers
             val_col = 1
@@ -735,13 +741,16 @@ def generate_workbook(
                 ws_review.write(r_idx, 3, r_item["value"], fmt_text)
                 ws_review.write(r_idx, 4, r_item["confidence"], fmt_text)
                 ws_review.write(r_idx, 5, r_item["reason"], fmt_text)
-                ws_review.write_url(
-                    r_idx,
-                    6,
-                    r_item["link"],
-                    cell_format=fmt_label_link,
-                    string="Open Source Viewer",
-                )
+                if r_item["link"]:
+                    ws_review.write_url(
+                        r_idx,
+                        6,
+                        r_item["link"],
+                        cell_format=fmt_label_link,
+                        string="Open Source Viewer",
+                    )
+                else:
+                    ws_review.write_string(r_idx, 6, "No source link available", fmt_text)
 
         workbook.close()
         workbook = None

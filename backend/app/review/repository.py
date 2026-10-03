@@ -14,6 +14,7 @@ from typing import Any
 from app.classification.models import ClassifiedRecord, TaxonomyStatus
 from app.classification.repository import ClassificationRepository
 from app.classification.taxonomy import TaxonomyRepository
+from app.config import DEFAULT_DATA_DIR
 from app.extraction.models import ConfidenceBand, ScoredRecord
 from app.extraction.repository import ExtractionRepository
 from app.review.models import (
@@ -24,7 +25,7 @@ from app.review.models import (
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_DATA_DIR: Path = Path(__file__).parent.parent.parent / "data"
+_DEFAULT_DATA_DIR: Path = DEFAULT_DATA_DIR
 
 
 def make_review_id(

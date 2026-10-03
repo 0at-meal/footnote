@@ -11,9 +11,96 @@ Enforces Invariants:
 - Deterministic, backward-compatible deserialization and serialization.
 """
 
+import json
+import re
 from typing import Annotated, Any, Literal
+from urllib.parse import quote
 
 from pydantic import BaseModel, Field, model_validator
+
+# https://www.sec.gov/Archives/edgar/data/{cik}/{accession without dashes}/{document}
+_SEC_ARCHIVES_URL = re.compile(r"^https://www\.sec\.gov/Archives/edgar/data/[1-9]\d*/\d{18}/[^/#?]+$")
+
+
+def sec_archives_url(
+    cik: str | int | None, accession: str | None, document: str | None, text: str | None = None
+) -> str | None:
+    """
+    EDGAR Archives URL for a filing document (decision D9), or None when it cannot be built.
+
+    The CIK is required: the CIK-less forms used before AUD-018 return 404 or redirect. `text`
+    adds a text fragment (`#:~:text=`) so the browser scrolls to that text.
+    """
+    if cik is None or not accession or not document:
+        return None
+    try:
+        cik_int = int(str(cik).strip())
+    except ValueError:
+        return None
+    acc = accession.replace("-", "").strip()
+    if cik_int <= 0 or not re.fullmatch(r"\d{18}", acc):
+        return None
+    url = f"https://www.sec.gov/Archives/edgar/data/{cik_int}/{acc}/{quote(document)}"
+    if text and text.strip():
+        # `&`, `,` and `-` are text-fragment syntax and must be percent-encoded; quote() keeps `-`.
+        url += "#:~:text=" + quote(text.strip(), safe="").replace("-", "%2D")
+    return url
+
+
+def canonical_locator(locator: Any) -> dict[str, Any]:
+    """
+    Canonical form of a locator (FN-023 / AUD-037): only the fields that identify the target,
+    with numbers normalised, so equal targets compare equal however they were built (model or
+    dict, int or float, derived `source_file` alias or `url` present or not).
+    """
+    data = locator.model_dump() if isinstance(locator, BaseModel) else dict(locator)
+    kind = data.get("type")
+    if kind == "html":
+        return {
+            "type": "html",
+            "accession": str(data["accession"]),
+            "document": str(data["document"]),
+            "element_path": str(data["element_path"]),
+            "char_range": list(data["char_range"]) if data.get("char_range") is not None else None,
+        }
+    if kind == "pdf":
+        bbox = data["bbox"]
+        return {
+            "type": "pdf",
+            "source_file": str(data["source_file"]),
+            "page": int(data["page"]),
+            "bbox": {k: round(float(bbox[k]), 4) for k in ("x0", "y0", "x1", "y1")},
+        }
+    raise ValueError(f"unknown locator type: {kind!r}")
+
+
+def canonical_locator_key(locator: Any) -> str:
+    """Deterministic string key for a locator (sorted, compact JSON of `canonical_locator`)."""
+    return json.dumps(canonical_locator(locator), sort_keys=True, separators=(",", ":"))
+
+
+def require_provenance(data: Any) -> Any:
+    """
+    `mode="before"` check shared by record models (AUD-025, I3/I4).
+
+    A record must carry provenance: a locator, or all of page, bbox and source_file (the legacy
+    fields older jobs store). Previously missing values were filled with page 1, a whole-page box
+    and "unknown.pdf", so a record that lost its provenance still highlighted something.
+    """
+    if not isinstance(data, dict) or data.get("locator") is not None:
+        return data
+    missing = [key for key in ("page", "bbox", "source_file") if data.get(key) is None or data.get(key) == ""]
+    if missing:
+        raise ValueError(
+            "record has no provenance: give a locator, or page, bbox and source_file "
+            f"(missing: {', '.join(missing)})"
+        )
+    return data
+
+
+def is_sec_archives_url(url: str | None) -> bool:
+    """True for a CIK-qualified EDGAR Archives document URL (fragment ignored)."""
+    return bool(url) and bool(_SEC_ARCHIVES_URL.match(str(url).split("#", 1)[0]))
 
 
 class PdfLocator(BaseModel):
@@ -53,6 +140,10 @@ class HtmlLocator(BaseModel):
     """
 
     type: Literal["html"] = "html"
+    cik: str | None = Field(
+        default=None,
+        description="SEC Central Index Key of the filer; required to build a valid Archives URL (D9)",
+    )
     accession: str = Field(
         ...,
         min_length=1,

@@ -10,7 +10,7 @@ Note:
 """
 
 from enum import Enum
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel
 
@@ -61,6 +61,10 @@ class DoclingItem(BaseModel):
     error_detail: str | None = None
     """Description of the parse error if is_error is True."""
 
+    coord_origin: Literal["TOPLEFT", "BOTTOMLEFT"] = "TOPLEFT"
+    """Origin of `bbox` (AUD-002). Docling table cells are top-left; provenance boxes may be
+    bottom-left. The normaliser inverts Y only for BOTTOMLEFT boxes."""
+
     is_reconciliation_candidate: bool = False
     """Flag indicating whether this item belongs to a reconciliation candidate table."""
 
@@ -107,6 +111,7 @@ from app.extraction.locator import (
     HtmlLocator,
     Locator,
     PdfLocator,
+    require_provenance,
 )
 
 
@@ -144,18 +149,17 @@ class ExtractedRecord(BaseModel):
     footnote_type: str | None = None
     """Type of footnote if extracted from a footnote section (e.g. 'debt')."""
 
+    @model_validator(mode="before")
+    @classmethod
+    def _require_provenance(cls, data: Any) -> Any:
+        return require_provenance(data)
+
     @model_validator(mode="after")
     def _sync_locator_and_legacy_fields(self) -> "ExtractedRecord":
         if self.locator is None:
-            if self.page >= 1 and self.source_file:
-                try:
-                    self.locator = PdfLocator(
-                        page=self.page,
-                        bbox=self.bbox,
-                        source_file=self.source_file,
-                    )
-                except Exception:  # noqa: BLE001, S110
-                    pass
+            # require_provenance guarantees explicit page, bbox and source_file; an invalid value
+            # (e.g. page 0) now fails validation instead of silently dropping the locator (AUD-025).
+            self.locator = PdfLocator(page=self.page, bbox=self.bbox, source_file=self.source_file)
         elif isinstance(self.locator, PdfLocator):
             self.page = self.locator.page
             self.bbox = self.locator.bbox

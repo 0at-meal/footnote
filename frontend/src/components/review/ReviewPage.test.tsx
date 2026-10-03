@@ -368,39 +368,8 @@ describe('ReviewPage Component', () => {
     expect(html).toContain('review-resizer')
   })
 
-  it('renders HTML source viewer iframe when source_file is HTML (FN-032)', () => {
-    const mockItems = [
-      {
-        id: '1',
-        value: '750',
-        label: 'Adjusted EBITDA',
-        page: 1,
-        bbox: { x0: 0, y0: 0, x1: 10, y1: 10 },
-        source_file: 'filing.html',
-        confidence_band: 'auto_accepted' as const,
-        confidence_score: 0.99,
-        normalized_label: 'Adjusted EBITDA',
-        taxonomy_status: 'matched',
-        status: 'locked' as const,
-        flags: [],
-        statement_type: 'non_gaap_bridge' as const,
-        error_detail: null,
-      },
-    ]
-
-    const html = renderToStaticMarkup(
-      <ReviewPage
-        jobId="job-html-source"
-        apiBase="http://localhost:8000"
-        onBack={vi.fn()}
-        initialItems={mockItems}
-      />
-    )
-
-    expect(html).toContain('review-html-viewer')
-    expect(html).toContain('src="http://localhost:8000/filings/job-html-source/html"')
-    expect(html).toContain('SEC EDGAR HTML Filing Viewer')
-  })
+  // The HTML-source iframe test was removed (AUD-018): it asserted an iframe to the non-existent
+  // /filings/{job}/html route. Replaced by ReviewPage.htmlSource.test.tsx.
 })
 
 

@@ -74,10 +74,9 @@ def read_formula_inputs(
             and classified_record.normalized_label.strip()
         )
 
-        if not (is_auto_accepted or is_explicitly_confirmed):
-            if not include_unreviewed:
-                excluded_count += 1
-                continue
+        if not (is_auto_accepted or is_explicitly_confirmed) and not include_unreviewed:
+            excluded_count += 1
+            continue
 
         # Resolve effective normalized label
         if (

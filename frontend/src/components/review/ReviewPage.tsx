@@ -1,8 +1,10 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef } from 'react'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import type { ReviewItem, ReviewItemsResponse, ReviewStatus, StatementType } from '../../types/review'
-import { loadPdf, renderPage, PDF_RENDER_SCALE } from '../../lib/pdf/renderer'
-import type { PDFDocumentProxy } from '../../lib/pdf/renderer'
+import { loadPdf, createSerialRenderer, PDF_RENDER_SCALE } from '../../lib/pdf/renderer'
+import type { PDFDocumentProxy, SerialPageRenderer } from '../../lib/pdf/renderer'
 import { normalizeBboxToPixels } from '../../lib/pdf/coordinates'
+import { secSourceLink } from '../../lib/secLinks'
 import { buildAuditReportDownloadUrl, buildAuditReportFilename } from '../../lib/audit_report'
 import DebtScheduleCard from '../DebtScheduleCard'
 import LeaseScheduleCard from '../footnote/LeaseScheduleCard'
@@ -39,6 +41,13 @@ interface Props {
   initialParserUsed?: 'docling' | 'pymupdf' | 'mixed' | null
   initialItems?: ReviewItem[]
 }
+
+// Zoom snaps to 25% steps (so 100% and 150% are exact levels); Fit width may land between them.
+const ZOOM_STEP = 0.25
+const ZOOM_MIN = 0.5
+const ZOOM_MAX = 2.5
+const zoomIn = (z: number) => Math.min(ZOOM_MAX, (Math.floor(z / ZOOM_STEP + 1e-6) + 1) * ZOOM_STEP)
+const zoomOut = (z: number) => Math.max(ZOOM_MIN, (Math.ceil(z / ZOOM_STEP - 1e-6) - 1) * ZOOM_STEP)
 
 const REVIEW_STATUS_LABELS: Record<ReviewStatus, string> = {
   auto_accepted: 'Auto Accepted',
@@ -124,6 +133,29 @@ type FilterTab =
   | 'cash_flow'
   | 'balance_sheet'
   | 'kpi'
+  | 'footnotes'
+
+const isFlaggedItem = (item: ReviewItem) =>
+  item.status === 'needs_review' ||
+  item.status === 'manual_required' ||
+  item.status === 'extraction_error' ||
+  item.status === 'pending_taxonomy_confirmation' ||
+  item.status === 'flagged'
+
+function matchesTab(item: ReviewItem, tab: FilterTab): boolean {
+  if (tab === 'flagged') return isFlaggedItem(item)
+  if (tab === 'all') return true
+  if (tab === 'footnotes') return false
+  return item.statement_type === tab
+}
+
+/** Default selection: the first item visible in `tab` (AUD-019), else the first item. */
+function firstItemFor(items: ReviewItem[], tab: FilterTab): ReviewItem | null {
+  return items.find((i) => matchesTab(i, tab)) ?? items[0] ?? null
+}
+
+/** Rows of the virtualized item list: table headings and item cards. */
+type ListRow = { kind: 'table'; key: string; tableName: string } | { kind: 'item'; key: string; item: ReviewItem }
 
 export default function ReviewPage({
   jobId,
@@ -134,19 +166,18 @@ export default function ReviewPage({
   initialItems = [],
 }: Props) {
   const [items, setItems] = useState<ReviewItem[]>(initialItems)
-  const [selectedItem, setSelectedItem] = useState<ReviewItem | null>(
-    initialItems.length > 0 ? initialItems[0] : null,
-  )
+  const [selectedItem, setSelectedItem] = useState<ReviewItem | null>(() => firstItemFor(initialItems, 'flagged'))
   const [itemsLoading, setItemsLoading] = useState(initialItems.length === 0)
   const [itemsError, setItemsError] = useState<string | null>(null)
 
   const [activeTab, setActiveTab] = useState<FilterTab>('flagged')
+  const activeTabRef = useRef<FilterTab>('flagged')
 
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null)
   const [pdfLoading, setPdfLoading] = useState(true)
   const [pdfError, setPdfError] = useState<string | null>(null)
 
-  const [currentPage, setCurrentPage] = useState<number>(1)
+  const [currentPage, setCurrentPage] = useState<number>(() => firstItemFor(initialItems, 'flagged')?.page ?? 1)
   const [pageRenderError, setPageRenderError] = useState<string | null>(null)
   const [canvasSize, setCanvasSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 })
 
@@ -187,14 +218,7 @@ export default function ReviewPage({
   ).length
   const manualCount = items.filter((i) => i.status === 'manual_required' || i.status === 'extraction_error').length
 
-  const isFlagged = (item: ReviewItem) =>
-    item.status === 'needs_review' ||
-    item.status === 'manual_required' ||
-    item.status === 'extraction_error' ||
-    item.status === 'pending_taxonomy_confirmation' ||
-    item.status === 'flagged'
-
-  const flaggedCount = items.filter(isFlagged).length
+  const flaggedCount = items.filter(isFlaggedItem).length
   const totalCount = items.length
   const isNeedsReview = items.some(i => i.statement_type === 'income_statement' && (i.status === 'needs_review' || i.status === 'manual_required' || i.status === 'extraction_error'))
   const bridgeNeedsReview = items.some(i => i.statement_type === 'non_gaap_bridge' && (i.status === 'needs_review' || i.status === 'manual_required' || i.status === 'extraction_error'))
@@ -206,27 +230,7 @@ export default function ReviewPage({
   const bsCount = items.filter((i) => i.statement_type === 'balance_sheet').length
   const kpiCount = items.filter((i) => i.statement_type === 'kpi').length
 
-  const filteredItems = items.filter((item) => {
-    if (activeTab === 'flagged') {
-      return isFlagged(item)
-    }
-    if (activeTab === 'income_statement') {
-      return item.statement_type === 'income_statement'
-    }
-    if (activeTab === 'non_gaap_bridge') {
-      return item.statement_type === 'non_gaap_bridge'
-    }
-    if (activeTab === 'cash_flow') {
-      return item.statement_type === 'cash_flow'
-    }
-    if (activeTab === 'balance_sheet') {
-      return item.statement_type === 'balance_sheet'
-    }
-    if (activeTab === 'kpi') {
-      return item.statement_type === 'kpi'
-    }
-    return true // 'all'
-  })
+  const filteredItems = items.filter((item) => matchesTab(item, activeTab))
 
   // Group filtered items by table_name
   type TableGroup = {
@@ -243,6 +247,38 @@ export default function ReviewPage({
     } else {
       tableGroups.push({ tableName: currentTable, items: [item] })
     }
+  })
+
+  const listRows: ListRow[] = []
+  tableGroups.forEach((group, groupIdx) => {
+    if (group.tableName) listRows.push({ kind: 'table', key: `table-${groupIdx}`, tableName: group.tableName })
+    group.items.forEach((it) => listRows.push({ kind: 'item', key: it.id, item: it }))
+  })
+
+  // One virtualized list (FN-062 / AUD-019): only the visible cards are mounted, so a 954-item
+  // filing stays responsive. Content above the list (taxonomy panel, empty state) is the scroll margin.
+  const listScrollRef = useRef<HTMLDivElement | null>(null)
+  const listHeadRef = useRef<HTMLDivElement | null>(null)
+  const [listOffset, setListOffset] = useState(0)
+  useLayoutEffect(() => {
+    const head = listHeadRef.current
+    if (!head) return
+    const update = () => setListOffset(head.offsetTop + head.offsetHeight)
+    update()
+    if (typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(update)
+    observer.observe(head)
+    return () => observer.disconnect()
+  }, [activeTab])
+  // React Compiler is not enabled in this project, so the memoization caveat this rule warns about does not apply.
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const rowVirtualizer = useVirtualizer({
+    count: listRows.length,
+    getScrollElement: () => listScrollRef.current,
+    estimateSize: (index) => (listRows[index]?.kind === 'table' ? 36 : 120),
+    getItemKey: (index) => listRows[index]?.key ?? index,
+    overscan: 8,
+    scrollMargin: listOffset,
   })
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -264,9 +300,10 @@ export default function ReviewPage({
         if (data.parser_used) {
           setParserUsed(data.parser_used)
         }
-        if (data.items.length > 0) {
-          setSelectedItem(data.items[0])
-          setCurrentPage(data.items[0].page)
+        const first = firstItemFor(data.items, activeTabRef.current)
+        if (first) {
+          setSelectedItem(first)
+          setCurrentPage(first.page)
         }
         setItemsError(null)
       } catch (err) {
@@ -311,47 +348,97 @@ export default function ReviewPage({
     }
   }, [jobId, apiBase])
 
-  // ── 3. Render Canvas when PDF doc or selected item page changes ──────────
+  // ── 3. Render Canvas when PDF doc or target page changes (AUD-001) ───────
+  // Renders are serialized per canvas: the previous pdf.js RenderTask is cancelled and
+  // awaited before the next one starts, and the effect never sets the state it depends on.
+  const rendererRef = useRef<SerialPageRenderer | null>(null)
+  if (rendererRef.current === null) rendererRef.current = createSerialRenderer()
+  // The viewed page is independent of the selection (AUD-020): selecting an item moves to its
+  // page, but Next/Prev can then browse away from it.
+  const targetPage = currentPage
+  const renderScale = PDF_RENDER_SCALE * zoomScale
+  const [renderAttempt, setRenderAttempt] = useState(0)
+  const stageRef = useRef<HTMLDivElement | null>(null)
+  const highlightRef = useRef<HTMLDivElement | null>(null)
+
   useEffect(() => {
-    if (!pdfDoc || !canvasRef.current) return
+    const renderer = rendererRef.current
+    return () => renderer?.cancel()
+  }, [])
 
-    let cancelled = false
-    const targetPage = selectedItem ? selectedItem.page : currentPage
-
-    async function draw() {
-      if (!pdfDoc || !canvasRef.current) return
-      try {
-        await renderPage(pdfDoc, targetPage, canvasRef.current, PDF_RENDER_SCALE)
-        if (cancelled) return
-        setCurrentPage(targetPage)
+  useEffect(() => {
+    if (!pdfDoc || !canvasRef.current || !rendererRef.current) return
+    let active = true
+    const canvas = canvasRef.current
+    rendererRef.current
+      .render(pdfDoc, targetPage, canvas, renderScale)
+      .then((result) => {
+        if (!active || result === 'superseded') return
         setPageRenderError(null)
-        if (canvasRef.current) {
-          const rect = canvasRef.current.getBoundingClientRect()
-          setCanvasSize({ width: Math.round(rect.width), height: Math.round(rect.height) })
-        }
-      } catch (err) {
-        if (cancelled) return
+        // Zoom re-renders at a higher scale, so the canvas's CSS size is the page size in
+        // layout pixels; size the highlight overlay from it, not from a transformed rect.
+        setCanvasSize({ width: parseFloat(canvas.style.width) || 0, height: parseFloat(canvas.style.height) || 0 })
+      })
+      .catch((err: unknown) => {
+        if (!active) return
         // EC-2 handling: Page not found in document
         setPageRenderError(err instanceof Error ? err.message : `Page ${targetPage} could not be rendered`)
-      }
-    }
-
-    void draw()
-
+      })
     return () => {
-      cancelled = true
+      active = false
     }
-  }, [pdfDoc, selectedItem, currentPage])
+  }, [pdfDoc, targetPage, renderScale, renderAttempt])
+
+  // Bring the selected item's highlight into view once its page is drawn, and again whenever
+  // an item is clicked (even the already-selected one, after the reviewer scrolled away).
+  const selectedItemId = selectedItem?.id
+  const [scrollRequest, setScrollRequest] = useState(0)
+  useEffect(() => {
+    highlightRef.current?.scrollIntoView?.({ block: 'center', inline: 'center' })
+  }, [selectedItemId, canvasSize, scrollRequest])
+
+  async function handleFitWidth() {
+    const stage = stageRef.current
+    if (!pdfDoc || !stage) return
+    const page = await pdfDoc.getPage(currentPage)
+    const pageWidth = page.getViewport({ scale: PDF_RENDER_SCALE }).width
+    const style = window.getComputedStyle(stage)
+    const available = stage.clientWidth - (parseFloat(style.paddingLeft) || 0) - (parseFloat(style.paddingRight) || 0)
+    if (available <= 0 || pageWidth <= 0) return
+    setZoomScale(Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Number((available / pageWidth).toFixed(3)))))
+  }
 
   function handleSelectItem(item: ReviewItem) {
     setSelectedItem(item)
     setCurrentPage(item.page)
+    setScrollRequest((n) => n + 1)
+    // Retry after a failed render when the user picks another item.
+    if (pageRenderError) {
+      setPageRenderError(null)
+      setRenderAttempt((n) => n + 1)
+    }
     // Clear editing mode when switching items
     if (editingItemId && editingItemId !== item.id) {
       setEditingItemId(null)
       setEditError(null)
     }
   }
+
+  function handleTabChange(tab: FilterTab) {
+    setActiveTab(tab)
+    activeTabRef.current = tab
+    // Keep the selection inside the visible list (AUD-019).
+    if (tab !== 'footnotes' && !(selectedItem && matchesTab(selectedItem, tab))) {
+      const first = items.find((i) => matchesTab(i, tab))
+      if (first) handleSelectItem(first)
+    }
+  }
+
+  // Keep the selected card in view in the virtualized list (J/K, tab changes, initial load).
+  const selectedRowIndex = listRows.findIndex((r) => r.kind === 'item' && r.item.id === selectedItemId)
+  useEffect(() => {
+    if (selectedRowIndex >= 0) rowVirtualizer.scrollToIndex(selectedRowIndex, { align: 'auto' })
+  }, [selectedRowIndex, rowVirtualizer])
 
   // ── Action Handlers (Feature 5 Step 3) ──────────────────────────────────
 
@@ -633,7 +720,7 @@ export default function ReviewPage({
             aria-label="Back to queue"
           >
             <ArrowLeft size={14} aria-hidden="true" />
-            <span>← Back to Queue</span>
+            <span>Back to Queue</span>
           </button>
           <div className="review-header__title-group">
             <h1 className="review-header__title">
@@ -960,7 +1047,7 @@ export default function ReviewPage({
               role="tab"
               aria-selected={activeTab === 'flagged'}
               className={`review-tab ${activeTab === 'flagged' ? 'review-tab--active' : ''}`}
-              onClick={() => setActiveTab('flagged')}
+              onClick={() => handleTabChange('flagged')}
             >
               Flagged
               <span className="review-tab__badge">{flaggedCount}</span>
@@ -970,7 +1057,7 @@ export default function ReviewPage({
               role="tab"
               aria-selected={activeTab === 'all'}
               className={`review-tab ${activeTab === 'all' ? 'review-tab--active' : ''}`}
-              onClick={() => setActiveTab('all')}
+              onClick={() => handleTabChange('all')}
             >
               All
               <span className="review-tab__badge">{totalCount}</span>
@@ -980,7 +1067,7 @@ export default function ReviewPage({
               role="tab"
               aria-selected={activeTab === 'income_statement'}
               className={`review-tab ${activeTab === 'income_statement' ? 'review-tab--active' : ''}`}
-              onClick={() => setActiveTab('income_statement')}
+              onClick={() => handleTabChange('income_statement')}
             >
               IS
               <span className="review-tab__badge">{isCount}</span>
@@ -990,7 +1077,7 @@ export default function ReviewPage({
               role="tab"
               aria-selected={activeTab === 'non_gaap_bridge'}
               className={`review-tab ${activeTab === 'non_gaap_bridge' ? 'review-tab--active' : ''}`}
-              onClick={() => setActiveTab('non_gaap_bridge')}
+              onClick={() => handleTabChange('non_gaap_bridge')}
             >
               Bridge
               <span className="review-tab__badge">{bridgeCount}</span>
@@ -1000,7 +1087,7 @@ export default function ReviewPage({
               role="tab"
               aria-selected={activeTab === 'cash_flow'}
               className={`review-tab ${activeTab === 'cash_flow' ? 'review-tab--active' : ''}`}
-              onClick={() => setActiveTab('cash_flow')}
+              onClick={() => handleTabChange('cash_flow')}
             >
               CF
               <span className="review-tab__badge">{cfCount}</span>
@@ -1010,7 +1097,7 @@ export default function ReviewPage({
               role="tab"
               aria-selected={activeTab === 'balance_sheet'}
               className={`review-tab ${activeTab === 'balance_sheet' ? 'review-tab--active' : ''}`}
-              onClick={() => setActiveTab('balance_sheet')}
+              onClick={() => handleTabChange('balance_sheet')}
             >
               BS
               <span className="review-tab__badge">{bsCount}</span>
@@ -1021,12 +1108,22 @@ export default function ReviewPage({
                 role="tab"
                 aria-selected={activeTab === 'kpi'}
                 className={`review-tab ${activeTab === 'kpi' ? 'review-tab--active' : ''}`}
-                onClick={() => setActiveTab('kpi')}
+                onClick={() => handleTabChange('kpi')}
               >
                 KPI
                 <span className="review-tab__badge">{kpiCount}</span>
               </button>
             )}
+            {/* Footnote schedules get their own tab so they never push the item list down (AUD-019). */}
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'footnotes'}
+              className={`review-tab ${activeTab === 'footnotes' ? 'review-tab--active' : ''}`}
+              onClick={() => handleTabChange('footnotes')}
+            >
+              Footnotes
+            </button>
           </div>
           {/* ── Statement Readiness Indicators (Ticket D.2.2) ── */}
           {items.length > 0 && (
@@ -1050,7 +1147,30 @@ export default function ReviewPage({
             </div>
           )}
 
-          <div className="review-sidebar__scroll-container">
+          <div ref={listScrollRef} className="review-sidebar__scroll-container" style={{ position: 'relative' }}>
+          {activeTab === 'footnotes' ? (
+            <div className="review-footnotes" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <p style={{ margin: '4px 2px', fontSize: '12px', color: 'var(--ink-muted)' }}>
+                Debt, lease and concentration schedules from the filing&apos;s footnotes. Schedules that were not found are not shown.
+              </p>
+              {/* ── Debt Schedule Footnote Card (Feature 8, Step E) ── */}
+              <DebtScheduleCard
+                jobId={jobId}
+                apiBase={apiBase}
+                onTrancheSelect={(tranche) => setCurrentPage(tranche.page)}
+              />
+              {/* ── Lease Schedule Footnote Card (Feature 8, Step F) ── */}
+              <LeaseScheduleCard
+                jobId={jobId}
+                apiBase={apiBase}
+                onYearSelect={(year) => setCurrentPage(year.page)}
+              />
+              {/* ── Customer & Supplier Concentration Card (Feature 8, Step I) ── */}
+              <ConcentrationCard jobId={jobId} apiBase={apiBase} />
+            </div>
+          ) : (
+          <>
+          <div ref={listHeadRef} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {itemsLoading && (
             <div className="job-list--empty">
               <p>Loading extracted items...</p>
@@ -1161,8 +1281,6 @@ export default function ReviewPage({
                   <>
                     <div
                       style={{
-                        maxHeight: '180px',
-                        overflowY: 'auto',
                         display: 'flex',
                         flexDirection: 'column',
                         gap: '6px',
@@ -1249,36 +1367,38 @@ export default function ReviewPage({
               </div>
             )
           })()}
-
-          {/* ── Debt Schedule Footnote Card (Feature 8, Step E) ── */}
-          <DebtScheduleCard
-            jobId={jobId}
-            apiBase={apiBase}
-            onTrancheSelect={(tranche) => setCurrentPage(tranche.page)}
-          />
-
-          {/* ── Lease Schedule Footnote Card (Feature 8, Step F) ── */}
-          <LeaseScheduleCard
-            jobId={jobId}
-            apiBase={apiBase}
-            onYearSelect={(year) => setCurrentPage(year.page)}
-          />
-
-          {/* ── Customer & Supplier Concentration Card (Feature 8, Step I) ── */}
-          <ConcentrationCard jobId={jobId} apiBase={apiBase} />
+          </div>
 
           {!itemsLoading && !itemsError && filteredItems.length > 0 && (
-            <div className="review-sidebar__list" role="listbox" aria-label="Extracted items list">
-              {tableGroups.map((group, groupIdx) => (
-                <div key={groupIdx} className="review-table-group">
-                  {group.tableName && (
-                    <div className="review-table-header" title={`Table: ${group.tableName}`}>
+            <div
+              className="review-sidebar__list"
+              role="listbox"
+              aria-label="Extracted items list"
+              style={{ position: 'relative', height: rowVirtualizer.getTotalSize(), flexShrink: 0 }}
+            >
+              {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                const row = listRows[virtualRow.index]
+                return (
+                  <div
+                    key={virtualRow.key}
+                    data-index={virtualRow.index}
+                    ref={rowVirtualizer.measureElement}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      paddingBottom: '6px',
+                      transform: `translateY(${virtualRow.start - rowVirtualizer.options.scrollMargin}px)`,
+                    }}
+                  >
+                    {row.kind === 'table' ? (
+                    <div className="review-table-header" title={`Table: ${row.tableName}`}>
                       <span className="review-table-header__icon"><Table2 size={13} aria-hidden="true" /></span>
-                      <span className="review-table-header__title">{group.tableName}</span>
+                      <span className="review-table-header__title">{row.tableName}</span>
                     </div>
-                  )}
-                  <div className="review-table-group__items">
-                    {group.items.map((item) => {
+                    ) : (() => {
+                      const item = row.item
                       const isSelected = selectedItem?.id === item.id
                       const isEditing = editingItemId === item.id
                       const isCandidate = item.is_target_metric_candidate !== false
@@ -1286,6 +1406,7 @@ export default function ReviewPage({
                       return (
                         <div
                           key={item.id}
+                          data-item-id={item.id}
                           role="option"
                           aria-selected={isSelected}
                           tabIndex={0}
@@ -1457,11 +1578,13 @@ export default function ReviewPage({
                       )}
                     </div>
                   )
-                })}
-              </div>
+                    })()}
+                  </div>
+                )
+              })}
             </div>
-          ))}
-            </div>
+          )}
+          </>
           )}
           </div>
         </aside>
@@ -1506,7 +1629,7 @@ export default function ReviewPage({
                 <button
                   type="button"
                   className="fn-btn fn-btn--ghost fn-btn--sm"
-                  onClick={() => setZoomScale((z) => Math.max(0.6, Number((z - 0.15).toFixed(2))))}
+                  onClick={() => setZoomScale(zoomOut)}
                   title="Zoom out"
                   aria-label="Zoom out"
                 >
@@ -1518,7 +1641,7 @@ export default function ReviewPage({
                 <button
                   type="button"
                   className="fn-btn fn-btn--ghost fn-btn--sm"
-                  onClick={() => setZoomScale((z) => Math.min(2.5, Number((z + 0.15).toFixed(2))))}
+                  onClick={() => setZoomScale(zoomIn)}
                   title="Zoom in"
                   aria-label="Zoom in"
                 >
@@ -1527,7 +1650,8 @@ export default function ReviewPage({
                 <button
                   type="button"
                   className="fn-btn fn-btn--ghost fn-btn--sm"
-                  onClick={() => setZoomScale(1.0)}
+                  onClick={() => void handleFitWidth()}
+                  disabled={!pdfDoc}
                   title="Fit width"
                   aria-label="Fit width"
                 >
@@ -1544,18 +1668,40 @@ export default function ReviewPage({
           </div>
 
           {/* Viewer Stage: HTML (FN-032) or PDF with Single Item Sweep (FN-062) */}
-          {selectedItem?.source_file?.endsWith('.html') || selectedItem?.source_file?.endsWith('.htm') ? (
-            <div className="review-viewer__stage" style={{ padding: '16px', height: '100%', flex: 1 }}>
-              <iframe
-                src={`${apiBase}/filings/${jobId}/html`}
-                className="review-html-viewer"
-                title="SEC EDGAR HTML Filing Viewer"
-                sandbox="allow-same-origin allow-scripts"
-                style={{ width: '100%', height: '100%', border: '1px solid var(--border)', borderRadius: 'var(--fn-radius-md)' }}
-              />
-            </div>
+          {selectedItem?.locator?.type === 'html' ? (
+            // AUD-018 / D9: HTML-sourced items link out to the filing on sec.gov. (The previous
+            // iframe pointed at a route that does not exist, with an allow-same-origin +
+            // allow-scripts sandbox.) The viewer is chosen by locator type, not file extension.
+            (() => {
+              const loc = selectedItem.locator
+              const href = secSourceLink(loc, selectedItem.label)
+              return (
+                <div className="review-viewer__stage review-html-source" style={{ padding: '24px', flex: 1, overflow: 'auto' }}>
+                  <h3 style={{ marginTop: 0 }}>Source: SEC EDGAR HTML filing</h3>
+                  <dl style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '4px 12px', fontSize: '13px' }}>
+                    <dt>Document</dt>
+                    <dd style={{ margin: 0 }}>{loc.document}</dd>
+                    <dt>Accession</dt>
+                    <dd style={{ margin: 0 }}>{loc.accession}</dd>
+                    <dt>Element</dt>
+                    <dd style={{ margin: 0 }}>
+                      <code>{loc.element_path}</code>
+                    </dd>
+                  </dl>
+                  {href ? (
+                    <a className="fn-btn fn-btn--primary fn-btn--sm" href={href} target="_blank" rel="noopener noreferrer">
+                      Open on sec.gov
+                    </a>
+                  ) : (
+                    <p role="note" style={{ fontSize: '13px', color: 'var(--ink-muted)' }}>
+                      No sec.gov link: the filer&apos;s CIK is not recorded for this item.
+                    </p>
+                  )}
+                </div>
+              )
+            })()
           ) : (
-            <div className="review-viewer__stage" style={{ flex: 1, overflow: 'auto', padding: '16px', display: 'flex', justifyContent: 'center' }}>
+            <div ref={stageRef} className="review-viewer__stage" style={{ flex: 1, overflow: 'auto', padding: '16px', display: 'flex' }}>
               {pdfLoading && (
                 <div className="review-viewer__loading">
                   <div className="review-viewer__spinner" />
@@ -1585,9 +1731,11 @@ export default function ReviewPage({
                   backgroundColor: '#ffffff',
                   boxShadow: 'var(--fn-shadow-md)',
                   borderRadius: '2px',
-                  transform: `scale(${zoomScale})`,
-                  transformOrigin: 'top center',
-                  transition: 'transform var(--fn-motion-state)',
+                  // Auto margins centre the page but, unlike justify-content: center, never push
+                  // a zoomed page past the stage's left edge where it cannot be scrolled to.
+                  margin: '0 auto',
+                  flexShrink: 0,
+                  alignSelf: 'flex-start',
                 }}
               >
                 <canvas ref={canvasRef} className="review-viewer__canvas" />
@@ -1604,6 +1752,7 @@ export default function ReviewPage({
                       )
                       return (
                         <div
+                          ref={highlightRef}
                           role="img"
                           aria-label={`Highlight for ${selectedItem.label}: ${selectedItem.value}`}
                           className="review-highlight-single"
