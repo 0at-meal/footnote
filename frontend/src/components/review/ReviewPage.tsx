@@ -1294,6 +1294,7 @@ export default function ReviewPage({
                       return (
                         <div
                           key={item.id}
+                          data-item-id={item.id}
                           role="option"
                           aria-selected={isSelected}
                           tabIndex={0}
