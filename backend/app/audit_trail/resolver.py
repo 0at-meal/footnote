@@ -15,6 +15,7 @@ from enum import Enum
 from pathlib import Path
 
 from app.audit_trail.models import SourceChainResponse, SourceComponent
+from app.config import DEFAULT_DATA_DIR
 from app.excel_export.models import W3CAnnotationRecord
 from app.excel_export.repository import ModelRepository
 from app.review.models import ReviewItem
@@ -22,7 +23,7 @@ from app.review.repository import ReviewRepository, make_review_id
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_DATA_DIR: Path = Path(__file__).parent.parent.parent / "data"
+_DEFAULT_DATA_DIR: Path = DEFAULT_DATA_DIR
 
 
 class AuditTrailResolver:

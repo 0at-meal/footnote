@@ -23,6 +23,7 @@ from typing import Any
 
 import xlsxwriter
 
+from app.config import DEFAULT_DATA_DIR
 from app.excel_export.models import (
     CellReference,
     W3CAnnotationRecord,
@@ -42,7 +43,7 @@ from app.formula_engine.models import FormulaNodeType, FormulaTree
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_DATA_DIR: Path = Path(__file__).parent.parent.parent / "data"
+_DEFAULT_DATA_DIR: Path = DEFAULT_DATA_DIR
 
 from app.excel_export.utils import (
     IB_CURRENCY_FORMAT as _IB_CURRENCY_FORMAT,

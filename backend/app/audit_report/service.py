@@ -14,10 +14,11 @@ from pathlib import Path
 from app.audit_report.compiler import compile_audit_dataset
 from app.audit_report.renderer import render_audit_report_pdf
 from app.audit_report.repository import AuditReportRepository
+from app.config import DEFAULT_DATA_DIR
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_DATA_DIR: Path = Path(__file__).parent.parent.parent / "data"
+_DEFAULT_DATA_DIR: Path = DEFAULT_DATA_DIR
 
 
 def generate_audit_report(

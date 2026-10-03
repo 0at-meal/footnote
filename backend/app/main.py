@@ -30,6 +30,7 @@ from pydantic import BaseModel, Field
 from app.audit_report.router import router as audit_report_router
 from app.audit_trail.router import router as audit_trail_router
 from app.classification.router import router as classification_router
+from app.config import DEFAULT_DATA_DIR
 from app.drift.router import router as drift_router
 from app.excel_export.router import router as excel_export_router
 from app.footnote.router import router as footnote_router
@@ -92,7 +93,7 @@ class HealthResponse(BaseModel):
     summary="Health check endpoint for team deployment readiness (Step K)",
 )
 def health_check() -> HealthResponse:
-    data_dir = Path(__file__).parent.parent / "data"
+    data_dir = DEFAULT_DATA_DIR
     data_dir.mkdir(parents=True, exist_ok=True)
     test_file = data_dir / ".health_check.tmp"
     data_writable = False

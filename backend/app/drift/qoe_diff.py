@@ -14,6 +14,7 @@ Enforces:
 """
 
 from typing import Any
+
 from pydantic import BaseModel, Field
 
 from app.classification.taxonomy import (

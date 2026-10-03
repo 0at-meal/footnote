@@ -239,8 +239,8 @@ def mark_component_relabeled(
     return updated_flag
 
 
-from app.drift.qoe_diff import QoEDiffReport, QoERow, diff_qoe_components
 from app.classification.taxonomy import classify_addback_category
+from app.drift.qoe_diff import QoEDiffReport, QoERow, diff_qoe_components
 
 
 @router.get(

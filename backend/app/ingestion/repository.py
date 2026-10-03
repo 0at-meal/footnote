@@ -26,11 +26,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from app.config import DEFAULT_DATA_DIR
 from app.ingestion.models import JobRecord, JobStatus
 
 # Default data directory: backend/data/ (one level above the app/ package root).
 # Tests override this by constructing JobRepository(data_dir=tmp_path).
-_DEFAULT_DATA_DIR: Path = Path(__file__).parent.parent.parent / "data"
+_DEFAULT_DATA_DIR: Path = DEFAULT_DATA_DIR
 _REPO_LOCK = threading.RLock()
 
 

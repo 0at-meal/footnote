@@ -20,6 +20,7 @@ import json
 import os
 from pathlib import Path
 
+from app.config import DEFAULT_DATA_DIR
 from app.extraction.models import (
     DoclingItem,
     ExtractedRecord,
@@ -30,7 +31,7 @@ from app.extraction.models import (
 
 # Default data directory: backend/data/ (one level above the app/ package root).
 # Tests override this by constructing ExtractionRepository(data_dir=tmp_path).
-_DEFAULT_DATA_DIR: Path = Path(__file__).parent.parent.parent / "data"
+_DEFAULT_DATA_DIR: Path = DEFAULT_DATA_DIR
 
 
 class ExtractionRepository:

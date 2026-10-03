@@ -26,6 +26,7 @@ from app.audit_report.models import (
     ReportMetadata,
 )
 from app.audit_trail.resolver import AuditTrailResolver
+from app.config import DEFAULT_DATA_DIR
 from app.drift.repository import DriftRepository
 from app.extraction.models import ScoredRecord
 from app.extraction.repository import ExtractionRepository
@@ -36,7 +37,7 @@ from app.review.repository import ReviewRepository
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_DATA_DIR: Path = Path(__file__).parent.parent.parent / "data"
+_DEFAULT_DATA_DIR: Path = DEFAULT_DATA_DIR
 
 
 class ModelNotCompleteError(Exception):
