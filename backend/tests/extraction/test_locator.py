@@ -148,12 +148,33 @@ def test_stable_review_id_hashing() -> None:
 
 
 def test_w3c_annotation_selector_for_html_locator() -> None:
-    """Verifies W3C annotation builder uses XPathSelector and format_cell_comment for HTML targets."""
-    html_loc = HtmlLocator(
-        accession="0000320193-23-000106",
-        document="aapl-20230930.htm",
+    """Verifies W3C annotation builder uses XPathSelector and format_cell_comment for HTML targets.
+
+    SYNTHETIC identifiers. AUD-018: the target is a CIK-qualified sec.gov Archives URL; a malformed
+    stored URL (no /Archives/, which 404s) is never emitted.
+    """
+    malformed = HtmlLocator(
+        accession="0009999999-23-000106",
+        document="synthetic-20230930.htm",
         element_path="/html/body/table[2]/tr[4]/td[2]",
-        url="https://www.sec.gov/edgar/data/320193/000032019323000106/aapl-20230930.htm",
+        url="https://www.sec.gov/edgar/data/9999999/000999999923000106/synthetic-20230930.htm",
+    )
+    malformed_node = FormulaNode(
+        node_id="leaf_html_malformed",
+        label="Stock-Based Compensation",
+        node_type=FormulaNodeType.leaf,
+        source_node=FormulaInputNode(
+            node_id="node_html_malformed", normalized_label="Stock-Based Compensation", value="55.00",
+            label="SBC", record_index=0, locator=malformed,
+        ),
+    )
+    assert not build_w3c_annotation_for_node("job_html_1", "Source_Inputs", "B2", malformed_node).target.source.startswith("http")
+
+    html_loc = HtmlLocator(
+        cik="9999999",
+        accession="0009999999-23-000106",
+        document="synthetic-20230930.htm",
+        element_path="/html/body/table[2]/tr[4]/td[2]",
     )
     src_node = FormulaInputNode(
         node_id="node_html_sbc",
@@ -174,7 +195,7 @@ def test_w3c_annotation_selector_for_html_locator() -> None:
     assert anno.target.selector is not None
     assert anno.target.selector.type == "XPathSelector"
     assert anno.target.selector.value == "/html/body/table[2]/tr[4]/td[2]"
-    assert "https://www.sec.gov" in anno.target.source
+    assert anno.target.source == "https://www.sec.gov/Archives/edgar/data/9999999/000999999923000106/synthetic-20230930.htm"
 
     comment = format_cell_comment(anno)
     assert "[Footnote Provenance - EDGAR HTML]" in comment

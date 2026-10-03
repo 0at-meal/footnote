@@ -11,9 +11,44 @@ Enforces Invariants:
 - Deterministic, backward-compatible deserialization and serialization.
 """
 
+import re
 from typing import Annotated, Any, Literal
+from urllib.parse import quote
 
 from pydantic import BaseModel, Field, model_validator
+
+# https://www.sec.gov/Archives/edgar/data/{cik}/{accession without dashes}/{document}
+_SEC_ARCHIVES_URL = re.compile(r"^https://www\.sec\.gov/Archives/edgar/data/[1-9]\d*/\d{18}/[^/#?]+$")
+
+
+def sec_archives_url(
+    cik: str | int | None, accession: str | None, document: str | None, text: str | None = None
+) -> str | None:
+    """
+    EDGAR Archives URL for a filing document (decision D9), or None when it cannot be built.
+
+    The CIK is required: the CIK-less forms used before AUD-018 return 404 or redirect. `text`
+    adds a text fragment (`#:~:text=`) so the browser scrolls to that text.
+    """
+    if cik is None or not accession or not document:
+        return None
+    try:
+        cik_int = int(str(cik).strip())
+    except ValueError:
+        return None
+    acc = accession.replace("-", "").strip()
+    if cik_int <= 0 or not re.fullmatch(r"\d{18}", acc):
+        return None
+    url = f"https://www.sec.gov/Archives/edgar/data/{cik_int}/{acc}/{quote(document)}"
+    if text and text.strip():
+        # `&`, `,` and `-` are text-fragment syntax and must be percent-encoded; quote() keeps `-`.
+        url += "#:~:text=" + quote(text.strip(), safe="").replace("-", "%2D")
+    return url
+
+
+def is_sec_archives_url(url: str | None) -> bool:
+    """True for a CIK-qualified EDGAR Archives document URL (fragment ignored)."""
+    return bool(url) and bool(_SEC_ARCHIVES_URL.match(str(url).split("#", 1)[0]))
 
 
 class PdfLocator(BaseModel):
@@ -53,6 +88,10 @@ class HtmlLocator(BaseModel):
     """
 
     type: Literal["html"] = "html"
+    cik: str | None = Field(
+        default=None,
+        description="SEC Central Index Key of the filer; required to build a valid Archives URL (D9)",
+    )
     accession: str = Field(
         ...,
         min_length=1,

@@ -125,7 +125,8 @@ def test_generate_first_zero_reviewed_workflow(tmp_path: Path) -> None:
     lbl_r2 = ws_inputs.cell(row=2, column=1)
     val_r2 = ws_inputs.cell(row=2, column=2)
     assert lbl_r2.hyperlink is not None
-    assert "http://localhost:8000/api/review/job_gen_first/source" in lbl_r2.hyperlink.target
+    # AUD-018: the old target (/api/review/{job}/source) returned 404; this is the real PDF route.
+    assert lbl_r2.hyperlink.target == "http://localhost:8000/review/job_gen_first/pdf"
     assert lbl_r2.hyperlink.location == "page=10"
     assert val_r2.value == 1500.0
     assert val_r2.comment is not None

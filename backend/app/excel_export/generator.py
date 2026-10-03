@@ -293,14 +293,18 @@ def generate_workbook(
             deep_link = format_source_deep_link(
                 job_id, node=leaf, base_url=base_url
             )
-            ws_inputs.write_url(
-                row_idx,
-                0,
-                deep_link,
-                cell_format=fmt_label_link,
-                string=leaf.label,
-                tip=f"Source: {source_file} (p. {page})",
-            )
+            if deep_link is not None:
+                ws_inputs.write_url(
+                    row_idx,
+                    0,
+                    deep_link,
+                    cell_format=fmt_label_link,
+                    string=leaf.label,
+                    tip=f"Source: {source_file} (p. {page})",
+                )
+            else:
+                # No valid source URL (e.g. HTML source without a CIK): no link rather than a 404 (AUD-018).
+                ws_inputs.write_string(row_idx, 0, leaf.label, fmt_text)
 
             # FN-032 / Invariant I5: Values in Column B stay plain numbers
             val_col = 1
@@ -737,13 +741,16 @@ def generate_workbook(
                 ws_review.write(r_idx, 3, r_item["value"], fmt_text)
                 ws_review.write(r_idx, 4, r_item["confidence"], fmt_text)
                 ws_review.write(r_idx, 5, r_item["reason"], fmt_text)
-                ws_review.write_url(
-                    r_idx,
-                    6,
-                    r_item["link"],
-                    cell_format=fmt_label_link,
-                    string="Open Source Viewer",
-                )
+                if r_item["link"]:
+                    ws_review.write_url(
+                        r_idx,
+                        6,
+                        r_item["link"],
+                        cell_format=fmt_label_link,
+                        string="Open Source Viewer",
+                    )
+                else:
+                    ws_review.write_string(r_idx, 6, "No source link available", fmt_text)
 
         workbook.close()
         workbook = None

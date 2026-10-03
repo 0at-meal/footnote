@@ -4,6 +4,7 @@ import type { ReviewItem, ReviewItemsResponse, ReviewStatus, StatementType } fro
 import { loadPdf, createSerialRenderer, PDF_RENDER_SCALE } from '../../lib/pdf/renderer'
 import type { PDFDocumentProxy, SerialPageRenderer } from '../../lib/pdf/renderer'
 import { normalizeBboxToPixels } from '../../lib/pdf/coordinates'
+import { secSourceLink } from '../../lib/secLinks'
 import { buildAuditReportDownloadUrl, buildAuditReportFilename } from '../../lib/audit_report'
 import DebtScheduleCard from '../DebtScheduleCard'
 import LeaseScheduleCard from '../footnote/LeaseScheduleCard'
@@ -1667,16 +1668,38 @@ export default function ReviewPage({
           </div>
 
           {/* Viewer Stage: HTML (FN-032) or PDF with Single Item Sweep (FN-062) */}
-          {selectedItem?.source_file?.endsWith('.html') || selectedItem?.source_file?.endsWith('.htm') ? (
-            <div className="review-viewer__stage" style={{ padding: '16px', height: '100%', flex: 1 }}>
-              <iframe
-                src={`${apiBase}/filings/${jobId}/html`}
-                className="review-html-viewer"
-                title="SEC EDGAR HTML Filing Viewer"
-                sandbox="allow-same-origin allow-scripts"
-                style={{ width: '100%', height: '100%', border: '1px solid var(--border)', borderRadius: 'var(--fn-radius-md)' }}
-              />
-            </div>
+          {selectedItem?.locator?.type === 'html' ? (
+            // AUD-018 / D9: HTML-sourced items link out to the filing on sec.gov. (The previous
+            // iframe pointed at a route that does not exist, with an allow-same-origin +
+            // allow-scripts sandbox.) The viewer is chosen by locator type, not file extension.
+            (() => {
+              const loc = selectedItem.locator
+              const href = secSourceLink(loc, selectedItem.label)
+              return (
+                <div className="review-viewer__stage review-html-source" style={{ padding: '24px', flex: 1, overflow: 'auto' }}>
+                  <h3 style={{ marginTop: 0 }}>Source: SEC EDGAR HTML filing</h3>
+                  <dl style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '4px 12px', fontSize: '13px' }}>
+                    <dt>Document</dt>
+                    <dd style={{ margin: 0 }}>{loc.document}</dd>
+                    <dt>Accession</dt>
+                    <dd style={{ margin: 0 }}>{loc.accession}</dd>
+                    <dt>Element</dt>
+                    <dd style={{ margin: 0 }}>
+                      <code>{loc.element_path}</code>
+                    </dd>
+                  </dl>
+                  {href ? (
+                    <a className="fn-btn fn-btn--primary fn-btn--sm" href={href} target="_blank" rel="noopener noreferrer">
+                      Open on sec.gov
+                    </a>
+                  ) : (
+                    <p role="note" style={{ fontSize: '13px', color: 'var(--ink-muted)' }}>
+                      No sec.gov link: the filer&apos;s CIK is not recorded for this item.
+                    </p>
+                  )}
+                </div>
+              )
+            })()
           ) : (
             <div ref={stageRef} className="review-viewer__stage" style={{ flex: 1, overflow: 'auto', padding: '16px', display: 'flex' }}>
               {pdfLoading && (
