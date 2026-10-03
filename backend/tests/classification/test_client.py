@@ -22,6 +22,10 @@ from app.classification.models import ClassifierInputPayload
 from app.classification.taxonomy import SEED_TAXONOMY
 from groq import APIConnectionError, RateLimitError
 
+# Not a real key: makes the client 'configured' so the injected mock is used. The test session
+# clears GROQ_API_KEY (tests/conftest.py), so no real key is ever read.
+TEST_API_KEY = "gsk_test_dummy_key_not_real"
+
 
 def create_mock_completion(content: str) -> MagicMock:
     mock_choice = MagicMock()
@@ -37,7 +41,7 @@ def test_classify_successful_response() -> None:
         '{"label": "Stock-Based Compensation", "confidence": 0.98}'
     )
 
-    client = GroqClassifierClient(client=mock_groq)
+    client = GroqClassifierClient(api_key=TEST_API_KEY, client=mock_groq)
     payload = ClassifierInputPayload(label="Stock compensation expense")
 
     response = client.classify(payload)
@@ -66,6 +70,7 @@ def test_classify_retry_on_429_exponential_backoff() -> None:
     ]
 
     client = GroqClassifierClient(
+        api_key=TEST_API_KEY,
         client=mock_groq,
         max_retries=2,
         initial_retry_delay=0.01,
@@ -97,6 +102,7 @@ def test_classify_max_retries_exceeded_raises() -> None:
     mock_groq.chat.completions.create.side_effect = rate_limit_err
 
     client = GroqClassifierClient(
+        api_key=TEST_API_KEY,
         client=mock_groq,
         max_retries=2,
         initial_retry_delay=0.01,
@@ -116,7 +122,7 @@ def test_classify_malformed_json_raises_value_error() -> None:
         "Invalid JSON not parseable"
     )
 
-    client = GroqClassifierClient(client=mock_groq)
+    client = GroqClassifierClient(api_key=TEST_API_KEY, client=mock_groq)
     payload = ClassifierInputPayload(label="Amortization")
 
     with pytest.raises(ValueError, match="Malformed JSON response"):
@@ -129,7 +135,7 @@ def test_classify_invalid_schema_missing_fields_raises_value_error() -> None:
         '{"unexpected_key": "some_value"}'
     )
 
-    client = GroqClassifierClient(client=mock_groq)
+    client = GroqClassifierClient(api_key=TEST_API_KEY, client=mock_groq)
     payload = ClassifierInputPayload(label="Amortization")
 
     with pytest.raises(
@@ -144,7 +150,7 @@ def test_classify_invalid_confidence_bounds_raises_value_error() -> None:
         '{"label": "Amortization of Intangibles", "confidence": 1.5}'
     )
 
-    client = GroqClassifierClient(client=mock_groq)
+    client = GroqClassifierClient(api_key=TEST_API_KEY, client=mock_groq)
     payload = ClassifierInputPayload(label="Amortization")
 
     with pytest.raises(
@@ -159,7 +165,7 @@ def test_classify_truncates_oversized_payload() -> None:
         '{"label": "Restructuring", "confidence": 0.85}'
     )
 
-    client = GroqClassifierClient(client=mock_groq)
+    client = GroqClassifierClient(api_key=TEST_API_KEY, client=mock_groq)
     long_label = "A" * (MAX_LABEL_CHARS + 500)
     payload = ClassifierInputPayload(label=long_label)
 
@@ -176,7 +182,7 @@ def test_classify_truncates_oversized_payload() -> None:
 
 def test_classify_daily_rpd_cap_enforcement() -> None:
     mock_groq = MagicMock()
-    client = GroqClassifierClient(client=mock_groq)
+    client = GroqClassifierClient(api_key=TEST_API_KEY, client=mock_groq)
     client._daily_request_count = MAX_RPD
 
     payload = ClassifierInputPayload(label="Tax adjustment")
@@ -194,7 +200,7 @@ def test_classify_api_connection_error_propagates() -> None:
         request=mock_request
     )
 
-    client = GroqClassifierClient(client=mock_groq)
+    client = GroqClassifierClient(api_key=TEST_API_KEY, client=mock_groq)
     payload = ClassifierInputPayload(label="Tax adjustment")
 
     with pytest.raises(APIConnectionError):

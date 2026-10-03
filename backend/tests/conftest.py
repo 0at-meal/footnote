@@ -13,6 +13,11 @@ import shutil
 import tempfile
 from pathlib import Path
 
+# Tests never use a real Groq key. Set it empty before app import: the classifier calls
+# load_dotenv(), which does not override variables that already exist, so the developer's .env
+# key stays out of the test session and local runs behave like CI.
+os.environ["GROQ_API_KEY"] = ""
+
 if not os.environ.get("FOOTNOTE_DATA_DIR"):
     _tmp = Path(tempfile.mkdtemp(prefix="footnote-test-data-"))
     _seed = Path(__file__).resolve().parent.parent / "data" / "taxonomy.json"
