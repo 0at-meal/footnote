@@ -6,7 +6,13 @@ import type {
   ProvenanceSummaryRecord,
 } from '../../types/audit'
 import type { JobRecord } from '../../types/job'
-import { loadPdf, renderPage, PDF_RENDER_SCALE, type PDFDocumentProxy } from '../../lib/pdf/renderer'
+import {
+  loadPdf,
+  createSerialRenderer,
+  PDF_RENDER_SCALE,
+  type PDFDocumentProxy,
+  type SerialPageRenderer,
+} from '../../lib/pdf/renderer'
 import { normalizeBboxToPixels, type PixelBoundingBox } from '../../lib/pdf/coordinates'
 import { computeChainRollup } from '../../lib/pdf/audit_status'
 import { buildAuditReportDownloadUrl, buildAuditReportFilename } from '../../lib/audit_report'
@@ -289,46 +295,41 @@ export default function AuditTrailView({
     }
   }, [jobId, apiBase])
 
-  // ── 3. Render active PDF page to canvas ─────────────────────────────────
+  // ── 3. Render active PDF page to canvas (AUD-001: serialized, no self-triggering) ──
+  const rendererRef = useRef<SerialPageRenderer | null>(null)
+  if (rendererRef.current === null) rendererRef.current = createSerialRenderer()
+  const targetPage = selectedComponent ? selectedComponent.page : activePage
+
   useEffect(() => {
-    if (!pdfDoc || !canvasRef.current) return
+    const renderer = rendererRef.current
+    return () => renderer?.cancel()
+  }, [])
 
-    let cancelled = false
-    const targetPage = selectedComponent ? selectedComponent.page : activePage
-
-    async function drawPage() {
-      if (!pdfDoc || !canvasRef.current) return
-
-      if (targetPage < 1 || targetPage > pdfDoc.numPages) {
-        if (!cancelled) setPdfError(`Page ${targetPage} not found in document`)
-        return
-      }
-
-      try {
-        await renderPage(pdfDoc, targetPage, canvasRef.current, PDF_RENDER_SCALE)
-        if (cancelled) return
+  useEffect(() => {
+    if (!pdfDoc || !canvasRef.current || !rendererRef.current) return
+    let active = true
+    const canvas = canvasRef.current
+    // Out-of-range pages reject with "Page N not found in document" and land in the catch below.
+    rendererRef.current
+      .render(pdfDoc, targetPage, canvas, PDF_RENDER_SCALE)
+      .then((result) => {
+        if (!active || result === 'superseded') return
         setPdfError(null)
-        setActivePage(targetPage)
-        if (canvasRef.current) {
-          const rect = canvasRef.current.getBoundingClientRect()
-          setCanvasDims({ width: Math.round(rect.width), height: Math.round(rect.height) })
-        }
-      } catch (err) {
-        if (cancelled) return
+        const rect = canvas.getBoundingClientRect()
+        setCanvasDims({ width: Math.round(rect.width), height: Math.round(rect.height) })
+      })
+      .catch((err: unknown) => {
+        if (!active) return
         setPdfError(err instanceof Error ? err.message : 'Failed to render PDF page')
-      }
-    }
-
-    void drawPage()
-
+      })
     return () => {
-      cancelled = true
+      active = false
     }
-  }, [pdfDoc, selectedComponent, activePage])
+  }, [pdfDoc, targetPage])
 
   // ── Calculate BBox Highlight Overlay ─────────────────────────────────────
   let bboxStyle: PixelBoundingBox | null = null
-  if (selectedComponent && selectedComponent.page === activePage && canvasDims.width > 0) {
+  if (selectedComponent && selectedComponent.page === targetPage && canvasDims.width > 0) {
     bboxStyle = normalizeBboxToPixels(selectedComponent.bbox, canvasDims.width, canvasDims.height)
   }
 

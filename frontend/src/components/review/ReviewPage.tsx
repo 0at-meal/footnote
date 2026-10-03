@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import type { ReviewItem, ReviewItemsResponse, ReviewStatus, StatementType } from '../../types/review'
-import { loadPdf, renderPage, PDF_RENDER_SCALE } from '../../lib/pdf/renderer'
-import type { PDFDocumentProxy } from '../../lib/pdf/renderer'
+import { loadPdf, createSerialRenderer, PDF_RENDER_SCALE } from '../../lib/pdf/renderer'
+import type { PDFDocumentProxy, SerialPageRenderer } from '../../lib/pdf/renderer'
 import { normalizeBboxToPixels } from '../../lib/pdf/coordinates'
 import { buildAuditReportDownloadUrl, buildAuditReportFilename } from '../../lib/audit_report'
 import DebtScheduleCard from '../DebtScheduleCard'
@@ -311,41 +311,49 @@ export default function ReviewPage({
     }
   }, [jobId, apiBase])
 
-  // ── 3. Render Canvas when PDF doc or selected item page changes ──────────
+  // ── 3. Render Canvas when PDF doc or target page changes (AUD-001) ───────
+  // Renders are serialized per canvas: the previous pdf.js RenderTask is cancelled and
+  // awaited before the next one starts, and the effect never sets the state it depends on.
+  const rendererRef = useRef<SerialPageRenderer | null>(null)
+  if (rendererRef.current === null) rendererRef.current = createSerialRenderer()
+  const targetPage = selectedItem ? selectedItem.page : currentPage
+  const [renderAttempt, setRenderAttempt] = useState(0)
+
   useEffect(() => {
-    if (!pdfDoc || !canvasRef.current) return
+    const renderer = rendererRef.current
+    return () => renderer?.cancel()
+  }, [])
 
-    let cancelled = false
-    const targetPage = selectedItem ? selectedItem.page : currentPage
-
-    async function draw() {
-      if (!pdfDoc || !canvasRef.current) return
-      try {
-        await renderPage(pdfDoc, targetPage, canvasRef.current, PDF_RENDER_SCALE)
-        if (cancelled) return
-        setCurrentPage(targetPage)
+  useEffect(() => {
+    if (!pdfDoc || !canvasRef.current || !rendererRef.current) return
+    let active = true
+    const canvas = canvasRef.current
+    rendererRef.current
+      .render(pdfDoc, targetPage, canvas, PDF_RENDER_SCALE)
+      .then((result) => {
+        if (!active || result === 'superseded') return
         setPageRenderError(null)
-        if (canvasRef.current) {
-          const rect = canvasRef.current.getBoundingClientRect()
-          setCanvasSize({ width: Math.round(rect.width), height: Math.round(rect.height) })
-        }
-      } catch (err) {
-        if (cancelled) return
+        const rect = canvas.getBoundingClientRect()
+        setCanvasSize({ width: Math.round(rect.width), height: Math.round(rect.height) })
+      })
+      .catch((err: unknown) => {
+        if (!active) return
         // EC-2 handling: Page not found in document
         setPageRenderError(err instanceof Error ? err.message : `Page ${targetPage} could not be rendered`)
-      }
-    }
-
-    void draw()
-
+      })
     return () => {
-      cancelled = true
+      active = false
     }
-  }, [pdfDoc, selectedItem, currentPage])
+  }, [pdfDoc, targetPage, renderAttempt])
 
   function handleSelectItem(item: ReviewItem) {
     setSelectedItem(item)
     setCurrentPage(item.page)
+    // Retry after a failed render when the user picks another item.
+    if (pageRenderError) {
+      setPageRenderError(null)
+      setRenderAttempt((n) => n + 1)
+    }
     // Clear editing mode when switching items
     if (editingItemId && editingItemId !== item.id) {
       setEditingItemId(null)
