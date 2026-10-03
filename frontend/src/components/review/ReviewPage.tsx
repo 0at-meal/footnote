@@ -40,6 +40,13 @@ interface Props {
   initialItems?: ReviewItem[]
 }
 
+// Zoom snaps to 25% steps (so 100% and 150% are exact levels); Fit width may land between them.
+const ZOOM_STEP = 0.25
+const ZOOM_MIN = 0.5
+const ZOOM_MAX = 2.5
+const zoomIn = (z: number) => Math.min(ZOOM_MAX, (Math.floor(z / ZOOM_STEP + 1e-6) + 1) * ZOOM_STEP)
+const zoomOut = (z: number) => Math.max(ZOOM_MIN, (Math.ceil(z / ZOOM_STEP - 1e-6) - 1) * ZOOM_STEP)
+
 const REVIEW_STATUS_LABELS: Record<ReviewStatus, string> = {
   auto_accepted: 'Auto Accepted',
   needs_review: 'Needs Review',
@@ -316,8 +323,13 @@ export default function ReviewPage({
   // awaited before the next one starts, and the effect never sets the state it depends on.
   const rendererRef = useRef<SerialPageRenderer | null>(null)
   if (rendererRef.current === null) rendererRef.current = createSerialRenderer()
-  const targetPage = selectedItem ? selectedItem.page : currentPage
+  // The viewed page is independent of the selection (AUD-020): selecting an item moves to its
+  // page, but Next/Prev can then browse away from it.
+  const targetPage = currentPage
+  const renderScale = PDF_RENDER_SCALE * zoomScale
   const [renderAttempt, setRenderAttempt] = useState(0)
+  const stageRef = useRef<HTMLDivElement | null>(null)
+  const highlightRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     const renderer = rendererRef.current
@@ -329,12 +341,13 @@ export default function ReviewPage({
     let active = true
     const canvas = canvasRef.current
     rendererRef.current
-      .render(pdfDoc, targetPage, canvas, PDF_RENDER_SCALE)
+      .render(pdfDoc, targetPage, canvas, renderScale)
       .then((result) => {
         if (!active || result === 'superseded') return
         setPageRenderError(null)
-        const rect = canvas.getBoundingClientRect()
-        setCanvasSize({ width: Math.round(rect.width), height: Math.round(rect.height) })
+        // Zoom re-renders at a higher scale, so the canvas's CSS size is the page size in
+        // layout pixels; size the highlight overlay from it, not from a transformed rect.
+        setCanvasSize({ width: parseFloat(canvas.style.width) || 0, height: parseFloat(canvas.style.height) || 0 })
       })
       .catch((err: unknown) => {
         if (!active) return
@@ -344,11 +357,31 @@ export default function ReviewPage({
     return () => {
       active = false
     }
-  }, [pdfDoc, targetPage, renderAttempt])
+  }, [pdfDoc, targetPage, renderScale, renderAttempt])
+
+  // Bring the selected item's highlight into view once its page is drawn, and again whenever
+  // an item is clicked (even the already-selected one, after the reviewer scrolled away).
+  const selectedItemId = selectedItem?.id
+  const [scrollRequest, setScrollRequest] = useState(0)
+  useEffect(() => {
+    highlightRef.current?.scrollIntoView?.({ block: 'center', inline: 'center' })
+  }, [selectedItemId, canvasSize, scrollRequest])
+
+  async function handleFitWidth() {
+    const stage = stageRef.current
+    if (!pdfDoc || !stage) return
+    const page = await pdfDoc.getPage(currentPage)
+    const pageWidth = page.getViewport({ scale: PDF_RENDER_SCALE }).width
+    const style = window.getComputedStyle(stage)
+    const available = stage.clientWidth - (parseFloat(style.paddingLeft) || 0) - (parseFloat(style.paddingRight) || 0)
+    if (available <= 0 || pageWidth <= 0) return
+    setZoomScale(Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Number((available / pageWidth).toFixed(3)))))
+  }
 
   function handleSelectItem(item: ReviewItem) {
     setSelectedItem(item)
     setCurrentPage(item.page)
+    setScrollRequest((n) => n + 1)
     // Retry after a failed render when the user picks another item.
     if (pageRenderError) {
       setPageRenderError(null)
@@ -1515,7 +1548,7 @@ export default function ReviewPage({
                 <button
                   type="button"
                   className="fn-btn fn-btn--ghost fn-btn--sm"
-                  onClick={() => setZoomScale((z) => Math.max(0.6, Number((z - 0.15).toFixed(2))))}
+                  onClick={() => setZoomScale(zoomOut)}
                   title="Zoom out"
                   aria-label="Zoom out"
                 >
@@ -1527,7 +1560,7 @@ export default function ReviewPage({
                 <button
                   type="button"
                   className="fn-btn fn-btn--ghost fn-btn--sm"
-                  onClick={() => setZoomScale((z) => Math.min(2.5, Number((z + 0.15).toFixed(2))))}
+                  onClick={() => setZoomScale(zoomIn)}
                   title="Zoom in"
                   aria-label="Zoom in"
                 >
@@ -1536,7 +1569,8 @@ export default function ReviewPage({
                 <button
                   type="button"
                   className="fn-btn fn-btn--ghost fn-btn--sm"
-                  onClick={() => setZoomScale(1.0)}
+                  onClick={() => void handleFitWidth()}
+                  disabled={!pdfDoc}
                   title="Fit width"
                   aria-label="Fit width"
                 >
@@ -1564,7 +1598,7 @@ export default function ReviewPage({
               />
             </div>
           ) : (
-            <div className="review-viewer__stage" style={{ flex: 1, overflow: 'auto', padding: '16px', display: 'flex', justifyContent: 'center' }}>
+            <div ref={stageRef} className="review-viewer__stage" style={{ flex: 1, overflow: 'auto', padding: '16px', display: 'flex' }}>
               {pdfLoading && (
                 <div className="review-viewer__loading">
                   <div className="review-viewer__spinner" />
@@ -1594,9 +1628,11 @@ export default function ReviewPage({
                   backgroundColor: '#ffffff',
                   boxShadow: 'var(--fn-shadow-md)',
                   borderRadius: '2px',
-                  transform: `scale(${zoomScale})`,
-                  transformOrigin: 'top center',
-                  transition: 'transform var(--fn-motion-state)',
+                  // Auto margins centre the page but, unlike justify-content: center, never push
+                  // a zoomed page past the stage's left edge where it cannot be scrolled to.
+                  margin: '0 auto',
+                  flexShrink: 0,
+                  alignSelf: 'flex-start',
                 }}
               >
                 <canvas ref={canvasRef} className="review-viewer__canvas" />
@@ -1613,6 +1649,7 @@ export default function ReviewPage({
                       )
                       return (
                         <div
+                          ref={highlightRef}
                           role="img"
                           aria-label={`Highlight for ${selectedItem.label}: ${selectedItem.value}`}
                           className="review-highlight-single"

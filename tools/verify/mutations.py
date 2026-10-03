@@ -70,7 +70,7 @@ MUTATIONS: list[dict[str, object]] = [
         "id": "M5",
         "desc": "Review PDF page never drawn",
         "file": "frontend/src/components/review/ReviewPage.tsx",
-        "old": "      .render(pdfDoc, targetPage, canvas, PDF_RENDER_SCALE)",
+        "old": "      .render(pdfDoc, targetPage, canvas, renderScale)",
         "new": "      .constructor && Promise.resolve('rendered' as const)",
         "runs": [("frontend", VITEST)],
         "e2e": True,

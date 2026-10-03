@@ -639,7 +639,9 @@
   flex: 1;
   overflow: auto;
   display: flex;
-  justify-content: center;
+  /* Not justify-content: center: it pushes a zoomed page past the left edge, out of scroll
+     reach (AUD-020). The canvas wrap centres itself with auto margins instead. */
+  justify-content: flex-start;
   align-items: flex-start;
   padding: 24px;
   background-color: #08090d;
