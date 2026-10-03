@@ -6,8 +6,10 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   test: {
-    // File constructor is available natively in Node 20+ — no jsdom needed
-    // for the current test suite (pure function tests only).
+    // Default environment is node; DOM component tests opt in with
+    // `// @vitest-environment jsdom` (see src/test/setupDom.ts).
     environment: 'node',
+    // Playwright specs live in e2e/ and run with `npm run e2e`.
+    exclude: ['**/node_modules/**', '**/dist/**', 'e2e/**'],
   },
 })
