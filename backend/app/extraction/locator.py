@@ -11,6 +11,7 @@ Enforces Invariants:
 - Deterministic, backward-compatible deserialization and serialization.
 """
 
+import json
 import re
 from typing import Annotated, Any, Literal
 from urllib.parse import quote
@@ -44,6 +45,38 @@ def sec_archives_url(
         # `&`, `,` and `-` are text-fragment syntax and must be percent-encoded; quote() keeps `-`.
         url += "#:~:text=" + quote(text.strip(), safe="").replace("-", "%2D")
     return url
+
+
+def canonical_locator(locator: Any) -> dict[str, Any]:
+    """
+    Canonical form of a locator (FN-023 / AUD-037): only the fields that identify the target,
+    with numbers normalised, so equal targets compare equal however they were built (model or
+    dict, int or float, derived `source_file` alias or `url` present or not).
+    """
+    data = locator.model_dump() if isinstance(locator, BaseModel) else dict(locator)
+    kind = data.get("type")
+    if kind == "html":
+        return {
+            "type": "html",
+            "accession": str(data["accession"]),
+            "document": str(data["document"]),
+            "element_path": str(data["element_path"]),
+            "char_range": list(data["char_range"]) if data.get("char_range") is not None else None,
+        }
+    if kind == "pdf":
+        bbox = data["bbox"]
+        return {
+            "type": "pdf",
+            "source_file": str(data["source_file"]),
+            "page": int(data["page"]),
+            "bbox": {k: round(float(bbox[k]), 4) for k in ("x0", "y0", "x1", "y1")},
+        }
+    raise ValueError(f"unknown locator type: {kind!r}")
+
+
+def canonical_locator_key(locator: Any) -> str:
+    """Deterministic string key for a locator (sorted, compact JSON of `canonical_locator`)."""
+    return json.dumps(canonical_locator(locator), sort_keys=True, separators=(",", ":"))
 
 
 def require_provenance(data: Any) -> Any:

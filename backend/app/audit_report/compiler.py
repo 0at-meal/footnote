@@ -293,11 +293,9 @@ class AuditReportCompiler:
             if r.node_id.startswith("hardcode_"):
                 source_file = r.target.source
                 page = r.target.selector.page if r.target.selector else 1
-                coords = (
-                    r.target.selector.refinedBy.coordinates
-                    if r.target.selector
-                    else None
-                )
+                # refinedBy is absent for XPath targets and a TextQuoteSelector for HTML (AUD-037).
+                refined = r.target.selector.refinedBy if r.target.selector else None
+                coords = getattr(refined, "coordinates", None)
                 bbox_dict = (
                     {"x0": coords.x0, "y0": coords.y0, "x1": coords.x1, "y1": coords.y1}
                     if coords

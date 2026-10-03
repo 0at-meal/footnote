@@ -18,6 +18,7 @@ from app.audit_trail.models import SourceChainResponse, SourceComponent
 from app.config import DEFAULT_DATA_DIR
 from app.excel_export.models import W3CAnnotationRecord
 from app.excel_export.repository import ModelRepository
+from app.extraction.locator import PdfLocator
 from app.review.models import ReviewItem
 from app.review.repository import ReviewRepository, make_review_id
 
@@ -217,8 +218,13 @@ class AuditTrailResolver:
                 page = 1
                 bbox_dict = {"x0": 0.0, "y0": 0.0, "x1": 1000.0, "y1": 1000.0}
 
-            # Ticket 12.2: Compute content hash ID to look up matching live review item
-            hash_review_id = make_review_id(job_id, source_file, page, bbox_dict)
+            # Ticket 12.2: Compute content hash ID to look up matching live review item.
+            # With the leaf's locator (AUD-037) this matches review IDs for HTML items too, which
+            # hash accession/document/element; the URL + whole-page fallback never matched them.
+            leaf_locator = getattr(leaf_record, "locator", None)
+            if isinstance(leaf_locator, PdfLocator):
+                source_file, page, bbox_dict = leaf_locator.source_file, leaf_locator.page, dict(leaf_locator.bbox)
+            hash_review_id = make_review_id(job_id, source_file, page, bbox_dict, locator=leaf_locator)
             review_item = review_items_by_id.get(hash_review_id)
 
             # Fallback for legacy sequential index IDs: leaf_{idx}_{slug}

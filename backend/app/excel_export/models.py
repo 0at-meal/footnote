@@ -6,9 +6,11 @@ Enforces CONSTITUTION §1.1, §1.3, §1.5, §2.3, §2.5:
 - W3C Web Annotation standard schema with 0-1000 normalized bounding box coordinates.
 """
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
+
+from app.extraction.locator import Locator
 
 
 class BoundingBoxCoordinates(BaseModel):
@@ -28,6 +30,18 @@ class W3CRefinedBy(BaseModel):
     coordinate_space: Literal["0-1000"] = "0-1000"
 
 
+class W3CTextQuoteSelector(BaseModel):
+    """W3C TextQuoteSelector refining an HTML element selector to the quoted text (AUD-037)."""
+
+    type: Literal["TextQuoteSelector"] = "TextQuoteSelector"
+    exact: str = Field(..., min_length=1, description="Exact text of the target within the element")
+    prefix: str | None = Field(default=None, description="Text immediately before `exact`")
+    suffix: str | None = Field(default=None, description="Text immediately after `exact`")
+
+
+W3CRefinement = Annotated[W3CRefinedBy | W3CTextQuoteSelector, Field(discriminator="type")]
+
+
 class W3CSelector(BaseModel):
     """W3C Web Annotation selector supporting PDF Media Fragment and HTML XPath/DOM targeting (FN-023)."""
 
@@ -39,7 +53,7 @@ class W3CSelector(BaseModel):
     value: str = Field(
         ..., description="Selector string (e.g. xywh=... or /html/body/table...)"
     )
-    refinedBy: W3CRefinedBy | None = Field(default=None)
+    refinedBy: W3CRefinement | None = Field(default=None)
 
 
 class W3CTarget(BaseModel):
@@ -83,6 +97,10 @@ class W3CAnnotationRecord(BaseModel):
     )
     body: W3CBody
     target: W3CTarget
+    locator: Locator | None = Field(
+        default=None,
+        description="Canonical locator of the leaf source (FN-023 / AUD-037); None for derived cells",
+    )
 
 
 class CellReference(BaseModel):

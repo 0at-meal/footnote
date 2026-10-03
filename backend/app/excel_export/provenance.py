@@ -15,6 +15,7 @@ from app.excel_export.models import (
     W3CRefinedBy,
     W3CSelector,
     W3CTarget,
+    W3CTextQuoteSelector,
 )
 from app.extraction.locator import is_sec_archives_url, sec_archives_url
 from app.formula_engine.models import FormulaNode
@@ -60,16 +61,19 @@ def build_w3c_annotation_for_node(
     """
     annotation_id = f"urn:footnote:provenance:{job_id}:{sheet_name}:{cell_coord}"
 
+    record_locator = None
     if node.source_node is not None:
         src = node.source_node
         loc = getattr(src, "locator", None)
+        record_locator = loc
         if loc is not None and getattr(loc, "type", None) == "html":
             selector = W3CSelector(
                 type="XPathSelector",
                 conformsTo="http://www.w3.org/TR/DOM-XPath/",
                 page=1,
                 value=loc.element_path,
-                refinedBy=None,
+                # The element is a table cell; the quote pins the value inside it (AUD-037).
+                refinedBy=W3CTextQuoteSelector(exact=src.value.strip()) if src.value.strip() else None,
             )
             # No CIK and no valid stored URL: identify the document without inventing a link (AUD-018).
             source_target = _html_document_url(loc) or f"urn:footnote:sec:{loc.accession}:{loc.document}"
@@ -113,6 +117,7 @@ def build_w3c_annotation_for_node(
         is_formula=node.node_type != "leaf" or sheet_name == "Reconciliation",
         body=body,
         target=target,
+        locator=record_locator,
     )
 
 
@@ -135,9 +140,10 @@ def format_cell_comment(annotation: W3CAnnotationRecord) -> str:
                 f"Element: {target.selector.value}\n"
                 f"ID: {annotation.id}"
             )
+        refined = target.selector.refinedBy
         coords = (
-            target.selector.refinedBy.coordinates
-            if target.selector.refinedBy
+            refined.coordinates
+            if isinstance(refined, W3CRefinedBy)
             else BoundingBoxCoordinates(x0=0.0, y0=0.0, x1=0.0, y1=0.0)
         )
         return (
