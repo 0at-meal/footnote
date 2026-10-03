@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef } from 'react'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import type { ReviewItem, ReviewItemsResponse, ReviewStatus, StatementType } from '../../types/review'
 import { loadPdf, createSerialRenderer, PDF_RENDER_SCALE } from '../../lib/pdf/renderer'
 import type { PDFDocumentProxy, SerialPageRenderer } from '../../lib/pdf/renderer'
@@ -131,6 +132,29 @@ type FilterTab =
   | 'cash_flow'
   | 'balance_sheet'
   | 'kpi'
+  | 'footnotes'
+
+const isFlaggedItem = (item: ReviewItem) =>
+  item.status === 'needs_review' ||
+  item.status === 'manual_required' ||
+  item.status === 'extraction_error' ||
+  item.status === 'pending_taxonomy_confirmation' ||
+  item.status === 'flagged'
+
+function matchesTab(item: ReviewItem, tab: FilterTab): boolean {
+  if (tab === 'flagged') return isFlaggedItem(item)
+  if (tab === 'all') return true
+  if (tab === 'footnotes') return false
+  return item.statement_type === tab
+}
+
+/** Default selection: the first item visible in `tab` (AUD-019), else the first item. */
+function firstItemFor(items: ReviewItem[], tab: FilterTab): ReviewItem | null {
+  return items.find((i) => matchesTab(i, tab)) ?? items[0] ?? null
+}
+
+/** Rows of the virtualized item list: table headings and item cards. */
+type ListRow = { kind: 'table'; key: string; tableName: string } | { kind: 'item'; key: string; item: ReviewItem }
 
 export default function ReviewPage({
   jobId,
@@ -141,19 +165,18 @@ export default function ReviewPage({
   initialItems = [],
 }: Props) {
   const [items, setItems] = useState<ReviewItem[]>(initialItems)
-  const [selectedItem, setSelectedItem] = useState<ReviewItem | null>(
-    initialItems.length > 0 ? initialItems[0] : null,
-  )
+  const [selectedItem, setSelectedItem] = useState<ReviewItem | null>(() => firstItemFor(initialItems, 'flagged'))
   const [itemsLoading, setItemsLoading] = useState(initialItems.length === 0)
   const [itemsError, setItemsError] = useState<string | null>(null)
 
   const [activeTab, setActiveTab] = useState<FilterTab>('flagged')
+  const activeTabRef = useRef<FilterTab>('flagged')
 
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null)
   const [pdfLoading, setPdfLoading] = useState(true)
   const [pdfError, setPdfError] = useState<string | null>(null)
 
-  const [currentPage, setCurrentPage] = useState<number>(1)
+  const [currentPage, setCurrentPage] = useState<number>(() => firstItemFor(initialItems, 'flagged')?.page ?? 1)
   const [pageRenderError, setPageRenderError] = useState<string | null>(null)
   const [canvasSize, setCanvasSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 })
 
@@ -194,14 +217,7 @@ export default function ReviewPage({
   ).length
   const manualCount = items.filter((i) => i.status === 'manual_required' || i.status === 'extraction_error').length
 
-  const isFlagged = (item: ReviewItem) =>
-    item.status === 'needs_review' ||
-    item.status === 'manual_required' ||
-    item.status === 'extraction_error' ||
-    item.status === 'pending_taxonomy_confirmation' ||
-    item.status === 'flagged'
-
-  const flaggedCount = items.filter(isFlagged).length
+  const flaggedCount = items.filter(isFlaggedItem).length
   const totalCount = items.length
   const isNeedsReview = items.some(i => i.statement_type === 'income_statement' && (i.status === 'needs_review' || i.status === 'manual_required' || i.status === 'extraction_error'))
   const bridgeNeedsReview = items.some(i => i.statement_type === 'non_gaap_bridge' && (i.status === 'needs_review' || i.status === 'manual_required' || i.status === 'extraction_error'))
@@ -213,27 +229,7 @@ export default function ReviewPage({
   const bsCount = items.filter((i) => i.statement_type === 'balance_sheet').length
   const kpiCount = items.filter((i) => i.statement_type === 'kpi').length
 
-  const filteredItems = items.filter((item) => {
-    if (activeTab === 'flagged') {
-      return isFlagged(item)
-    }
-    if (activeTab === 'income_statement') {
-      return item.statement_type === 'income_statement'
-    }
-    if (activeTab === 'non_gaap_bridge') {
-      return item.statement_type === 'non_gaap_bridge'
-    }
-    if (activeTab === 'cash_flow') {
-      return item.statement_type === 'cash_flow'
-    }
-    if (activeTab === 'balance_sheet') {
-      return item.statement_type === 'balance_sheet'
-    }
-    if (activeTab === 'kpi') {
-      return item.statement_type === 'kpi'
-    }
-    return true // 'all'
-  })
+  const filteredItems = items.filter((item) => matchesTab(item, activeTab))
 
   // Group filtered items by table_name
   type TableGroup = {
@@ -250,6 +246,38 @@ export default function ReviewPage({
     } else {
       tableGroups.push({ tableName: currentTable, items: [item] })
     }
+  })
+
+  const listRows: ListRow[] = []
+  tableGroups.forEach((group, groupIdx) => {
+    if (group.tableName) listRows.push({ kind: 'table', key: `table-${groupIdx}`, tableName: group.tableName })
+    group.items.forEach((it) => listRows.push({ kind: 'item', key: it.id, item: it }))
+  })
+
+  // One virtualized list (FN-062 / AUD-019): only the visible cards are mounted, so a 954-item
+  // filing stays responsive. Content above the list (taxonomy panel, empty state) is the scroll margin.
+  const listScrollRef = useRef<HTMLDivElement | null>(null)
+  const listHeadRef = useRef<HTMLDivElement | null>(null)
+  const [listOffset, setListOffset] = useState(0)
+  useLayoutEffect(() => {
+    const head = listHeadRef.current
+    if (!head) return
+    const update = () => setListOffset(head.offsetTop + head.offsetHeight)
+    update()
+    if (typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(update)
+    observer.observe(head)
+    return () => observer.disconnect()
+  }, [activeTab])
+  // React Compiler is not enabled in this project, so the memoization caveat this rule warns about does not apply.
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const rowVirtualizer = useVirtualizer({
+    count: listRows.length,
+    getScrollElement: () => listScrollRef.current,
+    estimateSize: (index) => (listRows[index]?.kind === 'table' ? 36 : 120),
+    getItemKey: (index) => listRows[index]?.key ?? index,
+    overscan: 8,
+    scrollMargin: listOffset,
   })
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -271,9 +299,10 @@ export default function ReviewPage({
         if (data.parser_used) {
           setParserUsed(data.parser_used)
         }
-        if (data.items.length > 0) {
-          setSelectedItem(data.items[0])
-          setCurrentPage(data.items[0].page)
+        const first = firstItemFor(data.items, activeTabRef.current)
+        if (first) {
+          setSelectedItem(first)
+          setCurrentPage(first.page)
         }
         setItemsError(null)
       } catch (err) {
@@ -393,6 +422,22 @@ export default function ReviewPage({
       setEditError(null)
     }
   }
+
+  function handleTabChange(tab: FilterTab) {
+    setActiveTab(tab)
+    activeTabRef.current = tab
+    // Keep the selection inside the visible list (AUD-019).
+    if (tab !== 'footnotes' && !(selectedItem && matchesTab(selectedItem, tab))) {
+      const first = items.find((i) => matchesTab(i, tab))
+      if (first) handleSelectItem(first)
+    }
+  }
+
+  // Keep the selected card in view in the virtualized list (J/K, tab changes, initial load).
+  const selectedRowIndex = listRows.findIndex((r) => r.kind === 'item' && r.item.id === selectedItemId)
+  useEffect(() => {
+    if (selectedRowIndex >= 0) rowVirtualizer.scrollToIndex(selectedRowIndex, { align: 'auto' })
+  }, [selectedRowIndex, rowVirtualizer])
 
   // ── Action Handlers (Feature 5 Step 3) ──────────────────────────────────
 
@@ -674,7 +719,7 @@ export default function ReviewPage({
             aria-label="Back to queue"
           >
             <ArrowLeft size={14} aria-hidden="true" />
-            <span>← Back to Queue</span>
+            <span>Back to Queue</span>
           </button>
           <div className="review-header__title-group">
             <h1 className="review-header__title">
@@ -1001,7 +1046,7 @@ export default function ReviewPage({
               role="tab"
               aria-selected={activeTab === 'flagged'}
               className={`review-tab ${activeTab === 'flagged' ? 'review-tab--active' : ''}`}
-              onClick={() => setActiveTab('flagged')}
+              onClick={() => handleTabChange('flagged')}
             >
               Flagged
               <span className="review-tab__badge">{flaggedCount}</span>
@@ -1011,7 +1056,7 @@ export default function ReviewPage({
               role="tab"
               aria-selected={activeTab === 'all'}
               className={`review-tab ${activeTab === 'all' ? 'review-tab--active' : ''}`}
-              onClick={() => setActiveTab('all')}
+              onClick={() => handleTabChange('all')}
             >
               All
               <span className="review-tab__badge">{totalCount}</span>
@@ -1021,7 +1066,7 @@ export default function ReviewPage({
               role="tab"
               aria-selected={activeTab === 'income_statement'}
               className={`review-tab ${activeTab === 'income_statement' ? 'review-tab--active' : ''}`}
-              onClick={() => setActiveTab('income_statement')}
+              onClick={() => handleTabChange('income_statement')}
             >
               IS
               <span className="review-tab__badge">{isCount}</span>
@@ -1031,7 +1076,7 @@ export default function ReviewPage({
               role="tab"
               aria-selected={activeTab === 'non_gaap_bridge'}
               className={`review-tab ${activeTab === 'non_gaap_bridge' ? 'review-tab--active' : ''}`}
-              onClick={() => setActiveTab('non_gaap_bridge')}
+              onClick={() => handleTabChange('non_gaap_bridge')}
             >
               Bridge
               <span className="review-tab__badge">{bridgeCount}</span>
@@ -1041,7 +1086,7 @@ export default function ReviewPage({
               role="tab"
               aria-selected={activeTab === 'cash_flow'}
               className={`review-tab ${activeTab === 'cash_flow' ? 'review-tab--active' : ''}`}
-              onClick={() => setActiveTab('cash_flow')}
+              onClick={() => handleTabChange('cash_flow')}
             >
               CF
               <span className="review-tab__badge">{cfCount}</span>
@@ -1051,7 +1096,7 @@ export default function ReviewPage({
               role="tab"
               aria-selected={activeTab === 'balance_sheet'}
               className={`review-tab ${activeTab === 'balance_sheet' ? 'review-tab--active' : ''}`}
-              onClick={() => setActiveTab('balance_sheet')}
+              onClick={() => handleTabChange('balance_sheet')}
             >
               BS
               <span className="review-tab__badge">{bsCount}</span>
@@ -1062,12 +1107,22 @@ export default function ReviewPage({
                 role="tab"
                 aria-selected={activeTab === 'kpi'}
                 className={`review-tab ${activeTab === 'kpi' ? 'review-tab--active' : ''}`}
-                onClick={() => setActiveTab('kpi')}
+                onClick={() => handleTabChange('kpi')}
               >
                 KPI
                 <span className="review-tab__badge">{kpiCount}</span>
               </button>
             )}
+            {/* Footnote schedules get their own tab so they never push the item list down (AUD-019). */}
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'footnotes'}
+              className={`review-tab ${activeTab === 'footnotes' ? 'review-tab--active' : ''}`}
+              onClick={() => handleTabChange('footnotes')}
+            >
+              Footnotes
+            </button>
           </div>
           {/* ── Statement Readiness Indicators (Ticket D.2.2) ── */}
           {items.length > 0 && (
@@ -1091,7 +1146,30 @@ export default function ReviewPage({
             </div>
           )}
 
-          <div className="review-sidebar__scroll-container">
+          <div ref={listScrollRef} className="review-sidebar__scroll-container" style={{ position: 'relative' }}>
+          {activeTab === 'footnotes' ? (
+            <div className="review-footnotes" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <p style={{ margin: '4px 2px', fontSize: '12px', color: 'var(--ink-muted)' }}>
+                Debt, lease and concentration schedules from the filing&apos;s footnotes. Schedules that were not found are not shown.
+              </p>
+              {/* ── Debt Schedule Footnote Card (Feature 8, Step E) ── */}
+              <DebtScheduleCard
+                jobId={jobId}
+                apiBase={apiBase}
+                onTrancheSelect={(tranche) => setCurrentPage(tranche.page)}
+              />
+              {/* ── Lease Schedule Footnote Card (Feature 8, Step F) ── */}
+              <LeaseScheduleCard
+                jobId={jobId}
+                apiBase={apiBase}
+                onYearSelect={(year) => setCurrentPage(year.page)}
+              />
+              {/* ── Customer & Supplier Concentration Card (Feature 8, Step I) ── */}
+              <ConcentrationCard jobId={jobId} apiBase={apiBase} />
+            </div>
+          ) : (
+          <>
+          <div ref={listHeadRef} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {itemsLoading && (
             <div className="job-list--empty">
               <p>Loading extracted items...</p>
@@ -1202,8 +1280,6 @@ export default function ReviewPage({
                   <>
                     <div
                       style={{
-                        maxHeight: '180px',
-                        overflowY: 'auto',
                         display: 'flex',
                         flexDirection: 'column',
                         gap: '6px',
@@ -1290,36 +1366,38 @@ export default function ReviewPage({
               </div>
             )
           })()}
-
-          {/* ── Debt Schedule Footnote Card (Feature 8, Step E) ── */}
-          <DebtScheduleCard
-            jobId={jobId}
-            apiBase={apiBase}
-            onTrancheSelect={(tranche) => setCurrentPage(tranche.page)}
-          />
-
-          {/* ── Lease Schedule Footnote Card (Feature 8, Step F) ── */}
-          <LeaseScheduleCard
-            jobId={jobId}
-            apiBase={apiBase}
-            onYearSelect={(year) => setCurrentPage(year.page)}
-          />
-
-          {/* ── Customer & Supplier Concentration Card (Feature 8, Step I) ── */}
-          <ConcentrationCard jobId={jobId} apiBase={apiBase} />
+          </div>
 
           {!itemsLoading && !itemsError && filteredItems.length > 0 && (
-            <div className="review-sidebar__list" role="listbox" aria-label="Extracted items list">
-              {tableGroups.map((group, groupIdx) => (
-                <div key={groupIdx} className="review-table-group">
-                  {group.tableName && (
-                    <div className="review-table-header" title={`Table: ${group.tableName}`}>
+            <div
+              className="review-sidebar__list"
+              role="listbox"
+              aria-label="Extracted items list"
+              style={{ position: 'relative', height: rowVirtualizer.getTotalSize(), flexShrink: 0 }}
+            >
+              {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                const row = listRows[virtualRow.index]
+                return (
+                  <div
+                    key={virtualRow.key}
+                    data-index={virtualRow.index}
+                    ref={rowVirtualizer.measureElement}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      paddingBottom: '6px',
+                      transform: `translateY(${virtualRow.start - rowVirtualizer.options.scrollMargin}px)`,
+                    }}
+                  >
+                    {row.kind === 'table' ? (
+                    <div className="review-table-header" title={`Table: ${row.tableName}`}>
                       <span className="review-table-header__icon"><Table2 size={13} aria-hidden="true" /></span>
-                      <span className="review-table-header__title">{group.tableName}</span>
+                      <span className="review-table-header__title">{row.tableName}</span>
                     </div>
-                  )}
-                  <div className="review-table-group__items">
-                    {group.items.map((item) => {
+                    ) : (() => {
+                      const item = row.item
                       const isSelected = selectedItem?.id === item.id
                       const isEditing = editingItemId === item.id
                       const isCandidate = item.is_target_metric_candidate !== false
@@ -1499,11 +1577,13 @@ export default function ReviewPage({
                       )}
                     </div>
                   )
-                })}
-              </div>
+                    })()}
+                  </div>
+                )
+              })}
             </div>
-          ))}
-            </div>
+          )}
+          </>
           )}
           </div>
         </aside>

@@ -5,7 +5,10 @@
 .review-layout {
   display: flex;
   flex-direction: column;
-  height: 100svh;
+  /* Fills the space under the app bar (AppShell fill), not the whole viewport (AUD-019). */
+  flex: 1;
+  min-height: 0;
+  height: 100%;
   overflow: hidden;
   background-color: var(--fn-bg-app);
   color: var(--fn-text-primary);

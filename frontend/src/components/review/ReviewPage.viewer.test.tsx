@@ -8,6 +8,7 @@ import '../../test/setupDom'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { createFakePdf } from '../../test/fakePdf'
+import { stubReviewListLayout } from '../../test/listLayout'
 import { PDF_RENDER_SCALE } from '../../lib/pdf/renderer'
 import type { ReviewItem } from '../../types/review'
 
@@ -42,6 +43,7 @@ function jsonResponse(body: unknown, ok = true, status = 200): Response {
 const PAGE_W = 600
 
 async function openViewer() {
+  stubReviewListLayout()
   // jsdom has no layout; report the canvas's CSS size as a browser would for an untransformed canvas.
   vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLCanvasElement) {
     const width = parseFloat(this.style.width) || 0

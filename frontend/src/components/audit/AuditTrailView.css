@@ -5,7 +5,10 @@
 .audit-page {
   display: flex;
   flex-direction: column;
-  height: 100svh;
+  /* Fills the space under the app bar (AppShell fill), not the whole viewport (AUD-019). */
+  flex: 1;
+  min-height: 0;
+  height: 100%;
   width: 100%;
   background: var(--bg);
   color: var(--text-h);

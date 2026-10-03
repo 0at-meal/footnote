@@ -16,6 +16,11 @@ export interface AppShellProps {
   showDesignLink?: boolean
   /** Persistent service warning (e.g. degraded PDF parser, D1). Shown on every screen. */
   serviceWarning?: string | null
+  /**
+   * Full-height workspace screens (review, audit trail): the shell is exactly one viewport tall
+   * and the content fills the space below the bar, so the page itself never scrolls (AUD-019).
+   */
+  fill?: boolean
   children: React.ReactNode
 }
 
@@ -25,6 +30,7 @@ export const AppShell: React.FC<AppShellProps> = ({
   onNavigate,
   showDesignLink = false,
   serviceWarning = null,
+  fill = false,
   children,
 }) => {
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -53,7 +59,7 @@ export const AppShell: React.FC<AppShellProps> = ({
       style={{
         display: 'flex',
         flexDirection: 'column',
-        minHeight: '100vh',
+        ...(fill ? { height: '100svh', overflow: 'hidden' } : { minHeight: '100vh' }),
         backgroundColor: 'var(--bg)',
         color: 'var(--ink)',
       }}
@@ -199,7 +205,7 @@ export const AppShell: React.FC<AppShellProps> = ({
       )}
 
       {/* Main Content Area */}
-      <div style={{ flex: 1 }}>{children}</div>
+      <div style={fill ? { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' } : { flex: 1 }}>{children}</div>
     </div>
   )
 }

@@ -319,6 +319,7 @@ function App() {
     return (
       <AppShell
         serviceWarning={serviceWarning}
+        fill
         currentRoute="app"
         onNavigate={handleNavigate}
         showDesignLink={import.meta.env.DEV}
@@ -345,6 +346,7 @@ function App() {
     return (
       <AppShell
         serviceWarning={serviceWarning}
+        fill
         currentRoute="app"
         onNavigate={handleNavigate}
         showDesignLink={import.meta.env.DEV}
