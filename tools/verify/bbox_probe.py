@@ -23,10 +23,13 @@ def value_locations(page: Any, value: str) -> list[tuple[float, float, float, fl
     needle = value.strip().lstrip("$").strip()
     if not needle:
         return []
+    # Filings print nil cells as an em/en dash; the parser stores them as "-".
+    needles = [needle, "—", "–"] if needle == "-" else [needle]
     width, height = page.rect.width, page.rect.height
     return [
         (r.x0 / width * 1000, r.y0 / height * 1000, r.x1 / width * 1000, r.y1 / height * 1000)
-        for r in page.search_for(needle)
+        for n in needles
+        for r in page.search_for(n)
     ]
 
 
@@ -38,8 +41,13 @@ def contains_center(bbox: dict[str, float], rect: tuple[float, float, float, flo
     )
 
 
-def probe_job(data_dir: Path, job_id: str) -> dict[str, Any]:
-    items = json.loads((data_dir / "results" / f"{job_id}_review.json").read_text(encoding="utf-8"))
+def probe_job(data_dir: Path, job_id: str, source: str = "review") -> dict[str, Any]:
+    """source='review' probes review items; 'normalized' probes every extracted cell (works for
+    not_found jobs, which have no review items)."""
+    raw = json.loads((data_dir / "results" / f"{job_id}_{source}.json").read_text(encoding="utf-8"))
+    items = [
+        {**it, "id": it.get("id", f"cell-{n}")} for n, it in enumerate(raw if isinstance(raw, list) else raw.get("items", []))
+    ]
     doc = pymupdf.open(str(data_dir / "uploads" / f"{job_id}.pdf"))
     hits = misses = not_found = 0
     examples: list[dict[str, Any]] = []
@@ -84,12 +92,13 @@ def main() -> int:
     ap.add_argument("--data-dir", type=Path, required=True)
     ap.add_argument("--job", default=None)
     ap.add_argument("--json", action="store_true")
+    ap.add_argument("--source", choices=["review", "normalized"], default="review")
     args = ap.parse_args()
     results_dir = args.data_dir / "results"
     jobs = [args.job] if args.job else sorted(
-        p.name.removesuffix("_review.json") for p in results_dir.glob("*_review.json")
+        p.name.removesuffix(f"_{args.source}.json") for p in results_dir.glob(f"*_{args.source}.json")
     )
-    out = [probe_job(args.data_dir, j) for j in jobs]
+    out = [probe_job(args.data_dir, j, args.source) for j in jobs]
     if args.json:
         print(json.dumps(out, indent=2))
     else:

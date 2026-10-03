@@ -181,12 +181,10 @@ def test_count_image_only_pages_missing_file(tmp_path: Path) -> None:
         (200.0, 400.0, 800.0, 500.0, 750.0),
     ],
 )
-def test_normalize_item_bbox_docling_y_inversion_parametrized(
+def test_normalize_item_bbox_bottom_left_origin_is_inverted(
     y0: float, y1: float, page_height: float, expected_y0: float, expected_y1: float
 ) -> None:
-    """
-    Parametrized Docling path test: verifies Y-axis inversion across multiple coordinate sets.
-    """
+    """A box declared BOTTOMLEFT (PDF user space) is inverted into top-left screen space."""
     item = DoclingItem(
         value="50",
         label="Revenue",
@@ -194,10 +192,30 @@ def test_normalize_item_bbox_docling_y_inversion_parametrized(
         bbox=DoclingBbox(x0=10.0, y0=y0, x1=200.0, y1=y1),
         source_file="test.pdf",
         parser_used="docling",
+        coord_origin="BOTTOMLEFT",
     )
     norm = normalize_item_bbox(item, page_width=600.0, page_height=page_height)
     assert abs(norm.bbox.y0 - expected_y0) <= 0.05
     assert abs(norm.bbox.y1 - expected_y1) <= 0.05
+
+
+def test_normalize_item_bbox_docling_top_left_cell_is_not_inverted() -> None:
+    """
+    Docling table-cell boxes are TOPLEFT. Replaces a test that asserted every Docling box is
+    inverted, which enshrined the mirrored-highlight defect (AUD-002).
+    """
+    item = DoclingItem(
+        value="1,250",
+        label="Cash",
+        page=1,
+        bbox=DoclingBbox(x0=362.13, y0=239.36, x1=418.40, y1=247.79),
+        source_file="test.pdf",
+        parser_used="docling",
+        coord_origin="TOPLEFT",
+    )
+    norm = normalize_item_bbox(item, page_width=595.0, page_height=842.0)
+    assert abs(norm.bbox.y0 - 284.27) <= 0.05
+    assert abs(norm.bbox.y1 - 294.29) <= 0.05
 
 
 @pytest.mark.parametrize(

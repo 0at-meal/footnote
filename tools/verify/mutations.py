@@ -50,11 +50,13 @@ MUTATIONS: list[dict[str, object]] = [
     },
     {
         "id": "M3",
-        "desc": "Docling bbox Y handling: remove the inversion (audit form; correct only for top-left boxes)",
+        # Redefined after AUD-002: the audit form (remove the inversion) was the fix itself, so the
+        # mutation now re-introduces the defect: invert every Docling box regardless of origin.
+        "desc": "Docling bbox Y: invert every Docling box regardless of coord_origin (AUD-002 defect)",
         "file": "backend/app/extraction/coordinate_normalizer.py",
-        "old": "        y0_screen = 1000.0 - y1_raw\n        y1_screen = 1000.0 - y0_raw",
-        "new": "        y0_screen = y0_raw\n        y1_screen = y1_raw",
-        "runs": [("backend", pytest("tests/extraction/test_coordinate_normalizer.py", "tests/extraction/test_golden_fixture_highlight.py", "tests/extraction/test_job_runner_integration.py"))],
+        "old": '    if item.coord_origin == "BOTTOMLEFT":',
+        "new": '    if item.parser_used == "docling" or item.coord_origin == "BOTTOMLEFT":',
+        "runs": [("backend", pytest("tests/extraction/test_coordinate_normalizer.py", "tests/extraction/test_docling_golden_bbox.py"))],
     },
     {
         "id": "M4",

@@ -22,7 +22,7 @@ import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 os.environ["TORCHDYNAMO_DISABLE"] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -240,6 +240,16 @@ def _is_reconciliation_table(
         "bridge",
     )
     return any(kw in combined for kw in reconciliation_keywords)
+
+
+def _coord_origin_of(raw_bbox: Any) -> Literal["TOPLEFT", "BOTTOMLEFT"]:
+    """
+    Docling's BoundingBox carries `coord_origin` (CoordOrigin.TOPLEFT / BOTTOMLEFT). Table cells
+    come back top-left; page provenance boxes are usually bottom-left (AUD-002).
+    """
+    origin = getattr(raw_bbox, "coord_origin", None)
+    text = str(getattr(origin, "value", None) or getattr(origin, "name", None) or origin or "")
+    return "BOTTOMLEFT" if "BOTTOM" in text.upper() else "TOPLEFT"
 
 
 def _safe_cell_text(cell: Any) -> str:
@@ -555,6 +565,7 @@ def _parse_pdf_impl(
                         raw_bbox = getattr(table_prov[0], "bbox", None)
 
                     bbox_obj = DoclingBbox(x0=0.0, y0=0.0, x1=0.0, y1=0.0)
+                    bbox_origin = _coord_origin_of(raw_bbox)
                     if raw_bbox is not None:
                         # Extract l, t, r, b or x0, y0, x1, y1
                         x0 = float(getattr(raw_bbox, "l", getattr(raw_bbox, "x0", 0.0)))
@@ -575,6 +586,7 @@ def _parse_pdf_impl(
                         label=label,
                         page=page_no,
                         bbox=bbox_obj,
+                        coord_origin=bbox_origin,
                         source_file=source_file,
                         table_name=table_title,
                         is_reconciliation_candidate=is_reconciliation,

@@ -61,6 +61,10 @@ class DoclingItem(BaseModel):
     error_detail: str | None = None
     """Description of the parse error if is_error is True."""
 
+    coord_origin: Literal["TOPLEFT", "BOTTOMLEFT"] = "TOPLEFT"
+    """Origin of `bbox` (AUD-002). Docling table cells are top-left; provenance boxes may be
+    bottom-left. The normaliser inverts Y only for BOTTOMLEFT boxes."""
+
     is_reconciliation_candidate: bool = False
     """Flag indicating whether this item belongs to a reconciliation candidate table."""
 
