@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import UploadZone from './components/UploadZone'
 import JobList from './components/JobList'
 import SubmitBar from './components/SubmitBar'
@@ -16,10 +16,27 @@ import type {
 import { DEFAULT_METRIC } from './types/job'
 import { X, Search } from 'lucide-react'
 import { AppShell } from './components/shell/AppShell'
-import { DesignPreviewPage } from './components/design/DesignPreviewPage'
 import { Wordmark } from './components/brand/Wordmark'
 import { CommandPalette } from './components/search/CommandPalette'
 import './App.css'
+
+/**
+ * Design-system showcase: dev builds only (FN-061, D7). In production builds
+ * `import.meta.env.DEV` is the literal `false`, so this lazy import is removed from the bundle.
+ */
+const DesignPreviewPage = import.meta.env.DEV
+  ? lazy(() =>
+      import('./components/design/DesignPreviewPage').then((m) => ({ default: m.DesignPreviewPage })),
+    )
+  : null
+
+function isDesignPath(): boolean {
+  return (
+    import.meta.env.DEV &&
+    typeof window !== 'undefined' &&
+    (window.location.pathname === '/design' || window.location.hash === '#/design')
+  )
+}
 
 /** Base URL for the FastAPI backend. Change for production deployment. */
 const API_BASE = 'http://localhost:8000'
@@ -36,14 +53,9 @@ function App() {
   const [companies, setCompanies] = useState<CompanyWithJobs[]>([])
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
   const [serviceWarning, setServiceWarning] = useState<string | null>(null)
-  const [currentRoute, setCurrentRoute] = useState<'app' | 'design'>(() => {
-    if (typeof window !== 'undefined') {
-      if (window.location.pathname === '/design' || window.location.hash === '#/design') {
-        return 'design'
-      }
-    }
-    return 'app'
-  })
+  const [currentRoute, setCurrentRoute] = useState<'app' | 'design'>(() =>
+    isDesignPath() ? 'design' : 'app',
+  )
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -58,17 +70,14 @@ function App() {
 
   useEffect(() => {
     const onPopState = () => {
-      if (window.location.pathname === '/design' || window.location.hash === '#/design') {
-        setCurrentRoute('design')
-      } else {
-        setCurrentRoute('app')
-      }
+      setCurrentRoute(isDesignPath() ? 'design' : 'app')
     }
     window.addEventListener('popstate', onPopState)
     return () => window.removeEventListener('popstate', onPopState)
   }, [])
 
   function handleNavigate(route: 'app' | 'design') {
+    if (route === 'design' && !import.meta.env.DEV) return
     setCurrentRoute(route)
     if (route === 'design') {
       window.history.pushState(null, '', '/design')
@@ -264,18 +273,21 @@ function App() {
 
   // ── Render ───────────────────────────────────────────────────────────────
 
-  if (currentRoute === 'design') {
+  if (currentRoute === 'design' && DesignPreviewPage) {
     return (
       <AppShell
         serviceWarning={serviceWarning}
         currentRoute="design"
         onNavigate={handleNavigate}
+        showDesignLink={import.meta.env.DEV}
         breadcrumbs={[
           { label: 'Home', onClick: () => handleNavigate('app') },
           { label: 'Design System (/design)', active: true },
         ]}
       >
-        <DesignPreviewPage />
+        <Suspense fallback={null}>
+          <DesignPreviewPage />
+        </Suspense>
       </AppShell>
     )
   }
@@ -287,6 +299,7 @@ function App() {
         serviceWarning={serviceWarning}
         currentRoute="app"
         onNavigate={handleNavigate}
+        showDesignLink={import.meta.env.DEV}
         breadcrumbs={[
           { label: 'Home', onClick: () => setActiveReviewJobId(null) },
           { label: `Review: ${activeJob?.filename || activeReviewJobId}`, active: true },
@@ -312,6 +325,7 @@ function App() {
         serviceWarning={serviceWarning}
         currentRoute="app"
         onNavigate={handleNavigate}
+        showDesignLink={import.meta.env.DEV}
         breadcrumbs={[
           { label: 'Home', onClick: () => setActiveAuditJobId(null) },
           { label: `Audit Trail: ${activeAuditJob?.filename || activeAuditJobId}`, active: true },
@@ -352,6 +366,7 @@ function App() {
         serviceWarning={serviceWarning}
       currentRoute="app"
       onNavigate={handleNavigate}
+        showDesignLink={import.meta.env.DEV}
       breadcrumbs={[{ label: 'Upload & Queue', active: true }]}
     >
       <div className="app-layout">

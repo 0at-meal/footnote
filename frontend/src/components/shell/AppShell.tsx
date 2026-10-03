@@ -12,6 +12,8 @@ export interface AppShellProps {
   breadcrumbs?: BreadcrumbItem[]
   currentRoute?: 'app' | 'design'
   onNavigate?: (route: 'app' | 'design') => void
+  /** Show the dev-only design-system link (D7). App passes import.meta.env.DEV. */
+  showDesignLink?: boolean
   /** Persistent service warning (e.g. degraded PDF parser, D1). Shown on every screen. */
   serviceWarning?: string | null
   children: React.ReactNode
@@ -21,6 +23,7 @@ export const AppShell: React.FC<AppShellProps> = ({
   breadcrumbs = [],
   currentRoute = 'app',
   onNavigate,
+  showDesignLink = false,
   serviceWarning = null,
   children,
 }) => {
@@ -29,7 +32,8 @@ export const AppShell: React.FC<AppShellProps> = ({
       const savedTheme = localStorage.getItem('fn-theme') as 'light' | 'dark' | null
       if (savedTheme) return savedTheme
     }
-    return 'dark'
+    // Appendix A: light-first "paper and ink"; dark is the second theme (D7).
+    return 'light'
   })
 
   useEffect(() => {
@@ -137,23 +141,8 @@ export const AppShell: React.FC<AppShellProps> = ({
 
         {/* Right side controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {/* User/Environment status badge */}
-          <span
-            style={{
-              fontSize: '11px',
-              fontFamily: 'var(--fn-font-mono)',
-              padding: '2px 8px',
-              borderRadius: 'var(--fn-radius-sm)',
-              backgroundColor: 'var(--surface-2)',
-              color: 'var(--ink-muted)',
-              border: '1px solid var(--border)',
-            }}
-          >
-            Local · Single-User
-          </span>
-
           {/* Design System Preview link / toggle */}
-          {onNavigate && (
+          {import.meta.env.DEV && showDesignLink && onNavigate && (
             <button
               type="button"
               onClick={() => onNavigate(currentRoute === 'design' ? 'app' : 'design')}
