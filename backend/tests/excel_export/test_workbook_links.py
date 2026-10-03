@@ -79,6 +79,53 @@ def test_every_local_workbook_link_returns_200(tmp_path: Path) -> None:
     assert failures == []
 
 
+def test_every_capital_structure_workbook_link_returns_200(tmp_path: Path) -> None:
+    """Same check for the capital_structure workbook (Debt_Tranches provenance links)."""
+    from app.footnote.models import DebtSchedule, DebtTranche
+    from app.footnote.repository import DebtScheduleRepository
+
+    repo = JobRepository()
+    pdf = write_synthetic_pdf(tmp_path / "synthetic_debt_links.pdf", [SYNTHETIC_EBITDA_BRIDGE])
+    job = repo.save_job(
+        filename="synthetic_debt_links.pdf",
+        content=pdf.read_bytes(),
+        target_metric="Adjusted EBITDA",
+        filing_year=2025,
+        workflow_pack="capital_structure",
+    )
+    # SYNTHETIC debt schedule (not filing data).
+    DebtScheduleRepository().save_debt_schedule(
+        DebtSchedule(
+            job_id=job.job_id,
+            footnote_title="Synthetic Note: Debt",
+            tranches=[
+                DebtTranche(
+                    id="t1", instrument_name="Synthetic Term Loan", principal_amount=100.0, principal_text="100",
+                    interest_rate=5.0, rate_text="5.0%", maturity_year=2030, senior_subordinated="senior",
+                    is_floating=False, spread=None, benchmark=None, page=1,
+                    bbox={"x0": 100.0, "y0": 100.0, "x1": 200.0, "y1": 120.0},
+                )
+            ],
+            total_debt=100.0,
+            weighted_avg_rate=5.0,
+            is_confirmed=False,
+        )
+    )
+
+    client = TestClient(app)
+    generated = client.post(f"/models/{job.job_id}/generate")
+    assert generated.status_code == 200, generated.text
+    links = _workbook_links(Path(generated.json()["file_path"]))
+    assert links, "workbook has no hyperlinks to check"
+    base = public_base_url()
+    failures = [
+        f"{resp.status_code} {link}"
+        for link in sorted(set(links))
+        if (resp := client.get(link.removeprefix(base))).status_code != 200
+    ]
+    assert failures == []
+
+
 def _html_leaf(locator: HtmlLocator) -> FormulaNode:
     source = FormulaInputNode(
         node_id="input-1",
