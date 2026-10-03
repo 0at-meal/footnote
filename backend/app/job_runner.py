@@ -137,7 +137,8 @@ def process_queued_job(
                 getattr(it, "is_reconciliation_candidate", False)
                 for it in docling_items
             )
-        target_metric_found = pack_candidate_found or bool(docling_items)
+        # I3: 'found' means a candidate table exists, not merely that something was extracted.
+        target_metric_found = pack_candidate_found
         summary = create_extraction_summary(
             scored_records,
             image_only_page_count=image_only_page_count,
@@ -145,6 +146,19 @@ def process_queued_job(
             target_metric_found=target_metric_found,
         )
         extraction_repo.save_extraction_summary(job_id, summary)
+
+        # D2: a non-GAAP bridge job with no reconciliation table ends here, explicitly.
+        # No classification, no bridge, no workbook; the review lists nothing.
+        if workflow_pack == "non_gaap_bridge" and not pack_candidate_found:
+            classification_repo.save_classified_records(job_id, [])
+            repo.update_job_status(
+                job_id,
+                JobStatus.not_found,
+                model_ready=False,
+                model_skip_reason=f"{target_metric} reconciliation not found in this filing",
+            )
+            logger.info("Job %s: no %s reconciliation table found", job_id, target_metric)
+            return
 
         # Stage 6: Two-Level Classification & Taxonomy Normalization (Feature 3)
         client = classifier_client or GroqClassifierClient()
@@ -154,7 +168,12 @@ def process_queued_job(
         reconciliation_candidates = [
             r for r in scored_records if r.is_reconciliation_candidate
         ]
-        if not reconciliation_candidates and scored_records:
+        if (
+            not reconciliation_candidates
+            and scored_records
+            and workflow_pack != "non_gaap_bridge"
+        ):
+            # Other packs (capital structure, cash conversion) still classify every record.
             reconciliation_candidates = list(scored_records)
 
         filtered_out_count = len(scored_records) - len(reconciliation_candidates)

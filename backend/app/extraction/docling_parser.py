@@ -242,6 +242,30 @@ def _is_reconciliation_table(
     return any(kw in combined for kw in reconciliation_keywords)
 
 
+def _safe_cell_text(cell: Any) -> str:
+    """Cell text, or "" when a malformed cell raises (matches the per-cell guards below)."""
+    try:
+        return str(getattr(cell, "text", "") or "")
+    except Exception:  # noqa: BLE001 - malformed cells are skipped elsewhere too
+        return ""
+
+
+def _row_labels_mention_target(
+    texts: list[str], target_metric: str, workflow_pack: str
+) -> bool:
+    """
+    True when any cell text in the table names the target metric (non-GAAP bridge pack only).
+
+    EX-99.1 bridges usually put their title above the table and end with the target total
+    ("Adjusted EBITDA"), which the first-rows sample misses. Under D2 a miss means the job
+    reports "not found", so every row label is checked (AUD-007).
+    """
+    needle = target_metric.strip().lower()
+    if workflow_pack != "non_gaap_bridge" or not needle:
+        return False
+    return any(needle in (text or "").lower() for text in texts)
+
+
 def is_table_relevant_for_pack(
     table_title: str,
     workflow_pack: str = "non_gaap_bridge",
@@ -426,6 +450,12 @@ def _parse_pdf_impl(
             is_reconciliation = is_table_relevant_for_pack(
                 table_title, workflow_pack, target_metric, sample_text=sample_text
             )
+            if not is_reconciliation:
+                is_reconciliation = _row_labels_mention_target(
+                    [_safe_cell_text(c) for c in table_cells],
+                    target_metric,
+                    workflow_pack,
+                )
 
             # Identify header text by column and row indices
             col_headers: dict[int, list[str]] = {}
@@ -648,6 +678,12 @@ def _parse_pdf_with_pymupdf(
                 is_reconciliation = is_table_relevant_for_pack(
                     table_title, workflow_pack, target_metric, sample_text=sample_text
                 )
+                if not is_reconciliation:
+                    is_reconciliation = _row_labels_mention_target(
+                        [str(row[0] or "") for row in extracted if row],
+                        target_metric,
+                        workflow_pack,
+                    )
 
                 num_cols = getattr(table, "col_count", len(extracted[0]))
 

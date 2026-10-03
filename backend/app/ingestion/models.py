@@ -39,6 +39,8 @@ class JobStatus(str, Enum):
     extracting = "extracting"
     done = "done"
     failed = "failed"
+    not_found = "not_found"
+    """Pipeline ran, but the filing has no table for the requested reconciliation (D2)."""
 
 
 class JobRecord(BaseModel):

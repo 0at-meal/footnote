@@ -35,6 +35,8 @@ def test_process_queued_job_transitions_to_done(tmp_path: Path) -> None:
         page=1,
         bbox=DoclingBbox(x0=0, y0=0, x1=10, y1=10),
         source_file="report.pdf",
+        # D2: a non-GAAP bridge job needs a reconciliation table to reach "done".
+        is_reconciliation_candidate=True,
     )
 
     with patch("app.job_runner.parse_pdf_with_report", return_value=([dummy_item], ParseReport())):

@@ -129,6 +129,8 @@ def test_job_runner_zero_auto_accepted_sets_model_ready_false(tmp_path: Path) ->
             page=1,
             bbox=DoclingBbox(x0=10.0, y0=20.0, x1=30.0, y1=40.0),
             source_file="unclear_report.pdf",
+            # D2: the item comes from a reconciliation table; otherwise the job ends not_found.
+            is_reconciliation_candidate=True,
         )
     ]
     sample_normalized = [
@@ -155,6 +157,7 @@ def test_job_runner_zero_auto_accepted_sets_model_ready_false(tmp_path: Path) ->
             confidence_score=0.75,
             confidence_band=ConfidenceBand.needs_review,
             flags=["low_confidence"],
+            is_reconciliation_candidate=True,
         )
     ]
     sample_summary = ExtractionSummary(

@@ -62,7 +62,7 @@ export type RejectedFile = {
  * Lifecycle states for a persisted job (mirrors backend JobStatus enum).
  * Values are frozen per CONSTITUTION §2.3 — do not rename.
  */
-export type JobStatus = 'queued' | 'extracting' | 'done' | 'failed'
+export type JobStatus = 'queued' | 'extracting' | 'done' | 'failed' | 'not_found'
 
 /**
  * A backend-persisted job record returned by POST /upload/jobs and GET /upload/jobs.
