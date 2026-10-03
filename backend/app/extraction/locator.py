@@ -46,6 +46,25 @@ def sec_archives_url(
     return url
 
 
+def require_provenance(data: Any) -> Any:
+    """
+    `mode="before"` check shared by record models (AUD-025, I3/I4).
+
+    A record must carry provenance: a locator, or all of page, bbox and source_file (the legacy
+    fields older jobs store). Previously missing values were filled with page 1, a whole-page box
+    and "unknown.pdf", so a record that lost its provenance still highlighted something.
+    """
+    if not isinstance(data, dict) or data.get("locator") is not None:
+        return data
+    missing = [key for key in ("page", "bbox", "source_file") if data.get(key) is None or data.get(key) == ""]
+    if missing:
+        raise ValueError(
+            "record has no provenance: give a locator, or page, bbox and source_file "
+            f"(missing: {', '.join(missing)})"
+        )
+    return data
+
+
 def is_sec_archives_url(url: str | None) -> bool:
     """True for a CIK-qualified EDGAR Archives document URL (fragment ignored)."""
     return bool(url) and bool(_SEC_ARCHIVES_URL.match(str(url).split("#", 1)[0]))

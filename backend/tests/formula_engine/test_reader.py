@@ -47,6 +47,24 @@ def _create_classified_record(
     else:
         band = ConfidenceBand.manual_required
 
+    if not source_file or page < 1:
+        # ExtractedRecord rejects missing provenance at construction (AUD-025). To test the
+        # reader's own defence (AC-9) against data that bypassed validation, build the chain
+        # unvalidated (pydantic re-runs the record's validators when it is nested).
+        extracted = ExtractedRecord.model_construct(
+            value=value, label=label, page=page, bbox=bbox, source_file=source_file, locator=None
+        )
+        unvalidated_scored = ScoredRecord.model_construct(
+            record=extracted, confidence_score=confidence_score, confidence_band=band, flags=[], status="ok"
+        )
+        return ClassifiedRecord.model_construct(
+            record=unvalidated_scored,
+            normalized_label=normalized_label,
+            taxonomy_status=taxonomy_status,
+            classifier_confidence=0.99,
+            is_confirmed=is_confirmed,
+        )
+
     extracted = ExtractedRecord(
         value=value,
         label=label,

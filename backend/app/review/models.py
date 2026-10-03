@@ -5,11 +5,12 @@ Governed by CONSTITUTION §2.3 (frozen fields), §3.9 (review stage boundaries).
 """
 
 from enum import Enum
+from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
 from app.classification.models import StatementType
-from app.extraction.locator import HtmlLocator, Locator, PdfLocator
+from app.extraction.locator import HtmlLocator, Locator, PdfLocator, require_provenance
 from app.extraction.models import ConfidenceBand
 
 
@@ -58,14 +59,16 @@ class ReviewItem(BaseModel):
         description="Structural confidence score from Feature 2",
     )
 
+    @model_validator(mode="before")
+    @classmethod
+    def _require_provenance(cls, data: Any) -> Any:
+        return require_provenance(data)
+
     @model_validator(mode="after")
     def _sync_locator(self) -> "ReviewItem":
         if self.locator is None:
-            self.locator = PdfLocator(
-                page=max(1, self.page),
-                bbox=self.bbox,
-                source_file=self.source_file or "unknown.pdf",
-            )
+            # require_provenance guarantees explicit page, bbox and source_file here (AUD-025).
+            self.locator = PdfLocator(page=self.page, bbox=self.bbox, source_file=self.source_file)
         elif isinstance(self.locator, PdfLocator):
             self.page = self.locator.page
             self.bbox = self.locator.bbox
