@@ -21,6 +21,7 @@ Rule: a finding is only marked done here when the verifying command was run and 
 | AUD-033 | 2 | FIXED (CI workflow written, not executed here; 2 known-red CI steps) | Log: AUD-033 |
 | AUD-034 | 2 | FIXED | Log: AUD-034 |
 | AUD-027 | 2 | PARTIAL (public-filing Docling golden fixture BLOCKED on SEC_USER_AGENT; Lighthouse/axe not yet) | Log: AUD-027 |
+| AUD-002 | 3 | FIXED (golden fixture is synthetic; public-filing fixture BLOCKED on SEC_USER_AGENT) | Log: AUD-002 |
 
 ## Log
 
@@ -107,6 +108,27 @@ Rule: a finding is only marked done here when the verifying command was run and 
 
 ### Batch 2 checkpoint (tag fix-batch-2)
 - ruff `All checks passed!`; mypy strict `no issues found in 96 source files`; backend pytest `575 passed` (580 before minus 7 tautological, plus 2 new); eslint clean; tsc clean (incl. e2e); vitest `28 files / 114 tests`; `npm run verify:bundle` OK; Playwright `3 passed`.
+
+### AUD-002 — mirrored Docling highlights (commit d736c02)
+- `DoclingItem.coord_origin` (TOPLEFT/BOTTOMLEFT) is set by the parser from each Docling box; the normalizer inverts Y only for BOTTOMLEFT. Removed a debug log line that printed `item.value` (I6).
+- Replaced `test_normalize_item_bbox_docling_inversion_parametrized` (asserted the defect) with a BOTTOMLEFT-is-inverted test and a Docling-TOPLEFT-is-not-inverted test.
+- New `tests/extraction/test_docling_golden_bbox.py`: real Docling parse of a SYNTHETIC two-table PDF; every item's box must contain its own value text as located independently by PyMuPDF.
+  - RED (before the fix, earlier in this run): all 24 boxes mirrored, `assert misses == []` failed.
+  - GREEN: `18 passed` (`test_docling_golden_bbox.py` + `test_coordinate_normalizer.py`).
+  - Revert check (mutation M3, re-introduces the unconditional inversion): `3 failed, 15 passed` — `FAILED tests/extraction/test_docling_golden_bbox.py::test_docling_rows_keep_document_order` among them. Restored → green.
+- New `frontend/e2e/review-highlight.spec.ts` (seeded Docling + PyMuPDF jobs): with the fix both jobs pass and the Docling job's highlights contain their value text 12/12; with the backend fix stashed the Docling test fails (0 hits).
+- VERIFY on copies of the user's filings (`run_pipeline.py` in throwaway data dirs, offline classifier stub; `tools/verify/bbox_probe.py --source normalized`, every extracted cell):
+
+  | Filing (copy) | Parser | hit | miss | value text not on page | rate |
+  |---|---|---|---|---|---|
+  | GOOGL 10-Q | docling | 103 | 0 | 2 | 1.0 |
+  | GOOGL 10-Q | pymupdf | 104 | 0 | 0 | 1.0 |
+  | Amazon | docling | 475 | 0 | 0 | 1.0 |
+  | Amazon | pymupdf | 954 | 0 | 0 | 1.0 |
+
+  Audit baseline for Docling was 3 hit / 100 miss. The first Amazon/Docling probe reported 15 misses; all 15 boxes contain exactly an em dash (U+2014) that Docling stores as `-`, i.e. the probe searched for the wrong glyph. The probe now matches dash variants; boxes were not changed.
+  User data checksums after the runs: `3906eb32…pdf: OK`, `a04a4f1e…pdf: OK`, `jobs.json: OK`.
+- Gates for touched files: ruff `All checks passed!`, mypy strict `no issues found in 96 source files`, e2e `tsc` and eslint clean.
 
 ## Out-of-scope discoveries
 - **FN-003 `flat_idx` change is dead code.** PyMuPDF `find_tables()` tables expose `rows[].cells`; the `elif table.cells` branch with `flat_idx` (docling_parser.py) is not reached for them. Left in place (harmless); removal is cleanup (AUD-041 batch 10).
