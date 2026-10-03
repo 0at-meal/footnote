@@ -189,6 +189,16 @@ Rule: a finding is only marked done here when the verifying command was run and 
 - On a **copy** of `backend/data`: dry run `1248 record(s) in 20 file(s); 0 incomplete`; apply `12 file(s) rewritten`, `VERIFY OK: 1370 review item(s) in 6 job(s) have the same IDs and locators`; all stored provenance records load (`2477 across 5 job(s)`); `backend/data/jobs.json: OK` (untouched). **Action for user:** run the tool on `backend/data` if wanted (dry run first).
 - Gates: ruff clean; mypy strict clean (96 files); backend pytest `605 passed`.
 
+### Batch 3 checkpoint (tag fix-batch-3)
+- VERIFY list:
+  - bbox probe 100% on Docling and PyMuPDF jobs: GOOGL 103/103 and 104/104, Amazon 475/475 and 954/954 (copies), seeded e2e jobs 12/12 each (AUD-002). ✔
+  - Playwright: highlight inside the value box at zoom 1.0 and 1.5, both parsers (AUD-020). ✔
+  - Next/Prev work with an item selected (canvas pixels change) (AUD-020). ✔
+  - Every workbook link returns 200: all local links in generated non_gaap_bridge and capital_structure workbooks (AUD-018). ✔ sec.gov links shape-checked only (live check needs `SEC_USER_AGENT`).
+- Gates: ruff `All checks passed!`; mypy strict `no issues found in 96 source files`; backend pytest `605 passed`; eslint clean; `tsc -b` + e2e `tsc` clean; vitest `31 files / 126 tests`; build OK; `verify:bundle` OK; Playwright `10 passed (4.0m)` (race `0/20` natural and forced).
+- Mutations (`tools/verify/mutations.py --e2e`): M1-M7 KILLED (M3 redefined after AUD-002; M6 killed by the Playwright specs), M8/M9/M10 SURVIVED (batches 5/7/8). `tracked changes after run: (none)`.
+- Report: [FIX_REPORT.md](FIX_REPORT.md).
+
 ## Out-of-scope discoveries
 - **FN-003 `flat_idx` change is dead code.** PyMuPDF `find_tables()` tables expose `rows[].cells`; the `elif table.cells` branch with `flat_idx` (docling_parser.py) is not reached for them. Left in place (harmless); removal is cleanup (AUD-041 batch 10).
 - **HIGH — Debt_Tranches value cells are overwritten by their hyperlink (I5).** `excel_export/debt_schedule_generator.py:192` writes the principal with `write_number`, then line 233 calls `write_url(curr_row, 5, …, string=None)` on the same cell. Probe: xlsxwriter `write_number(123.0)` then `write_url(string=None)` leaves `'http://localhost:8000/x'` (str) in the cell. Every principal in a capital_structure workbook is a URL string, not a number. Belongs with AUD-013 (batch 5); not fixed here. (The link itself returns 200.)
