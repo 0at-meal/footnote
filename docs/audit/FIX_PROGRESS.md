@@ -26,6 +26,7 @@ Rule: a finding is only marked done here when the verifying command was run and 
 | AUD-019 | 3 | FIXED (footnote cards gated by pack is D6/AUD-013, batch 5) | Log: AUD-019 |
 | AUD-018 | 3 | FIXED (live sec.gov 200 check BLOCKED on SEC_USER_AGENT; shape-checked) | Log: AUD-018 |
 | eval accuracy > 100% (exposed by AUD-002) | 3 | FIXED (a7ae48d) | Log: AUD-018 |
+| AUD-025 | 3 | FIXED | Log: AUD-025 |
 
 ## Log
 
@@ -169,6 +170,13 @@ Rule: a finding is only marked done here when the verifying command was run and 
 - **Every local workbook link returns 200** (Batch 3 VERIFY): non_gaap_bridge workbook (Source_Inputs + Review sheet + cell provenance links) and capital_structure workbook (Debt_Tranches provenance links), via the real app routes. sec.gov links: shape-checked only; a live 200 check needs `SEC_USER_AGENT` (BLOCKED).
 - **Regression exposed by AUD-002, fixed forward (D8), commit a7ae48d:** full pytest showed `tests/eval/test_e2e_benchmark.py` failing — `line_item_accuracy_percentage … input_value=116.67` (> 100). Cause proven by re-applying the mirrored-box defect (M3 edit) → that test `6 passed`; restored → fails. The metric divided by non-optional ground truth but counted matched optional items; correct boxes made optional items match. New `test_diff_filing_matched_optional_item_does_not_push_accuracy_over_100`: RED `input_value=200.0`; GREEN; revert check red. `tests/eval`: `74 passed`.
 - Gates: ruff `All checks passed!`; mypy strict `no issues found in 96 source files`; backend pytest `585 passed`; frontend eslint/tsc clean, vitest `31 files / 126 tests`.
+
+### AUD-025 — fabricated provenance defaults (commit 1924a47)
+- `require_provenance` (`extraction/locator.py`, `mode="before"`) on ReviewItem, FormulaInputNode, ExtractedRecord: a locator, or all of page + bbox + source_file, else `ValueError("record has no provenance …")`. The `"unknown.pdf"` / `max(1, page)` padding and ExtractedRecord's `except Exception: pass` are gone. Records with an HtmlLocator keep the legacy page/bbox defaults (the locator is their provenance).
+- `tests/test_provenance_required.py` (13): RED `7 failed, 6 passed` (no-provenance and partial-provenance records validated for all 3 models; page-0 record silently lost its locator). GREEN `13 passed`. Revert check (4 model files stashed): `7 failed, 6 passed`; restored → green.
+- `tests/formula_engine/test_reader.py::test_read_formula_inputs_missing_provenance` built invalid records through the models; those are now rejected at construction, so the test builds them with `model_construct` to keep testing the reader's own AC-9 defence (still reports all 3 errors).
+- Verified-OK preserved — **old jobs load**: copy of `backend/data` (6 jobs) through the models, before and after: `jobs=6 review_items=1370 extracted_records=1370 errors=0`. Real pipeline on the GOOGL copy: Docling and PyMuPDF runs complete, `error: null`.
+- Gates: ruff clean, mypy strict clean (96 files), backend pytest `598 passed` + this fix's test updates (`tests/formula_engine` + new file: `49 passed`).
 
 ## Out-of-scope discoveries
 - **FN-003 `flat_idx` change is dead code.** PyMuPDF `find_tables()` tables expose `rows[].cells`; the `elif table.cells` branch with `flat_idx` (docling_parser.py) is not reached for them. Left in place (harmless); removal is cleanup (AUD-041 batch 10).
