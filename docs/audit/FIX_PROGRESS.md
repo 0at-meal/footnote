@@ -27,6 +27,7 @@ Rule: a finding is only marked done here when the verifying command was run and 
 | AUD-018 | 3 | FIXED (live sec.gov 200 check BLOCKED on SEC_USER_AGENT; shape-checked) | Log: AUD-018 |
 | eval accuracy > 100% (exposed by AUD-002) | 3 | FIXED (a7ae48d) | Log: AUD-018 |
 | AUD-025 | 3 | FIXED | Log: AUD-025 |
+| AUD-037 | 3 | FIXED (migration tool provided, not run on backend/data — user decision) | Log: AUD-037 |
 
 ## Log
 
@@ -177,6 +178,16 @@ Rule: a finding is only marked done here when the verifying command was run and 
 - `tests/formula_engine/test_reader.py::test_read_formula_inputs_missing_provenance` built invalid records through the models; those are now rejected at construction, so the test builds them with `model_construct` to keep testing the reader's own AC-9 defence (still reports all 3 errors).
 - Verified-OK preserved — **old jobs load**: copy of `backend/data` (6 jobs) through the models, before and after: `jobs=6 review_items=1370 extracted_records=1370 errors=0`. Real pipeline on the GOOGL copy: Docling and PyMuPDF runs complete, `error: null`.
 - Gates: ruff clean, mypy strict clean (96 files), backend pytest `598 passed` + this fix's test updates (`tests/formula_engine` + new file: `49 passed`).
+
+### AUD-037 — FN-023 follow-through (commit 6de0484)
+- `canonical_locator()` / `canonical_locator_key()` (`extraction/locator.py`): identity fields only, numbers normalised; model/dict, int/float, `source_file` alias and `url` do not change the key; a different element does. Review IDs are **not** derived from it (Verified-OK ID stability untouched).
+- `W3CAnnotationRecord.locator` (optional; stored records without it still load) carries the leaf's locator; HTML targets get `refinedBy: TextQuoteSelector(exact=<value>)` (discriminated union with the BoundingBox refinement).
+- `audit_trail/resolver.py`: uses the record's locator for `make_review_id`, so HTML leaves find their live review item. `audit_report/compiler.py`: no longer dereferences a missing `refinedBy`.
+- `tools/migrate_locators.py`: dry run by default; `--apply` backs up each changed file (`*.pre-locator-migration.json`), adds `locator` to legacy records, reloads through the app models and checks review IDs + canonical locators are unchanged.
+- `tests/test_locator_followthrough.py` (4): RED — `ImportError … canonical_locator_key`; `AttributeError: 'W3CAnnotationRecord' object has no attribute 'locator'`; `assert 'source_record_missing' == 'locked'` (HTML leaf not matched to its review item); `AttributeError: 'NoneType' object has no attribute 'coordinates'` — `4 failed`. GREEN `4 passed`. Revert check (4 app files stashed): `3 failed, 1 passed` (canonical key lives in the unstashed locator module).
+- `tests/test_migrate_locators.py` (2, real tool via subprocess on a SYNTHETIC data dir): dry run writes nothing; apply adds the locator, keeps the ID, writes a backup, is idempotent — `2 passed`.
+- On a **copy** of `backend/data`: dry run `1248 record(s) in 20 file(s); 0 incomplete`; apply `12 file(s) rewritten`, `VERIFY OK: 1370 review item(s) in 6 job(s) have the same IDs and locators`; all stored provenance records load (`2477 across 5 job(s)`); `backend/data/jobs.json: OK` (untouched). **Action for user:** run the tool on `backend/data` if wanted (dry run first).
+- Gates: ruff clean; mypy strict clean (96 files); backend pytest `605 passed`.
 
 ## Out-of-scope discoveries
 - **FN-003 `flat_idx` change is dead code.** PyMuPDF `find_tables()` tables expose `rows[].cells`; the `elif table.cells` branch with `flat_idx` (docling_parser.py) is not reached for them. Left in place (harmless); removal is cleanup (AUD-041 batch 10).
