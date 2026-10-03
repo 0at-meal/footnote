@@ -142,7 +142,7 @@ def run_one(m: dict[str, object], with_e2e: bool) -> dict[str, object]:
     try:
         for cwd, cmd in runs:
             env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1")
-            proc = subprocess.run(cmd, cwd=ROOT / cwd, capture_output=True, text=True, env=env, timeout=2400, check=False)
+            proc = subprocess.run(cmd, cwd=ROOT / cwd, capture_output=True, text=True, encoding="utf-8", errors="replace", env=env, timeout=2400, check=False)
             lines = [ln for ln in (proc.stdout + proc.stderr).splitlines() if ln.strip()]
             tails.append(f"{' '.join(cmd[-2:])}: " + " | ".join(lines[-2:]))
             if proc.returncode != 0:
