@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from 'react'
+import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import UploadZone from './components/UploadZone'
 import JobList from './components/JobList'
 import SubmitBar from './components/SubmitBar'
@@ -37,6 +37,10 @@ function isDesignPath(): boolean {
     (window.location.pathname === '/design' || window.location.hash === '#/design')
   )
 }
+
+/** Queue auto-refresh: every 3 s while a job is active, for at most 20 minutes (AUD-035). */
+const POLL_INTERVAL_MS = 3000
+const MAX_POLL_WINDOW_MS = 20 * 60 * 1000
 
 /** Base URL for the FastAPI backend. Change for production deployment. */
 const API_BASE = 'http://localhost:8000'
@@ -128,13 +132,27 @@ function App() {
   }, [])
 
   // ── Auto-polling for active jobs status (spec AC-7, AC-8) ───────────────
+  // Bounded (AUD-035): a job that never leaves 'extracting' must not poll forever. The backend
+  // also fails such jobs after JOB_TIMEOUT_SECONDS; this is the client-side backstop.
+  const pollStartRef = useRef<number | null>(null)
+  const [pollingPaused, setPollingPaused] = useState(false)
   useEffect(() => {
     const hasActiveJobs = persistedJobs.some(
       (j) => j.status === 'queued' || j.status === 'extracting',
     )
-    if (!hasActiveJobs) return
+    if (!hasActiveJobs) {
+      pollStartRef.current = null
+      return
+    }
+    if (pollingPaused) return
+    if (pollStartRef.current === null) pollStartRef.current = Date.now()
 
     const intervalId = setInterval(() => {
+      if (Date.now() - (pollStartRef.current ?? Date.now()) > MAX_POLL_WINDOW_MS) {
+        clearInterval(intervalId)
+        setPollingPaused(true)
+        return
+      }
       fetch(`${API_BASE}/upload/jobs`)
         .then((res) => res.json())
         .then((data: { jobs: JobRecord[] }) => {
@@ -144,10 +162,15 @@ function App() {
           // Non-fatal background refresh error
         })
       refreshCompanies()
-    }, 3000)
+    }, POLL_INTERVAL_MS)
 
     return () => clearInterval(intervalId)
-  }, [persistedJobs])
+  }, [persistedJobs, pollingPaused])
+
+  function resumePolling() {
+    pollStartRef.current = null
+    setPollingPaused(false)
+  }
 
   // ── Staged file handlers ─────────────────────────────────────────────────
 
@@ -491,6 +514,15 @@ function App() {
                   <li key={i}>{msg}</li>
                 ))}
               </ul>
+            </div>
+          )}
+
+          {pollingPaused && (
+            <div className="fn-poll-notice" role="status">
+              Auto-refresh paused after 20 minutes because a job has not finished.{' '}
+              <button type="button" className="fn-btn fn-btn--ghost fn-btn--sm" onClick={resumePolling}>
+                Resume
+              </button>
             </div>
           )}
 

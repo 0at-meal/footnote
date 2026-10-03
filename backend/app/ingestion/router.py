@@ -22,6 +22,7 @@ from fastapi import (
     UploadFile,
 )
 
+from app.config import job_timeout_seconds
 from app.ingestion.company_repository import CompanyRepository
 from app.ingestion.edgar_client import (
     EdgarClientError,
@@ -322,6 +323,8 @@ def list_jobs(
     repo: Annotated[JobRepository, Depends(get_repository)],
 ) -> GetJobsResponse:
     """Return all persisted JobRecords (spec AC-7: survive page refresh)."""
+    # AUD-035: a job stuck in 'extracting' past the timeout is failed with a reason.
+    repo.fail_stale_jobs(job_timeout_seconds())
     return GetJobsResponse(jobs=repo.list_jobs())
 
 

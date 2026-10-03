@@ -671,3 +671,13 @@
   border-left: 2px solid var(--danger);
   padding-left: 6px;
 }
+
+.fn-poll-notice {
+  margin: 0 0 12px;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--ink-secondary);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--fn-radius-sm);
+}

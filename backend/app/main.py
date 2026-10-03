@@ -37,6 +37,7 @@ from app.drift.router import router as drift_router
 from app.excel_export.router import router as excel_export_router
 from app.footnote.router import router as footnote_router
 from app.ingestion.company_router import router as company_router
+from app.ingestion.repository import JobRepository
 from app.ingestion.router import router as ingestion_router
 from app.review.router import router as review_router
 from app.startup import check_parser_dependencies, parser_status
@@ -46,6 +47,11 @@ from app.startup import check_parser_dependencies, parser_status
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     # D1: refuse to start without Docling unless ALLOW_PYMUPDF_FALLBACK=1.
     check_parser_dependencies()
+    # AUD-035: background workers do not survive a restart; fail their jobs with a reason.
+    JobRepository().fail_interrupted_jobs(
+        "Processing was interrupted because the server stopped before the job finished. "
+        "Re-submit the filing."
+    )
     yield
 
 

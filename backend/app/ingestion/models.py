@@ -78,6 +78,8 @@ class JobRecord(BaseModel):
     """Why the PyMuPDF fallback was used instead of Docling, if it was (I3, D1)."""
     failure_reason: str | None = None
     """User-visible reason when status is 'failed' (I3)."""
+    started_at: str | None = None
+    """ISO 8601 UTC timestamp when processing started (status first set to 'extracting')."""
 
 
 class CompanyRecord(BaseModel):
