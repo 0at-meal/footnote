@@ -23,6 +23,7 @@ Rule: a finding is only marked done here when the verifying command was run and 
 | AUD-027 | 2 | PARTIAL (public-filing Docling golden fixture BLOCKED on SEC_USER_AGENT; Lighthouse/axe not yet) | Log: AUD-027 |
 | AUD-002 | 3 | FIXED (golden fixture is synthetic; public-filing fixture BLOCKED on SEC_USER_AGENT) | Log: AUD-002 |
 | AUD-020 | 3 | FIXED (page thumbnails not added; not required by the fix) | Log: AUD-020 |
+| AUD-019 | 3 | FIXED (footnote cards gated by pack is D6/AUD-013, batch 5) | Log: AUD-019 |
 
 ## Log
 
@@ -144,6 +145,18 @@ Rule: a finding is only marked done here when the verifying command was run and 
 - Regression: race e2e `natural opens: 0/20 failed`, `forced slow-items opens: 0/20 failed`; smoke `ok`. eslint clean, `tsc -b` clean, vitest `29 files / 118 tests`, build OK, `verify:bundle` OK.
 - Mutations: M5 anchor updated to the new render call — KILLED (vitest). M6 — KILLED by `review-smoke.spec.ts e2e/review-highlight.spec.ts` (`--e2e`; the highlight spec is now part of the mutation e2e run).
 
+### AUD-019 — review layout (commit ad9683a)
+- AppShell `fill` (review, audit trail): shell is one viewport tall, content fills the space under the 48px bar; `.review-layout` / `.audit-page` no longer use `100svh`. Footnote cards moved to a **Footnotes** tab. One virtualized list (`@tanstack/react-virtual`, already in package.json but unused) with table headings as rows; selected card kept in view. Taxonomy panel inner `maxHeight: 180px` scroll box removed. Default selection = first item of the active tab; tab switch re-selects inside the tab. Single arrow on Back.
+- Unit `src/components/review/ReviewPage.layout.test.tsx` (6). jsdom has no layout, so `src/test/listLayout.ts` gives the list container (600px) and rows (120px) browser-like `offsetHeight`/`offsetWidth` (TanStack Virtual measures with these).
+  - RED (ReviewPage.tsx stashed): `Unable to find role="option"` ×2 (selected item not in the visible Flagged list); `expected <h3 …> to be null` (debt card in the list view); `expected 954 to be less than 60`; `expected [ <div …> ] to deeply equal []` (inner scroll box); `expected '← Back to Queue' not to contain '←'` — `6 failed`.
+  - GREEN: review tests `4 files / 23 passed`.
+- Playwright `e2e/review-layout.spec.ts` (1280x800):
+  - RED (before the shell/CSS change): both tests `Expected: 0 Received: 48` for `window.scrollY` after `scrollTo(0, 10000)` — the page scrolled by exactly the app-bar height.
+  - GREEN: `2 passed` — no page scroll; heading and Export to Excel in viewport and not covered (`elementFromPoint` hits `.review-header`); first list option ends above 800px; selected option in viewport; audit-trail header uncovered.
+- Full gates after the change: eslint clean; `tsc -b` and e2e `tsc` clean; vitest `30 files / 124 tests`; build OK; `verify:bundle` OK; Playwright `10 passed` (race `0/20` natural and forced).
+- Not measured: a browser timing on a real 954-item job (virtualization is proven by the mounted-card count only).
+
 ## Out-of-scope discoveries
 - **FN-003 `flat_idx` change is dead code.** PyMuPDF `find_tables()` tables expose `rows[].cells`; the `elif table.cells` branch with `flat_idx` (docling_parser.py) is not reached for them. Left in place (harmless); removal is cleanup (AUD-041 batch 10).
+- **Tautological review test remains.** `ReviewPage.test.tsx` "correctly filters flagged items vs all reconciliation items (Ticket 3.4)" re-implements the filter inline and never renders ReviewPage. The real behaviour is now covered by `ReviewPage.layout.test.tsx`; deleting the old test is cleanup (AUD-027 follow-up).
 - **Seed taxonomy is not version-controlled.** `classification/taxonomy.py` reads the seed from `<data dir>/taxonomy.json`; `backend/data/` is gitignored, so `test_master_taxonomy_loads_from_seed_json` only passes on this machine and would fail in CI. The test conftest copies the local file read-only as a stopgap. Proper fix belongs with AUD-028 (taxonomy injected explicitly) / AUD-033 (CI).
