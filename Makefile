@@ -18,7 +18,7 @@ run-frontend:
 	npm --prefix frontend run dev
 
 eval:
-	$(PY) -m eval.run_benchmark --split dev --replay
+	$(PY) -m eval.run_benchmark --split dev --replay --strict
 
 test:
 	cd backend && ../$(PY) -m pytest

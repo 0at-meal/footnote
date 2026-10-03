@@ -11,7 +11,6 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
-
 from app.classification.models import ClassifierRawResponse
 from app.extraction.docling_parser import _parse_pdf_with_pymupdf, parse_pdf_with_report
 from app.extraction.repository import ExtractionRepository
@@ -19,6 +18,7 @@ from app.ingestion.models import JobStatus
 from app.ingestion.repository import JobRepository
 from app.job_runner import process_queued_job
 from app.review.repository import ReviewRepository
+
 from tests.fixtures.synthetic.pdfs import (
     SYNTHETIC_BALANCE_SHEET,
     SYNTHETIC_EBITDA_BRIDGE,

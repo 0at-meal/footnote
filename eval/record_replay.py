@@ -44,8 +44,8 @@ class RecordReplayClassifierClient(GroqClassifierClient):
         if self.cassette_path.exists():
             try:
                 self._cache = json.loads(self.cassette_path.read_text(encoding="utf-8"))
-            except Exception as e:
-                logger.warning("Could not read cassette at %s: %e", self.cassette_path, e)
+            except (json.JSONDecodeError, OSError) as e:
+                logger.warning("Could not read cassette at %s: %s", self.cassette_path, e)
                 self._cache = {}
 
     def _save_cassette(self) -> None:

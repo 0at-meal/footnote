@@ -17,6 +17,7 @@ Enforces:
 import math
 from pathlib import Path
 from typing import Any
+
 import yaml
 
 from eval.models import (
@@ -24,7 +25,6 @@ from eval.models import (
     BenchmarkCorpusExecutionResult,
     BenchmarkFiling,
     BenchmarkFilingExecutionResult,
-    CalibrationReport,
     ConfidenceBucket,
     CorpusAccuracyMetrics,
     EvalGateMetrics,
@@ -778,8 +778,9 @@ def evaluate_gates(
                 tolerance = float(content.get("tolerance", tolerance))
                 cost_budget = float(content.get("cost_budget_per_filing_usd", cost_budget))
                 latency_budget = float(content.get("latency_budget_per_filing_seconds", latency_budget))
-        except Exception:
-            pass
+        except (yaml.YAMLError, OSError, TypeError, ValueError) as err:
+            # I3: a broken gates file must not silently fall back to defaults.
+            raise ValueError(f"Invalid eval gates file {g_path}: {err}") from err
 
     actuals: dict[str, float] = {
         "min_auto_accepted_exact_match": metrics.auto_accepted_exact_match_rate,

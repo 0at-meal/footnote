@@ -10,10 +10,9 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-from pathlib import Path
-from typing import Any
-import urllib.request
 import urllib.error
+import urllib.request
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +78,7 @@ def fetch_filing_by_accession(
                 f"<ticker>{ticker}</ticker>\n"
                 f"<form>{form}</form>\n"
                 f"<div>Non-GAAP Reconciliation Table for {ticker}</div>\n"
-            ).encode("utf-8")
+            ).encode()
             cached_file.write_bytes(mock_content)
             return cached_file
         raise

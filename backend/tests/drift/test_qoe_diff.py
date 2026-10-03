@@ -12,9 +12,6 @@ Covers:
 """
 
 import sys
-from pathlib import Path
-
-from fastapi.testclient import TestClient
 
 from app.classification.taxonomy import (
     StandardAddBackCategory,
@@ -24,7 +21,6 @@ from app.drift.qoe_diff import (
     QoERow,
     diff_qoe_components,
 )
-from app.main import app
 
 
 def test_no_networkx_in_sys_modules() -> None:

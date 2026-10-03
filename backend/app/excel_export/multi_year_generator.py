@@ -93,7 +93,7 @@ def generate_multi_year_workbook(
 
     # Deduplicate periods with "latest filing wins" and detect restatements (FN-031)
     def _period_key(job_rec: JobRecord) -> str:
-        p_val = getattr(job_rec, "period", None)
+        p_val: str | None = job_rec.period
         if p_val and p_val.strip():
             return p_val.strip()
         if job_rec.filing_year is not None:

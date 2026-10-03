@@ -126,7 +126,7 @@ def extract_html_tables(soup: BeautifulSoup) -> list[HtmlTable]:
                 try:
                     cs = cell_tag.get("colspan")
                     if cs:
-                        colspan = max(1, int(cs))
+                        colspan = max(1, int(str(cs)))
                 except (ValueError, TypeError):
                     colspan = 1
 
@@ -134,7 +134,7 @@ def extract_html_tables(soup: BeautifulSoup) -> list[HtmlTable]:
                 try:
                     rs = cell_tag.get("rowspan")
                     if rs:
-                        rowspan = max(1, int(rs))
+                        rowspan = max(1, int(str(rs)))
                 except (ValueError, TypeError):
                     rowspan = 1
 

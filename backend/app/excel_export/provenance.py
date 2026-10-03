@@ -170,10 +170,10 @@ def format_source_deep_link(
         if src.page:
             return f"{base_url}/api/review/{job_id}/source#page={src.page}"
 
-    if annotation is not None and annotation.target.selector is not None:
-        target = annotation.target
-        if target.selector.type == "XPathSelector":
-            return target.source
-        return f"{base_url}/api/review/{job_id}/source#page={target.selector.page}"
+    selector = annotation.target.selector if annotation is not None else None
+    if annotation is not None and selector is not None:
+        if selector.type == "XPathSelector":
+            return annotation.target.source
+        return f"{base_url}/api/review/{job_id}/source#page={selector.page}"
 
     return f"{base_url}/api/review/{job_id}"
