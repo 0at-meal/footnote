@@ -5,6 +5,7 @@ import { buildAuditReportDownloadUrl, buildAuditReportFilename, canDownloadAudit
 import { Download, FileCheck, History, Trash2, FileText, Info, MoreHorizontal, CheckCircle2 } from 'lucide-react'
 import { formatFiscalPeriod } from '../lib/fiscal_period'
 import { EmptyState } from './brand/EmptyState'
+import { getApiBase } from '../lib/config'
 
 interface Props {
   stagedFiles: StagedFile[]
@@ -199,7 +200,7 @@ function PdfIcon() {
 function JobList({
   stagedFiles,
   persistedJobs,
-  apiBase = 'http://localhost:8000',
+  apiBase = getApiBase(),
   onYearChange,
   onRemove,
   onReview,

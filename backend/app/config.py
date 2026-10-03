@@ -33,3 +33,8 @@ def job_timeout_seconds() -> int:
         return max(1, int(raw)) if raw else 1800
     except ValueError:
         return 1800
+
+
+def public_base_url() -> str:
+    """Base URL written into workbook deep links (D9). Read at call time; no trailing slash."""
+    return os.environ.get("PUBLIC_BASE_URL", "").strip().rstrip("/") or "http://localhost:8000"

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ArrowLeft, Download } from 'lucide-react'
 import './ModelViewer.css'
+import { getApiBase } from '../lib/config'
 
 export type ModelTab =
   | 'executive_summary'
@@ -29,7 +30,7 @@ const TABS: { id: ModelTab; label: string }[] = [
 export default function ModelViewer({
   jobId,
   companyName = 'Financial Model',
-  apiBase = 'http://localhost:8000',
+  apiBase = getApiBase(),
   onBack,
 }: Props) {
   const [activeTab, setActiveTab] = useState<ModelTab>('executive_summary')

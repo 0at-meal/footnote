@@ -18,6 +18,7 @@ import { X, Search } from 'lucide-react'
 import { AppShell } from './components/shell/AppShell'
 import { Wordmark } from './components/brand/Wordmark'
 import { CommandPalette } from './components/search/CommandPalette'
+import { getApiBase } from './lib/config'
 import './App.css'
 
 /**
@@ -42,8 +43,6 @@ function isDesignPath(): boolean {
 const POLL_INTERVAL_MS = 3000
 const MAX_POLL_WINDOW_MS = 20 * 60 * 1000
 
-/** Base URL for the FastAPI backend. Change for production deployment. */
-const API_BASE = 'http://localhost:8000'
 
 function App() {
   const [stagedFiles, setStagedFiles] = useState<StagedFile[]>([])
@@ -91,7 +90,7 @@ function App() {
   }
 
   function refreshCompanies() {
-    fetch(`${API_BASE}/companies`)
+    fetch(`${getApiBase()}/companies`)
       .then((res) => res.json())
       .then((data: CompanyWithJobs[]) => {
         if (Array.isArray(data)) {
@@ -105,7 +104,7 @@ function App() {
 
   // ── On mount: degraded-parser check (D1) ─────────────────────────────────
   useEffect(() => {
-    fetch(`${API_BASE}/health`)
+    fetch(`${getApiBase()}/health`)
       .then((res) => res.json())
       .then((data: HealthStatus) => {
         if (data.status === 'degraded') {
@@ -119,7 +118,7 @@ function App() {
 
   // ── On mount: restore persisted jobs and companies from backend ─────────
   useEffect(() => {
-    fetch(`${API_BASE}/upload/jobs`)
+    fetch(`${getApiBase()}/upload/jobs`)
       .then((res) => res.json())
       .then((data: { jobs: JobRecord[] }) => {
         setPersistedJobs(data.jobs)
@@ -153,7 +152,7 @@ function App() {
         setPollingPaused(true)
         return
       }
-      fetch(`${API_BASE}/upload/jobs`)
+      fetch(`${getApiBase()}/upload/jobs`)
         .then((res) => res.json())
         .then((data: { jobs: JobRecord[] }) => {
           setPersistedJobs(data.jobs)
@@ -248,7 +247,7 @@ function App() {
         form.append('workflow_packs', sf.workflow_pack ?? selectedWorkflowPack)
       }
 
-      const res = await fetch(`${API_BASE}/upload/jobs`, {
+      const res = await fetch(`${getApiBase()}/upload/jobs`, {
         method: 'POST',
         body: form,
       })
@@ -330,7 +329,7 @@ function App() {
       >
         <ReviewPage
           jobId={activeReviewJobId}
-          apiBase={API_BASE}
+          apiBase={getApiBase()}
           onBack={() => setActiveReviewJobId(null)}
           onAuditTrail={(jobId) => {
             setActiveReviewJobId(null)
@@ -356,7 +355,7 @@ function App() {
       >
         <AuditTrailView
           jobId={activeAuditJobId}
-          apiBase={API_BASE}
+          apiBase={getApiBase()}
           onBack={() => setActiveAuditJobId(null)}
           onReview={(jobId) => {
             setActiveAuditJobId(null)
@@ -476,14 +475,14 @@ function App() {
           <CompanySelector
             selectedCompany={selectedCompany}
             onCompanyChange={setSelectedCompany}
-            apiBase={API_BASE}
+            apiBase={getApiBase()}
           />
 
           {/* Multi-Year Model Generation Card */}
           {activeCompanyWithLatestJobs && (
             <CompanyMultiYearCard
               company={activeCompanyWithLatestJobs}
-              apiBase={API_BASE}
+              apiBase={getApiBase()}
             />
           )}
 
@@ -529,7 +528,7 @@ function App() {
           <JobList
             stagedFiles={stagedFiles}
             persistedJobs={persistedJobs}
-            apiBase={API_BASE}
+            apiBase={getApiBase()}
             onYearChange={handleYearChange}
             onRemove={handleRemove}
             onReview={(jobId) => setActiveReviewJobId(jobId)}

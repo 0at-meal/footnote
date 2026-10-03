@@ -7,6 +7,7 @@ Enforces:
 - Pure functions: idempotent and deterministic.
 """
 
+from app.config import public_base_url
 from app.excel_export.models import (
     BoundingBoxCoordinates,
     W3CAnnotationRecord,
@@ -134,11 +135,12 @@ def format_cell_hyperlink_url(
     job_id: str,
     sheet_name: str,
     cell_coord: str,
-    base_url: str = "http://localhost:8000",
+    base_url: str | None = None,
 ) -> str:
     """
     Constructs the canonical HTTP URI target for the cell's provenance hyperlink.
     """
+    base_url = base_url or public_base_url()
     return f"{base_url}/models/{job_id}/provenance/{sheet_name}/{cell_coord}"
 
 
@@ -146,13 +148,14 @@ def format_source_deep_link(
     job_id: str,
     annotation: W3CAnnotationRecord | None = None,
     node: FormulaNode | None = None,
-    base_url: str = "http://localhost:8000",
+    base_url: str | None = None,
 ) -> str:
     """
     Constructs the deep link URL to the source document for label cell hyperlinks (FN-032).
     - For HTML sources: Public SEC link with fragment or element path.
     - For PDF sources: Hosted document viewer link with page anchor.
     """
+    base_url = base_url or public_base_url()
     if node is not None and node.source_node is not None:
         src = node.source_node
         loc = getattr(src, "locator", None)

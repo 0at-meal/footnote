@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { CompanyRecord } from '../types/job'
+import { getApiBase } from '../lib/config'
 
 interface Props {
   selectedCompany: string
@@ -10,7 +11,7 @@ interface Props {
 export default function CompanySelector({
   selectedCompany,
   onCompanyChange,
-  apiBase = 'http://localhost:8000',
+  apiBase = getApiBase(),
 }: Props) {
   const [companies, setCompanies] = useState<CompanyRecord[]>([])
 

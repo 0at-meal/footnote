@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { CompanyWithJobs, MultiYearModelResponse } from '../types/job'
 import { Layers, Download } from 'lucide-react'
 import { formatFiscalPeriod } from '../lib/fiscal_period'
+import { getApiBase } from '../lib/config'
 
 interface Props {
   company: CompanyWithJobs
@@ -10,7 +11,7 @@ interface Props {
 
 export default function CompanyMultiYearCard({
   company,
-  apiBase = 'http://localhost:8000',
+  apiBase = getApiBase(),
 }: Props) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [generationResult, setGenerationResult] =
