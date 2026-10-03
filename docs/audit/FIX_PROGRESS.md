@@ -18,6 +18,9 @@ Rule: a finding is only marked done here when the verifying command was run and 
 | AUD-007 (D2) | 1 | FIXED | Log: AUD-007 |
 | AUD-035 | 1 | FIXED | Log: AUD-035 |
 | infra: test-session data isolation (conftest) | 1 | committed (c287099) | Log: AUD-035 |
+| AUD-033 | 2 | FIXED (CI workflow written, not executed here; 2 known-red CI steps) | Log: AUD-033 |
+| AUD-034 | 2 | FIXED | Log: AUD-034 |
+| AUD-027 | 2 | PARTIAL (public-filing Docling golden fixture BLOCKED on SEC_USER_AGENT; Lighthouse/axe not yet) | Log: AUD-027 |
 
 ## Log
 
@@ -82,5 +85,29 @@ Rule: a finding is only marked done here when the verifying command was run and 
 - Gates: backend pytest `577 passed` (isolated data dir); frontend eslint clean, `tsc -b` clean, vitest `27 files / 113 tests`, build OK, e2e `2 passed`.
 - **DoD not fully met at this checkpoint:** `ruff check backend eval tools` reports 24 errors and `mypy backend/app` (strict) reports 20 errors. All are the pre-existing ones listed in the audit (AUD-033, batch 2); none are in files added or changed by batch 1 except where already present. Re-checked at the batch 2 checkpoint.
 
+### AUD-033 — DoD tooling (commit dbab3ef)
+- `backend/mypy.ini` (non-strict) deleted. `mypy backend/app` (root strict): **20 errors → `Success: no issues found in 96 source files`**.
+- Two mypy errors were runtime bugs in `drift/router.py` (`ReviewItem.extracted_value`; `list_jobs(company_id=)`). New test `tests/drift/test_qoe_route_company.py`: RED `AttributeError: 'ReviewItem' object has no attribute 'extracted_value'`; GREEN `1 passed`; revert check red/green.
+- `ruff check backend eval tools`: **24 → `All checks passed!`**. Behaviour change: a malformed `eval/gates.yaml` now raises (was silently ignored, I3).
+- `.github/workflows/ci.yml`: backend (ruff, mypy --strict, pytest), frontend (eslint, tsc, vitest, build + bundle check), e2e (Playwright), eval (`--strict`). YAML parses; **not executed** (no GitHub run from here). Expected red until later: `eval` (batch 6) and 6 backend taxonomy tests that need a versioned seed taxonomy (see discoveries). `requirements.txt`: `pywin32` limited to Windows so Linux CI can install. `make eval` now `--strict`.
+
+### AUD-034 — base URLs (commit ddbc4d1)
+- Backend `tests/excel_export/test_public_base_url.py` (real generator): RED `assert not ['http://localhost:8000/api/review/...']`; GREEN; revert check red/green.
+- Frontend `src/components/apiBase.test.tsx` (real App): RED `expected [ …(4) ] to include 'https://api.example.test/upload/jobs'`; GREEN; revert check red/green.
+- `.env.example` / `frontend/.env.example` document VITE_API_BASE, PUBLIC_BASE_URL, SEC_USER_AGENT, FOOTNOTE_DATA_DIR, ALLOW_PYMUPDF_FALLBACK, JOB_TIMEOUT_SECONDS.
+
+### AUD-027 — test infrastructure (commits 2133717, 1d954ff, 895a383, mutations tool)
+- jsdom + Testing Library component tests (used by AUD-001/003/017/007/035/034).
+- Playwright: `e2e/review-pdf-race.spec.ts` (AUD-001) and `e2e/review-smoke.spec.ts` (open review → canvas ink pixels > 2000 → every item highlight contains its value text (PyMuPDF search oracle) → Export to Excel → download is a real .xlsx). Full e2e: `3 passed (2.6m)`.
+- Seed (`tools/verify/seed_e2e.py`): Docling job bbox probe `hit 0 / miss 12` (AUD-002, fixed in batch 3); PyMuPDF job `hit 12 / miss 0`.
+- Replaced tautological flat-index tests with `test_pymupdf_path_bboxes_contain_their_value_text` (real parser + normaliser). Mutation check: the old flat_idx off-by-one **survives** it because PyMuPDF tables expose `rows[].cells`, so the branch changed by the p0 "FN-003 fix" is effectively dead code; a mutation of the live rows path is **killed** (`1 failed`).
+- `tools/verify/mutations.py` (M1-M10). Batch 2 run: M1 K, M2 K, M3 K (tests still enforce the Docling inversion bug → AUD-002), M4 K, M5 K (vitest race test), M6 SURVIVED unit-only / **KILLED with `--e2e`** (smoke), M7 K, M8 S, M9 S, M10 S. M8/M9/M10 belong to AUD-005 (batch 5), AUD-038 (batch 7), AUD-021 (batch 8). `tracked changes after run: (none)`.
+- BLOCKED: "real-Docling golden fixture built from a few pages of a public filing" needs SEC access (`SEC_USER_AGENT` unset). Batch 3 adds a real-Docling golden test on a SYNTHETIC PDF instead.
+- Not yet: Lighthouse / axe (batch 9).
+
+### Batch 2 checkpoint (tag fix-batch-2)
+- ruff `All checks passed!`; mypy strict `no issues found in 96 source files`; backend pytest `575 passed` (580 before minus 7 tautological, plus 2 new); eslint clean; tsc clean (incl. e2e); vitest `28 files / 114 tests`; `npm run verify:bundle` OK; Playwright `3 passed`.
+
 ## Out-of-scope discoveries
+- **FN-003 `flat_idx` change is dead code.** PyMuPDF `find_tables()` tables expose `rows[].cells`; the `elif table.cells` branch with `flat_idx` (docling_parser.py) is not reached for them. Left in place (harmless); removal is cleanup (AUD-041 batch 10).
 - **Seed taxonomy is not version-controlled.** `classification/taxonomy.py` reads the seed from `<data dir>/taxonomy.json`; `backend/data/` is gitignored, so `test_master_taxonomy_loads_from_seed_json` only passes on this machine and would fail in CI. The test conftest copies the local file read-only as a stopgap. Proper fix belongs with AUD-028 (taxonomy injected explicitly) / AUD-033 (CI).
