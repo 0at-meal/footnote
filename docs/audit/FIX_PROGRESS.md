@@ -22,6 +22,7 @@ Rule: a finding is only marked done here when the verifying command was run and 
 | AUD-034 | 2 | FIXED | Log: AUD-034 |
 | AUD-027 | 2 | PARTIAL (public-filing Docling golden fixture BLOCKED on SEC_USER_AGENT; Lighthouse/axe not yet) | Log: AUD-027 |
 | AUD-002 | 3 | FIXED (golden fixture is synthetic; public-filing fixture BLOCKED on SEC_USER_AGENT) | Log: AUD-002 |
+| AUD-020 | 3 | FIXED (page thumbnails not added; not required by the fix) | Log: AUD-020 |
 
 ## Log
 
@@ -129,6 +130,19 @@ Rule: a finding is only marked done here when the verifying command was run and 
   Audit baseline for Docling was 3 hit / 100 miss. The first Amazon/Docling probe reported 15 misses; all 15 boxes contain exactly an em dash (U+2014) that Docling stores as `-`, i.e. the probe searched for the wrong glyph. The probe now matches dash variants; boxes were not changed.
   User data checksums after the runs: `3906eb32…pdf: OK`, `a04a4f1e…pdf: OK`, `jobs.json: OK`.
 - Gates for touched files: ruff `All checks passed!`, mypy strict `no issues found in 96 source files`, e2e `tsc` and eslint clean.
+
+### AUD-020 — viewer navigation and zoom (commits d4be892 + mutation-run commit)
+- Drawn page = page control (`currentPage`), not `selectedItem.page`; selecting an item moves to its page. Zoom re-renders at `PDF_RENDER_SCALE * zoom` (25% steps, so 100%/150% are exact); overlay sized from the canvas CSS size, not a transformed rect. Fit width computed from the stage width. Stage centring moved from `justify-content: center` (inline style **and** `ReviewPage.css`) to auto margins, so a zoomed page's left edge stays in scroll reach. Each item click scrolls its highlight into view.
+- Unit `src/components/review/ReviewPage.viewer.test.tsx` (4; fakes only pdf.js and fetch):
+  - First RED attempt was invalid: all 4 failed in setup because jsdom reports a 0x0 `getBoundingClientRect`, so the old code drew no overlay. The test now stubs the canvas rect to its CSS size (what a browser reports for an untransformed canvas).
+  - RED (ReviewPage.tsx stashed): `expected [ 1 ] to include 2`; `expected '900px' to be '1035px'`; `expected 900 to be greater than or equal to 1198`; `expected [] to include <div role="img" …>` — `4 failed`.
+  - GREEN: `4 passed`. (Zoom expectation later updated to the 25% step: 1125px.)
+- Playwright `e2e/review-highlight.spec.ts` (Batch 3 VERIFY), seeded Docling + PyMuPDF jobs:
+  - GREEN: `5 passed` — highlights contain their value text for both parsers at zoom 100% and 150%, with the canvas bitmap re-rendered to the zoomed width; Next/Prev draw another page while an item is selected (canvas pixel fingerprint changes) and back restores the highlight; at 200% the page's left edge is reachable and the clicked item's highlight is inside the visible stage.
+  - RED (ReviewPage.tsx stashed): `Received: 550.8` for the bitmap-width check at 150% (both parsers: CSS scale, no re-render); `expect(await canvasFingerprint(page)).not.toBe(startPixels)` failed (Next changed the label but redrew the same page) — `3 failed, 2 passed` (the two 100% tests pass on old code, as expected).
+  - Two real bugs found by the e2e run itself and fixed before commit: the stylesheet still centred the stage (`left edge reachable` failed with the inline fix alone; measured wrap left = -55px at scrollLeft 0), and clicking the already-selected item did not re-scroll to it.
+- Regression: race e2e `natural opens: 0/20 failed`, `forced slow-items opens: 0/20 failed`; smoke `ok`. eslint clean, `tsc -b` clean, vitest `29 files / 118 tests`, build OK, `verify:bundle` OK.
+- Mutations: M5 anchor updated to the new render call — KILLED (vitest). M6 — KILLED by `review-smoke.spec.ts e2e/review-highlight.spec.ts` (`--e2e`; the highlight spec is now part of the mutation e2e run).
 
 ## Out-of-scope discoveries
 - **FN-003 `flat_idx` change is dead code.** PyMuPDF `find_tables()` tables expose `rows[].cells`; the `elif table.cells` branch with `flat_idx` (docling_parser.py) is not reached for them. Left in place (harmless); removal is cleanup (AUD-041 batch 10).
