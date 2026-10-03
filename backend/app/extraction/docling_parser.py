@@ -20,11 +20,15 @@ Isolation (CONSTITUTION §3.8, §3.2):
 import logging
 import os
 import re
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 os.environ["TORCHDYNAMO_DISABLE"] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
+DOCLING_IMPORT_ERROR: str | None = None
+"""Why Docling could not be imported in this interpreter, or None when it is available (D1)."""
 
 if TYPE_CHECKING:
     from docling.datamodel.base_models import InputFormat
@@ -35,7 +39,8 @@ else:
         from docling.datamodel.base_models import InputFormat
         from docling.datamodel.pipeline_options import PdfPipelineOptions
         from docling.document_converter import DocumentConverter, PdfFormatOption
-    except ImportError:  # pragma: no cover
+    except ImportError as _docling_import_err:  # pragma: no cover
+        DOCLING_IMPORT_ERROR = f"{type(_docling_import_err).__name__}: {_docling_import_err}"
 
         class _FallbackInputFormat:
             PDF = "pdf"
@@ -66,6 +71,7 @@ else:
         DocumentConverter = _FallbackDocumentConverter
 
 
+from app.config import pymupdf_fallback_allowed
 from app.extraction.models import DoclingBbox, DoclingItem
 
 logger = logging.getLogger(__name__)
@@ -287,11 +293,47 @@ class DoclingParseError(Exception):
     """Raised when an unrecoverable structural parse error occurs during extraction."""
 
 
+@dataclass
+class ParseReport:
+    """Which parser produced the items and, when PyMuPDF was used, why (I3, D1)."""
+
+    parser_used: str = "docling"
+    fallback_reason: str | None = None
+
+
+def parse_pdf_with_report(
+    pdf_path: Path,
+    source_file: str,
+    target_metric: str = "",
+    workflow_pack: str = "non_gaap_bridge",
+) -> tuple[list[DoclingItem], ParseReport]:
+    """
+    Parse a PDF and report the parser actually used.
+
+    Raises DoclingParseError when Docling is missing and ALLOW_PYMUPDF_FALLBACK is not "1".
+    """
+    report = ParseReport()
+    items = _parse_pdf_impl(pdf_path, source_file, target_metric, workflow_pack, report)
+    return items, report
+
+
 def parse_pdf(
     pdf_path: Path,
     source_file: str,
     target_metric: str = "",
     workflow_pack: str = "non_gaap_bridge",
+) -> list[DoclingItem]:
+    """Parse a PDF into table-cell items (see parse_pdf_with_report for the parser report)."""
+    items, _report = parse_pdf_with_report(pdf_path, source_file, target_metric, workflow_pack)
+    return items
+
+
+def _parse_pdf_impl(
+    pdf_path: Path,
+    source_file: str,
+    target_metric: str,
+    workflow_pack: str,
+    report: "ParseReport",
 ) -> list[DoclingItem]:
     """
     Parse a local PDF filing using Docling and extract raw table cell items.
@@ -312,6 +354,22 @@ def parse_pdf(
     if not pdf_path.exists():
         raise FileNotFoundError(f"PDF file not found at path: {pdf_path}")
 
+    if DOCLING_IMPORT_ERROR is not None:
+        if not pymupdf_fallback_allowed():
+            raise DoclingParseError(
+                "Docling is not installed in this Python interpreter "
+                f"({DOCLING_IMPORT_ERROR}). Start the server with the project virtualenv "
+                "(python tools/run_backend.py) or set ALLOW_PYMUPDF_FALLBACK=1 for degraded mode."
+            )
+        report.parser_used = "pymupdf"
+        report.fallback_reason = f"Docling unavailable ({DOCLING_IMPORT_ERROR}); used PyMuPDF fallback."
+        return _parse_pdf_with_pymupdf(
+            pdf_path,
+            source_file,
+            target_metric,
+            workflow_pack=workflow_pack,
+        )
+
     try:
         pipeline_options = PdfPipelineOptions()
         pipeline_options.do_ocr = False
@@ -325,12 +383,14 @@ def parse_pdf(
         )
         result = converter.convert(str(pdf_path))
         doc = result.document
-    except Exception as err:
+    except Exception as err:  # noqa: BLE001 - any Docling failure falls back, with the reason stamped on the job (I3)
         logger.warning(
-            "Docling unavailable or failed for %s (%s). Using native PyMuPDF fallback.",
-            pdf_path,
-            err,
-            exc_info=True,
+            "Docling conversion failed (%s). Using native PyMuPDF fallback.",
+            type(err).__name__,
+        )
+        report.parser_used = "pymupdf"
+        report.fallback_reason = (
+            f"Docling conversion failed ({type(err).__name__}: {str(err)[:200]}); used PyMuPDF fallback."
         )
         return _parse_pdf_with_pymupdf(
             pdf_path,

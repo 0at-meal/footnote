@@ -31,7 +31,7 @@ from app.extraction.coordinate_normalizer import (
     count_image_only_pages,
     normalize_coordinates,
 )
-from app.extraction.docling_parser import parse_pdf
+from app.extraction.docling_parser import parse_pdf_with_report
 from app.extraction.flagger import create_extraction_summary
 from app.extraction.repository import ExtractionRepository
 from app.formula_engine.reader import read_formula_inputs
@@ -86,7 +86,7 @@ def process_queued_job(
         workflow_pack = getattr(job, "workflow_pack", "non_gaap_bridge") or "non_gaap_bridge"
 
         # Stage 1: Docling structural parse (bounded extraction per workflow pack, Ticket 7.2)
-        docling_items = parse_pdf(
+        docling_items, parse_report = parse_pdf_with_report(
             pdf_path,
             job.filename,
             target_metric=target_metric,
@@ -100,10 +100,17 @@ def process_queued_job(
         parser_used: Literal["docling", "pymupdf", "mixed"] = "docling"
         if len(parsers_in_items) > 1:
             parser_used = "mixed"
-        elif "pymupdf" in parsers_in_items:
+        elif "pymupdf" in parsers_in_items or parse_report.parser_used == "pymupdf":
             parser_used = "pymupdf"
         else:
             parser_used = "docling"
+        # D1 / I3: stamp the parser and any fallback reason on the job so the UI can show it.
+        repo.update_job_status(
+            job_id,
+            JobStatus.extracting,
+            parser_used=parser_used,
+            parser_fallback_reason=parse_report.fallback_reason,
+        )
 
         # Stage 2: PyMuPDF 0-1000 coordinate normalization
         normalized_items = normalize_coordinates(pdf_path, docling_items)
@@ -330,6 +337,10 @@ def process_queued_job(
             model_skip_reason,
         )
     except Exception as err:
-        logger.error("Error processing job %s: %s", job_id, err)
-        repo.update_job_status(job_id, JobStatus.failed)
+        logger.error("Error processing job %s: %s", job_id, type(err).__name__)
+        repo.update_job_status(
+            job_id,
+            JobStatus.failed,
+            failure_reason=f"{type(err).__name__}: {str(err)[:300]}",
+        )
         raise

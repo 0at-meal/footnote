@@ -144,9 +144,13 @@ cp .env.example .env
 ### 3. Start the backend
 
 ```bash
-cd backend
-uvicorn app.main:app --reload
+python tools/run_backend.py
 ```
+
+This always runs uvicorn with the `.venv` interpreter. Do not start the server with a bare
+`uvicorn` from another Python: without Docling the server refuses to start (set
+`ALLOW_PYMUPDF_FALLBACK=1` to run in a degraded, clearly-labelled PyMuPDF mode).
+`python tools/run_backend.py --check` reports the interpreter and Docling status.
 
 The API will be available at `http://localhost:8000`.
 

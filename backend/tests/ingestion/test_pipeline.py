@@ -11,6 +11,7 @@ from unittest.mock import patch
 
 import pymupdf
 import pytest
+from app.extraction.docling_parser import ParseReport
 from app.extraction.models import DoclingBbox, DoclingItem
 from app.ingestion.models import JobStatus
 from app.ingestion.repository import JobRepository
@@ -36,7 +37,7 @@ def test_process_queued_job_transitions_to_done(tmp_path: Path) -> None:
         source_file="report.pdf",
     )
 
-    with patch("app.job_runner.parse_pdf", return_value=[dummy_item]):
+    with patch("app.job_runner.parse_pdf_with_report", return_value=([dummy_item], ParseReport())):
         process_queued_job(job.job_id, repo)
 
     updated = repo.get_job(job.job_id)
@@ -53,7 +54,7 @@ def test_process_queued_job_transitions_to_failed_on_error(tmp_path: Path) -> No
     job = repo.save_job("fail.pdf", make_minimal_pdf(), "Adjusted EBITDA")
 
     with (
-        patch("app.job_runner.parse_pdf", side_effect=RuntimeError("Docling error")),
+        patch("app.job_runner.parse_pdf_with_report", side_effect=RuntimeError("Docling error")),
         pytest.raises(RuntimeError, match="Docling error"),
     ):
         process_queued_job(job.job_id, repo)

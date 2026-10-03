@@ -70,6 +70,12 @@ class JobRecord(BaseModel):
     """Optional analyst session ID for multi-user / team deployment isolation (Step K)."""
     workflow_pack: WorkflowPack = "non_gaap_bridge"
     """Workflow pack selected for bounded extraction and model generation (Step 7)."""
+    parser_used: str | None = None
+    """PDF parser that produced the items ('docling', 'pymupdf' or 'mixed'), stamped by the runner (D1)."""
+    parser_fallback_reason: str | None = None
+    """Why the PyMuPDF fallback was used instead of Docling, if it was (I3, D1)."""
+    failure_reason: str | None = None
+    """User-visible reason when status is 'failed' (I3)."""
 
 
 class CompanyRecord(BaseModel):

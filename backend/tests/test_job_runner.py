@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from app.classification.models import ClassifierRawResponse
+from app.extraction.docling_parser import ParseReport
 from app.extraction.models import (
     ConfidenceBand,
     DoclingBbox,
@@ -91,7 +92,7 @@ def test_job_runner_auto_accepted_generates_draft_model(tmp_path: Path) -> None:
     )
 
     with (
-        patch("app.job_runner.parse_pdf", return_value=sample_docling),
+        patch("app.job_runner.parse_pdf_with_report", return_value=(sample_docling, ParseReport())),
         patch("app.job_runner.normalize_coordinates", return_value=sample_normalized),
         patch("app.job_runner.assemble_records", return_value=sample_records),
         patch("app.job_runner.score_records", return_value=sample_scored),
@@ -174,7 +175,7 @@ def test_job_runner_zero_auto_accepted_sets_model_ready_false(tmp_path: Path) ->
     )
 
     with (
-        patch("app.job_runner.parse_pdf", return_value=sample_docling),
+        patch("app.job_runner.parse_pdf_with_report", return_value=(sample_docling, ParseReport())),
         patch("app.job_runner.normalize_coordinates", return_value=sample_normalized),
         patch("app.job_runner.assemble_records", return_value=sample_records),
         patch("app.job_runner.score_records", return_value=sample_scored),
@@ -316,7 +317,7 @@ def test_job_runner_filters_non_reconciliation_candidates_before_classification(
     ]
 
     with (
-        patch("app.job_runner.parse_pdf", return_value=sample_docling),
+        patch("app.job_runner.parse_pdf_with_report", return_value=(sample_docling, ParseReport())),
         patch("app.job_runner.normalize_coordinates", return_value=sample_normalized),
         patch("app.job_runner.assemble_records", return_value=[rec1, rec2]),
         patch("app.job_runner.score_records", return_value=[scored1, scored2]),
@@ -401,7 +402,7 @@ def test_job_runner_unimplemented_workflow_pack_skips_model(tmp_path: Path) -> N
     )
 
     with (
-        patch("app.job_runner.parse_pdf", return_value=sample_docling),
+        patch("app.job_runner.parse_pdf_with_report", return_value=(sample_docling, ParseReport())),
         patch("app.job_runner.normalize_coordinates", return_value=sample_normalized),
         patch("app.job_runner.assemble_records", return_value=sample_records),
         patch("app.job_runner.score_records", return_value=sample_scored),

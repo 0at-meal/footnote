@@ -11,6 +11,7 @@ import type {
   JobRecord,
   CompanyWithJobs,
   WorkflowPack,
+  HealthStatus,
 } from './types/job'
 import { DEFAULT_METRIC } from './types/job'
 import { X, Search } from 'lucide-react'
@@ -34,6 +35,7 @@ function App() {
   const [selectedCompany, setSelectedCompany] = useState<string>('')
   const [companies, setCompanies] = useState<CompanyWithJobs[]>([])
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
+  const [serviceWarning, setServiceWarning] = useState<string | null>(null)
   const [currentRoute, setCurrentRoute] = useState<'app' | 'design'>(() => {
     if (typeof window !== 'undefined') {
       if (window.location.pathname === '/design' || window.location.hash === '#/design') {
@@ -87,6 +89,20 @@ function App() {
         // Non-fatal if backend is offline
       })
   }
+
+  // ── On mount: degraded-parser check (D1) ─────────────────────────────────
+  useEffect(() => {
+    fetch(`${API_BASE}/health`)
+      .then((res) => res.json())
+      .then((data: HealthStatus) => {
+        if (data.status === 'degraded') {
+          setServiceWarning(data.degraded_reason || 'The backend reports a degraded state.')
+        }
+      })
+      .catch(() => {
+        // Backend offline is reported by the queue fetch below.
+      })
+  }, [])
 
   // ── On mount: restore persisted jobs and companies from backend ─────────
   useEffect(() => {
@@ -251,6 +267,7 @@ function App() {
   if (currentRoute === 'design') {
     return (
       <AppShell
+        serviceWarning={serviceWarning}
         currentRoute="design"
         onNavigate={handleNavigate}
         breadcrumbs={[
@@ -267,6 +284,7 @@ function App() {
     const activeJob = persistedJobs.find((j) => j.job_id === activeReviewJobId)
     return (
       <AppShell
+        serviceWarning={serviceWarning}
         currentRoute="app"
         onNavigate={handleNavigate}
         breadcrumbs={[
@@ -291,6 +309,7 @@ function App() {
     const activeAuditJob = persistedJobs.find((j) => j.job_id === activeAuditJobId)
     return (
       <AppShell
+        serviceWarning={serviceWarning}
         currentRoute="app"
         onNavigate={handleNavigate}
         breadcrumbs={[
@@ -330,6 +349,7 @@ function App() {
 
   return (
     <AppShell
+        serviceWarning={serviceWarning}
       currentRoute="app"
       onNavigate={handleNavigate}
       breadcrumbs={[{ label: 'Upload & Queue', active: true }]}

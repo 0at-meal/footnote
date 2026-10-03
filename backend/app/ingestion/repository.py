@@ -157,6 +157,9 @@ class JobRepository:
         filing_year: int | None = None,
         company_id: str | None = None,
         model_skip_reason: str | None = None,
+        parser_used: str | None = None,
+        parser_fallback_reason: str | None = None,
+        failure_reason: str | None = None,
     ) -> JobRecord | None:
         """
         Update the status (and optionally model_ready/filing_year/company_id/model_skip_reason) of a specific JobRecord and persist to jobs.json.
@@ -194,6 +197,12 @@ class JobRepository:
                         updates["company_id"] = company_id
                     if model_skip_reason is not None:
                         updates["model_skip_reason"] = model_skip_reason
+                    if parser_used is not None:
+                        updates["parser_used"] = parser_used
+                    if parser_fallback_reason is not None:
+                        updates["parser_fallback_reason"] = parser_fallback_reason
+                    if failure_reason is not None:
+                        updates["failure_reason"] = failure_reason
                     updated_record = rec.model_copy(update=updates)
                     records[idx] = updated_record
                     break

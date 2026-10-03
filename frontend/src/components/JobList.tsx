@@ -429,6 +429,16 @@ function JobList({
                             {job.filename}
                           </span>
                         </div>
+                        {job.parser_fallback_reason && (
+                          <div className="job-table__note job-table__note--warn" data-testid="parser-fallback-note">
+                            Parsed with PyMuPDF fallback: {job.parser_fallback_reason}
+                          </div>
+                        )}
+                        {job.status === 'failed' && job.failure_reason && (
+                          <div className="job-table__note job-table__note--danger" data-testid="failure-reason-note">
+                            Failed: {job.failure_reason}
+                          </div>
+                        )}
                       </td>
                       <td className="job-table__metric" style={{ padding: '10px 12px' }}>
                         <span

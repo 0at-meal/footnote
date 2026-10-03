@@ -13,6 +13,8 @@ import os
 
 os.environ["TORCHDYNAMO_DISABLE"] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
@@ -37,8 +39,18 @@ from app.footnote.router import router as footnote_router
 from app.ingestion.company_router import router as company_router
 from app.ingestion.router import router as ingestion_router
 from app.review.router import router as review_router
+from app.startup import check_parser_dependencies, parser_status
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    # D1: refuse to start without Docling unless ALLOW_PYMUPDF_FALLBACK=1.
+    check_parser_dependencies()
+    yield
+
 
 app = FastAPI(
+    lifespan=lifespan,
     title="Footnote",
     version="0.1.0",
     description=(
@@ -85,6 +97,15 @@ class HealthResponse(BaseModel):
     data_dir_writable: bool = Field(
         default=True, description="True if data storage directory is writable"
     )
+    docling_available: bool = Field(
+        default=True, description="False when Docling cannot be imported (D1)"
+    )
+    parser_mode: str = Field(
+        default="docling", description="'docling' or 'pymupdf_fallback' (degraded)"
+    )
+    degraded_reason: str | None = Field(
+        default=None, description="Why the service is degraded, shown in the UI banner"
+    )
 
 
 @app.get(
@@ -114,11 +135,16 @@ def health_check() -> HealthResponse:
     except (sqlite3.Error, OSError):
         db_ok = False
 
+    parsers = parser_status()
+    healthy = data_writable and db_ok and parsers.docling_available
     return HealthResponse(
-        status="ok" if (data_writable and db_ok) else "degraded",
+        status="ok" if healthy else "degraded",
         version="0.1.0",
         db_ok=db_ok,
         data_dir_writable=data_writable,
+        docling_available=parsers.docling_available,
+        parser_mode=parsers.parser_mode,
+        degraded_reason=parsers.degraded_reason,
     )
 
 

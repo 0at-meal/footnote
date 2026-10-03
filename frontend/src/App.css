@@ -643,3 +643,31 @@
   }
 }
 
+
+/* ── Degraded-mode banner and per-job notes (AUD-003 / D1, I3) ── */
+.fn-service-banner {
+  padding: 8px 20px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink);
+  background: var(--warn-bg);
+  border-bottom: 1px solid var(--warn-border);
+}
+
+.job-table__note {
+  margin-top: 4px;
+  max-width: 420px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--ink-secondary);
+}
+
+.job-table__note--warn {
+  border-left: 2px solid var(--warn);
+  padding-left: 6px;
+}
+
+.job-table__note--danger {
+  border-left: 2px solid var(--danger);
+  padding-left: 6px;
+}

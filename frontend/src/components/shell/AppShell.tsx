@@ -12,6 +12,8 @@ export interface AppShellProps {
   breadcrumbs?: BreadcrumbItem[]
   currentRoute?: 'app' | 'design'
   onNavigate?: (route: 'app' | 'design') => void
+  /** Persistent service warning (e.g. degraded PDF parser, D1). Shown on every screen. */
+  serviceWarning?: string | null
   children: React.ReactNode
 }
 
@@ -19,6 +21,7 @@ export const AppShell: React.FC<AppShellProps> = ({
   breadcrumbs = [],
   currentRoute = 'app',
   onNavigate,
+  serviceWarning = null,
   children,
 }) => {
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -199,6 +202,12 @@ export const AppShell: React.FC<AppShellProps> = ({
           </button>
         </div>
       </header>
+
+      {serviceWarning && (
+        <div role="alert" aria-label="Service degraded" className="fn-service-banner">
+          <strong>Degraded mode.</strong> {serviceWarning}
+        </div>
+      )}
 
       {/* Main Content Area */}
       <div style={{ flex: 1 }}>{children}</div>
