@@ -275,6 +275,20 @@ def test_diff_filing_optional_ground_truth_item() -> None:
     assert metrics.target_accuracy_achieved is True
 
 
+def test_diff_filing_matched_optional_item_does_not_push_accuracy_over_100() -> None:
+    """
+    Accuracy is TP / non-optional ground truth, so a matched optional item must not count in the
+    numerator either. Exposed once correct Docling boxes (AUD-002) let optional items match:
+    the e2e benchmark then failed validation with 116.67%.
+    """
+    filing, exec_res = _create_mock_filing_and_exec_result(optional_item=True)
+    # Both records are extracted and match: one non-optional, one optional.
+    metrics = diff_filing(filing, exec_res)
+
+    assert metrics.true_positives == 2
+    assert metrics.line_item_accuracy_percentage == 100.0
+
+
 def test_diff_filing_failed_extraction_threshold_boundary() -> None:
     """AC-5, EC-3: Filing with > 15% non-auto-accepted items is marked failed_extraction."""
     # 1 item auto-accept (score 0.98), 1 item needs review (score 0.80) -> 50% non-auto-accepted

@@ -237,6 +237,7 @@ def diff_filing(
     matched_extracted_indices: set[int] = set()
 
     true_positives = 0
+    non_optional_true_positives = 0
     false_negatives = 0
     non_optional_gt_count = 0
 
@@ -315,6 +316,8 @@ def diff_filing(
                 status = ItemMatchStatus.exact_match
                 pattern = FailurePattern.none
                 true_positives += 1
+                if not is_opt:
+                    non_optional_true_positives += 1
             elif not val_eq:
                 status = ItemMatchStatus.value_mismatch
                 layer_errors.extraction_errors += 1
@@ -407,11 +410,14 @@ def diff_filing(
         layer_errors.generation_errors += 1
 
     # Precision, Recall, F1, Accuracy Calculations
-    eval_gt_total = (
-        non_optional_gt_count if non_optional_gt_count > 0 else total_gt_items
-    )
+    # Numerator and denominator cover the same items: a matched optional item must not lift
+    # accuracy above 100% (it did once correct Docling boxes let optional items match, AUD-002).
+    if non_optional_gt_count > 0:
+        eval_gt_total, accuracy_tp = non_optional_gt_count, non_optional_true_positives
+    else:
+        eval_gt_total, accuracy_tp = total_gt_items, true_positives
     accuracy_pct = round(
-        float((true_positives / eval_gt_total) * 100.0) if eval_gt_total > 0 else 100.0,
+        float((accuracy_tp / eval_gt_total) * 100.0) if eval_gt_total > 0 else 100.0,
         2,
     )
 
