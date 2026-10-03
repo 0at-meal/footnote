@@ -29,7 +29,7 @@ def pytest(*paths: str) -> list[str]:
 
 
 VITEST = [NPX, "vitest", "run"]
-E2E_SMOKE = [NPX, "playwright", "test", "e2e/review-smoke.spec.ts"]
+E2E_SMOKE = [NPX, "playwright", "test", "e2e/review-smoke.spec.ts", "e2e/review-highlight.spec.ts"]
 
 MUTATIONS: list[dict[str, object]] = [
     {
