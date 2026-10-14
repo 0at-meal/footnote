@@ -1,18 +1,18 @@
 """
-Master Financial Taxonomy management and deterministic alias matching (Feature 3).
+Master Financial Taxonomy management and deterministic alias matching.
 
 Enforces:
-- spec.md AC-4: Exact and canonicalized alias matching against Master Financial Taxonomy.
-- spec.md AC-5: Unrecognized labels route to pending_taxonomy_confirmation, never auto-accepted.
-- CONSTITUTION ? 6.3: Never auto-merge conflicting taxonomy labels.
-- CONSTITUTION ? 1.9: Atomic persistence via temporary file rename.
+- Exact and canonicalized alias matching against Master Financial Taxonomy.
+- Unrecognized labels route to pending_taxonomy_confirmation, never auto-accepted.
+- Never auto-merge conflicting taxonomy labels.
+- Atomic persistence via temporary file rename.
 """
 
-from enum import Enum
 import json
 import logging
 import os
 import re
+from enum import Enum
 from pathlib import Path
 
 from pydantic import ValidationError
@@ -343,7 +343,7 @@ def match_master_taxonomy(
     master: MasterTaxonomy | None = None,
 ) -> TaxonomyItem | None:
     """
-    Matches a raw candidate label against MasterTaxonomy canonical names and aliases (Feature 3).
+    Matches a raw candidate label against MasterTaxonomy canonical names and aliases.
 
     Evaluation order:
     1. Exact canonical_name match (case-insensitive, raw or cleaned).
@@ -527,7 +527,7 @@ def check_label_against_taxonomy(
     fuzzy_threshold: float = 0.85,
 ) -> TaxonomyCheckResult:
     """
-    Checks candidate label against the active taxonomy (AC-4, AC-5).
+    Checks candidate label against the active taxonomy.
 
     1. Exact & canonicalized match -> TaxonomyStatus.matched (is_matched=True)
     2. Fuzzy token-set-ratio match (>= 0.85) -> TaxonomyStatus.fuzzy_matched (is_matched=True)
@@ -639,7 +639,7 @@ class TaxonomyRepository:
 
     def save_taxonomy(self, master: MasterTaxonomy) -> Path:
         """
-        Persists MasterTaxonomy to data/taxonomy.json atomically (CONSTITUTION ? 1.9).
+        Persists MasterTaxonomy to data/taxonomy.json atomically.
         """
         self._ensure_dir()
         dest_path = self._taxonomy_file
@@ -711,7 +711,7 @@ class TaxonomyRepository:
 
 class StandardAddBackCategory(str, Enum):
     """
-    Standardized add-back categories per FN-033:
+    Standardized add-back categories:
     SBC, restructuring, impairment, M&A/integration, litigation, FX, other.
     """
 
@@ -726,7 +726,7 @@ class StandardAddBackCategory(str, Enum):
 
 def classify_addback_category(label: str) -> StandardAddBackCategory:
     """
-    Deterministically maps a line item label to a standard add-back category (FN-033).
+    Deterministically maps a line item label to a standard add-back category.
     Alias match first, with robust financial keyword matching.
     """
     norm = label.lower().strip()

@@ -1,5 +1,5 @@
 """
-Inline XBRL (iXBRL) Parser for SEC Filings (FN-021).
+Inline XBRL (iXBRL) parser for SEC filings.
 
 Extracts authoritative GAAP facts from inline XBRL tags (e.g. us-gaap:NetIncomeLoss)
 for cross-checks and validation against non-GAAP figures.
@@ -8,11 +8,22 @@ for cross-checks and validation against non-GAAP figures.
 import logging
 import re
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 
 from app.extraction.html.models import IxbrlFact
 
 logger = logging.getLogger(__name__)
+
+_US_GAAP_NAME = re.compile(r"^us-gaap:", re.IGNORECASE)
+
+
+def _attr(tag: Tag, *names: str) -> str | None:
+    """Return the first non-empty attribute value among ``names`` as a string."""
+    for name in names:
+        value = tag.get(name)
+        if value:
+            return value if isinstance(value, str) else " ".join(value)
+    return None
 
 
 def parse_ixbrl_facts(soup: BeautifulSoup) -> list[IxbrlFact]:
@@ -27,7 +38,7 @@ def parse_ixbrl_facts(soup: BeautifulSoup) -> list[IxbrlFact]:
     # <xbrli:context id="c-1"> ... <xbrli:endDate>2024-09-30</xbrli:endDate> ...
     context_dates: dict[str, str] = {}
     for ctx in soup.find_all(re.compile(r"^(?:xbrli:)?context$", re.IGNORECASE)):
-        ctx_id = ctx.get("id") or ctx.get("id".lower())
+        ctx_id = _attr(ctx, "id")
         if not ctx_id:
             continue
         # Find period
@@ -45,10 +56,12 @@ def parse_ixbrl_facts(soup: BeautifulSoup) -> list[IxbrlFact]:
     ix_tags = soup.find_all(re.compile(r"^(?:ix:)?nonfraction$", re.IGNORECASE))
     if not ix_tags:
         # Check elements having 'name' attribute starting with us-gaap:
-        ix_tags = soup.find_all(attrs={"name": re.compile(r"^us-gaap:", re.IGNORECASE)})
+        ix_tags = soup.find_all(
+            lambda t: bool(_US_GAAP_NAME.match(_attr(t, "name") or ""))
+        )
 
     for tag in ix_tags:
-        concept = tag.get("name") or tag.get("concept")
+        concept = _attr(tag, "name", "concept")
         if not concept:
             continue
 
@@ -59,13 +72,13 @@ def parse_ixbrl_facts(soup: BeautifulSoup) -> list[IxbrlFact]:
         # Parse scale and sign
         scale_val = 0
         try:
-            scale_str = tag.get("scale")
+            scale_str = _attr(tag, "scale")
             if scale_str is not None:
                 scale_val = int(scale_str)
         except (ValueError, TypeError):
             scale_val = 0
 
-        sign_mult = -1 if str(tag.get("sign", "")).strip() == "-" else 1
+        sign_mult = -1 if (_attr(tag, "sign") or "").strip() == "-" else 1
 
         # Clean number
         clean_num_str = raw_text.replace(",", "").replace("$", "").strip()
@@ -81,11 +94,11 @@ def parse_ixbrl_facts(soup: BeautifulSoup) -> list[IxbrlFact]:
 
         final_val = base_val * (10 ** scale_val) * sign_mult
 
-        ctx_ref = tag.get("contextref") or tag.get("contextRef") or ""
+        ctx_ref = _attr(tag, "contextref", "contextRef") or ""
         period_str = context_dates.get(ctx_ref, ctx_ref)
 
-        unit = tag.get("unitref") or tag.get("unitRef") or "USD"
-        decimals = tag.get("decimals")
+        unit = _attr(tag, "unitref", "unitRef") or "USD"
+        decimals = _attr(tag, "decimals")
 
         facts.append(
             IxbrlFact(

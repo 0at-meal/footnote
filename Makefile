@@ -1,16 +1,20 @@
-.PHONY: eval test lint build
+.PHONY: install test lint typecheck format check
 
-eval:
-	python -m eval.run_benchmark --split dev --replay
+install:
+	pip install -r requirements-dev.txt
 
 test:
-	pytest backend/tests
-	npm --prefix frontend test
+	cd backend && pytest
 
 lint:
 	ruff check backend
-	mypy backend/app
-	npm --prefix frontend run lint
+	ruff format --check backend
 
-build:
-	npm --prefix frontend run build
+typecheck:
+	mypy
+
+format:
+	ruff check backend --fix
+	ruff format backend
+
+check: lint typecheck test

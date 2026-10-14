@@ -1,5 +1,5 @@
 """
-Thread-safe Token Bucket Rate Limiter for SEC EDGAR (FN-020).
+Thread-safe Token Bucket Rate Limiter for SEC EDGAR.
 
 SEC fair-access guidance restricts automated tools to no more than 10 requests per second.
 This implementation provides a strict token bucket to enforce this limit.

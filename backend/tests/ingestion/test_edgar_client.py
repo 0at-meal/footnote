@@ -1,243 +1,307 @@
 """
-Unit tests for SEC EDGAR Direct Integration (Step D).
-
-Tests:
-- search_company with mocked SEC company tickers JSON
-- get_filings with mocked submissions JSON
-- fetch_filing_pdf with valid and invalid PDF bytes
-- 404 handling surfacing as structured error
-- router endpoints GET /upload/edgar/search, GET /upload/edgar/filings/{cik}, POST /upload/edgar
+Unit and contract tests for SEC EDGAR Client.
 """
 
+import time
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
-from app.ingestion.company_repository import CompanyRepository
-from app.ingestion.edgar_client import (
-    EdgarCompanyNotFoundError,
-    EdgarFetchError,
-    fetch_filing_pdf,
-    get_filings,
-    search_company,
+from app.ingestion.edgar.circuit_breaker import CircuitBreaker, CircuitState
+from app.ingestion.edgar.client import EdgarClient
+from app.ingestion.edgar.models import (
+    EdgarCircuitBreakerOpenError,
+    EdgarClientError,
+    EdgarRateLimitError,
+    ForeignFilerUnsupportedError,
 )
-from app.ingestion.models import EdgarCompanyResult, EdgarFiling
-from app.ingestion.repository import JobRepository
-from app.main import app
-from fastapi.testclient import TestClient
+from app.ingestion.edgar.rate_limiter import TokenBucketRateLimiter
 
-client = TestClient(app)
-
-MOCK_COMPANY_TICKERS = {
-    "0": {"cik_str": 320193, "ticker": "AAPL", "title": "Apple Inc."},
-    "1": {"cik_str": 789019, "ticker": "MSFT", "title": "MICROSOFT CORP"},
-    "2": {"cik_str": 1018724, "ticker": "AMZN", "title": "AMAZON COM INC"},
+# Sample mock data for company_tickers.json
+MOCK_TICKERS = {
+    "0": {"cik_str": 1652044, "ticker": "GOOGL", "title": "Alphabet Inc."},
+    "1": {"cik_str": 1652044, "ticker": "GOOG", "title": "Alphabet Inc."},
+    "2": {"cik_str": 320193, "ticker": "AAPL", "title": "Apple Inc."},
+    "3": {"cik_str": 1067983, "ticker": "BRK-A", "title": "BERKSHIRE HATHAWAY INC"},
+    "4": {"cik_str": 1090872, "ticker": "BABA", "title": "Alibaba Group Holding Ltd"},
 }
 
-MOCK_SUBMISSIONS = {
-    "cik": "0000320193",
+# Sample mock data for Alphabet submissions CIK0001652044.json
+MOCK_GOOGL_SUBMISSIONS = {
+    "cik": "0001652044",
     "entityType": "operating",
-    "sic": "3571",
-    "name": "Apple Inc.",
-    "tickers": ["AAPL"],
+    "sic": "7370",
+    "name": "Alphabet Inc.",
+    "tickers": ["GOOGL", "GOOG"],
     "filings": {
         "recent": {
             "accessionNumber": [
-                "0000320193-24-000106",
-                "0000320193-24-000069",
-                "0000320193-23-000106",
+                "0001652044-24-000088",
+                "0001652044-24-000065",
+                "0001652044-24-000033",
+                "0001652044-24-000010",
+                "0001652044-24-000005",
             ],
-            "filingDate": ["2024-11-01", "2024-08-02", "2023-11-03"],
-            "reportDate": ["2024-09-28", "2024-06-29", "2023-09-30"],
-            "form": ["10-K", "10-Q", "10-K"],
+            "filingDate": [
+                "2024-10-30",
+                "2024-07-24",
+                "2024-04-26",
+                "2024-02-01",
+                "2024-01-30",
+            ],
+            "reportDate": [
+                "2024-09-30",
+                "2024-06-30",
+                "2024-03-31",
+                "2023-12-31",
+                "2024-01-30",
+            ],
+            "form": [
+                "10-Q",
+                "10-Q",
+                "10-Q",
+                "10-K",
+                "8-K",
+            ],
             "primaryDocument": [
-                "aapl-20240928.pdf",
-                "aapl-20240629.pdf",
-                "aapl-20230930.pdf",
+                "goog-20240930.htm",
+                "goog-20240630.htm",
+                "goog-20240331.htm",
+                "goog-20231231.htm",
+                "goog-20240130.htm",
             ],
             "primaryDocDescription": [
-                "FORM 10-K ANNUAL REPORT",
-                "FORM 10-Q QUARTERLY REPORT",
-                "FORM 10-K ANNUAL REPORT",
+                "10-Q",
+                "10-Q",
+                "10-Q",
+                "10-K",
+                "8-K",
             ],
         }
     },
 }
 
-SAMPLE_VALID_PDF = b"%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>\nendobj\nxref\n0 4\n0000000000 65535 f \n0000000009 00000 n \n0000000058 00000 n \n0000000115 00000 n \ntrailer\n<< /Size 4 /Root 1 0 R >>\nstartxref\n190\n%%EOF"
+# Sample mock data for Foreign Filer submissions (e.g. Alibaba 20-F / 6-K)
+MOCK_FOREIGN_SUBMISSIONS = {
+    "cik": "0001090872",
+    "entityType": "foreign",
+    "name": "Alibaba Group Holding Ltd",
+    "tickers": ["BABA"],
+    "filings": {
+        "recent": {
+            "accessionNumber": ["0001090872-24-000010", "0001090872-24-000005"],
+            "filingDate": ["2024-06-25", "2024-05-15"],
+            "reportDate": ["2024-03-31", "2024-03-31"],
+            "form": ["20-F", "6-K"],
+            "primaryDocument": ["baba-20240331.htm", "baba-6k.htm"],
+            "primaryDocDescription": ["20-F", "6-K"],
+        }
+    },
+}
 
 
-def test_search_company_by_ticker() -> None:
-    mock_res = MagicMock()
-    mock_res.status_code = 200
-    mock_res.json.return_value = MOCK_COMPANY_TICKERS
+class MockTransport(httpx.BaseTransport):
+    def __init__(self, doc_content: bytes = b"<html>Sample EDGAR Document</html>") -> None:
+        self.doc_content = doc_content
+        self.request_count = 0
 
-    mock_http = MagicMock(spec=httpx.Client)
-    mock_http.get.return_value = mock_res
+    def handle_request(self, request: httpx.Request) -> httpx.Response:
+        self.request_count += 1
+        url_str = str(request.url)
 
-    results = search_company("AAPL", client=mock_http)
-    assert len(results) == 1
-    assert results[0].cik == "0000320193"
-    assert results[0].company_name == "Apple Inc."
-    assert results[0].ticker == "AAPL"
+        if "company_tickers.json" in url_str:
+            return httpx.Response(200, json=MOCK_TICKERS)
+        elif "CIK0001652044.json" in url_str:
+            return httpx.Response(200, json=MOCK_GOOGL_SUBMISSIONS)
+        elif "CIK0001090872.json" in url_str:
+            return httpx.Response(200, json=MOCK_FOREIGN_SUBMISSIONS)
+        elif "0001652044-24-000005-index.htm" in url_str:
+            index_html = """
+            <html>
+                <table class="tableFile">
+                    <tr><td>EX-99.1</td><td><a href="goog-ex991.htm">goog-ex991.htm</a></td><td>Press Release Q4 2023</td></tr>
+                </table>
+            </html>
+            """
+            return httpx.Response(200, text=index_html)
+        elif url_str.endswith((".htm", ".pdf")):
+            return httpx.Response(200, content=self.doc_content, headers={"Content-Type": "text/html"})
 
-
-def test_search_company_by_name_substring() -> None:
-    mock_res = MagicMock()
-    mock_res.status_code = 200
-    mock_res.json.return_value = MOCK_COMPANY_TICKERS
-
-    mock_http = MagicMock(spec=httpx.Client)
-    mock_http.get.return_value = mock_res
-
-    results = search_company("microsoft", client=mock_http)
-    assert len(results) == 1
-    assert results[0].ticker == "MSFT"
-
-
-def test_get_filings_success() -> None:
-    mock_res = MagicMock()
-    mock_res.status_code = 200
-    mock_res.json.return_value = MOCK_SUBMISSIONS
-
-    mock_http = MagicMock(spec=httpx.Client)
-    mock_http.get.return_value = mock_res
-
-    filings = get_filings("320193", client=mock_http)
-    assert len(filings) == 3
-    assert filings[0].accession_number == "0000320193-24-000106"
-    assert filings[0].form_type == "10-K"
-    assert filings[0].filing_year == 2024
+        return httpx.Response(404, text="Not Found")
 
 
-def test_get_filings_form_type_filter() -> None:
-    mock_res = MagicMock()
-    mock_res.status_code = 200
-    mock_res.json.return_value = MOCK_SUBMISSIONS
+# 1. Rate Limiter Tests
+def test_rate_limiter_burst_and_refill() -> None:
+    limiter = TokenBucketRateLimiter(rate=50.0, capacity=5.0)
+    # Burst 5 tokens
+    for _ in range(5):
+        assert limiter.try_acquire(1.0) is True
 
-    mock_http = MagicMock(spec=httpx.Client)
-    mock_http.get.return_value = mock_res
+    # Next immediate acquire should fail
+    assert limiter.try_acquire(1.0) is False
 
-    filings_10k = get_filings("320193", form_type="10-K", client=mock_http)
-    assert len(filings_10k) == 2
-    assert all(f.form_type == "10-K" for f in filings_10k)
-
-
-def test_get_filings_404_raises_company_not_found() -> None:
-    mock_res = MagicMock()
-    mock_res.status_code = 404
-
-    mock_http = MagicMock(spec=httpx.Client)
-    mock_http.get.return_value = mock_res
-
-    with pytest.raises(EdgarCompanyNotFoundError):
-        get_filings("9999999999", client=mock_http)
+    # After sleeping, tokens refill
+    time.sleep(0.05)  # 0.05s * 50 tokens/s = ~2.5 tokens
+    assert limiter.try_acquire(1.0) is True
 
 
-def test_fetch_filing_pdf_success() -> None:
-    mock_res = MagicMock()
-    mock_res.status_code = 200
-    mock_res.content = SAMPLE_VALID_PDF
+def test_rate_limiter_timeout_raises_error() -> None:
+    limiter = TokenBucketRateLimiter(rate=1.0, capacity=1.0)
+    assert limiter.acquire(1.0, timeout=0.1) is True
 
-    mock_http = MagicMock(spec=httpx.Client)
-    mock_http.get.return_value = mock_res
+    with pytest.raises(EdgarRateLimitError):
+        # Needs 1 token, rate is 1.0 token/s, so wait time is 1.0s > timeout 0.1s
+        limiter.acquire(1.0, timeout=0.1)
 
-    pdf_bytes = fetch_filing_pdf(
-        accession_number="0000320193-24-000106",
-        cik="320193",
-        primary_document="aapl-20240928.pdf",
-        client=mock_http,
+
+# 2. Circuit Breaker Tests
+def test_circuit_breaker_transitions() -> None:
+    cb = CircuitBreaker(failure_threshold=3, recovery_timeout=0.1)
+    assert cb.get_state() == CircuitState.CLOSED
+
+    # Record 2 failures -> remains CLOSED
+    cb.record_failure()
+    cb.record_failure()
+    assert cb.get_state() == CircuitState.CLOSED
+
+    # 3rd failure -> trips OPEN
+    cb.record_failure()
+    assert cb.get_state() == CircuitState.OPEN
+
+    with pytest.raises(EdgarCircuitBreakerOpenError):
+        cb.before_request()
+
+    # Sleep past recovery_timeout -> moves to HALF_OPEN
+    time.sleep(0.12)
+    assert cb.get_state() == CircuitState.HALF_OPEN
+
+    # Success in HALF_OPEN resets to CLOSED
+    cb.record_success()
+    assert cb.get_state() == CircuitState.CLOSED
+
+
+# 3. EdgarClient Tests
+TEST_USER_AGENT = "Footnote Tests tests@example.com"
+
+
+def test_missing_user_agent_raises(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("SEC_USER_AGENT", raising=False)
+    with pytest.raises(EdgarClientError, match="SEC_USER_AGENT"):
+        EdgarClient()
+
+
+def test_get_filings_googl(tmp_path: Path) -> None:
+    transport = MockTransport()
+    http_client = httpx.Client(transport=transport)
+    client = EdgarClient(
+        user_agent=TEST_USER_AGENT,
+        cache_dir=tmp_path / "edgar_cache",
+        http_client=http_client,
     )
-    assert pdf_bytes.startswith(b"%PDF")
+
+    # Acceptance requirement: get_filings("GOOGL") returns latest 10-Q and 10-K with correct periods
+    filings = client.get_filings("GOOGL")
+    assert len(filings) > 0
+
+    # Check 10-Q
+    q_filings = [f for f in filings if f.form == "10-Q"]
+    assert len(q_filings) >= 1
+    latest_10q = q_filings[0]
+    assert latest_10q.accession == "0001652044-24-000088"
+    assert latest_10q.period == "2024-09-30"
+    assert latest_10q.cik == "0001652044"
+    assert latest_10q.primary_document == "goog-20240930.htm"
+    assert "https://www.sec.gov/Archives/edgar/data/1652044/000165204424000088/goog-20240930.htm" == latest_10q.primary_url
+
+    # Check 10-K
+    k_filings = [f for f in filings if f.form == "10-K"]
+    assert len(k_filings) >= 1
+    latest_10k = k_filings[0]
+    assert latest_10k.accession == "0001652044-24-000010"
+    assert latest_10k.period == "2023-12-31"
+    assert latest_10k.filing_year == 2023
 
 
-def test_fetch_filing_pdf_invalid_bytes_raises_fetch_error() -> None:
-    mock_res = MagicMock()
-    mock_res.status_code = 200
-    mock_res.content = b"<html>Not a PDF</html>"
+def test_share_classes_and_ticker_variations(tmp_path: Path) -> None:
+    transport = MockTransport()
+    http_client = httpx.Client(transport=transport)
+    client = EdgarClient(
+        user_agent=TEST_USER_AGENT,
+        cache_dir=tmp_path / "edgar_cache",
+        http_client=http_client,
+    )
 
-    mock_http = MagicMock(spec=httpx.Client)
-    mock_http.get.return_value = mock_res
+    # Both GOOG and GOOGL resolve to CIK 0001652044
+    assert client.resolve_cik("GOOGL") == "0001652044"
+    assert client.resolve_cik("GOOG") == "0001652044"
 
-    with pytest.raises(EdgarFetchError):
-        fetch_filing_pdf(
-            accession_number="0000320193-24-000106",
-            cik="320193",
-            client=mock_http,
-        )
+    # Berkshire share class variation BRK.A vs BRK-A
+    assert client.resolve_cik("BRK-A") == "0001067983"
+    assert client.resolve_cik("BRK.A") == "0001067983"
 
-
-def test_edgar_search_endpoint() -> None:
-    with patch("app.ingestion.router.search_company") as mock_search:
-        mock_search.return_value = [
-            EdgarCompanyResult(
-                cik="0000320193", company_name="Apple Inc.", ticker="AAPL"
-            )
-        ]
-        res = client.get("/upload/edgar/search?q=AAPL")
-        assert res.status_code == 200
-        data = res.json()
-        assert len(data) == 1
-        assert data[0]["ticker"] == "AAPL"
+    # Numeric CIK padding
+    assert client.resolve_cik("320193") == "0000320193"
 
 
-def test_edgar_filings_endpoint() -> None:
-    with patch("app.ingestion.router.get_filings") as mock_get:
-        mock_get.return_value = [
-            EdgarFiling(
-                accession_number="0000320193-24-000106",
-                form_type="10-K",
-                filing_date="2024-11-01",
-                report_date="2024-09-28",
-                primary_document="aapl-20240928.pdf",
-                description="10-K",
-                filing_year=2024,
-            )
-        ]
-        res = client.get("/upload/edgar/filings/0000320193")
-        assert res.status_code == 200
-        data = res.json()
-        assert len(data) == 1
-        assert data[0]["form_type"] == "10-K"
+def test_foreign_filer_explicit_rejection(tmp_path: Path) -> None:
+    transport = MockTransport()
+    http_client = httpx.Client(transport=transport)
+    client = EdgarClient(
+        user_agent=TEST_USER_AGENT,
+        cache_dir=tmp_path / "edgar_cache",
+        http_client=http_client,
+    )
+
+    # Alibaba (BABA) files Form 20-F / 6-K. Must explicitly raise ForeignFilerUnsupportedError
+    with pytest.raises(ForeignFilerUnsupportedError) as exc_info:
+        client.get_filings("BABA")
+
+    assert "Foreign filers" in str(exc_info.value)
+    assert "unsupported" in str(exc_info.value)
 
 
-def test_edgar_submit_endpoint(tmp_path: Path) -> None:
-    job_repo = JobRepository(data_dir=tmp_path)
-    company_repo = CompanyRepository(data_dir=tmp_path)
+def test_accession_caching_immutable(tmp_path: Path) -> None:
+    transport = MockTransport(doc_content=b"<html>Financial Statements 10-Q Content</html>")
+    http_client = httpx.Client(transport=transport)
+    client = EdgarClient(
+        user_agent=TEST_USER_AGENT,
+        cache_dir=tmp_path / "edgar_cache",
+        http_client=http_client,
+    )
 
-    from app.ingestion.router import get_company_repository, get_repository
+    accession = "0001652044-24-000088"
+    doc_name = "goog-20240930.htm"
+    cik = "0001652044"
 
-    app.dependency_overrides[get_repository] = lambda: job_repo
-    app.dependency_overrides[get_company_repository] = lambda: company_repo
+    # First fetch: requests from transport
+    initial_count = transport.request_count
+    doc1 = client.get_document(accession=accession, document_name=doc_name, cik=cik)
+    assert doc1.content == b"<html>Financial Statements 10-Q Content</html>"
+    assert transport.request_count > initial_count
 
-    try:
-        with (
-            patch(
-                "app.ingestion.router.fetch_filing_pdf", return_value=SAMPLE_VALID_PDF
-            ),
-            patch("app.ingestion.router.process_queued_job"),
-        ):
-            res = client.post(
-                "/upload/edgar",
-                json={
-                    "cik": "0000320193",
-                    "accession_number": "0000320193-24-000106",
-                    "target_metric": "Adjusted EBITDA",
-                    "filing_year": 2024,
-                    "company_name": "Apple Inc.",
-                    "primary_document": "aapl-20240928.pdf",
-                },
-            )
-            assert res.status_code == 200
-            job_data = res.json()
-            assert job_data["status"] == "queued"
-            assert job_data["target_metric"] == "Adjusted EBITDA"
-            assert job_data["filing_year"] == 2024
-            assert job_data["company_id"] is not None
+    # Second fetch: served strictly from disk cache, transport not called again
+    count_after_first = transport.request_count
+    doc2 = client.get_document(accession=accession, document_name=doc_name, cik=cik)
+    assert doc2.content == b"<html>Financial Statements 10-Q Content</html>"
+    assert transport.request_count == count_after_first
 
-            jobs = job_repo.list_jobs()
-            assert len(jobs) == 1
-            assert jobs[0].job_id == job_data["job_id"]
-    finally:
-        app.dependency_overrides.clear()
+
+def test_exhibit_discovery_ex99_1(tmp_path: Path) -> None:
+    transport = MockTransport()
+    http_client = httpx.Client(transport=transport)
+    client = EdgarClient(
+        user_agent=TEST_USER_AGENT,
+        cache_dir=tmp_path / "edgar_cache",
+        http_client=http_client,
+    )
+
+    filings = client.get_filings("GOOGL", forms=["8-K"])
+    assert len(filings) >= 1
+    filing_8k = filings[0]
+
+    exhibits = client.get_filing_directory_index(filing_8k)
+    assert len(exhibits) >= 1
+    ex99 = next((e for e in exhibits if e.exhibit_number == "EX-99.1"), None)
+    assert ex99 is not None
+    assert ex99.filename == "goog-ex991.htm"
+    assert "Press Release" in (ex99.description or "")

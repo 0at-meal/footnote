@@ -1,17 +1,19 @@
+# Python
 .venv/
 __pycache__/
 *.pyc
 .mypy_cache/
 .ruff_cache/
-frontend/node_modules/
-frontend/dist/
-*.xlsx
-backend/data/
-backend/temp_test_dir/
 .pytest_cache/
-.agents/
-skills-lock.json
+
+# Runtime data and caches
+backend/data/
+data/
+
+# Secrets
 .env
 *.env
-eval/.cache/
-eval/cache/
+
+# Local agent tooling
+.agents/
+skills-lock.json

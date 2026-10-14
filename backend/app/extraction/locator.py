@@ -1,13 +1,13 @@
 """
-Locator Union Schema (FN-023).
+Locator Union Schema.
 
 Defines the discriminated union of provenance locators:
 - PdfLocator: targeting page number, normalized 0-1000 bounding box, and source filename.
 - HtmlLocator: targeting SEC EDGAR accession number, document/exhibit, DOM element path (XPath/CSS),
   optional character range, and direct SEC URL.
 
-Enforces Invariants:
-- I4: Exact provenance locator preserved across all operations.
+Enforces:
+- Exact provenance locator preserved across all operations.
 - Deterministic, backward-compatible deserialization and serialization.
 """
 
@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field, model_validator
 
 class PdfLocator(BaseModel):
     """
-    Provenance locator for PDF document targets (Feature 2 / Feature 4).
+    Provenance locator for PDF document targets.
     """
 
     type: Literal["pdf"] = "pdf"
@@ -49,7 +49,7 @@ class PdfLocator(BaseModel):
 
 class HtmlLocator(BaseModel):
     """
-    Provenance locator for SEC EDGAR HTML and iXBRL document targets (FN-023, FN-021).
+    Provenance locator for SEC EDGAR HTML and iXBRL document targets.
     """
 
     type: Literal["html"] = "html"

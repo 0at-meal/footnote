@@ -1,127 +1,80 @@
 # Footnote Architecture
 
-Footnote extracts company-reported non-GAAP reconciliation bridges (Adjusted EBITDA, Free Cash Flow, etc.) from SEC filings and compiles them into formula-native Excel workbooks where every number traces back to its exact source coordinates.
+The current state is a library of deterministic pieces, not an application.
+There is no API server, UI, database, or orchestrator. Those will be designed
+once the next product direction is decided (see [DECISIONS.md](DECISIONS.md)).
 
----
-
-## 1. Pipeline Flow
-
-The primary workflow (`non_gaap_bridge`) executes in discrete stages:
+## Modules
 
 ```
-[PDF / EDGAR Source]
-        │
-        ▼
- 1. Ingestion (`app/ingestion`)
-    • Validate file format, compute content hash, record JobRecord in data store
-        │
-        ▼
- 2. Layout-Aware Extraction (`app/extraction`)
-    • Docling parses document structure and tables
-    • PyMuPDF normalizes cell bounding boxes (0–1000 W3C Web Annotation space)
-    • Bounded to reconciliation candidate tables
-    • Outputs 5-field ExtractedRecord: {value, label, page, bbox, source_file}
-        │
-        ▼
- 3. Classification & Normalization (`app/classification`)
-    • Level 1: Deterministic alias matching against Master Financial Taxonomy (60–80 items)
-    • Level 2: LLM classifier (Groq) for genuine unknowns only (labels only, zero numeric input/output)
-    • Assigns ConfidenceBand: auto_accepted (>=0.95), needs_review (0.65–0.95), manual_required (<0.65)
-        │
-        ▼
- 4. Human Trust Layer (`app/review`, frontend)
-    • Auto-accepted items pre-locked
-    • Flagged/uncertain items surfaced in side-by-side review UI with PDF highlight
-    • Review actions: confirm, edit label, flag
-        │
-        ▼
- 5. Deterministic Formula Engine (`app/formula_engine`)
-    • Pure mathematical AST tree construction (`build_formula_tree`)
-    • Zero I/O, zero wall-clock, zero randomness
-        │
-        ▼
- 6. Excel Model Generation (`app/excel_export`)
-    • Fresh `.xlsx` generation using xlsxwriter (IB convention: blue hardcode, black formula)
-    • Source_Inputs tab + Reconciliation tab with live formulas
-    • Provenance embedded via cell comments and W3C Web Annotation records
-        │
-        ▼
- 7. Audit & Compliance (`app/audit_trail`, `app/audit_report`, `app/drift`)
-    • Interactive cell-to-source PDF coordinate lookup
-    • Downloadable compliance PDF audit report
-    • Cross-year metric definition drift detection
+backend/app/
+├── ingestion/
+│   ├── edgar/          client.py, rate_limiter.py, circuit_breaker.py, models.py
+│   └── exhibit_99/     detector.py, extractor.py, models.py
+├── extraction/
+│   ├── html/           table_parser.py, detector.py, ixbrl_parser.py, extractor.py, models.py
+│   ├── locator.py      PdfLocator | HtmlLocator discriminated union
+│   ├── models.py       ExtractedRecord
+│   └── scale_and_sign.py
+└── classification/
+    ├── taxonomy.py     master taxonomy, alias + fuzzy matching, add-back categories
+    └── models.py
 ```
 
----
-
-## 2. Module Boundaries & Dependency Rules
-
-Module boundaries are load-bearing isolation constraints:
+Data flow available today:
 
 ```
-main
- ├── ingestion ──► extraction ──► classification ──► formula_engine ──► excel_export
- │       │              │               │                    │                │
- │       ▼              ▼               ▼                    │                ▼
- │    review ◄──────────┴───────────────┘                    │           audit_trail
- │       │                                                   │                │
- │       ▼                                                   │                ▼
- │     drift                                                 └─────────► audit_report
- └────────────────────────────────────────────────────────────────────────────┘
+EdgarClient.get_filings / get_filing_directory_index / get_document
+        │  (raw HTML, cached by accession)
+        ▼
+Exhibit99Extractor  ──►  HtmlExtractor
+                           ├─ extract_html_tables      (grid, numeric cells, XPath)
+                           ├─ detect_reconciliation_tables
+                           └─ parse_ixbrl_facts
+        ▼
+list[ExtractedRecord]  (value as reported, label path, HtmlLocator)
+        ▼
+scale_and_sign.normalize_line_item   taxonomy.match_master_taxonomy
 ```
 
-**Boundary Rules:**
-1. `classification/` (LLM client and dispatcher) is isolated from downstream modules.
-2. `formula_engine/` functions are pure: no I/O, no network, no clock, no random, no global mutable state.
-3. `extraction/` produces frozen 5-field `ExtractedRecord` schemas; it does not know about formula trees or Excel sheets.
-4. `excel_export/` creates workbooks from scratch via xlsxwriter; it never modifies existing files.
+No orchestration connects these steps yet. Callers compose them directly.
 
----
+## Dependency rules
 
-## 3. Core Invariants
+These are enforced by `backend/tests/test_architecture_boundaries.py`:
 
-- **I1. Zero-Numeric Classifier:** The classifier and any LLM never read or write numeric values. Classification outputs are strictly constrained to taxonomy labels. Structural result types contain no numeric fields.
-- **I2. Pure Formula Engine:** The formula engine is a pure mathematical function. Identical inputs always produce identical formula trees and outputs, with no I/O, no randomness, and deterministic sorting.
-- **I3. No Silent Failures:** Every skipped, failed, or ambiguous item carries an explicit reason (`model_skip_reason` or equivalent error detail) visible to the user. Errors are never swallowed to keep pipelines artificially green.
-- **I4. Complete Provenance:** Every extracted number carries an exact locator to its source (`page`, `bbox`, `source_file`, transitioning to discriminated union `Locator` after FN-023).
-- **I5. Native Formulas & Numeric Types:** Excel numbers are written as IEEE numbers, never text strings. Derived cells contain live Excel formulas (`SUM`, arithmetic). Input numbers are never overwritten by calculated values.
-- **I6. Zero Content Egress:** Raw document content never appears in telemetry, external tracking, or unauthorized third-party services.
+1. Only `ingestion/edgar/` performs network I/O.
+2. No module imports an LLM SDK (groq, openai, anthropic, ...).
+3. `extraction/` and `classification/` never import `ingestion/`.
+4. `classification/` never imports `extraction/`.
 
----
+## Engineering principles
 
-## 4. Testing, Linting & Evaluation
+These carry over from the earlier product because they still hold:
 
-### Backend
-```bash
-cd backend
+- **Deterministic numbers.** Every extracted or normalized value comes from
+  deterministic code. If an LLM is introduced later, it may assist with labels
+  but must never produce or alter a number.
+- **No silent failure.** Anything skipped, unparseable, or ambiguous returns an
+  explicit status or reason (`not_found_reason`, `flag_reason`,
+  `ForeignFilerUnsupportedError`). It is never dropped or defaulted quietly.
+- **Provenance on every number.** An `ExtractedRecord` carries the raw
+  as-reported string plus a `Locator` back to its source.
+- **Honest validation.** A feature counts as working only once it has run on a
+  real saved SEC filing and a human has checked the output against the source.
+  Fixture and mock tests are necessary but not sufficient. Any accuracy number
+  must state its sample size and label provenance.
 
-# Run pytest test suite (480+ tests)
-pytest
+## Known gaps
 
-# Type checking (mypy strict mode)
-mypy app
+These are verified against the code as of 2026-10-14:
 
-# Code linting & formatting (ruff)
-ruff check .
-ruff format --check .
-```
-
-### Frontend
-```bash
-cd frontend
-
-# Run unit & component tests (vitest)
-npm test
-
-# Type checking & production build
-npm run build
-
-# ESLint
-npm run lint
-```
-
-### Evaluation Harness
-```bash
-# Evaluation runner (dev corpus)
-python -m pytest backend/tests/eval/test_runner.py
-```
+| Area | Gap |
+|---|---|
+| EDGAR client | Reads only `filings.recent` from the submissions API. Older filings (`filings.files` pages) are not fetched. There is no 8-K `items` filter (e.g. 2.02). Default cache dir is relative to the working directory. |
+| HTML extractor | Records use placeholder legacy PDF fields (`page=1`, full-page bbox). `HtmlLocator.url` is only set when the caller passes a verified URL. The detector is keyword-based and defaults to "Adjusted EBITDA". |
+| Table parser | Column → period binding is heuristic. Caption scale is not passed into `scale_and_sign`. |
+| iXBRL parser | Handles `ix:nonFraction` with `endDate`/`instant` only. No `startDate`, dimensions, unit resolution, or `ixt` transforms. Values that fail to parse are skipped without a reason. |
+| EX-99 extractor | HTML only. PDF and image exhibits log a warning and return no records. |
+| Taxonomy | `TaxonomyRepository` persists to `backend/data/taxonomy.json` (gitignored). The seed aliases are hand-written and unvalidated on a gold set. |
+| Validation | No gold set and no runs on real filings. |

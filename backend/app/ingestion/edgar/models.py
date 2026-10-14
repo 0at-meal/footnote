@@ -1,9 +1,9 @@
 """
-Data models and exceptions for SEC EDGAR Client (FN-020).
+Data models and exceptions for SEC EDGAR Client.
 
 Enforces:
-- Typed FilingRef schema per FN-020 spec: (cik, accession, form, period, filed_at, primary_url, exhibits).
-- Invariant I3: Foreign filers return explicit unsupported error.
+- Typed FilingRef schema: (cik, accession, form, period, filed_at, primary_url, exhibits).
+- Foreign filers return explicit unsupported error.
 """
 
 from pydantic import BaseModel, Field
@@ -20,7 +20,7 @@ class FilingExhibit(BaseModel):
 
 class FilingRef(BaseModel):
     """
-    Authoritative reference to an SEC filing from EDGAR Submissions API (FN-020).
+    Authoritative reference to an SEC filing from EDGAR Submissions API.
     """
 
     cik: str = Field(..., description="10-digit zero-padded CIK string")
@@ -62,7 +62,7 @@ class EdgarRateLimitError(EdgarClientError):
 
 
 class ForeignFilerUnsupportedError(EdgarClientError):
-    """Raised when encountering foreign filers (Forms 20-F, 40-F, 6-K) per Invariant I3."""
+    """Raised when encountering foreign filers (Forms 20-F, 40-F, 6-K)."""
 
 
 class EdgarCircuitBreakerOpenError(EdgarClientError):

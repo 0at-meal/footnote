@@ -1,18 +1,15 @@
 """
-Unit tests for Master Financial Taxonomy management, alias matching, and pre-classification (Feature 3).
+Unit tests for Master Financial Taxonomy management and alias matching.
 
 Validates:
 - MasterTaxonomy validation from seed taxonomy.json
 - TaxonomyRepository loading and persistence of MasterTaxonomy
 - match_master_taxonomy exact canonical and alias matching
 - get_items_by_statement filtering
-- pre_classify_records deterministic classification bypassing Groq
-- Unmatched records returned for Groq dispatch
 """
 
 from pathlib import Path
 
-from app.classification.dispatcher import pre_classify_records
 from app.classification.models import (
     MasterTaxonomy,
     StatementType,
@@ -25,36 +22,6 @@ from app.classification.taxonomy import (
     check_label_against_taxonomy,
     match_master_taxonomy,
 )
-from app.extraction.models import (
-    ConfidenceBand,
-    ExtractedRecord,
-    ScoredRecord,
-)
-
-
-def _make_dummy_scored_record(
-    label: str,
-    value: str = "100",
-    confidence_band: ConfidenceBand = ConfidenceBand.auto_accepted,
-    status: str = "ok",
-    table_name: str | None = "Income Statement",
-) -> ScoredRecord:
-    er = ExtractedRecord(
-        value=value,
-        label=label,
-        page=1,
-        bbox={"x0": 10.0, "y0": 20.0, "x1": 100.0, "y1": 50.0},
-        source_file="filing.pdf",
-    )
-    return ScoredRecord(
-        record=er,
-        confidence_band=confidence_band,
-        confidence_score=0.95,
-        status=status,
-        flags=[],
-        table_name=table_name,
-        is_reconciliation_candidate=True,
-    )
 
 
 def test_master_taxonomy_loads_from_seed_json() -> None:
@@ -135,33 +102,6 @@ def test_taxonomy_repository_save_and_reload(tmp_path: Path) -> None:
     assert reloaded.items[0].statement_type == StatementType.kpi
 
 
-def test_pre_classify_records_deterministic_and_unmatched() -> None:
-    master = SEED_MASTER_TAXONOMY
-
-    rec_revenue = _make_dummy_scored_record("Total revenues")
-    rec_cogs = _make_dummy_scored_record("Cost of sales")
-    rec_unknown = _make_dummy_scored_record("Novel Patent Settlement Reserve")
-    rec_error = _make_dummy_scored_record("Revenue", status="extraction_error")
-
-    records = [rec_revenue, rec_cogs, rec_unknown, rec_error]
-
-    pre_classified, unmatched = pre_classify_records(records, master)
-
-    # 2 records matched deterministically (Revenue and Cost of sales)
-    assert len(pre_classified) == 2
-    assert pre_classified[0].normalized_label == "Revenue"
-    assert pre_classified[0].statement_type == StatementType.income_statement
-    assert pre_classified[0].is_confirmed is True
-    assert pre_classified[0].classifier_confidence == 1.0
-
-    assert pre_classified[1].normalized_label == "Cost of Revenue"
-    assert pre_classified[1].statement_type == StatementType.income_statement
-    assert pre_classified[1].is_confirmed is True
-
-    # 2 records unmatched (unknown item and extraction_error item)
-    assert len(unmatched) == 2
-    assert unmatched[0].record.label == "Novel Patent Settlement Reserve"
-    assert unmatched[1].record.label == "Revenue"
 
 
 def test_check_label_against_taxonomy_master() -> None:

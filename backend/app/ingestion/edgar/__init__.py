@@ -1,5 +1,5 @@
 """
-SEC EDGAR ingestion package (FN-020).
+SEC EDGAR ingestion package.
 """
 
 from app.ingestion.edgar.circuit_breaker import CircuitBreaker, CircuitState

@@ -1,5 +1,5 @@
 """
-Unit tests for Unit Scale and Sign Normalization (FN-013).
+Unit tests for Unit Scale and Sign Normalization.
 """
 
 
@@ -7,14 +7,13 @@ from app.extraction.scale_and_sign import (
     UnitScale,
     detect_scale_from_caption,
     detect_sign,
-    format_workbook_units_header,
     is_per_share_or_percentage,
     normalize_line_item,
 )
 
 
 def test_detect_scale_thousands_captions() -> None:
-    """FN-013: Detects thousands scale from various standard SEC filing captions."""
+    """Detects thousands scale from various standard SEC filing captions."""
     captions = [
         "Consolidated Statements of Operations (in thousands)",
         "(in thousands, except per share data)",
@@ -29,7 +28,7 @@ def test_detect_scale_thousands_captions() -> None:
 
 
 def test_detect_scale_millions_captions() -> None:
-    """FN-013: Detects millions scale from various standard SEC filing captions."""
+    """Detects millions scale from various standard SEC filing captions."""
     captions = [
         "Non-GAAP Reconciliations (in millions)",
         "(in millions, except per share amounts)",
@@ -44,7 +43,7 @@ def test_detect_scale_millions_captions() -> None:
 
 
 def test_detect_scale_ambiguity_flags_never_guesses() -> None:
-    """FN-013 / I3: Ambiguity creates an explicit flag rather than guessing."""
+    """Ambiguity creates an explicit flag rather than guessing."""
     # Conflicting scale indicators
     conflicting = "Table 1 (in thousands, except foreign segments in millions)"
     res = detect_scale_from_caption(conflicting)
@@ -58,7 +57,7 @@ def test_detect_scale_ambiguity_flags_never_guesses() -> None:
 
 
 def test_detect_scale_magnitude_cross_check() -> None:
-    """FN-013: Magnitude cross-check detects anomalous numbers for declared scale."""
+    """Magnitude cross-check detects anomalous numbers for declared scale."""
     # Caption says millions, but values are raw trillions e.g. 50,000,000 in millions
     res = detect_scale_from_caption(
         "(in millions)",
@@ -69,7 +68,7 @@ def test_detect_scale_magnitude_cross_check() -> None:
 
 
 def test_detect_sign_parentheses_and_prefixes() -> None:
-    """FN-013: Sign detection from accounting parentheses, minus signs, and label directives."""
+    """Sign detection from accounting parentheses, minus signs, and label directives."""
     # Parentheses negatives
     sign, is_paren = detect_sign("(1,234.50)", "Net Loss")
     assert sign == -1
@@ -101,7 +100,7 @@ def test_detect_sign_parentheses_and_prefixes() -> None:
 
 
 def test_per_share_and_percentage_exemptions() -> None:
-    """FN-013: Per-share and percentage rows are exempt from table scale multipliers."""
+    """Per-share and percentage rows are exempt from table scale multipliers."""
     assert is_per_share_or_percentage("Diluted net income per share", "1.24") is True
     assert is_per_share_or_percentage("Adjusted EPS", "2.10") is True
     assert is_per_share_or_percentage("Operating Margin", "18.5%") is True
@@ -109,7 +108,7 @@ def test_per_share_and_percentage_exemptions() -> None:
 
 
 def test_normalize_line_item_scale_and_sign() -> None:
-    """FN-013: Normalization produces exact numeric value while preserving as-reported string."""
+    """Normalization produces exact numeric value while preserving as-reported string."""
     # Standard add-back in thousands
     item1 = normalize_line_item(
         raw_value="15,000",
@@ -146,7 +145,7 @@ def test_normalize_line_item_scale_and_sign() -> None:
 
 
 def test_mixed_scale_tables() -> None:
-    """FN-013: Mixed scale tables correctly scale dollar rows while leaving share/percent rows intact."""
+    """Mixed scale tables correctly scale dollar rows while leaving share/percent rows intact."""
     table_rows = [
         ("GAAP Net Income", "50,000", UnitScale.THOUSANDS, False, 50_000_000.0),
         ("Diluted EPS", "1.25", UnitScale.THOUSANDS, True, 1.25),
@@ -160,8 +159,15 @@ def test_mixed_scale_tables() -> None:
         assert res.normalized_numeric_value == expected_normalized
 
 
-def test_format_workbook_units_header() -> None:
-    """FN-013: Workbook units header format helper."""
-    assert format_workbook_units_header(UnitScale.THOUSANDS) == "Amounts in thousands (except per-share amounts)"
-    assert format_workbook_units_header(UnitScale.MILLIONS) == "Amounts in millions (except per-share amounts)"
-    assert format_workbook_units_header(UnitScale.UNITS) == "Amounts in dollars"
+def test_unknown_scale_is_flagged_not_guessed() -> None:
+    """A scalable row with no detected scale is flagged and left unnormalized."""
+    res = normalize_line_item("15,000", "Stock-based compensation")
+    assert res.scale == UnitScale.UNKNOWN
+    assert res.as_reported_numeric == 15000.0
+    assert res.normalized_numeric_value is None
+    assert res.is_ambiguous is True
+    assert res.flag_reason is not None
+
+    # Per-share rows need no scale and still normalize.
+    eps = normalize_line_item("2.45", "Adjusted diluted EPS")
+    assert eps.normalized_numeric_value == 2.45

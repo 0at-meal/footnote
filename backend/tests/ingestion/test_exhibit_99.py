@@ -1,10 +1,8 @@
 """
-Unit tests for 8-K EX-99.1 Earnings Release Support (FN-022).
+Unit tests for 8-K Item 2.02 / EX-99.1 earnings release detection and extraction.
 """
 
 
-from app.extraction.locator import HtmlLocator
-from app.extraction.models import ExtractedRecord
 from app.ingestion.edgar.models import FilingExhibit, FilingRef
 from app.ingestion.exhibit_99.detector import (
     classify_exhibit_format,
@@ -12,7 +10,6 @@ from app.ingestion.exhibit_99.detector import (
     is_guidance_text,
     is_item_2_02_text,
 )
-from app.ingestion.exhibit_99.differ import diff_bridges, merge_dedupe_bridges
 from app.ingestion.exhibit_99.extractor import Exhibit99Extractor
 from app.ingestion.exhibit_99.models import ExhibitFormat
 
@@ -104,113 +101,3 @@ def test_exhibit_99_extractor_html() -> None:
     assert len(guidance_labels) > 0
 
 
-def test_diff_bridges_and_latest_filed_wins() -> None:
-    loc_8k = HtmlLocator(
-        accession="0001652044-24-000005",
-        document="goog-ex991.htm",
-        element_path="/html/body/table[1]/tr[5]/td[2]",
-    )
-    loc_10q = HtmlLocator(
-        accession="0001652044-24-000088",
-        document="goog-10q.htm",
-        element_path="/html/body/table[2]/tr[5]/td[2]",
-    )
-
-    # 8-K records
-    rec_8k_net_inc = ExtractedRecord(
-        value="26,301",
-        label="Reconciliation > Net Income",
-        page=1,
-        bbox={"x0": 0.0, "y0": 0.0, "x1": 1000.0, "y1": 1000.0},
-        source_file="goog-ex991.htm",
-        locator=loc_8k,
-    )
-    rec_8k_restruct = ExtractedRecord(
-        value="150",
-        label="Reconciliation > Restructuring charges",
-        page=1,
-        bbox={"x0": 0.0, "y0": 0.0, "x1": 1000.0, "y1": 1000.0},
-        source_file="goog-ex991.htm",
-        locator=loc_8k,
-    )
-    rec_8k_ebitda = ExtractedRecord(
-        value="35,021",
-        label="Reconciliation > Adjusted EBITDA",
-        page=1,
-        bbox={"x0": 0.0, "y0": 0.0, "x1": 1000.0, "y1": 1000.0},
-        source_file="goog-ex991.htm",
-        locator=loc_8k,
-    )
-    release_records = [rec_8k_net_inc, rec_8k_restruct, rec_8k_ebitda]
-
-    # Subsequent 10-Q records with a slight restatement on restructuring (120 instead of 150)
-    rec_10q_net_inc = ExtractedRecord(
-        value="26,301",
-        label="10-Q > Net Income",
-        page=1,
-        bbox={"x0": 0.0, "y0": 0.0, "x1": 1000.0, "y1": 1000.0},
-        source_file="goog-10q.htm",
-        locator=loc_10q,
-    )
-    rec_10q_restruct = ExtractedRecord(
-        value="120",  # Discrepancy!
-        label="10-Q > Restructuring charges",
-        page=1,
-        bbox={"x0": 0.0, "y0": 0.0, "x1": 1000.0, "y1": 1000.0},
-        source_file="goog-10q.htm",
-        locator=loc_10q,
-    )
-    rec_10q_ebitda = ExtractedRecord(
-        value="34,991",  # Adjusted accordingly
-        label="10-Q > Adjusted EBITDA",
-        page=1,
-        bbox={"x0": 0.0, "y0": 0.0, "x1": 1000.0, "y1": 1000.0},
-        source_file="goog-10q.htm",
-        locator=loc_10q,
-    )
-    filing_records = [rec_10q_net_inc, rec_10q_restruct, rec_10q_ebitda]
-
-    # Run diff
-    diff_report = diff_bridges(
-        release_records=release_records,
-        filing_records=filing_records,
-        cik="0001652044",
-        period="2024-09-30",
-        release_accession="0001652044-24-000005",
-        filing_accession="0001652044-24-000088",
-    )
-
-    assert diff_report.has_discrepancies is True
-    assert len(diff_report.items) == 3
-
-    # Check match on Net Income
-    net_inc_diff = next(i for i in diff_report.items if "netincome" in i.metric_name.lower().replace(" ", ""))
-    assert net_inc_diff.is_match is True
-    assert net_inc_diff.status == "match"
-    # Preserves dual provenance
-    assert net_inc_diff.release_locator == loc_8k
-    assert net_inc_diff.filing_locator == loc_10q
-
-    # Check discrepancy on Restructuring
-    restruct_diff = next(i for i in diff_report.items if "restructuring" in i.metric_name.lower())
-    assert restruct_diff.is_match is False
-    assert restruct_diff.status == "discrepancy"
-    assert restruct_diff.release_value == 150.0
-    assert restruct_diff.filing_value == 120.0
-    assert restruct_diff.difference == -30.0
-
-    # Run merge_dedupe_bridges: 10-Q should be canonical
-    res = merge_dedupe_bridges(
-        release_records=release_records,
-        filing_records=filing_records,
-        cik="0001652044",
-        period="2024-09-30",
-        release_accession="0001652044-24-000005",
-        filing_accession="0001652044-24-000088",
-    )
-
-    assert len(res.canonical_records) == 3
-    # Authoritative canonical record has 10-Q locator and value
-    canonical_restruct = next(r for r in res.canonical_records if "restructuring" in r.label.lower())
-    assert canonical_restruct.value == "120"
-    assert canonical_restruct.locator == loc_10q

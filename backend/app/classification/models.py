@@ -1,97 +1,10 @@
 """
-Data models for the classification & normalization pipeline (Feature 3).
-
-Enforces CONSTITUTION §1.2, §1.3, §6.2, §6.5:
-- Outbound payload contains ONLY label and structural context (no value, bbox, or raw file content).
-- Return schema structurally contains ONLY textual label and confidence score (no numeric or computed fields).
-- ClassifiedRecord preserves the underlying ExtractedRecord byte-identically (AC-6, NFR7).
-- DecisionLogEntry provides exportable, machine-readable proof of numeric-free AI classification (AC-2, AC-7).
+Data models for the master financial taxonomy.
 """
 
 from enum import Enum
 
 from pydantic import BaseModel, Field
-
-from app.extraction.models import ScoredRecord
-
-
-class ClassifierInputPayload(BaseModel):
-    """
-    Sanitized input payload dispatched to the Groq classifier.
-
-    Contains exclusively the structural label and optional context.
-    Strictly excludes the extracted numeric value, page, bbox, and filename (CONSTITUTION §6.5).
-    """
-
-    label: str = Field(
-        ..., min_length=1, description="Raw structural label from extraction"
-    )
-    structural_context: str | None = Field(
-        default=None,
-        description="Surrounding structural context (e.g. adjacent headers)",
-    )
-    company_name: str | None = Field(
-        default=None,
-        description="Reporting company name for industry context",
-    )
-    sic_code: str | None = Field(
-        default=None,
-        description="SIC industry classification code for industry context",
-    )
-
-
-class ClassifierRawResponse(BaseModel):
-    """
-    Response schema produced by the Groq classifier.
-
-    Structurally cannot carry a numeric return field (CONSTITUTION §1.2, §6.2).
-    """
-
-    label: str = Field(
-        ..., min_length=1, description="Taxonomy classification candidate label"
-    )
-    confidence: float = Field(
-        ...,
-        ge=0.0,
-        le=1.0,
-        description="Classifier confidence score in the range [0.0, 1.0]",
-    )
-
-
-class ClassificationItemResult(BaseModel):
-    """
-    Per-item result of classifier dispatch.
-    """
-
-    record_index: int = Field(
-        ..., description="Index of the record in the original batch"
-    )
-    payload: ClassifierInputPayload = Field(
-        ..., description="Sanitized input sent to classifier"
-    )
-    raw_response: ClassifierRawResponse | None = Field(
-        default=None,
-        description="Parsed classifier response if successful",
-    )
-    is_error: bool = Field(
-        default=False, description="True if a classification error occurred"
-    )
-    error_detail: str | None = Field(
-        default=None,
-        description="Error message or reason for classification failure",
-    )
-
-
-class ClassificationBatchResult(BaseModel):
-    """
-    Aggregate result of a batch classification dispatch.
-    """
-
-    results: list[ClassificationItemResult]
-    total_dispatched: int
-    success_count: int
-    error_count: int
-    skipped_count: int
 
 
 class StatementType(str, Enum):
@@ -143,7 +56,7 @@ class MasterTaxonomy(BaseModel):
 
 class TaxonomyStatus(str, Enum):
     """
-    Taxonomy verification status for a classified label (spec.md §3, §4).
+    Taxonomy verification status for a classified label.
     """
 
     matched = "matched"
@@ -185,81 +98,3 @@ class TaxonomyCheckResult(BaseModel):
         description="Fuzzy matching token-set similarity score if fuzzy matched",
     )
 
-
-class ClassifiedRecord(BaseModel):
-    """
-    An extraction record with classification and taxonomy normalization metadata attached (Feature 3).
-
-    Strictly preserves the underlying ExtractedRecord and ScoredRecord fields (AC-6, NFR7).
-    """
-
-    record: ScoredRecord = Field(..., description="Underlying scored extraction record")
-    normalized_label: str | None = Field(
-        default=None,
-        description="Confirmed standardized taxonomy label if matched/confirmed; None if pending (AC-6)",
-    )
-    statement_type: StatementType | None = Field(
-        default=None,
-        description="Financial statement type category (e.g. income_statement, balance_sheet)",
-    )
-    taxonomy_status: TaxonomyStatus = Field(
-        default=TaxonomyStatus.pending_taxonomy_confirmation,
-        description="Taxonomy verification status",
-    )
-    classifier_confidence: float | None = Field(
-        default=None,
-        description="Confidence score returned by Groq classifier",
-    )
-    is_confirmed: bool = Field(
-        default=False,
-        description="True if normalized_label is confirmed and matched against active taxonomy",
-    )
-    is_target_metric_candidate: bool = Field(
-        default=True,
-        description="True if item belongs to the target metric reconciliation bridge",
-    )
-
-
-class DecisionLogEntry(BaseModel):
-    """
-    Single append-only decision log entry for a classifier call (spec.md §6, AC-2, AC-7).
-    """
-
-    job_id: str = Field(..., description="UUID of the job")
-    record_index: int = Field(
-        ..., description="Index of the extraction record in the job"
-    )
-    timestamp: str = Field(
-        ..., description="ISO 8601 UTC timestamp of the classifier call"
-    )
-    input_payload: ClassifierInputPayload = Field(
-        ..., description="Sanitized input sent to classifier"
-    )
-    raw_response: ClassifierRawResponse | None = Field(
-        default=None,
-        description="Classifier response (label and confidence only, strictly numeric-free)",
-    )
-    taxonomy_status: TaxonomyStatus = Field(
-        ...,
-        description="Outcome of taxonomy matching (matched or pending_taxonomy_confirmation)",
-    )
-    resulting_state: str = Field(
-        ...,
-        description="Resulting state: 'confirmed', 'pending_confirmation', or 'classification_error'",
-    )
-    error_detail: str | None = Field(
-        default=None,
-        description="Error details if classification or logging failed",
-    )
-
-
-class DecisionLogResponse(BaseModel):
-    """
-    API response model for GET /classification/{job_id}/decision-log (AC-7).
-    """
-
-    job_id: str = Field(..., description="Job UUID")
-    total_calls: int = Field(..., description="Total number of classifier calls logged")
-    entries: list[DecisionLogEntry] = Field(
-        ..., description="List of decision log entries"
-    )

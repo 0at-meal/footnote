@@ -1,5 +1,5 @@
 """
-Unit and benchmark tests for HTML and iXBRL Extractor (FN-021).
+Unit and benchmark tests for HTML and iXBRL Extractor.
 """
 
 import time

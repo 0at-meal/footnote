@@ -1,5 +1,5 @@
 """
-Data models for HTML and iXBRL Extraction (FN-021).
+Data models for HTML and iXBRL Extraction.
 """
 
 from pydantic import BaseModel, Field
@@ -51,8 +51,8 @@ class IxbrlFact(BaseModel):
 class HtmlExtractionResult(BaseModel):
     """Complete result of extracting an EDGAR HTML / iXBRL document."""
 
-    status: str = Field(..., description="'success' or 'not_found' per Invariant I3")
-    not_found_reason: str | None = Field(default=None, description="Explicit failure reason when not found (I3)")
+    status: str = Field(..., description="'success' or 'not_found'")
+    not_found_reason: str | None = Field(default=None, description="Explicit failure reason when not found")
     records: list[ExtractedRecord] = Field(default_factory=list, description="Extracted records with HtmlLocator")
     ixbrl_facts: list[IxbrlFact] = Field(default_factory=list, description="Authoritative GAAP facts")
     tables_scanned: int = 0

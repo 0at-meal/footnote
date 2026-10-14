@@ -1,5 +1,5 @@
 """
-Reconciliation Table Detector for HTML Filings (FN-021).
+Reconciliation Table Detector for HTML Filings.
 
 Ports deterministic reconciliation detection heuristics (keywords + structure)
 to HTML tables extracted from SEC EDGAR.

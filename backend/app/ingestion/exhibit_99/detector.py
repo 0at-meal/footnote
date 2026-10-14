@@ -1,5 +1,5 @@
 """
-Detector for 8-K Item 2.02 and EX-99.1 Exhibits (FN-022).
+Detector for 8-K Item 2.02 and EX-99.1 Exhibits.
 """
 
 import re

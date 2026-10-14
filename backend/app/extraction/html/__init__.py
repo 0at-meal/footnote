@@ -1,5 +1,5 @@
 """
-HTML / iXBRL Extraction Package (FN-021).
+HTML / iXBRL Extraction Package.
 """
 
 from app.extraction.html.detector import (

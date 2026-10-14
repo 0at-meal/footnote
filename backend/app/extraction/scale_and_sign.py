@@ -1,11 +1,11 @@
 """
-Unit Scale and Sign Normalization Engine for Footnote (FN-013).
+Unit scale and sign normalization.
 
 Provides pure, deterministic functions to:
 1. Detect scale from filing captions, table headers, and magnitude cross-checks.
 2. Detect arithmetic signs from parentheses, minus signs, and label directives ("Less:", "add/(deduct)").
 3. Normalize line-item amounts while strictly preserving as-reported values and exempting per-share/ratio rows.
-4. Flag ambiguous captions rather than guessing (Invariant I3).
+4. Flag ambiguous or missing scale rather than guessing (no silent failure).
 """
 
 from __future__ import annotations
@@ -87,7 +87,7 @@ def detect_scale_from_caption(
 ) -> ScaleDetectionResult:
     """
     Detects reporting unit scale from table caption or document context.
-    Enforces I3: Ambiguity creates an explicit flag rather than a guess.
+    Ambiguity creates an explicit flag rather than a guess.
     """
     if not caption_or_header and not context_text:
         return ScaleDetectionResult(
@@ -229,12 +229,13 @@ def parse_raw_numeric(raw_val: str | None) -> float | None:
 def normalize_line_item(
     raw_value: str,
     label: str,
-    table_scale: UnitScale = UnitScale.THOUSANDS,
+    table_scale: UnitScale = UnitScale.UNKNOWN,
     caption: str | None = None,
 ) -> NormalizedValueResult:
     """
     Normalizes a line-item numeric amount while strictly preserving the as-reported raw string.
-    Exempts per-share and percentage rows from scaling.
+    Exempts per-share and percentage rows from scaling. An UNKNOWN scale on a
+    scalable row yields no normalized value and an explicit flag, never a guess.
     """
     num = parse_raw_numeric(raw_value)
     sign, _is_parenthesized = detect_sign(raw_value, label)
@@ -265,6 +266,18 @@ def normalize_line_item(
             flag_reason=f"Non-numeric value string: '{raw_value}'",
         )
 
+    if table_scale == UnitScale.UNKNOWN and not is_exempt:
+        return NormalizedValueResult(
+            as_reported_raw=raw_value,
+            as_reported_numeric=num,
+            normalized_numeric_value=None,
+            scale=table_scale,
+            sign=sign,
+            is_exempt_from_scale=False,
+            is_ambiguous=True,
+            flag_reason=flag_reason or "Unknown scale: no unit caption detected for this table",
+        )
+
     # Calculate normalized numeric value
     # If exempt (per-share / ratio), scale multiplier is 1
     multiplier = 1 if is_exempt else int(table_scale)
@@ -283,18 +296,3 @@ def normalize_line_item(
         flag_reason=flag_reason,
     )
 
-
-def format_workbook_units_header(scale: UnitScale | int) -> str:
-    """
-    Generates the standardized units declaration for workbook headers (FN-013 AC-4).
-    """
-    scale_enum = UnitScale(int(scale)) if int(scale) in UnitScale._value2member_map_ else UnitScale.UNKNOWN
-    if scale_enum == UnitScale.THOUSANDS:
-        return "Amounts in thousands (except per-share amounts)"
-    if scale_enum == UnitScale.MILLIONS:
-        return "Amounts in millions (except per-share amounts)"
-    if scale_enum == UnitScale.BILLIONS:
-        return "Amounts in billions (except per-share amounts)"
-    if scale_enum == UnitScale.UNITS:
-        return "Amounts in dollars"
-    return "All figures as reported"

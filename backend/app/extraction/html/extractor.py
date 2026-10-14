@@ -1,12 +1,12 @@
 """
-HTML / iXBRL Extractor for SEC EDGAR Filings (FN-021).
+HTML / iXBRL extractor for SEC EDGAR filings.
 
 Coordinates:
 1. iXBRL fact extraction (authoritative GAAP lines).
 2. HTML table extraction with colspan/rowspan reconstruction and period binding.
 3. Non-GAAP reconciliation table detection.
 4. Construction of ExtractedRecord with HtmlLocator.
-5. Invariant I3 compliance: explicit 'not_found' status if no reconciliation table exists.
+5. No silent failure: explicit 'not_found' status if no reconciliation table exists.
 """
 
 import logging
@@ -47,7 +47,7 @@ class HtmlExtractor:
         Extracts records and authoritative facts from an HTML filing.
 
         Returns:
-            HtmlExtractionResult with status 'success' or 'not_found' (Invariant I3).
+            HtmlExtractionResult with status 'success' or 'not_found'.
         """
         start_time = time.monotonic()
 
@@ -72,7 +72,7 @@ class HtmlExtractor:
 
         elapsed = time.monotonic() - start_time
 
-        # 4. Explicit 'not_found' handling per Invariant I3
+        # 4. Explicit 'not_found' handling (no silent failure)
         if not candidate_tables:
             return HtmlExtractionResult(
                 status="not_found",
@@ -88,7 +88,8 @@ class HtmlExtractor:
 
         # 5. Build ExtractedRecord instances with HtmlLocator
         records: list[ExtractedRecord] = []
-        base_url = url or f"https://www.sec.gov/Archives/edgar/data/{accession}/{document_name}"
+        # The SEC archive URL needs the filer CIK, which this extractor does not
+        # know; only record a URL when the caller supplies a verified one.
 
         for table in candidate_tables:
             for cell in table.cells:
@@ -115,7 +116,7 @@ class HtmlExtractor:
                     document=document_name,
                     element_path=cell.xpath,
                     char_range=cell.char_range,
-                    url=base_url,
+                    url=url,
                 )
 
                 rec = ExtractedRecord(

@@ -1,14 +1,14 @@
 """
-SEC EDGAR Client for direct filing ingestion and submissions API (FN-020).
+SEC EDGAR client for the submissions API and filing documents.
 
 Implements:
 - Ticker-to-CIK resolution with 10-digit zero padding.
 - SEC Submissions API parsing returning typed FilingRef.
-- Exhibit discovery (including EX-99.1 for FN-022).
+- Exhibit discovery (including 8-K EX-99.1).
 - Token-bucket rate limiting (<= 10 req/s per SEC fair access).
 - Retries with backoff and CircuitBreaker.
 - Immutable accession-based disk caching.
-- Explicit ForeignFilerUnsupportedError on 20-F, 40-F, 6-K (Invariant I3).
+- Explicit ForeignFilerUnsupportedError on 20-F, 40-F, 6-K (no silent failure).
 """
 
 import logging
@@ -35,9 +35,6 @@ from app.ingestion.edgar.rate_limiter import TokenBucketRateLimiter
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_SEC_USER_AGENT = os.environ.get(
-    "SEC_USER_AGENT", "Footnote Research analyst@footnoteresearch.com"
-)
 FOREIGN_FORMS = {"20-F", "20-F/A", "40-F", "40-F/A", "6-K", "6-K/A"}
 
 
@@ -56,7 +53,13 @@ class EdgarClient:
         max_retries: int = 3,
         backoff_factor: float = 0.5,
     ) -> None:
-        self.user_agent = user_agent or DEFAULT_SEC_USER_AGENT
+        resolved_agent = user_agent or os.environ.get("SEC_USER_AGENT", "")
+        if not resolved_agent:
+            raise EdgarClientError(
+                "SEC_USER_AGENT is not set. SEC fair access requires a declared "
+                "User-Agent of the form 'Name contact@your-domain.com'."
+            )
+        self.user_agent = resolved_agent
         if "@" not in self.user_agent or " " not in self.user_agent:
             # SEC fair access requires Sample Company AdminContact@<sample company domain>.com
             logger.warning("SEC_USER_AGENT may not meet SEC guidelines: %s", self.user_agent)
@@ -227,7 +230,7 @@ class EdgarClient:
             List of FilingRef objects.
 
         Raises:
-            ForeignFilerUnsupportedError: If the entity is a foreign filer (Invariant I3).
+            ForeignFilerUnsupportedError: If the entity is a foreign filer.
         """
         cik10 = self.resolve_cik(ticker_or_cik)
         submissions = self.get_submissions(cik10)
@@ -248,7 +251,7 @@ class EdgarClient:
         if foreign_count > 0 and domestic_count == 0:
             raise ForeignFilerUnsupportedError(
                 f"Company {ticker_or_cik} (CIK {cik10}) is a foreign filer (filing forms: {set(forms_list) & FOREIGN_FORMS}). "
-                "Foreign filers (Forms 20-F, 40-F, 6-K) are unsupported per Invariant I3: US GAAP standard required."
+                "Foreign filers (Forms 20-F, 40-F, 6-K) are unsupported (US GAAP filers only)."
             )
 
         filing_refs: list[FilingRef] = []
@@ -263,7 +266,7 @@ class EdgarClient:
             if form_type in FOREIGN_FORMS:
                 if target_forms and form_type in target_forms:
                     raise ForeignFilerUnsupportedError(
-                        f"Form {form_type} for CIK {cik10} is a foreign filing unsupported per Invariant I3."
+                        f"Form {form_type} for CIK {cik10} is a foreign filing unsupported."
                     )
                 continue
 
@@ -328,7 +331,7 @@ class EdgarClient:
                     a_tag = tr.find("a", href=True)
                     if not a_tag:
                         continue
-                    href = a_tag["href"]
+                    href = str(a_tag["href"])
                     filename = href.split("/")[-1]
 
                     # Detect exhibit type

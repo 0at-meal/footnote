@@ -1,10 +1,9 @@
 """
-Extractor for 8-K EX-99.1 Press Releases (FN-022).
+Extractor for 8-K EX-99.1 earnings press releases.
 
-Handles:
-- HTML extraction via HtmlExtractor.
-- Routing of PDF/image exhibits to fallback parser.
-- Extraction and segregation of quarterly vs YTD and guidance reconciliations.
+Only HTML exhibits are supported. PDF and image exhibits are logged and
+return no records (the PDF pipeline was removed; see git tag v0-extraction).
+Guidance reconciliations are tagged with a "Guidance > " label prefix.
 """
 
 import logging
@@ -52,34 +51,6 @@ class Exhibit99Extractor:
                 target_metric=target_metric,
             )
             records = result.records
-        elif fmt == ExhibitFormat.PDF:
-            # Route to PDF fallback
-            # Note: docling_parser expects a file path
-            import tempfile
-            from pathlib import Path
-
-            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
-                if isinstance(content, str):
-                    tmp.write(content.encode("utf-8"))
-                else:
-                    tmp.write(content)
-                tmp_path = Path(tmp.name)
-
-            try:
-                from app.extraction.assembler import assemble_records
-                from app.extraction.coordinate_normalizer import normalize_coordinates
-                from app.extraction.docling_parser import parse_pdf
-
-                docling_items = parse_pdf(
-                    pdf_path=tmp_path,
-                    source_file=filename,
-                    target_metric=target_metric,
-                )
-                normalized = normalize_coordinates(tmp_path, docling_items)
-                records = assemble_records(normalized)
-            finally:
-                if tmp_path.exists():
-                    tmp_path.unlink()
         else:
             logger.warning("Unsupported exhibit format %s for %s", fmt, filename)
             records = []

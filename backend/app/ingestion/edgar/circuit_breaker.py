@@ -1,5 +1,5 @@
 """
-Circuit Breaker for SEC EDGAR Client (FN-020).
+Circuit Breaker for SEC EDGAR Client.
 
 Prevents cascading failures and respects upstream downtime when SEC EDGAR experiences outages.
 """
