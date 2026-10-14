@@ -72,7 +72,9 @@ def score_reconciliation_table(
     title_lower = table.title.lower()
 
     # Exclusions
-    if any(ex in title_lower for ex in EXCLUDED_TITLES) and not any(kw in title_lower for kw in RECON_KEYWORDS):
+    if any(ex in title_lower for ex in EXCLUDED_TITLES) and not any(
+        kw in title_lower for kw in RECON_KEYWORDS
+    ):
         return 0.0
 
     score = 0.0
@@ -126,7 +128,9 @@ def detect_reconciliation_tables(
     """
     candidate_tables: list[HtmlTable] = []
     for table in tables:
-        score = score_reconciliation_table(table, target_metric=target_metric, workflow_pack=workflow_pack)
+        score = score_reconciliation_table(
+            table, target_metric=target_metric, workflow_pack=workflow_pack
+        )
         table.reconciliation_score = score
         if score >= threshold:
             table.is_reconciliation = True

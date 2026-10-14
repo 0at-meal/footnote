@@ -218,7 +218,14 @@ def parse_raw_numeric(raw_val: str | None) -> float | None:
         is_neg = True
         s = s[1:].strip()
 
-    s = s.replace("$", "").replace("€", "").replace("£", "").replace(",", "").replace("%", "").strip()
+    s = (
+        s.replace("$", "")
+        .replace("€", "")
+        .replace("£", "")
+        .replace(",", "")
+        .replace("%", "")
+        .strip()
+    )
     try:
         val = float(s)
         return -val if is_neg else val
@@ -275,7 +282,8 @@ def normalize_line_item(
             sign=sign,
             is_exempt_from_scale=False,
             is_ambiguous=True,
-            flag_reason=flag_reason or "Unknown scale: no unit caption detected for this table",
+            flag_reason=flag_reason
+            or "Unknown scale: no unit caption detected for this table",
         )
 
     # Calculate normalized numeric value
@@ -295,4 +303,3 @@ def normalize_line_item(
         is_ambiguous=is_ambiguous,
         flag_reason=flag_reason,
     )
-

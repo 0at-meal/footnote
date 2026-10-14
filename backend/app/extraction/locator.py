@@ -36,7 +36,11 @@ class PdfLocator(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def _coerce_bbox(cls, data: Any) -> Any:
-        if isinstance(data, dict) and data.get("bbox") is not None and not isinstance(data.get("bbox"), dict):
+        if (
+            isinstance(data, dict)
+            and data.get("bbox") is not None
+            and not isinstance(data.get("bbox"), dict)
+        ):
             raw_bbox = data["bbox"]
             data["bbox"] = {
                 "x0": float(getattr(raw_bbox, "x0", 0.0)),
@@ -84,7 +88,11 @@ class HtmlLocator(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def _ensure_source_file(cls, data: Any) -> Any:
-        if isinstance(data, dict) and not data.get("source_file") and data.get("document"):
+        if (
+            isinstance(data, dict)
+            and not data.get("source_file")
+            and data.get("document")
+        ):
             data["source_file"] = data["document"]
         return data
 

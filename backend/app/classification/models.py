@@ -97,4 +97,3 @@ class TaxonomyCheckResult(BaseModel):
         default=None,
         description="Fuzzy matching token-set similarity score if fuzzy matched",
     )
-

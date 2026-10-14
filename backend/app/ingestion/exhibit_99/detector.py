@@ -58,7 +58,11 @@ def detect_earnings_release_exhibit(
     if not ex99:
         # Search for any exhibit with 99 in filename
         ex99 = next(
-            (e for e in filing.exhibits if "ex99" in e.filename.lower() or "ex-99" in e.filename.lower()),
+            (
+                e
+                for e in filing.exhibits
+                if "ex99" in e.filename.lower() or "ex-99" in e.filename.lower()
+            ),
             None,
         )
 

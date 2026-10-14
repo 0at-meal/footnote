@@ -2,7 +2,6 @@
 Unit tests for 8-K Item 2.02 / EX-99.1 earnings release detection and extraction.
 """
 
-
 from app.ingestion.edgar.models import FilingExhibit, FilingRef
 from app.ingestion.exhibit_99.detector import (
     classify_exhibit_format,
@@ -93,11 +92,15 @@ def test_exhibit_99_extractor_html() -> None:
 
     assert len(records) > 0
     # Should contain items from historical table
-    historical_labels = [r.label for r in records if "Outlook" not in r.label and "Guidance" not in r.label]
+    historical_labels = [
+        r.label
+        for r in records
+        if "Outlook" not in r.label and "Guidance" not in r.label
+    ]
     assert any("Adjusted EBITDA" in l for l in historical_labels)
 
     # Should contain tagged guidance records
-    guidance_labels = [r.label for r in records if "Guidance" in r.label or "Outlook" in r.label]
+    guidance_labels = [
+        r.label for r in records if "Guidance" in r.label or "Outlook" in r.label
+    ]
     assert len(guidance_labels) > 0
-
-

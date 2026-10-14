@@ -2,7 +2,6 @@
 Unit tests for Unit Scale and Sign Normalization.
 """
 
-
 from app.extraction.scale_and_sign import (
     UnitScale,
     detect_scale_from_caption,

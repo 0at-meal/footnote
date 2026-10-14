@@ -151,7 +151,9 @@ def test_extract_html_tables_with_spans_and_periods() -> None:
     assert len(tables) == 2
 
     recon_table = tables[1]
-    assert "Reconciliation" in recon_table.title or "Adjusted EBITDA" in recon_table.title
+    assert (
+        "Reconciliation" in recon_table.title or "Adjusted EBITDA" in recon_table.title
+    )
 
     # Check row labels
     assert any("Net Income" in lbl for lbl in recon_table.row_headers.values())
@@ -229,7 +231,10 @@ def test_html_extractor_explicit_not_found_invariant_i3() -> None:
 
     assert result.status == "not_found"
     assert result.not_found_reason is not None
-    assert "No non-GAAP reconciliation table matching 'Adjusted EBITDA' found" in result.not_found_reason
+    assert (
+        "No non-GAAP reconciliation table matching 'Adjusted EBITDA' found"
+        in result.not_found_reason
+    )
     assert len(result.records) == 0
 
 
@@ -237,7 +242,12 @@ def test_html_extractor_throughput_benchmark() -> None:
     # Test streaming/parsing throughput on synthetic large document (50 tables, 500 rows)
     tables_html = []
     for i in range(30):
-        rows_html = "".join([f"<tr><td>Item {j}</td><td>{j * 10}</td><td>{j * 15}</td></tr>" for j in range(20)])
+        rows_html = "".join(
+            [
+                f"<tr><td>Item {j}</td><td>{j * 10}</td><td>{j * 15}</td></tr>"
+                for j in range(20)
+            ]
+        )
         tables_html.append(f"<table><caption>Table {i}</caption>{rows_html}</table>")
     tables_html.append("""
     <table>

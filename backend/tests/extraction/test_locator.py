@@ -113,7 +113,3 @@ def test_extracted_record_with_html_locator() -> None:
     assert rec.locator == html_loc
     assert rec.source_file == "amzn-20231231.htm"
     assert rec.page == 1
-
-
-
-

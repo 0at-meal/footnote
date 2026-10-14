@@ -40,7 +40,10 @@ class CircuitBreaker:
 
     def get_state(self) -> CircuitState:
         with self._lock:
-            if self.state == CircuitState.OPEN and time.monotonic() - self.last_failure_time >= self.recovery_timeout:
+            if (
+                self.state == CircuitState.OPEN
+                and time.monotonic() - self.last_failure_time >= self.recovery_timeout
+            ):
                 self.state = CircuitState.HALF_OPEN
             return self.state
 
@@ -68,7 +71,10 @@ class CircuitBreaker:
         with self._lock:
             self.failure_count += 1
             self.last_failure_time = time.monotonic()
-            if self.state == CircuitState.HALF_OPEN or self.failure_count >= self.failure_threshold:
+            if (
+                self.state == CircuitState.HALF_OPEN
+                or self.failure_count >= self.failure_threshold
+            ):
                 self.state = CircuitState.OPEN
 
     def call(self, fn: Callable[..., T], *args: object, **kwargs: object) -> T:

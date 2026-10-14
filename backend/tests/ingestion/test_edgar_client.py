@@ -101,7 +101,9 @@ MOCK_FOREIGN_SUBMISSIONS = {
 
 
 class MockTransport(httpx.BaseTransport):
-    def __init__(self, doc_content: bytes = b"<html>Sample EDGAR Document</html>") -> None:
+    def __init__(
+        self, doc_content: bytes = b"<html>Sample EDGAR Document</html>"
+    ) -> None:
         self.doc_content = doc_content
         self.request_count = 0
 
@@ -125,7 +127,9 @@ class MockTransport(httpx.BaseTransport):
             """
             return httpx.Response(200, text=index_html)
         elif url_str.endswith((".htm", ".pdf")):
-            return httpx.Response(200, content=self.doc_content, headers={"Content-Type": "text/html"})
+            return httpx.Response(
+                200, content=self.doc_content, headers={"Content-Type": "text/html"}
+            )
 
         return httpx.Response(404, text="Not Found")
 
@@ -211,7 +215,10 @@ def test_get_filings_googl(tmp_path: Path) -> None:
     assert latest_10q.period == "2024-09-30"
     assert latest_10q.cik == "0001652044"
     assert latest_10q.primary_document == "goog-20240930.htm"
-    assert "https://www.sec.gov/Archives/edgar/data/1652044/000165204424000088/goog-20240930.htm" == latest_10q.primary_url
+    assert (
+        "https://www.sec.gov/Archives/edgar/data/1652044/000165204424000088/goog-20240930.htm"
+        == latest_10q.primary_url
+    )
 
     # Check 10-K
     k_filings = [f for f in filings if f.form == "10-K"]
@@ -261,7 +268,9 @@ def test_foreign_filer_explicit_rejection(tmp_path: Path) -> None:
 
 
 def test_accession_caching_immutable(tmp_path: Path) -> None:
-    transport = MockTransport(doc_content=b"<html>Financial Statements 10-Q Content</html>")
+    transport = MockTransport(
+        doc_content=b"<html>Financial Statements 10-Q Content</html>"
+    )
     http_client = httpx.Client(transport=transport)
     client = EdgarClient(
         user_agent=TEST_USER_AGENT,

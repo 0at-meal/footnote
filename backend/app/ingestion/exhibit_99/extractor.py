@@ -42,7 +42,11 @@ class Exhibit99Extractor:
         fmt = classify_exhibit_format(filename)
 
         if fmt == ExhibitFormat.HTML:
-            html_str = content.decode("utf-8", errors="replace") if isinstance(content, bytes) else content
+            html_str = (
+                content.decode("utf-8", errors="replace")
+                if isinstance(content, bytes)
+                else content
+            )
             result: HtmlExtractionResult = self.html_extractor.extract(
                 html_content=html_str,
                 accession=accession,

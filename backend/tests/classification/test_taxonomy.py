@@ -102,8 +102,6 @@ def test_taxonomy_repository_save_and_reload(tmp_path: Path) -> None:
     assert reloaded.items[0].statement_type == StatementType.kpi
 
 
-
-
 def test_check_label_against_taxonomy_master() -> None:
     master = SEED_MASTER_TAXONOMY
     result = check_label_against_taxonomy("Cost of goods sold", master)
@@ -161,12 +159,26 @@ def test_clean_raw_label_parentheticals_and_dates() -> None:
     """Verifies that clean_raw_label removes parentheticals, dates, footnotes, and bracketed text."""
     from app.classification.taxonomy import clean_raw_label
 
-    assert clean_raw_label("Cost of revenues (exclusive of depreciation)") == "Cost of revenues"
+    assert (
+        clean_raw_label("Cost of revenues (exclusive of depreciation)")
+        == "Cost of revenues"
+    )
     assert clean_raw_label("Operating income (loss)") == "Operating income"
-    assert clean_raw_label("Research and development / 2024") == "Research and development"
-    assert clean_raw_label("Restructuring and other charges (Note 4)") == "Restructuring and other charges"
-    assert clean_raw_label("Stock-based compensation expense (1)") == "Stock-based compensation expense"
-    assert clean_raw_label("[a] Net cash provided by (used in) operating activities") == "Net cash provided by operating activities"
+    assert (
+        clean_raw_label("Research and development / 2024") == "Research and development"
+    )
+    assert (
+        clean_raw_label("Restructuring and other charges (Note 4)")
+        == "Restructuring and other charges"
+    )
+    assert (
+        clean_raw_label("Stock-based compensation expense (1)")
+        == "Stock-based compensation expense"
+    )
+    assert (
+        clean_raw_label("[a] Net cash provided by (used in) operating activities")
+        == "Net cash provided by operating activities"
+    )
 
 
 def test_match_master_taxonomy_with_parentheticals_and_headers() -> None:

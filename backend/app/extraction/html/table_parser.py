@@ -35,7 +35,9 @@ PERIOD_PATTERNS = [
 # Patterns for accounting parentheses
 PARENTHESES_PATTERN = re.compile(r"^\s*\(\s*([0-9,]+(?:\.[0-9]+)?)\s*\)\s*$")
 CLEAN_NUM_PATTERN = re.compile(r"^\s*([0-9,]+(?:\.[0-9]+)?)\s*$")
-FOOTNOTE_REF_PATTERN = re.compile(r"\s*(?:\([a-z0-9]\)|\[[a-z0-9]\]|\*+)\s*$", re.IGNORECASE)
+FOOTNOTE_REF_PATTERN = re.compile(
+    r"\s*(?:\([a-z0-9]\)|\[[a-z0-9]\]|\*+)\s*$", re.IGNORECASE
+)
 
 
 def parse_numeric_cell(text: str) -> tuple[float | None, str]:
@@ -78,19 +80,25 @@ def get_element_xpath(element: Tag) -> str:
     """Computes a canonical 1-indexed XPath for a BeautifulSoup element."""
     path_components: list[str] = []
     current: Any = element
-    while current is not None and getattr(current, "name", None) not in [None, "[document]", "html"]:
+    while current is not None and getattr(current, "name", None) not in [
+        None,
+        "[document]",
+        "html",
+    ]:
         parent = current.parent
         if parent is None:
             break
         # Count preceding siblings of the same tag name
-        siblings = [s for s in parent.children if getattr(s, "name", None) == current.name]
+        siblings = [
+            s for s in parent.children if getattr(s, "name", None) == current.name
+        ]
         if len(siblings) > 1:
             idx = siblings.index(current) + 1
             path_components.append(f"{current.name}[{idx}]")
         else:
             path_components.append(current.name)
         current = parent
-    
+
     path_components.append("html")
     path_components.reverse()
     return "/" + "/".join(path_components)
@@ -189,7 +197,12 @@ def extract_html_tables(soup: BeautifulSoup) -> list[HtmlTable]:
             for c in range(max_cols - 1):
                 cell_curr = grid.get((r, c))
                 cell_val = grid.get((r, c + 1))
-                if cell_curr and cell_val and cell_curr.text.strip() == "$" and cell_val.numeric_value is not None:
+                if (
+                    cell_curr
+                    and cell_val
+                    and cell_curr.text.strip() == "$"
+                    and cell_val.numeric_value is not None
+                ):
                     # Bind currency to cell_val
                     cell_val.cleaned_value = f"${cell_val.cleaned_value}"
 
@@ -198,14 +211,21 @@ def extract_html_tables(soup: BeautifulSoup) -> list[HtmlTable]:
         col_headers: dict[int, str] = col_periods
 
         table_cells: list[HtmlCell] = []
-        for (r, c), cell in sorted(grid.items(), key=lambda item: (item[0][0], item[0][1])):
+        for (r, c), cell in sorted(
+            grid.items(), key=lambda item: (item[0][0], item[0][1])
+        ):
             # Only include the primary instance (top-left) of spanned cells
             if cell.row_idx == r and cell.col_idx == c:
                 if c in col_periods:
                     cell.period = col_periods[c]
                 table_cells.append(cell)
                 # If column 0 or 1 contains row title
-                if c <= 1 and cell.numeric_value is None and cell.text.strip() and (r not in row_headers or len(cell.text) > len(row_headers[r])):
+                if (
+                    c <= 1
+                    and cell.numeric_value is None
+                    and cell.text.strip()
+                    and (r not in row_headers or len(cell.text) > len(row_headers[r]))
+                ):
                     row_headers[r] = cell.text.strip()
 
         # Find table title from preceding paragraph, caption, or first header
@@ -215,7 +235,9 @@ def extract_html_tables(soup: BeautifulSoup) -> list[HtmlTable]:
             title = caption.get_text(strip=True)
         else:
             # Check preceding sibling tags (p, div, h1-h6)
-            prev = table_tag.find_previous_sibling(["p", "div", "h1", "h2", "h3", "h4", "h5", "h6"])
+            prev = table_tag.find_previous_sibling(
+                ["p", "div", "h1", "h2", "h3", "h4", "h5", "h6"]
+            )
             if prev and prev.get_text(strip=True):
                 txt = prev.get_text(strip=True)
                 if len(txt) < 200:
@@ -225,7 +247,12 @@ def extract_html_tables(soup: BeautifulSoup) -> list[HtmlTable]:
             # Check row 0
             r0_cells = [grid.get((0, c)) for c in range(max_cols) if grid.get((0, c))]
             for cell_item in r0_cells:
-                if cell_item and cell_item.text and len(cell_item.text) > 3 and cell_item.numeric_value is None:
+                if (
+                    cell_item
+                    and cell_item.text
+                    and len(cell_item.text) > 3
+                    and cell_item.numeric_value is None
+                ):
                     title = cell_item.text
                     break
 

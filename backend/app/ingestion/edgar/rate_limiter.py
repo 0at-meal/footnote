@@ -14,7 +14,7 @@ from app.ingestion.edgar.models import EdgarRateLimitError
 class TokenBucketRateLimiter:
     """
     Thread-safe Token Bucket rate limiter.
-    
+
     Default rate is 10.0 requests per second with capacity of 10 tokens.
     """
 
@@ -58,7 +58,7 @@ class TokenBucketRateLimiter:
                 if self.tokens >= tokens:
                     self.tokens -= tokens
                     return True
-                
+
                 deficit = tokens - self.tokens
                 wait_time = deficit / self.rate
 

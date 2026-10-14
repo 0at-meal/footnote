@@ -92,7 +92,7 @@ def parse_ixbrl_facts(soup: BeautifulSoup) -> list[IxbrlFact]:
         except ValueError:
             continue
 
-        final_val = base_val * (10 ** scale_val) * sign_mult
+        final_val = base_val * (10**scale_val) * sign_mult
 
         ctx_ref = _attr(tag, "contextref", "contextRef") or ""
         period_str = context_dates.get(ctx_ref, ctx_ref)
