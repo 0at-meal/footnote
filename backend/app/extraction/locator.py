@@ -95,23 +95,6 @@ class PdfLocator(BaseModel):
         description="Source PDF filename",
     )
 
-    @model_validator(mode="before")
-    @classmethod
-    def _coerce_bbox(cls, data: Any) -> Any:
-        if (
-            isinstance(data, dict)
-            and data.get("bbox") is not None
-            and not isinstance(data.get("bbox"), dict)
-        ):
-            raw_bbox = data["bbox"]
-            data["bbox"] = {
-                "x0": float(getattr(raw_bbox, "x0", 0.0)),
-                "y0": float(getattr(raw_bbox, "y0", 0.0)),
-                "x1": float(getattr(raw_bbox, "x1", 1000.0)),
-                "y1": float(getattr(raw_bbox, "y1", 1000.0)),
-            }
-        return data
-
 
 class HtmlLocator(BaseModel):
     """
@@ -164,37 +147,6 @@ class HtmlLocator(BaseModel):
 
 
 Locator = Annotated[PdfLocator | HtmlLocator, Field(discriminator="type")]
-
-
-def locator_from_legacy(
-    page: int,
-    bbox: dict[str, float] | Any,
-    source_file: str,
-) -> PdfLocator:
-    """Creates a canonical PdfLocator from legacy five-field components."""
-    if isinstance(bbox, dict):
-        normalized_bbox = {
-            "x0": float(bbox.get("x0", 0.0)),
-            "y0": float(bbox.get("y0", 0.0)),
-            "x1": float(bbox.get("x1", 1000.0)),
-            "y1": float(bbox.get("y1", 1000.0)),
-        }
-    elif bbox is not None:
-        normalized_bbox = {
-            "x0": float(getattr(bbox, "x0", 0.0)),
-            "y0": float(getattr(bbox, "y0", 0.0)),
-            "x1": float(getattr(bbox, "x1", 1000.0)),
-            "y1": float(getattr(bbox, "y1", 1000.0)),
-        }
-    else:
-        normalized_bbox = {"x0": 0.0, "y0": 0.0, "x1": 1000.0, "y1": 1000.0}
-
-    return PdfLocator(
-        type="pdf",
-        page=max(1, page),
-        bbox=normalized_bbox,
-        source_file=source_file,
-    )
 
 
 def deserialize_locator(data: dict[str, Any] | Locator | None) -> Locator | None:

@@ -39,9 +39,10 @@ running app (see the retraction below).
 - **2026-10-14: Unknown scale is flagged, never guessed.**
   `normalize_line_item` previously defaulted to thousands and multiplied
   unknown-scale values by 0. It now returns no normalized value plus a flag.
-- **2026-10-14: No fabricated SEC URLs.** The HTML extractor no longer builds
-  archive URLs (it put the accession where the CIK belongs). A URL is recorded
-  only when the caller supplies one.
+- **2026-10-14: No fabricated SEC URLs.** The HTML extractor used to build
+  archive URLs with the accession where the CIK belongs. It now builds a
+  CIK-qualified Archives URL only when the CIK is known (or accepts a valid
+  Archives URL from the caller); otherwise the URL is `None`.
 - **2026-10-14: Second review pass: correctness fixes in kept code.**
   - The taxonomy seed is now a tracked file (`seed_taxonomy.json`). It was
     previously read from untracked runtime data, so tests failed on a fresh

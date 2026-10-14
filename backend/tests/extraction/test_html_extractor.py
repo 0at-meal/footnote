@@ -252,7 +252,7 @@ def test_html_extractor_explicit_not_found() -> None:
 
 
 def test_html_extractor_throughput_benchmark() -> None:
-    # Test streaming/parsing throughput on synthetic large document (50 tables, 500 rows)
+    # Parsing throughput on a synthetic document: 30 filler tables x 20 rows + 1 reconciliation
     tables_html = []
     for i in range(30):
         rows_html = "".join(

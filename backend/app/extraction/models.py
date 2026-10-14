@@ -41,16 +41,13 @@ class ExtractedRecord(BaseModel):
     """W3C Web Annotation-style bounding box in 0-1000 space: {x0, y0, x1, y1}."""
 
     source_file: str = ""
-    """Original filename string as uploaded (UTF-8, unmodified)."""
+    """Source document filename (UTF-8, unmodified)."""
 
     locator: Locator | None = None
     """Discriminated union locator: PdfLocator or HtmlLocator."""
 
     is_reconciliation_candidate: bool = False
     """Flag indicating whether this item belongs to a reconciliation candidate table."""
-
-    footnote_type: str | None = None
-    """Type of footnote if extracted from a footnote section (e.g. 'debt')."""
 
     @model_validator(mode="before")
     @classmethod

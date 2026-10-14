@@ -1,8 +1,8 @@
 """
 Reconciliation Table Detector for HTML Filings.
 
-Ports deterministic reconciliation detection heuristics (keywords + structure)
-to HTML tables extracted from SEC EDGAR.
+Deterministic reconciliation detection heuristics (keywords + structure) for
+HTML tables extracted from SEC EDGAR.
 """
 
 import logging
