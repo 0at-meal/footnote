@@ -1,0 +1,150 @@
+{
+  "ticket": "P0-05b",
+  "accession": "0001174922-26-000034",
+  "ticker": "WYNN",
+  "reader": "Claude (claude-opus-5-5)",
+  "read_on": "2026-10-14",
+  "method": "Read the approved table rendered as raw cell text (tools.gold.render_table); no use of tools.gold.draft or the extractor's parsing. Values transcribed as displayed.",
+  "scale": "thousands",
+  "scale_evidence": "'in thousands' stated above the table in the release",
+  "metric_label_raw": "Adjusted Property EBITDAR",
+  "note": null,
+  "periods": [
+    {
+      "period_id": "3M-2026-03-31",
+      "label_raw": "Three Months Ended March 31, 2026"
+    },
+    {
+      "period_id": "3M-2025-03-31",
+      "label_raw": "Three Months Ended March 31, 2025"
+    }
+  ],
+  "lines": [
+    {
+      "label_raw": "Net income attributable to Wynn Resorts, Limited",
+      "role": "gaap_start",
+      "sign": 1,
+      "values": [
+        "120,454",
+        "72,747"
+      ]
+    },
+    {
+      "label_raw": "Net income attributable to noncontrolling interests",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "30,084",
+        "8,658"
+      ]
+    },
+    {
+      "label_raw": "Pre-opening expenses",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "11,745",
+        "5,287"
+      ]
+    },
+    {
+      "label_raw": "Depreciation and amortization",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "160,527",
+        "155,421"
+      ]
+    },
+    {
+      "label_raw": "Property charges and other",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "11,629",
+        "12,232"
+      ]
+    },
+    {
+      "label_raw": "Triple-net operating lease rent expense",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "35,364",
+        "35,389"
+      ]
+    },
+    {
+      "label_raw": "Corporate expenses and other",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "34,810",
+        "36,581"
+      ]
+    },
+    {
+      "label_raw": "Stock-based compensation",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "25,738",
+        "19,400"
+      ]
+    },
+    {
+      "label_raw": "Interest income",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "(13,092)",
+        "(19,359)"
+      ]
+    },
+    {
+      "label_raw": "Interest expense, net of amounts capitalized",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "152,362",
+        "157,608"
+      ]
+    },
+    {
+      "label_raw": "Change in derivatives fair value",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "(46,770)",
+        "29,539"
+      ]
+    },
+    {
+      "label_raw": "Other",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "29,434",
+        "8,374"
+      ]
+    },
+    {
+      "label_raw": "Provision for income taxes",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "10,132",
+        "11,022"
+      ]
+    },
+    {
+      "label_raw": "Adjusted Property EBITDAR",
+      "role": "total",
+      "sign": 1,
+      "values": [
+        "562,417",
+        "532,899"
+      ]
+    }
+  ]
+}

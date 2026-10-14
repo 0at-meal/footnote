@@ -1,0 +1,197 @@
+{
+  "ticket": "P0-05b",
+  "accession": "0001174922-26-000051",
+  "ticker": "WYNN",
+  "reader": "Claude (claude-opus-5-5)",
+  "read_on": "2026-10-14",
+  "method": "Read the approved table rendered as raw cell text (tools.gold.render_table); no use of tools.gold.draft or the extractor's parsing. Values transcribed as displayed.",
+  "scale": "thousands",
+  "scale_evidence": "'in thousands' stated above the table in the release",
+  "metric_label_raw": "Adjusted Property EBITDAR",
+  "note": null,
+  "periods": [
+    {
+      "period_id": "3M-2026-06-30",
+      "label_raw": "Three Months Ended June 30, 2026"
+    },
+    {
+      "period_id": "3M-2025-06-30",
+      "label_raw": "Three Months Ended June 30, 2025"
+    },
+    {
+      "period_id": "6M-2026-06-30",
+      "label_raw": "Six Months Ended June 30, 2026"
+    },
+    {
+      "period_id": "6M-2025-06-30",
+      "label_raw": "Six Months Ended June 30, 2025"
+    }
+  ],
+  "lines": [
+    {
+      "label_raw": "Net income attributable to Wynn Resorts, Limited",
+      "role": "gaap_start",
+      "sign": 1,
+      "values": [
+        "140,062",
+        "66,218",
+        "260,516",
+        "138,965"
+      ]
+    },
+    {
+      "label_raw": "Net income attributable to noncontrolling interests",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "42,510",
+        "10,743",
+        "72,594",
+        "19,401"
+      ]
+    },
+    {
+      "label_raw": "Pre-opening expenses",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "9,232",
+        "11,286",
+        "20,977",
+        "16,573"
+      ]
+    },
+    {
+      "label_raw": "Depreciation and amortization",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "165,421",
+        "152,907",
+        "325,948",
+        "308,328"
+      ]
+    },
+    {
+      "label_raw": "Property charges and other",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "9,662",
+        "13,245",
+        "21,291",
+        "25,477"
+      ]
+    },
+    {
+      "label_raw": "Triple-net operating lease rent expense",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "35,295",
+        "35,066",
+        "70,659",
+        "70,455"
+      ]
+    },
+    {
+      "label_raw": "Corporate expenses and other",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "34,209",
+        "46,446",
+        "69,019",
+        "83,027"
+      ]
+    },
+    {
+      "label_raw": "Stock-based compensation",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "16,902",
+        "28,837",
+        "42,640",
+        "48,237"
+      ]
+    },
+    {
+      "label_raw": "Interest income",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "(12,774)",
+        "(15,859)",
+        "(25,866)",
+        "(35,218)"
+      ]
+    },
+    {
+      "label_raw": "Interest expense, net of amounts capitalized",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "152,177",
+        "154,551",
+        "304,539",
+        "312,159"
+      ]
+    },
+    {
+      "label_raw": "Change in derivatives fair value",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "(43,287)",
+        "1,112",
+        "(90,057)",
+        "30,651"
+      ]
+    },
+    {
+      "label_raw": "Loss on debt financing transactions",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "—",
+        "1,083",
+        "—",
+        "1,083"
+      ]
+    },
+    {
+      "label_raw": "Other",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "2,746",
+        "36,164",
+        "32,180",
+        "44,538"
+      ]
+    },
+    {
+      "label_raw": "Provision for income taxes",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "16,154",
+        "10,588",
+        "26,286",
+        "21,610"
+      ]
+    },
+    {
+      "label_raw": "Adjusted Property EBITDAR",
+      "role": "total",
+      "sign": 1,
+      "values": [
+        "568,309",
+        "552,387",
+        "1,130,726",
+        "1,085,286"
+      ]
+    }
+  ]
+}

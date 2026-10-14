@@ -1,0 +1,120 @@
+{
+  "ticket": "P0-05b",
+  "accession": "0001091667-26-000027",
+  "ticker": "CHTR",
+  "reader": "Claude (claude-opus-5-5)",
+  "read_on": "2026-10-14",
+  "method": "Read the approved table rendered as raw cell text (tools.gold.render_table); no use of tools.gold.draft or the extractor's parsing. Values transcribed as displayed.",
+  "scale": "millions",
+  "scale_evidence": "dollars in millions",
+  "metric_label_raw": "Adjusted EBITDA (a)",
+  "note": null,
+  "periods": [
+    {
+      "period_id": "3M-2026-03-31",
+      "label_raw": "Three Months Ended March 31, 2026"
+    },
+    {
+      "period_id": "3M-2025-03-31",
+      "label_raw": "Three Months Ended March 31, 2025"
+    },
+    {
+      "period_id": "12M-2026-03-31",
+      "label_raw": "Last Twelve Months Ended March 31, 2026"
+    },
+    {
+      "period_id": "12M-2025-03-31",
+      "label_raw": "Last Twelve Months Ended March 31, 2025"
+    }
+  ],
+  "lines": [
+    {
+      "label_raw": "Net income attributable to Charter shareholders",
+      "role": "gaap_start",
+      "sign": 1,
+      "values": [
+        "1,163",
+        "1,217",
+        "4,933",
+        "5,194"
+      ]
+    },
+    {
+      "label_raw": "Plus: Net income attributable to noncontrolling interest",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "200",
+        "192",
+        "787",
+        "788"
+      ]
+    },
+    {
+      "label_raw": "Interest expense, net",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "1,256",
+        "1,241",
+        "5,057",
+        "5,154"
+      ]
+    },
+    {
+      "label_raw": "Income tax expense",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "465",
+        "445",
+        "1,712",
+        "1,648"
+      ]
+    },
+    {
+      "label_raw": "Depreciation and amortization",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "2,211",
+        "2,181",
+        "8,741",
+        "8,664"
+      ]
+    },
+    {
+      "label_raw": "Stock compensation expense",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "203",
+        "222",
+        "654",
+        "659"
+      ]
+    },
+    {
+      "label_raw": "Other, net",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "139",
+        "265",
+        "698",
+        "728"
+      ]
+    },
+    {
+      "label_raw": "Adjusted EBITDA (a)",
+      "role": "total",
+      "sign": 1,
+      "values": [
+        "5,637",
+        "5,763",
+        "22,582",
+        "22,835"
+      ]
+    }
+  ]
+}

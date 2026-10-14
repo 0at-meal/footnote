@@ -1,0 +1,141 @@
+{
+  "ticket": "P0-05b",
+  "accession": "0001690820-26-000034",
+  "ticker": "CVNA",
+  "reader": "Claude (claude-opus-5-5)",
+  "read_on": "2026-10-14",
+  "method": "Read the approved table rendered as raw cell text (tools.gold.render_table); no use of tools.gold.draft or the extractor's parsing. Values transcribed as displayed.",
+  "scale": "millions",
+  "scale_evidence": "(dollars in millions, except per unit amounts)",
+  "metric_label_raw": "Adjusted EBITDA",
+  "note": null,
+  "periods": [
+    {
+      "period_id": "3M-2025-03-31",
+      "label_raw": "Three Months Ended March 31, 2025"
+    },
+    {
+      "period_id": "3M-2026-03-31",
+      "label_raw": "Three Months Ended March 31, 2026"
+    }
+  ],
+  "lines": [
+    {
+      "label_raw": "Net income",
+      "role": "gaap_start",
+      "sign": 1,
+      "values": [
+        "373",
+        "405"
+      ]
+    },
+    {
+      "label_raw": "Income tax provision",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "2",
+        "36"
+      ]
+    },
+    {
+      "label_raw": "Interest expense, net",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "139",
+        "99"
+      ]
+    },
+    {
+      "label_raw": "Other expense (income), net",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "(122)",
+        "41"
+      ]
+    },
+    {
+      "label_raw": "Loss on debt extinguishment",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "2",
+        "—"
+      ]
+    },
+    {
+      "label_raw": "Operating income",
+      "role": "subtotal",
+      "sign": 1,
+      "values": [
+        "394",
+        "581"
+      ]
+    },
+    {
+      "label_raw": "Other operating expense, net",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "—",
+        "—"
+      ]
+    },
+    {
+      "label_raw": "Depreciation and amortization expense in cost of sales",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "31",
+        "28"
+      ]
+    },
+    {
+      "label_raw": "Depreciation and amortization expense in SG&A expenses",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "42",
+        "41"
+      ]
+    },
+    {
+      "label_raw": "Share-based compensation expense in cost of sales",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "1",
+        "1"
+      ]
+    },
+    {
+      "label_raw": "Share-based compensation expense in SG&A expenses",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "25",
+        "26"
+      ]
+    },
+    {
+      "label_raw": "Warrant revenue",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "(5)",
+        "(5)"
+      ]
+    },
+    {
+      "label_raw": "Adjusted EBITDA",
+      "role": "total",
+      "sign": 1,
+      "values": [
+        "488",
+        "672"
+      ]
+    }
+  ]
+}

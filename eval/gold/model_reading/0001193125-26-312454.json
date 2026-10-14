@@ -1,0 +1,142 @@
+{
+  "ticket": "P0-05b",
+  "accession": "0001193125-26-312454",
+  "ticker": "CYH",
+  "reader": "Claude (claude-opus-5-5)",
+  "read_on": "2026-10-14",
+  "method": "Read the approved table rendered as raw cell text (tools.gold.render_table); no use of tools.gold.draft or the extractor's parsing. Values transcribed as displayed.",
+  "scale": "millions",
+  "scale_evidence": "'in millions' stated above the table in the release",
+  "metric_label_raw": "Adjusted EBITDA",
+  "note": null,
+  "periods": [
+    {
+      "period_id": "3M-2026-06-30",
+      "label_raw": "Three Months Ended June 30, 2026"
+    },
+    {
+      "period_id": "3M-2025-06-30",
+      "label_raw": "Three Months Ended June 30, 2025"
+    },
+    {
+      "period_id": "6M-2026-06-30",
+      "label_raw": "Six Months Ended June 30, 2026"
+    },
+    {
+      "period_id": "6M-2025-06-30",
+      "label_raw": "Six Months Ended June 30, 2025"
+    }
+  ],
+  "lines": [
+    {
+      "label_raw": "Net income attributable to Community Health Systems, Inc. stockholders",
+      "role": "gaap_start",
+      "sign": 1,
+      "values": [
+        "70",
+        "282",
+        "12",
+        "269"
+      ]
+    },
+    {
+      "label_raw": "Provision for income taxes",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "76",
+        "118",
+        "165",
+        "160"
+      ]
+    },
+    {
+      "label_raw": "Depreciation and amortization",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "108",
+        "105",
+        "222",
+        "211"
+      ]
+    },
+    {
+      "label_raw": "Net income attributable to noncontrolling interests",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "34",
+        "38",
+        "67",
+        "76"
+      ]
+    },
+    {
+      "label_raw": "Interest expense, net",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "206",
+        "214",
+        "419",
+        "432"
+      ]
+    },
+    {
+      "label_raw": "Loss (gain) from early extinguishment of debt",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "5",
+        "(138)",
+        "12",
+        "(138)"
+      ]
+    },
+    {
+      "label_raw": "Impairment and (gain) loss on sale of businesses, net",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "(172)",
+        "(239)",
+        "(262)",
+        "(263)"
+      ]
+    },
+    {
+      "label_raw": "Expense related to employee termination benefits and other restructuring charges",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "3",
+        "-",
+        "3",
+        "-"
+      ]
+    },
+    {
+      "label_raw": "Expense from business transformation costs",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "-",
+        "-",
+        "-",
+        "9"
+      ]
+    },
+    {
+      "label_raw": "Adjusted EBITDA",
+      "role": "total",
+      "sign": 1,
+      "values": [
+        "330",
+        "380",
+        "638",
+        "756"
+      ]
+    }
+  ]
+}

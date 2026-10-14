@@ -1,0 +1,164 @@
+{
+  "ticket": "P0-05b",
+  "accession": "0000018926-26-000058",
+  "ticker": "LUMN",
+  "reader": "Claude (claude-opus-5-5)",
+  "read_on": "2026-10-14",
+  "method": "Read the approved table rendered as raw cell text (tools.gold.render_table); no use of tools.gold.draft or the extractor's parsing. Values transcribed as displayed.",
+  "scale": "millions",
+  "scale_evidence": "($ in millions)",
+  "metric_label_raw": "Adjusted EBITDA excluding Special Items",
+  "note": null,
+  "periods": [
+    {
+      "period_id": "3M-2026-06-30",
+      "label_raw": "Actual QTD 2Q26"
+    },
+    {
+      "period_id": "3M-2025-06-30",
+      "label_raw": "Actual QTD 2Q25"
+    },
+    {
+      "period_id": "6M-2026-06-30",
+      "label_raw": "Actual YTD 2Q26"
+    },
+    {
+      "period_id": "6M-2025-06-30",
+      "label_raw": "Actual YTD 2Q25"
+    }
+  ],
+  "lines": [
+    {
+      "label_raw": "Net loss",
+      "role": "gaap_start",
+      "sign": 1,
+      "values": [
+        "(201)",
+        "(915)",
+        "(401)",
+        "(1,116)"
+      ]
+    },
+    {
+      "label_raw": "Income tax expense (benefit)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "(54)",
+        "(234)",
+        "323",
+        "(278)"
+      ]
+    },
+    {
+      "label_raw": "Total other expense, net",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "167",
+        "546",
+        "592",
+        "898"
+      ]
+    },
+    {
+      "label_raw": "Depreciation and amortization expense",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "668",
+        "688",
+        "1,332",
+        "1,401"
+      ]
+    },
+    {
+      "label_raw": "Stock-based compensation expense",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "18",
+        "12",
+        "31",
+        "22"
+      ]
+    },
+    {
+      "label_raw": "Goodwill impairment",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "—",
+        "628",
+        "—",
+        "628"
+      ]
+    },
+    {
+      "label_raw": "Adjusted EBITDA",
+      "role": "subtotal",
+      "sign": 1,
+      "values": [
+        "598",
+        "725",
+        "1,877",
+        "1,555"
+      ]
+    },
+    {
+      "label_raw": "Net loss (gain) on sale of business (1)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "31",
+        "—",
+        "(565)",
+        "—"
+      ]
+    },
+    {
+      "label_raw": "Transaction and separation costs (1)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "48",
+        "92",
+        "101",
+        "108"
+      ]
+    },
+    {
+      "label_raw": "Modernization and simplification (1)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "116",
+        "41",
+        "222",
+        "91"
+      ]
+    },
+    {
+      "label_raw": "Other (1)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "9",
+        "19",
+        "16",
+        "52"
+      ]
+    },
+    {
+      "label_raw": "Adjusted EBITDA excluding Special Items",
+      "role": "total",
+      "sign": 1,
+      "values": [
+        "802",
+        "877",
+        "1,651",
+        "1,806"
+      ]
+    }
+  ]
+}

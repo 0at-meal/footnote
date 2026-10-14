@@ -1,0 +1,175 @@
+{
+  "ticket": "P0-05b",
+  "accession": "0000070318-26-000032",
+  "ticker": "THC",
+  "reader": "Claude (claude-opus-5-5)",
+  "read_on": "2026-10-14",
+  "method": "Read the approved table rendered as raw cell text (tools.gold.render_table); no use of tools.gold.draft or the extractor's parsing. Values transcribed as displayed.",
+  "scale": "millions",
+  "scale_evidence": "(Dollars in millions)",
+  "metric_label_raw": "Adjusted EBITDA",
+  "note": "Top-down presentation: items carry income-statement signs, so adjustments contribute with sign -1.",
+  "periods": [
+    {
+      "period_id": "3M-2026-06-30",
+      "label_raw": "Three Months Ended June 30, 2026"
+    },
+    {
+      "period_id": "3M-2025-06-30",
+      "label_raw": "Three Months Ended June 30, 2025"
+    },
+    {
+      "period_id": "6M-2026-06-30",
+      "label_raw": "Six Months Ended June 30, 2026"
+    },
+    {
+      "period_id": "6M-2025-06-30",
+      "label_raw": "Six Months Ended June 30, 2025"
+    }
+  ],
+  "lines": [
+    {
+      "label_raw": "Net income available to Tenet Healthcare Corporation common shareholders",
+      "role": "gaap_start",
+      "sign": 1,
+      "values": [
+        "826",
+        "288",
+        "1,528",
+        "694"
+      ]
+    },
+    {
+      "label_raw": "Net income available to noncontrolling interests",
+      "role": "adjustment",
+      "sign": -1,
+      "values": [
+        "(219)",
+        "(234)",
+        "(423)",
+        "(450)"
+      ]
+    },
+    {
+      "label_raw": "Net income",
+      "role": "subtotal",
+      "sign": 1,
+      "values": [
+        "1,045",
+        "522",
+        "1,951",
+        "1,144"
+      ]
+    },
+    {
+      "label_raw": "Income tax expense",
+      "role": "adjustment",
+      "sign": -1,
+      "values": [
+        "(295)",
+        "(120)",
+        "(521)",
+        "(263)"
+      ]
+    },
+    {
+      "label_raw": "Other non-operating income, net",
+      "role": "adjustment",
+      "sign": -1,
+      "values": [
+        "43",
+        "25",
+        "84",
+        "51"
+      ]
+    },
+    {
+      "label_raw": "Interest expense",
+      "role": "adjustment",
+      "sign": -1,
+      "values": [
+        "(204)",
+        "(206)",
+        "(409)",
+        "(410)"
+      ]
+    },
+    {
+      "label_raw": "Operating income",
+      "role": "subtotal",
+      "sign": 1,
+      "values": [
+        "1,501",
+        "823",
+        "2,797",
+        "1,766"
+      ]
+    },
+    {
+      "label_raw": "Revenue from contract termination",
+      "role": "adjustment",
+      "sign": -1,
+      "values": [
+        "413",
+        "—",
+        "826",
+        "—"
+      ]
+    },
+    {
+      "label_raw": "Depreciation and amortization",
+      "role": "adjustment",
+      "sign": -1,
+      "values": [
+        "(215)",
+        "(208)",
+        "(444)",
+        "(414)"
+      ]
+    },
+    {
+      "label_raw": "Impairment and restructuring charges, and acquisition-related costs",
+      "role": "adjustment",
+      "sign": -1,
+      "values": [
+        "(31)",
+        "(24)",
+        "(55)",
+        "(43)"
+      ]
+    },
+    {
+      "label_raw": "Litigation and investigation costs",
+      "role": "adjustment",
+      "sign": -1,
+      "values": [
+        "(3)",
+        "(28)",
+        "(30)",
+        "(45)"
+      ]
+    },
+    {
+      "label_raw": "Net gains (losses) on sales, consolidation and deconsolidation of facilities",
+      "role": "adjustment",
+      "sign": -1,
+      "values": [
+        "33",
+        "(38)",
+        "34",
+        "(16)"
+      ]
+    },
+    {
+      "label_raw": "Adjusted EBITDA",
+      "role": "total",
+      "sign": 1,
+      "values": [
+        "1,304",
+        "1,121",
+        "2,466",
+        "2,284"
+      ]
+    }
+  ]
+}
