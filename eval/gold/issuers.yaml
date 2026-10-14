@@ -1,6 +1,6 @@
 ticket: P0-01
 generated: '2026-10-14'
-approved_by: null
+approved_by: Niraj Jadhav (owner), 2026-10-14
 selection_rules:
   item: 8-K Item 2.02 with an HTML EX-99.1
   table: EX-99.1 contains a table with EBITDA in its title or row labels
