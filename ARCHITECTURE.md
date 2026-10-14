@@ -1,8 +1,9 @@
 # Footnote Architecture
 
 The current state is a library of deterministic pieces, not an application.
-There is no API server, UI, database, or orchestrator. Those will be designed
-once the next product direction is decided (see [DECISIONS.md](DECISIONS.md)).
+There is no API server, UI, database, or orchestrator yet. The target
+architecture and the phase that introduces each part are in
+[docs/ROADMAP.md](docs/ROADMAP.md) §4; this file describes what exists today.
 
 ## Modules
 

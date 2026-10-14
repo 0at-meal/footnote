@@ -5,6 +5,34 @@ Newest first. One entry per decision, with date and reason. Entries before
 those entries described features as deployed that were never wired into the
 running app (see the retraction below).
 
+- **2026-10-14: Direction adopted — see [docs/ROADMAP.md](docs/ROADMAP.md).** Footnote becomes
+  the verified, versioned, normalized record of how US-listed issuers define and adjust EBITDA,
+  for credit / leveraged-finance analysts first (fallback persona: equity earnings-quality).
+  *Why:* reconciled an external research report and an independent stress test against the
+  code and primary sources; the moat is point-in-time verified history, a normalization
+  standard with customer policy profiles, and change intelligence (Daloopa is "as reported",
+  merges renamed lines and hides restatements by default).
+- **2026-10-14: Report items rejected.** PDF/Docling as the non-GAAP source (official EDGAR
+  filings are HTML/iXBRL; bridges sit in untagged EX-99.1 HTML), per-tenant copies of public
+  data, a YAML pack DSL, Sidequest (Node.js only), HF Spaces as the production backend
+  (sleeps after 48 h, non-persistent disk), demo before measured accuracy, and LLM
+  classification. Sources in ROADMAP §10.
+- **2026-10-14: Stress-test items corrected.** Private-repo GitHub Actions cron works (2,000
+  free min/month; the 60-day auto-disable is for public repos). Review burden is bounded by
+  issuer-scoped label memory plus automatic sum/XBRL tie-outs. Sum tie-out tolerance is
+  max(1, ⌈n/2⌉) units of reported scale, not ±1.
+- **2026-10-14: Strict $0 infrastructure until first revenue.** GitHub Actions scheduled
+  ingest, Neon free, Cloudflare R2 + Pages, Cloud Run free (Phase 4), Clerk, Resend, Stripe
+  Payment Links; HF Spaces only for a public demo. Migration triggers in ROADMAP §6.
+- **2026-10-14: Public filing data is global; customer data is tenant-scoped (RLS).** Public
+  facts are keyed by CIK + accession + period and shared; watchlists, notes, policies and
+  opt-in corrections are per organisation.
+- **2026-10-14: Append-only observation model.** Every reported value is an observation tied
+  to the filing it came from; "as first reported", "current" and recasts are queries, never
+  overwrites.
+- **2026-10-14: Gates before build.** Phase 1 opens only after the 30-release gold set, the
+  ICP pass rule (≥5 of 8 interviews) and an analyst-reviewed normalization spec
+  ([docs/NORMALIZATION.md](docs/NORMALIZATION.md)).
 - **2026-10-14: Merged `origin/main` (39 commits, PR #2 "fix/audit-phases-0-3")
   into the clean base.** That work had not been in the local checkout. Fixes
   to kept modules were adopted: CIK-qualified SEC Archives URLs

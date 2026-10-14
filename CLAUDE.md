@@ -1,8 +1,10 @@
 # Working on Footnote
 
-Read [ARCHITECTURE.md](ARCHITECTURE.md) first. This repo is a clean base. The
-product direction is under review, so do not build an API, UI, database, or
-orchestration layer unless the user asks for it.
+Read [ARCHITECTURE.md](ARCHITECTURE.md) and [docs/ROADMAP.md](docs/ROADMAP.md)
+first. **Current phase: 0** (ground truth, ICP validation, normalization spec).
+Work only on tickets of the current phase; a phase opens only when the previous
+phase's exit gate is met and recorded in `eval/RESULTS.md`. Do not build an API,
+UI, database or orchestration layer before the phase that introduces it.
 
 ## Commands
 
@@ -14,6 +16,11 @@ orchestration layer unless the user asks for it.
 
 ## Rules
 
+- Gates, not dates. Atomic tickets: ≤1 day, one concern, one PR, with tests.
+- Public filing data is global (keyed by CIK + accession + period); customer data
+  is tenant-scoped. Reported values are append-only observations, never overwritten.
+- An LLM may at most *suggest labels* for human confirmation, and only where the
+  roadmap allows it (P3-08).
 - Numbers come only from deterministic code. Never let an LLM produce or alter a numeric value.
 - No silent failure. Return an explicit status or reason; never swallow an
   exception or default a value to keep things green (e.g. no `except: pass`, no

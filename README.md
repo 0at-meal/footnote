@@ -4,9 +4,10 @@ Deterministic building blocks for extracting company-reported non-GAAP
 reconciliations (Adjusted EBITDA and similar) from SEC EDGAR filings, with
 provenance on every number.
 
-> **Status (2026-10-14): clean base, direction under review.**
-> The repository was reset to the reusable core of the earlier product. The
-> next product direction will be decided from a separate review. The earlier
+> **Status (2026-10-14): clean base; direction adopted; Phase 0 of
+> [docs/ROADMAP.md](docs/ROADMAP.md).** Footnote is becoming the verified,
+> normalized record of how US-listed issuers define and adjust EBITDA, for credit
+> analysts first. The repository holds the reusable core of the earlier product. The earlier
 > PDF → Excel workbook product (FastAPI app, React UI, Groq classifier, formula
 > engine, audit reports) was removed from `main`. It is preserved at git tag
 > [`v0-extraction`](https://github.com/0at-meal/footnote/tree/v0-extraction).
@@ -68,6 +69,8 @@ the same commands.
 
 | Doc | Purpose |
 |---|---|
+| [docs/ROADMAP.md](docs/ROADMAP.md) | Direction, principles, phases and atomic tickets |
+| [docs/NORMALIZATION.md](docs/NORMALIZATION.md) | EBITDA normalization spec (draft) |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Modules, dependency rules, engineering principles, known gaps |
 | [DECISIONS.md](DECISIONS.md) | Decision log |
 | [docs/glossary.md](docs/glossary.md) | Domain terms (SEC filings, reconciliations, provenance) |
