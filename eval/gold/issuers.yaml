@@ -1,0 +1,359 @@
+ticket: P0-01
+generated: '2026-10-14'
+approved_by: Niraj Jadhav (owner), 2026-10-14
+selection_rules:
+  item: 8-K Item 2.02 with an HTML EX-99.1
+  table: EX-99.1 contains a table with EBITDA in its title or row labels
+  quarters: two releases filed 60-120 days apart
+selected:
+- ticker: TDG
+  name: TransDigm Group INC
+  cik: '0001260221'
+  fiscal_year_end: 0930
+  role: primary
+  rationale: '''EBITDA As Defined''; highly levered; September fiscal year end'
+  status: pass
+  releases:
+  - accession: 0001260221-26-000052
+    filed: '2026-08-04'
+    exhibit: exhibit991tdg2026q3earning.htm
+    url: https://www.sec.gov/Archives/edgar/data/1260221/000126022126000052/exhibit991tdg2026q3earning.htm
+    table_index: 7
+    table_title: Table 8
+    metric_label: EBITDA As Defined
+  - accession: 0001260221-26-000039
+    filed: '2026-05-05'
+    exhibit: exhibit991tdg2026q2earning.htm
+    url: https://www.sec.gov/Archives/edgar/data/1260221/000126022126000039/exhibit991tdg2026q2earning.htm
+    table_index: 7
+    table_title: Table 8
+    metric_label: EBITDA As Defined
+  reasons:
+  - '0001260221-26-000033: no HTML EX-99.1 (exhibits: EX-101.LAB, EX-101.PRE, EX-101.SCH)'
+- ticker: CZR
+  name: Caesars Entertainment, Inc.
+  cik: 0001590895
+  fiscal_year_end: '1231'
+  role: primary
+  rationale: gaming; heavy leverage; large bridge
+  status: pass
+  releases:
+  - accession: 0001590895-26-000027
+    filed: '2026-07-28'
+    exhibit: ex991-2026q2ceiearningsrel.htm
+    url: https://www.sec.gov/Archives/edgar/data/1590895/000159089526000027/ex991-2026q2ceiearningsrel.htm
+    table_index: 9
+    table_title: Table 10
+    metric_label: Adjusted EBITDA
+  - accession: 0001590895-26-000015
+    filed: '2026-04-28'
+    exhibit: ex991-2026q1ceiearningsrel.htm
+    url: https://www.sec.gov/Archives/edgar/data/1590895/000159089526000015/ex991-2026q1ceiearningsrel.htm
+    table_index: 6
+    table_title: Table 7
+    metric_label: Total Adjusted EBITDA
+  reasons: []
+- ticker: WYNN
+  name: WYNN RESORTS LTD
+  cik: 0001174922
+  fiscal_year_end: '1231'
+  role: primary
+  rationale: property-level EBITDAR naming edge case
+  status: pass
+  releases:
+  - accession: 0001174922-26-000051
+    filed: '2026-08-04'
+    exhibit: ex991wrlq22026pressrelease.htm
+    url: https://www.sec.gov/Archives/edgar/data/1174922/000117492226000051/ex991wrlq22026pressrelease.htm
+    table_index: 6
+    table_title: Table 7
+    metric_label: Adjusted Property EBITDAR
+  - accession: 0001174922-26-000034
+    filed: '2026-05-07'
+    exhibit: ex991wrlq12026pressrelease.htm
+    url: https://www.sec.gov/Archives/edgar/data/1174922/000117492226000034/ex991wrlq12026pressrelease.htm
+    table_index: 4
+    table_title: Table 5
+    metric_label: Adjusted Property EBITDAR
+  reasons: []
+- ticker: HTZ
+  name: HERTZ GLOBAL HOLDINGS, INC
+  cik: 0001657853
+  fiscal_year_end: '1231'
+  role: primary
+  rationale: '''Adjusted Corporate EBITDA'' (fleet-interest treatment)'
+  status: pass
+  releases:
+  - accession: 0001657853-26-000045
+    filed: '2026-08-06'
+    exhibit: q22026earningsrelease.htm
+    url: https://www.sec.gov/Archives/edgar/data/1657853/000165785326000045/q22026earningsrelease.htm
+    table_index: 8
+    table_title: Table 9
+    metric_label: Adjusted Corporate EBITDA (n)
+  - accession: 0001657853-26-000021
+    filed: '2026-05-07'
+    exhibit: q12026earningsrelease.htm
+    url: https://www.sec.gov/Archives/edgar/data/1657853/000165785326000021/q12026earningsrelease.htm
+    table_index: 7
+    table_title: Table 8
+    metric_label: Adjusted Corporate EBITDA (l)
+  reasons: []
+- ticker: CAR
+  name: AVIS BUDGET GROUP, INC.
+  cik: '0000723612'
+  fiscal_year_end: '1231'
+  role: primary
+  rationale: peer to Hertz for definition comparison
+  status: pass
+  releases:
+  - accession: 0000723612-26-000037
+    filed: '2026-07-28'
+    exhibit: a03-pressreleasexq2f26.htm
+    url: https://www.sec.gov/Archives/edgar/data/723612/000072361226000037/a03-pressreleasexq2f26.htm
+    table_index: 9
+    table_title: Table 10
+    metric_label: Adjusted EBITDA (d)
+  - accession: 0000723612-26-000025
+    filed: '2026-04-29'
+    exhibit: a03-pressreleasexq1f26.htm
+    url: https://www.sec.gov/Archives/edgar/data/723612/000072361226000025/a03-pressreleasexq1f26.htm
+    table_index: 9
+    table_title: Table 10
+    metric_label: Adjusted EBITDA (d)
+  reasons: []
+- ticker: THC
+  name: TENET HEALTHCARE CORP
+  cik: 0000070318
+  fiscal_year_end: '1231'
+  role: primary
+  rationale: healthcare HY; net-income start; NCI lines
+  status: pass
+  releases:
+  - accession: 0000070318-26-000032
+    filed: '2026-07-23'
+    exhibit: thc-20260630ex991earningsr.htm
+    url: https://www.sec.gov/Archives/edgar/data/70318/000007031826000032/thc-20260630ex991earningsr.htm
+    table_index: 14
+    table_title: Table 15
+    metric_label: Adjusted EBITDA
+  - accession: 0000070318-26-000023
+    filed: '2026-04-30'
+    exhibit: thc-20260331ex991earningsr.htm
+    url: https://www.sec.gov/Archives/edgar/data/70318/000007031826000023/thc-20260331ex991earningsr.htm
+    table_index: 13
+    table_title: Table 14
+    metric_label: Adjusted EBITDA
+  reasons:
+  - '0000070318-26-000003: no EBITDA table in EX-99.1'
+- ticker: CYH
+  name: COMMUNITY HEALTH SYSTEMS INC
+  cik: 0001108109
+  fiscal_year_end: '1231'
+  role: primary
+  rationale: distressed-ish healthcare; many add-backs
+  status: pass
+  releases:
+  - accession: 0001193125-26-312454
+    filed: '2026-07-22'
+    exhibit: cyh-ex99_1.htm
+    url: https://www.sec.gov/Archives/edgar/data/1108109/000119312526312454/cyh-ex99_1.htm
+    table_index: 11
+    table_title: Table 12
+    metric_label: Adjusted EBITDA
+  - accession: 0001193125-26-167000
+    filed: '2026-04-21'
+    exhibit: cyh-ex99_1.htm
+    url: https://www.sec.gov/Archives/edgar/data/1108109/000119312526167000/cyh-ex99_1.htm
+    table_index: 9
+    table_title: Table 10
+    metric_label: Adjusted EBITDA
+  reasons: []
+- ticker: IHRT
+  name: iHeartMedia, Inc.
+  cik: 0001400891
+  fiscal_year_end: '1231'
+  role: primary
+  rationale: highly levered media; reports in thousands
+  status: pass
+  releases:
+  - accession: 0001628280-26-055243
+    filed: '2026-08-10'
+    exhibit: ihmediaearningsrelease2026.htm
+    url: https://www.sec.gov/Archives/edgar/data/1400891/000162828026055243/ihmediaearningsrelease2026.htm
+    table_index: 9
+    table_title: Table 10
+    metric_label: Adjusted EBITDA
+  - accession: 0001628280-26-033471
+    filed: '2026-05-11'
+    exhibit: ihmediaearningsrelease2026.htm
+    url: https://www.sec.gov/Archives/edgar/data/1400891/000162828026033471/ihmediaearningsrelease2026.htm
+    table_index: 9
+    table_title: Table 10
+    metric_label: Adjusted EBITDA
+  reasons: []
+- ticker: LUMN
+  name: Lumen Technologies, Inc.
+  cik: 0000018926
+  fiscal_year_end: '1231'
+  role: primary
+  rationale: telecom; special items and restructuring
+  status: pass
+  releases:
+  - accession: 0000018926-26-000058
+    filed: '2026-08-04'
+    exhibit: lumnq220268-kexhibit991.htm
+    url: https://www.sec.gov/Archives/edgar/data/18926/000001892626000058/lumnq220268-kexhibit991.htm
+    table_index: 10
+    table_title: Table 11
+    metric_label: Adjusted EBITDA excluding Special Items
+  - accession: 0000018926-26-000045
+    filed: '2026-05-05'
+    exhibit: lumnq120268-kexhibit991.htm
+    url: https://www.sec.gov/Archives/edgar/data/18926/000001892626000045/lumnq120268-kexhibit991.htm
+    table_index: 10
+    table_title: Table 11
+    metric_label: Adjusted EBITDA excluding Special Items
+  reasons: []
+- ticker: CHTR
+  name: CHARTER COMMUNICATIONS, INC. /MO/
+  cik: 0001091667
+  fiscal_year_end: '1231'
+  role: primary
+  rationale: large-cap HY; simple bridge (control case)
+  status: pass
+  releases:
+  - accession: 0001091667-26-000051
+    filed: '2026-07-24'
+    exhibit: chtrex991earningsrelease63.htm
+    url: https://www.sec.gov/Archives/edgar/data/1091667/000109166726000051/chtrex991earningsrelease63.htm
+    table_index: 3
+    table_title: Table 4
+    metric_label: Adjusted EBITDA (a)
+  - accession: 0001091667-26-000027
+    filed: '2026-04-24'
+    exhibit: chtrex991earningsrelease33.htm
+    url: https://www.sec.gov/Archives/edgar/data/1091667/000109166726000027/chtrex991earningsrelease33.htm
+    table_index: 3
+    table_title: Table 4
+    metric_label: Adjusted EBITDA (a)
+  reasons: []
+- ticker: CVNA
+  name: CARVANA CO.
+  cik: 0001690820
+  fiscal_year_end: '1231'
+  role: primary
+  rationale: many adjustments; fast-changing definitions
+  status: pass
+  releases:
+  - accession: 0001690820-26-000054
+    filed: '2026-07-29'
+    exhibit: ex99_1q22026.htm
+    url: https://www.sec.gov/Archives/edgar/data/1690820/000169082026000054/ex99_1q22026.htm
+    table_index: 12
+    table_title: Table 13
+    metric_label: Adjusted EBITDA
+  - accession: 0001690820-26-000034
+    filed: '2026-04-29'
+    exhibit: ex99_1q12026.htm
+    url: https://www.sec.gov/Archives/edgar/data/1690820/000169082026000034/ex99_1q12026.htm
+    table_index: 13
+    table_title: Table 14
+    metric_label: Adjusted EBITDA
+  reasons: []
+- ticker: BHC
+  name: Bausch Health Companies Inc.
+  cik: 0000885590
+  fiscal_year_end: '1231'
+  role: primary
+  rationale: heavy add-backs; domestic-filer status to confirm
+  status: pass
+  releases:
+  - accession: 0000885590-26-000105
+    filed: '2026-07-29'
+    exhibit: ex991-q22026.htm
+    url: https://www.sec.gov/Archives/edgar/data/885590/000088559026000105/ex991-q22026.htm
+    table_index: 24
+    table_title: Table 25
+    metric_label: Adjusted EBITDA attributable to Bausch Health Companies Inc. (non-GAAP)
+      (c)
+  - accession: 0000885590-26-000051
+    filed: '2026-04-29'
+    exhibit: ex991-q1x2026.htm
+    url: https://www.sec.gov/Archives/edgar/data/885590/000088559026000051/ex991-q1x2026.htm
+    table_index: 24
+    table_title: Table 25
+    metric_label: Adjusted EBITDA attributable to Bausch Health Companies Inc. (non-GAAP)
+      (c)
+  reasons:
+  - '0000885590-26-000005: no HTML EX-99.1 (exhibits: EX-101.LAB, EX-101.PRE, EX-101.SCH)'
+- ticker: CC
+  name: Chemours Co
+  cik: '0001627223'
+  fiscal_year_end: '1231'
+  role: primary
+  rationale: chemicals HY; litigation add-backs
+  status: pass
+  releases:
+  - accession: 0001627223-26-000021
+    filed: '2026-08-04'
+    exhibit: cc-ex99_1.htm
+    url: https://www.sec.gov/Archives/edgar/data/1627223/000162722326000021/cc-ex99_1.htm
+    table_index: 11
+    table_title: Table 12
+    metric_label: Adjusted EBITDA
+  - accession: 0001627223-26-000010
+    filed: '2026-05-05'
+    exhibit: cc-ex99_1.htm
+    url: https://www.sec.gov/Archives/edgar/data/1627223/000162722326000010/cc-ex99_1.htm
+    table_index: 11
+    table_title: Table 12
+    metric_label: Adjusted EBITDA
+  reasons: []
+- ticker: RXT
+  name: Rackspace Technology, Inc.
+  cik: 0001810019
+  fiscal_year_end: '1231'
+  role: primary
+  rationale: distressed tech; SBC and restructuring heavy
+  status: pass
+  releases:
+  - accession: 0001810019-26-000092
+    filed: '2026-08-10'
+    exhibit: rxt991_q22026.htm
+    url: https://www.sec.gov/Archives/edgar/data/1810019/000181001926000092/rxt991_q22026.htm
+    table_index: 20
+    table_title: Table 21
+    metric_label: Adjusted EBITDA
+  - accession: 0001810019-26-000041
+    filed: '2026-05-07'
+    exhibit: rxt991_q12026.htm
+    url: https://www.sec.gov/Archives/edgar/data/1810019/000181001926000041/rxt991_q12026.htm
+    table_index: 19
+    table_title: Table 20
+    metric_label: Adjusted EBITDA
+  reasons: []
+- ticker: FUN
+  name: Six Flags Entertainment Corporation/NEW
+  cik: 0001999001
+  fiscal_year_end: '1231'
+  role: primary
+  rationale: post-merger integration costs
+  status: pass
+  releases:
+  - accession: 0001999001-26-000094
+    filed: '2026-08-06'
+    exhibit: sixflags-exh991xq22026.htm
+    url: https://www.sec.gov/Archives/edgar/data/1999001/000199900126000094/sixflags-exh991xq22026.htm
+    table_index: 5
+    table_title: Table 6
+    metric_label: Adjusted EBITDA (4)
+  - accession: 0001999001-26-000053
+    filed: '2026-05-07'
+    exhibit: sixflags-exh991xq12026.htm
+    url: https://www.sec.gov/Archives/edgar/data/1999001/000199900126000053/sixflags-exh991xq12026.htm
+    table_index: 9
+    table_title: Table 10
+    metric_label: Adjusted EBITDA
+  reasons: []
+not_selected: []
