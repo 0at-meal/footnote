@@ -48,7 +48,8 @@ your shell. The code does not load `.env` files automatically:
 export SEC_USER_AGENT="Your Name you@example.com"
 ```
 
-See [.env.example](.env.example) for all variables.
+See [.env.example](.env.example) for all variables. CI runs the same checks on
+every push (`.github/workflows/ci.yml`).
 
 ## Commands
 

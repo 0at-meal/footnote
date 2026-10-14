@@ -25,10 +25,11 @@ from app.classification.models import (
     TaxonomyItem,
     TaxonomyStatus,
 )
+from app.config import DEFAULT_DATA_DIR
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_DATA_DIR: Path = Path(__file__).parent.parent.parent / "data"
+_DEFAULT_DATA_DIR: Path = DEFAULT_DATA_DIR
 
 
 _SEED_FILE: Path = Path(__file__).with_name("seed_taxonomy.json")

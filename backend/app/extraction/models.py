@@ -6,12 +6,15 @@ EDGAR HTML element). The legacy ``page``/``bbox``/``source_file`` fields are
 kept in sync with the locator for backward-compatible serialization.
 """
 
+from typing import Any
+
 from pydantic import BaseModel, Field, model_validator
 
 from app.extraction.locator import (
     HtmlLocator,
     Locator,
     PdfLocator,
+    require_provenance,
 )
 
 
@@ -49,15 +52,21 @@ class ExtractedRecord(BaseModel):
     footnote_type: str | None = None
     """Type of footnote if extracted from a footnote section (e.g. 'debt')."""
 
+    @model_validator(mode="before")
+    @classmethod
+    def _require_provenance(cls, data: Any) -> Any:
+        return require_provenance(data)
+
     @model_validator(mode="after")
     def _sync_locator_and_legacy_fields(self) -> "ExtractedRecord":
         if self.locator is None:
-            if self.page >= 1 and self.source_file:
-                self.locator = PdfLocator(
-                    page=self.page,
-                    bbox=self.bbox,
-                    source_file=self.source_file,
-                )
+            # require_provenance guarantees explicit page, bbox and source_file; an
+            # invalid value (e.g. page 0) fails validation instead of leaving no locator.
+            self.locator = PdfLocator(
+                page=self.page,
+                bbox=self.bbox,
+                source_file=self.source_file,
+            )
         elif isinstance(self.locator, PdfLocator):
             self.page = self.locator.page
             self.bbox = self.locator.bbox

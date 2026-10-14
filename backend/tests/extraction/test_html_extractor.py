@@ -301,3 +301,27 @@ def test_ixbrl_invalid_scale_or_value_is_skipped_not_defaulted() -> None:
     assert [f.concept for f in facts] == ["us-gaap:NetIncomeLoss"]
     assert facts[0].value == 7000
     assert facts[0].unit is None  # no unitRef: not assumed to be USD
+
+
+def test_record_url_requires_cik() -> None:
+    """URLs are CIK-qualified Archives URLs when the CIK is known, otherwise absent."""
+    extractor = HtmlExtractor(parser_flavor="html.parser")
+    kwargs = {
+        "html_content": SAMPLE_IXBRL_HTML,
+        "accession": "0000000000-24-000001",
+        "document_name": "fixture-20240930.htm",
+    }
+    without_cik = extractor.extract(**kwargs)
+    assert all(
+        isinstance(r.locator, HtmlLocator) and r.locator.url is None
+        for r in without_cik.records
+    )
+
+    with_cik = extractor.extract(**kwargs, cik="0000001234")
+    loc = with_cik.records[0].locator
+    assert isinstance(loc, HtmlLocator)
+    assert loc.cik == "0000001234"
+    assert (
+        loc.url
+        == "https://www.sec.gov/Archives/edgar/data/1234/000000000024000001/fixture-20240930.htm"
+    )

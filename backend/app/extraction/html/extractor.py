@@ -20,7 +20,7 @@ from app.extraction.html.models import (
     HtmlExtractionResult,
 )
 from app.extraction.html.table_parser import extract_html_tables
-from app.extraction.locator import HtmlLocator
+from app.extraction.locator import HtmlLocator, is_sec_archives_url, sec_archives_url
 from app.extraction.models import ExtractedRecord
 
 logger = logging.getLogger(__name__)
@@ -41,6 +41,7 @@ class HtmlExtractor:
         document_name: str,
         url: str | None = None,
         target_metric: str = "Adjusted EBITDA",
+        cik: str | None = None,
     ) -> HtmlExtractionResult:
         """
         Extracts records and authoritative facts from an HTML filing.
@@ -86,8 +87,13 @@ class HtmlExtractor:
 
         # 5. Build ExtractedRecord instances with HtmlLocator
         records: list[ExtractedRecord] = []
-        # The SEC archive URL needs the filer CIK, which this extractor does not
-        # know; only record a URL when the caller supplies a verified one.
+        # A CIK-qualified Archives URL, or none at all: the accession prefix is the
+        # submitter, not the filer, so a URL is never derived without the CIK.
+        doc_url = (
+            url
+            if is_sec_archives_url(url)
+            else sec_archives_url(cik, accession, document_name)
+        )
 
         for table in candidate_tables:
             for cell in table.cells:
@@ -110,11 +116,12 @@ class HtmlExtractor:
                 full_label = " > ".join(components)
 
                 locator = HtmlLocator(
+                    cik=cik,
                     accession=accession,
                     document=document_name,
                     element_path=cell.xpath,
                     char_range=cell.char_range,
-                    url=url,
+                    url=doc_url,
                 )
 
                 rec = ExtractedRecord(

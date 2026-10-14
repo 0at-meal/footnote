@@ -5,6 +5,16 @@ Newest first. One entry per decision, with date and reason. Entries before
 those entries described features as deployed that were never wired into the
 running app (see the retraction below).
 
+- **2026-10-14: Merged `origin/main` (39 commits, PR #2 "fix/audit-phases-0-3")
+  into the clean base.** That work had not been in the local checkout. Fixes
+  to kept modules were adopted: CIK-qualified SEC Archives URLs
+  (`sec_archives_url`), records without provenance are rejected
+  (`require_provenance`), `FOOTNOTE_DATA_DIR`, test data isolation, and CI
+  (trimmed to the backend). Its fixes to removed modules, the frontend e2e
+  suite, `tools/`, and the phase 0–3 audit report (`docs/audit/`) were not
+  carried over because they concern the removed product. They remain in git
+  history at `ea7d318`. The audit's open item "seed taxonomy must be
+  versioned" is resolved by `seed_taxonomy.json`.
 - **2026-10-14: Reset to a clean base.** Removed the PDF → workbook product
   from `main`: FastAPI app, job runner, Docling/PyMuPDF extraction, Groq
   classifier, formula engine, Excel export, review, audit trail/report, drift,

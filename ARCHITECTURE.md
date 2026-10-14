@@ -60,7 +60,8 @@ These carry over from the earlier product because they still hold:
   explicit status or reason (`not_found_reason`, `flag_reason`,
   `ForeignFilerUnsupportedError`). It is never dropped or defaulted quietly.
 - **Provenance on every number.** An `ExtractedRecord` carries the raw
-  as-reported string plus a `Locator` back to its source.
+  as-reported string plus a `Locator` back to its source. A record without
+  provenance fails validation (`require_provenance`); it is never padded out.
 - **Honest validation.** A feature counts as working only once it has run on a
   real saved SEC filing and a human has checked the output against the source.
   Fixture and mock tests are necessary but not sufficient. Any accuracy number
@@ -73,10 +74,10 @@ These are verified against the code as of 2026-10-14:
 | Area | Gap |
 |---|---|
 | EDGAR client | Reads only `filings.recent` from the submissions API. Older filings (`filings.files` pages) are not fetched. There is no 8-K `items` filter (e.g. 2.02). Default cache dir is relative to the working directory. |
-| HTML extractor | Records use placeholder legacy PDF fields (`page=1`, full-page bbox). `HtmlLocator.url` is only set when the caller passes a verified URL. The detector is keyword-based and defaults to "Adjusted EBITDA". |
+| HTML extractor | Records use placeholder legacy PDF fields (`page=1`, full-page bbox). `HtmlLocator.url` is a CIK-qualified Archives URL when the caller passes `cik` (or a valid Archives URL); otherwise it is `None`, never derived from the accession alone. The detector is keyword-based and defaults to "Adjusted EBITDA". |
 | Table parser | Column → period binding is heuristic. Caption scale is not passed into `scale_and_sign`. |
 | iXBRL parser | Handles `ix:nonFraction` with `endDate`/`instant` only. No `startDate`, dimensions, unit resolution, or `ixt` transforms. Facts with an invalid scale or unparseable value are skipped with a logged warning. There is no structured skip list yet. |
 | EX-99 extractor | HTML only. PDF and image exhibits log a warning and return no records. |
-| Taxonomy | The seed is `classification/seed_taxonomy.json` (84 items, tracked). `TaxonomyRepository` reads user overrides from `backend/data/taxonomy.json` (gitignored), and that file **replaces** the seed when present. The aliases are hand-written and unvalidated on a gold set. Fuzzy (token-set) matches are suggestions only (`is_matched=False`), because the metric scores 1.0 on token subsets. |
+| Taxonomy | The seed is `classification/seed_taxonomy.json` (84 items, tracked). `TaxonomyRepository` reads user overrides from `$FOOTNOTE_DATA_DIR/taxonomy.json` (default `backend/data/`, gitignored), and that file **replaces** the seed when present. The aliases are hand-written and unvalidated on a gold set. Fuzzy (token-set) matches are suggestions only (`is_matched=False`), because the metric scores 1.0 on token subsets. |
 | Scale exemptions | Per-share / percent detection is label-keyword based. Share-count rows are scaled like dollar rows (correct for "in millions, except per share" tables, wrong for tables that state share counts in units). |
 | Validation | No gold set and no runs on real filings. |
