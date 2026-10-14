@@ -1,0 +1,379 @@
+{
+  "ticket": "P0-05",
+  "generated_by": "tools.gold.draft",
+  "generated_on": "2026-10-14",
+  "status": "ok",
+  "release": {
+    "schema_version": 1,
+    "ticker": "HTZ",
+    "cik": "0001657853",
+    "accession": "0001657853-26-000021",
+    "exhibit": "q12026earningsrelease.htm",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1657853/000165785326000021/q12026earningsrelease.htm",
+    "sha256": "779632eddc180c6ed9d8a5756c5b10285e9db24368e298c310b24bb50933086c",
+    "metric_label_raw": "Adjusted Corporate EBITDA (l)",
+    "scale": "millions",
+    "scale_quote": "(In millions, except per share data)",
+    "table": {
+      "table_index": 7,
+      "caption_raw": null
+    },
+    "periods": [
+      {
+        "period_id": "3M-2026-03-31",
+        "label_raw": "Three Months Ended March 31, 2026",
+        "end_date": "2026-03-31",
+        "months": 3
+      },
+      {
+        "period_id": "3M-2025-03-31",
+        "label_raw": "Three Months Ended March 31, 2025",
+        "end_date": "2025-03-31",
+        "months": 3
+      }
+    ],
+    "lines": [
+      {
+        "row_order": 0,
+        "label_raw": "Net income (loss)",
+        "role": "gaap_start",
+        "sign": 1,
+        "values": [
+          {
+            "period_id": "3M-2026-03-31",
+            "value_raw": "(333)",
+            "value": "-333",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "3M-2025-03-31",
+            "value_raw": "(443)",
+            "value": "-443",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          }
+        ]
+      },
+      {
+        "row_order": 1,
+        "label_raw": "Income tax provision (benefit)",
+        "role": "adjustment",
+        "sign": 1,
+        "values": [
+          {
+            "period_id": "3M-2026-03-31",
+            "value_raw": "29",
+            "value": "29",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "3M-2025-03-31",
+            "value_raw": "(82)",
+            "value": "-82",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          }
+        ]
+      },
+      {
+        "row_order": 2,
+        "label_raw": "Non-vehicle depreciation and amortization",
+        "role": "adjustment",
+        "sign": 1,
+        "values": [
+          {
+            "period_id": "3M-2026-03-31",
+            "value_raw": "26",
+            "value": "26",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "3M-2025-03-31",
+            "value_raw": "30",
+            "value": "30",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          }
+        ]
+      },
+      {
+        "row_order": 3,
+        "label_raw": "Non-vehicle debt interest, net of interest income (k)",
+        "role": "adjustment",
+        "sign": 1,
+        "values": [
+          {
+            "period_id": "3M-2026-03-31",
+            "value_raw": "137",
+            "value": "137",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "3M-2025-03-31",
+            "value_raw": "121",
+            "value": "121",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          }
+        ]
+      },
+      {
+        "row_order": 4,
+        "label_raw": "Vehicle debt-related charges (b)",
+        "role": "adjustment",
+        "sign": 1,
+        "values": [
+          {
+            "period_id": "3M-2026-03-31",
+            "value_raw": "12",
+            "value": "12",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "3M-2025-03-31",
+            "value_raw": "11",
+            "value": "11",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          }
+        ]
+      },
+      {
+        "row_order": 5,
+        "label_raw": "Restructuring and restructuring related charges (c)",
+        "role": "adjustment",
+        "sign": 1,
+        "values": [
+          {
+            "period_id": "3M-2026-03-31",
+            "value_raw": "8",
+            "value": "8",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "3M-2025-03-31",
+            "value_raw": "3",
+            "value": "3",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          }
+        ]
+      },
+      {
+        "row_order": 6,
+        "label_raw": "Net (gains) losses on financial instruments (e)",
+        "role": "adjustment",
+        "sign": 1,
+        "values": [
+          {
+            "period_id": "3M-2026-03-31",
+            "value_raw": "(29)",
+            "value": "-29",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "3M-2025-03-31",
+            "value_raw": "3",
+            "value": "3",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          }
+        ]
+      },
+      {
+        "row_order": 7,
+        "label_raw": "Share-based compensation expense",
+        "role": "adjustment",
+        "sign": 1,
+        "values": [
+          {
+            "period_id": "3M-2026-03-31",
+            "value_raw": "17",
+            "value": "17",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "3M-2025-03-31",
+            "value_raw": "15",
+            "value": "15",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          }
+        ]
+      },
+      {
+        "row_order": 8,
+        "label_raw": "Foreign currency (gains) losses (f)",
+        "role": "adjustment",
+        "sign": 1,
+        "values": [
+          {
+            "period_id": "3M-2026-03-31",
+            "value_raw": "\u2014",
+            "value": null,
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "3M-2025-03-31",
+            "value_raw": "4",
+            "value": "4",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          }
+        ]
+      },
+      {
+        "row_order": 9,
+        "label_raw": "Change in fair value of Public Warrants",
+        "role": "adjustment",
+        "sign": 1,
+        "values": [
+          {
+            "period_id": "3M-2026-03-31",
+            "value_raw": "(33)",
+            "value": "-33",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "3M-2025-03-31",
+            "value_raw": "9",
+            "value": "9",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          }
+        ]
+      },
+      {
+        "row_order": 10,
+        "label_raw": "Other items (g)",
+        "role": "adjustment",
+        "sign": 1,
+        "values": [
+          {
+            "period_id": "3M-2026-03-31",
+            "value_raw": "5",
+            "value": "5",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "3M-2025-03-31",
+            "value_raw": "27",
+            "value": "27",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          }
+        ]
+      },
+      {
+        "row_order": 11,
+        "label_raw": "Adjusted Corporate EBITDA (l)",
+        "role": "total",
+        "sign": 1,
+        "values": [
+          {
+            "period_id": "3M-2026-03-31",
+            "value_raw": "(161)",
+            "value": "-161",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "3M-2025-03-31",
+            "value_raw": "(302)",
+            "value": "-302",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          }
+        ]
+      }
+    ]
+  },
+  "checks": {
+    "direction": 1,
+    "sum": [
+      {
+        "period_id": "3M-2026-03-31",
+        "expected": "-161",
+        "computed": "-161",
+        "tolerance": "5",
+        "lines_summed": 10,
+        "passed": true
+      },
+      {
+        "period_id": "3M-2025-03-31",
+        "expected": "-302",
+        "computed": "-302",
+        "tolerance": "6",
+        "lines_summed": 11,
+        "passed": true
+      }
+    ],
+    "anchor": [
+      {
+        "period_id": "3M-2026-03-31",
+        "label": "Net income (loss)",
+        "concepts": [
+          "ProfitLoss",
+          "NetIncomeLoss"
+        ],
+        "status": "pass",
+        "concept": "ProfitLoss",
+        "xbrl_value": "-333",
+        "accn": "0001657853-26-000024",
+        "form": "10-Q",
+        "filed": "2026-05-08"
+      },
+      {
+        "period_id": "3M-2025-03-31",
+        "label": "Net income (loss)",
+        "concepts": [
+          "ProfitLoss",
+          "NetIncomeLoss"
+        ],
+        "status": "pass",
+        "concept": "ProfitLoss",
+        "xbrl_value": "-443",
+        "accn": "0001657853-26-000024",
+        "form": "10-Q",
+        "filed": "2026-05-08"
+      }
+    ]
+  },
+  "exceptions": [],
+  "notes": []
+}

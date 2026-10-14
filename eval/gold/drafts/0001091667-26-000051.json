@@ -1,0 +1,651 @@
+{
+  "ticket": "P0-05",
+  "generated_by": "tools.gold.draft",
+  "generated_on": "2026-10-14",
+  "status": "ok",
+  "release": {
+    "schema_version": 1,
+    "ticker": "CHTR",
+    "cik": "0001091667",
+    "accession": "0001091667-26-000051",
+    "exhibit": "chtrex991earningsrelease63.htm",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1091667/000109166726000051/chtrex991earningsrelease63.htm",
+    "sha256": "83e6336a596c3e7286d868dd17f4a66ac0546d4ea7c68e311b8fed80142b8b88",
+    "metric_label_raw": "Adjusted EBITDA (a)",
+    "scale": "millions",
+    "scale_quote": "(dollars in millions)",
+    "table": {
+      "table_index": 3,
+      "caption_raw": null
+    },
+    "periods": [
+      {
+        "period_id": "3M-2026-06-30",
+        "label_raw": "Three Months Ended June 30, 2026",
+        "end_date": "2026-06-30",
+        "months": 3
+      },
+      {
+        "period_id": "3M-2025-06-30",
+        "label_raw": "Three Months Ended June 30, 2025",
+        "end_date": "2025-06-30",
+        "months": 3
+      },
+      {
+        "period_id": "6M-2026-06-30",
+        "label_raw": "Six Months Ended June 30, 2026",
+        "end_date": "2026-06-30",
+        "months": 6
+      },
+      {
+        "period_id": "6M-2025-06-30",
+        "label_raw": "Six Months Ended June 30, 2025",
+        "end_date": "2025-06-30",
+        "months": 6
+      },
+      {
+        "period_id": "12M-2026-06-30",
+        "label_raw": "Last Twelve Months Ended June 30, 2026",
+        "end_date": "2026-06-30",
+        "months": 12
+      },
+      {
+        "period_id": "12M-2025-06-30",
+        "label_raw": "Last Twelve Months Ended June 30, 2025",
+        "end_date": "2025-06-30",
+        "months": 12
+      }
+    ],
+    "lines": [
+      {
+        "row_order": 0,
+        "label_raw": "Net income attributable to Charter shareholders",
+        "role": "gaap_start",
+        "sign": 1,
+        "values": [
+          {
+            "period_id": "3M-2026-06-30",
+            "value_raw": "1,292",
+            "value": "1292",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "3M-2025-06-30",
+            "value_raw": "1,301",
+            "value": "1301",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "6M-2026-06-30",
+            "value_raw": "2,455",
+            "value": "2455",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "6M-2025-06-30",
+            "value_raw": "2,518",
+            "value": "2518",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "12M-2026-06-30",
+            "value_raw": "4,924",
+            "value": "4924",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "12M-2025-06-30",
+            "value_raw": "5,264",
+            "value": "5264",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          }
+        ]
+      },
+      {
+        "row_order": 1,
+        "label_raw": "Plus: Net income attributable to noncontrolling interest",
+        "role": "adjustment",
+        "sign": 1,
+        "values": [
+          {
+            "period_id": "3M-2026-06-30",
+            "value_raw": "232",
+            "value": "232",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "3M-2025-06-30",
+            "value_raw": "194",
+            "value": "194",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "6M-2026-06-30",
+            "value_raw": "432",
+            "value": "432",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "6M-2025-06-30",
+            "value_raw": "386",
+            "value": "386",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "12M-2026-06-30",
+            "value_raw": "825",
+            "value": "825",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "12M-2025-06-30",
+            "value_raw": "790",
+            "value": "790",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          }
+        ]
+      },
+      {
+        "row_order": 2,
+        "label_raw": "Interest expense, net",
+        "role": "adjustment",
+        "sign": 1,
+        "values": [
+          {
+            "period_id": "3M-2026-06-30",
+            "value_raw": "1,276",
+            "value": "1276",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "3M-2025-06-30",
+            "value_raw": "1,263",
+            "value": "1263",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "6M-2026-06-30",
+            "value_raw": "2,532",
+            "value": "2532",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "6M-2025-06-30",
+            "value_raw": "2,504",
+            "value": "2504",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "12M-2026-06-30",
+            "value_raw": "5,070",
+            "value": "5070",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "12M-2025-06-30",
+            "value_raw": "5,089",
+            "value": "5089",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          }
+        ]
+      },
+      {
+        "row_order": 3,
+        "label_raw": "Income tax expense",
+        "role": "adjustment",
+        "sign": 1,
+        "values": [
+          {
+            "period_id": "3M-2026-06-30",
+            "value_raw": "475",
+            "value": "475",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "3M-2025-06-30",
+            "value_raw": "414",
+            "value": "414",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "6M-2026-06-30",
+            "value_raw": "940",
+            "value": "940",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "6M-2025-06-30",
+            "value_raw": "859",
+            "value": "859",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "12M-2026-06-30",
+            "value_raw": "1,773",
+            "value": "1773",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "12M-2025-06-30",
+            "value_raw": "1,635",
+            "value": "1635",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          }
+        ]
+      },
+      {
+        "row_order": 4,
+        "label_raw": "Depreciation and amortization",
+        "role": "adjustment",
+        "sign": 1,
+        "values": [
+          {
+            "period_id": "3M-2026-06-30",
+            "value_raw": "2,197",
+            "value": "2197",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "3M-2025-06-30",
+            "value_raw": "2,176",
+            "value": "2176",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "6M-2026-06-30",
+            "value_raw": "4,408",
+            "value": "4408",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "6M-2025-06-30",
+            "value_raw": "4,357",
+            "value": "4357",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "12M-2026-06-30",
+            "value_raw": "8,762",
+            "value": "8762",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "12M-2025-06-30",
+            "value_raw": "8,670",
+            "value": "8670",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          }
+        ]
+      },
+      {
+        "row_order": 5,
+        "label_raw": "Stock compensation expense",
+        "role": "adjustment",
+        "sign": 1,
+        "values": [
+          {
+            "period_id": "3M-2026-06-30",
+            "value_raw": "138",
+            "value": "138",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "3M-2025-06-30",
+            "value_raw": "157",
+            "value": "157",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "6M-2026-06-30",
+            "value_raw": "341",
+            "value": "341",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "6M-2025-06-30",
+            "value_raw": "379",
+            "value": "379",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "12M-2026-06-30",
+            "value_raw": "635",
+            "value": "635",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "12M-2025-06-30",
+            "value_raw": "663",
+            "value": "663",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          }
+        ]
+      },
+      {
+        "row_order": 6,
+        "label_raw": "Other, net",
+        "role": "adjustment",
+        "sign": 1,
+        "values": [
+          {
+            "period_id": "3M-2026-06-30",
+            "value_raw": "(161)",
+            "value": "-161",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "3M-2025-06-30",
+            "value_raw": "188",
+            "value": "188",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "6M-2026-06-30",
+            "value_raw": "(22)",
+            "value": "-22",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "6M-2025-06-30",
+            "value_raw": "453",
+            "value": "453",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "12M-2026-06-30",
+            "value_raw": "349",
+            "value": "349",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "12M-2025-06-30",
+            "value_raw": "752",
+            "value": "752",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          }
+        ]
+      },
+      {
+        "row_order": 7,
+        "label_raw": "Adjusted EBITDA (a)",
+        "role": "total",
+        "sign": 1,
+        "values": [
+          {
+            "period_id": "3M-2026-06-30",
+            "value_raw": "5,449",
+            "value": "5449",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "3M-2025-06-30",
+            "value_raw": "5,693",
+            "value": "5693",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "6M-2026-06-30",
+            "value_raw": "11,086",
+            "value": "11086",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "6M-2025-06-30",
+            "value_raw": "11,456",
+            "value": "11456",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "12M-2026-06-30",
+            "value_raw": "22,338",
+            "value": "22338",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          },
+          {
+            "period_id": "12M-2025-06-30",
+            "value_raw": "22,863",
+            "value": "22863",
+            "verified_by": "tieout",
+            "labeler": "extractor (tools.gold.draft)",
+            "labeled_on": "2026-10-14"
+          }
+        ]
+      }
+    ]
+  },
+  "checks": {
+    "direction": 1,
+    "sum": [
+      {
+        "period_id": "3M-2026-06-30",
+        "expected": "5449",
+        "computed": "5449",
+        "tolerance": "4",
+        "lines_summed": 7,
+        "passed": true
+      },
+      {
+        "period_id": "3M-2025-06-30",
+        "expected": "5693",
+        "computed": "5693",
+        "tolerance": "4",
+        "lines_summed": 7,
+        "passed": true
+      },
+      {
+        "period_id": "6M-2026-06-30",
+        "expected": "11086",
+        "computed": "11086",
+        "tolerance": "4",
+        "lines_summed": 7,
+        "passed": true
+      },
+      {
+        "period_id": "6M-2025-06-30",
+        "expected": "11456",
+        "computed": "11456",
+        "tolerance": "4",
+        "lines_summed": 7,
+        "passed": true
+      },
+      {
+        "period_id": "12M-2026-06-30",
+        "expected": "22338",
+        "computed": "22338",
+        "tolerance": "4",
+        "lines_summed": 7,
+        "passed": true
+      },
+      {
+        "period_id": "12M-2025-06-30",
+        "expected": "22863",
+        "computed": "22863",
+        "tolerance": "4",
+        "lines_summed": 7,
+        "passed": true
+      }
+    ],
+    "anchor": [
+      {
+        "period_id": "3M-2026-06-30",
+        "label": "Net income attributable to Charter shareholders",
+        "concepts": [
+          "NetIncomeLoss"
+        ],
+        "status": "pass",
+        "concept": "NetIncomeLoss",
+        "xbrl_value": "1292",
+        "accn": "0001091667-26-000052",
+        "form": "10-Q",
+        "filed": "2026-07-24"
+      },
+      {
+        "period_id": "3M-2025-06-30",
+        "label": "Net income attributable to Charter shareholders",
+        "concepts": [
+          "NetIncomeLoss"
+        ],
+        "status": "pass",
+        "concept": "NetIncomeLoss",
+        "xbrl_value": "1301",
+        "accn": "0001091667-26-000052",
+        "form": "10-Q",
+        "filed": "2026-07-24"
+      },
+      {
+        "period_id": "6M-2026-06-30",
+        "label": "Net income attributable to Charter shareholders",
+        "concepts": [
+          "NetIncomeLoss"
+        ],
+        "status": "pass",
+        "concept": "NetIncomeLoss",
+        "xbrl_value": "2455",
+        "accn": "0001091667-26-000052",
+        "form": "10-Q",
+        "filed": "2026-07-24"
+      },
+      {
+        "period_id": "6M-2025-06-30",
+        "label": "Net income attributable to Charter shareholders",
+        "concepts": [
+          "NetIncomeLoss"
+        ],
+        "status": "pass",
+        "concept": "NetIncomeLoss",
+        "xbrl_value": "2518",
+        "accn": "0001091667-26-000052",
+        "form": "10-Q",
+        "filed": "2026-07-24"
+      },
+      {
+        "period_id": "12M-2026-06-30",
+        "label": "Net income attributable to Charter shareholders",
+        "concepts": [
+          "NetIncomeLoss"
+        ],
+        "status": "pass",
+        "concept": "NetIncomeLoss",
+        "xbrl_value": "4924",
+        "derived": "fiscal year + current YTD - prior-year YTD",
+        "accn": [
+          "0001091667-26-000017",
+          "0001091667-26-000052",
+          "0001091667-26-000052"
+        ]
+      },
+      {
+        "period_id": "12M-2025-06-30",
+        "label": "Net income attributable to Charter shareholders",
+        "concepts": [
+          "NetIncomeLoss"
+        ],
+        "status": "pass",
+        "concept": "NetIncomeLoss",
+        "xbrl_value": "5264",
+        "derived": "fiscal year + current YTD - prior-year YTD",
+        "accn": [
+          "0001091667-26-000017",
+          "0001091667-26-000052",
+          "0001091667-25-000127"
+        ]
+      }
+    ]
+  },
+  "exceptions": [],
+  "notes": []
+}

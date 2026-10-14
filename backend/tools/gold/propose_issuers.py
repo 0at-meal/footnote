@@ -37,6 +37,8 @@ from app.ingestion.edgar.models import (
 )
 from bs4 import BeautifulSoup
 
+from tools.gold.patterns import BRIDGE_TERMS, GAAP_START, NOT_A_TOTAL, RECON_TITLE
+
 logger = logging.getLogger(__name__)
 
 TARGET_COUNT = 15
@@ -133,23 +135,37 @@ def item_202_releases(submissions: dict[str, Any]) -> list[ReleaseRef]:
     return out
 
 
-_GAAP_START = re.compile(
-    r"\bnet (?:\(loss\) income|income \(loss\)|income|loss)\b"
-    r"|\boperating (?:income|loss)\b|\bincome (?:\(loss\) )?before\b",
-    re.IGNORECASE,
+_MONTH_DAY = re.compile(
+    r"\b(?:January|February|March|April|May|June|July|August|September|October|"
+    r"November|December)\s+\d{1,2}\b"
 )
-_NOT_A_TOTAL = re.compile(
-    r"margin|%|per share|percent|\bltm\b|last twelve|trailing twelve", re.IGNORECASE
-)
-# A bridge from a GAAP measure to EBITDA adds back at least two of these.
-_BRIDGE_TERMS = ("interest", "tax", "depreciation", "amortization")
+_YEAR = re.compile(r"\b(20\d{2})\b")
+_GAAP_START = GAAP_START
+_NOT_A_TOTAL = NOT_A_TOTAL
+_BRIDGE_TERMS = BRIDGE_TERMS
 _MIN_BRIDGE_TERMS = 2
-# Fallback when indented bridge labels are not captured as row headers (known
-# table-parser gap): the table states outright that it reconciles to EBITDA.
-_RECON_TITLE = re.compile(r"reconciliation.*ebitda", re.IGNORECASE)
+# RECON_TITLE is the fallback when indented bridge labels are not captured as
+# row headers (known table-parser gap).
+_RECON_TITLE = RECON_TITLE
 
 
-def find_ebitda_table(html: str | bytes) -> TableFinding | None:
+def _covers_recent_period(header: str, filed: date) -> bool:
+    """True if the header names a period end 0-120 days before ``filed``."""
+    years = {int(y) for y in _YEAR.findall(header)}
+    for month_day in _MONTH_DAY.findall(header):
+        for year in years:
+            try:
+                end = datetime.strptime(f"{month_day} {year}", "%B %d %Y").date()  # noqa: DTZ007
+            except ValueError:
+                continue
+            if 0 <= (filed - end).days <= 120:
+                return True
+    return False
+
+
+def find_ebitda_table(
+    html: str | bytes, filed: date | None = None
+) -> TableFinding | None:
     """
     The table most likely to be the EBITDA reconciliation (bridge).
 
@@ -158,13 +174,15 @@ def find_ebitda_table(html: str | bytes) -> TableFinding | None:
     EBITDA-type total that is not a margin or per-share row, with at least two
     distinct bridge items (interest, tax, depreciation, amortization) between
     them, or a row/title that explicitly says it reconciles to EBITDA. LTM /
-    trailing-twelve-month totals are skipped (not the quarterly headline). That excludes KPI/highlight tables that merely list net income and
-    Adjusted EBITDA. Among qualifying tables the one with the most rows between
-    start and total wins. Returns None when no table qualifies; the caller
-    records that as a reason.
+    trailing-twelve-month totals are skipped (not the quarterly headline). That
+    excludes KPI/highlight tables that merely list net income and Adjusted
+    EBITDA. Among qualifying tables, one whose header names a period ending
+    0-120 days before ``filed`` (the current quarter) is preferred over
+    trailing or historical tables; ties go to the most rows between start and
+    total. Returns None when no table qualifies; the caller records that.
     """
     soup = BeautifulSoup(html, "lxml")
-    best: tuple[int, TableFinding] | None = None
+    best: tuple[tuple[bool, int], TableFinding] | None = None
     for table in extract_html_tables(soup):
         numeric = sum(1 for c in table.cells if c.numeric_value is not None)
         if numeric == 0:
@@ -200,8 +218,10 @@ def find_ebitda_table(html: str | bytes) -> TableFinding | None:
             metric_label=total_label,
             numeric_cells=numeric,
         )
-        if best is None or span > best[0]:
-            best = (span, finding)
+        header = " ".join(c.text for c in table.cells if c.row_idx < first_start)
+        key = (filed is not None and _covers_recent_period(header, filed), span)
+        if best is None or key > best[0]:
+            best = (key, finding)
     return best[1] if best else None
 
 
@@ -277,7 +297,7 @@ def evaluate(
         except EdgarClientError as exc:
             result.reasons.append(f"{rel.accession}: exhibit fetch failed: {exc}")
             continue
-        finding = find_ebitda_table(doc.content)
+        finding = find_ebitda_table(doc.content, rel.filed)
         if finding is None:
             result.reasons.append(f"{rel.accession}: no EBITDA table in EX-99.1")
             continue

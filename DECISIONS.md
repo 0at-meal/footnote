@@ -5,6 +5,17 @@ Newest first. One entry per decision, with date and reason. Entries before
 those entries described features as deployed that were never wired into the
 running app (see the retraction below).
 
+- **2026-10-14: P0-05 drafts; parser fix found on real filings.** `parse_numeric_cell` treated a
+  cell that is only a single-digit negative, e.g. "(7)", as a footnote marker and dropped the
+  value; it now strips a trailing footnote only when something remains. The draft tool also
+  handles four real-filing layouts deterministically: parentheses split across cells, top-down
+  bridges (items shown with income-statement signs), header spans misaligned with value columns
+  (columns then assigned by phrase order) and labels wrapped over two rows. A single inferred
+  sign flip is applied only if it makes every period tie out, and is reported as a note for the
+  owner. Results: 100/100 sum tie-outs, 95/100 XBRL anchors (5 are genuine: SEC companyfacts
+  lacks two Q2 2026 10-Qs, and one LTM figure differs from XBRL by 2, a likely recast). One
+  table choice was revised after approval (FUN Q1, table 9 → 4); the revision is recorded in
+  `eval/gold/issuers.yaml`.
 - **2026-10-14: Lean, tie-out-first gold-set labelling (ROADMAP Phase 0).** The extractor
   auto-drafts each bridge. Two independent checks run: the sum tie-out (within
   max(1, ⌈n/2⌉) units) and the GAAP anchor against XBRL `companyfacts`. Claude independently
