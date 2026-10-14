@@ -1,0 +1,184 @@
+{
+  "ticket": "P0-05b",
+  "accession": "0001810019-26-000041",
+  "ticker": "RXT",
+  "disagreements": [],
+  "values": [
+    {
+      "label_raw": "Net income (loss)",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "(71.5)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Net income (loss)",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "8.3",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Share-based compensation expense",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "12.0",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Share-based compensation expense",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "6.6",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Transaction-related adjustments, net (a)",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "1.5",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Transaction-related adjustments, net (a)",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "1.6",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Restructuring and transformation expenses (b)",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "13.1",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Restructuring and transformation expenses (b)",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "9.0",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Net loss on divestiture and investments (c)",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "0.1",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Net loss on divestiture and investments (c)",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "0.1",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Gain on debt extinguishment",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "—",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Gain on debt extinguishment",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "(55.8)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Other expense, net (h)",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "5.4",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Other expense, net (h)",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "3.5",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Interest expense",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "19.4",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Interest expense",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "26.2",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Provision (benefit) for income taxes",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "8.2",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Provision (benefit) for income taxes",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "(0.1)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Depreciation and amortization (i)",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "73.1",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Depreciation and amortization (i)",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "71.8",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Adjusted EBITDA",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "61.3",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Adjusted EBITDA",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "71.2",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    }
+  ]
+}

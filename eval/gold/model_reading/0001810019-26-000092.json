@@ -1,0 +1,153 @@
+{
+  "ticket": "P0-05b",
+  "accession": "0001810019-26-000092",
+  "ticker": "RXT",
+  "reader": "Claude (claude-opus-5-5)",
+  "read_on": "2026-10-14",
+  "method": "Read the approved table rendered as raw cell text (tools.gold.render_table); no use of tools.gold.draft or the extractor's parsing. Values transcribed as displayed.",
+  "scale": "millions",
+  "scale_evidence": "(In millions)",
+  "metric_label_raw": "Adjusted EBITDA",
+  "note": null,
+  "periods": [
+    {
+      "period_id": "3M-2025-06-30",
+      "label_raw": "Three Months Ended June 30, 2025"
+    },
+    {
+      "period_id": "3M-2026-06-30",
+      "label_raw": "Three Months Ended June 30, 2026"
+    },
+    {
+      "period_id": "6M-2025-06-30",
+      "label_raw": "Six Months Ended June 30, 2025"
+    },
+    {
+      "period_id": "6M-2026-06-30",
+      "label_raw": "Six Months Ended June 30, 2026"
+    }
+  ],
+  "lines": [
+    {
+      "label_raw": "Net loss",
+      "role": "gaap_start",
+      "sign": 1,
+      "values": [
+        "(54.5)",
+        "(67.5)",
+        "(126.0)",
+        "(59.2)"
+      ]
+    },
+    {
+      "label_raw": "Share-based compensation expense",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "10.0",
+        "10.4",
+        "22.0",
+        "17.0"
+      ]
+    },
+    {
+      "label_raw": "Transaction-related adjustments, net (a)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "0.4",
+        "0.5",
+        "1.9",
+        "2.1"
+      ]
+    },
+    {
+      "label_raw": "Restructuring and transformation expenses (b)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "4.4",
+        "18.4",
+        "17.5",
+        "27.4"
+      ]
+    },
+    {
+      "label_raw": "Net gain on divestiture and investments (c)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "(0.3)",
+        "(0.1)",
+        "(0.2)",
+        "—"
+      ]
+    },
+    {
+      "label_raw": "Gain on debt extinguishment",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "—",
+        "(6.7)",
+        "—",
+        "(62.5)"
+      ]
+    },
+    {
+      "label_raw": "Other expense, net (h)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "3.8",
+        "5.1",
+        "9.2",
+        "8.6"
+      ]
+    },
+    {
+      "label_raw": "Interest expense",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "21.3",
+        "34.2",
+        "40.7",
+        "60.4"
+      ]
+    },
+    {
+      "label_raw": "Provision for income taxes",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "4.6",
+        "1.8",
+        "12.8",
+        "1.7"
+      ]
+    },
+    {
+      "label_raw": "Depreciation and amortization (i)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "74.7",
+        "69.8",
+        "147.8",
+        "141.6"
+      ]
+    },
+    {
+      "label_raw": "Adjusted EBITDA",
+      "role": "total",
+      "sign": 1,
+      "values": [
+        "64.4",
+        "65.9",
+        "125.7",
+        "137.1"
+      ]
+    }
+  ]
+}

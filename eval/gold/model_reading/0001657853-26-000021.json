@@ -1,0 +1,132 @@
+{
+  "ticket": "P0-05b",
+  "accession": "0001657853-26-000021",
+  "ticker": "HTZ",
+  "reader": "Claude (claude-opus-5-5)",
+  "read_on": "2026-10-14",
+  "method": "Read the approved table rendered as raw cell text (tools.gold.render_table); no use of tools.gold.draft or the extractor's parsing. Values transcribed as displayed.",
+  "scale": "millions",
+  "scale_evidence": "(In millions, except per share data)",
+  "metric_label_raw": "Adjusted Corporate EBITDA (l)",
+  "note": null,
+  "periods": [
+    {
+      "period_id": "3M-2026-03-31",
+      "label_raw": "Three Months Ended March 31, 2026"
+    },
+    {
+      "period_id": "3M-2025-03-31",
+      "label_raw": "Three Months Ended March 31, 2025"
+    }
+  ],
+  "lines": [
+    {
+      "label_raw": "Net income (loss)",
+      "role": "gaap_start",
+      "sign": 1,
+      "values": [
+        "(333)",
+        "(443)"
+      ]
+    },
+    {
+      "label_raw": "Income tax provision (benefit)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "29",
+        "(82)"
+      ]
+    },
+    {
+      "label_raw": "Non-vehicle depreciation and amortization",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "26",
+        "30"
+      ]
+    },
+    {
+      "label_raw": "Non-vehicle debt interest, net of interest income (k)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "137",
+        "121"
+      ]
+    },
+    {
+      "label_raw": "Vehicle debt-related charges (b)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "12",
+        "11"
+      ]
+    },
+    {
+      "label_raw": "Restructuring and restructuring related charges (c)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "8",
+        "3"
+      ]
+    },
+    {
+      "label_raw": "Net (gains) losses on financial instruments (e)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "(29)",
+        "3"
+      ]
+    },
+    {
+      "label_raw": "Share-based compensation expense",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "17",
+        "15"
+      ]
+    },
+    {
+      "label_raw": "Foreign currency (gains) losses (f)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "—",
+        "4"
+      ]
+    },
+    {
+      "label_raw": "Change in fair value of Public Warrants",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "(33)",
+        "9"
+      ]
+    },
+    {
+      "label_raw": "Other items (g)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "5",
+        "27"
+      ]
+    },
+    {
+      "label_raw": "Adjusted Corporate EBITDA (l)",
+      "role": "total",
+      "sign": 1,
+      "values": [
+        "(161)",
+        "(302)"
+      ]
+    }
+  ]
+}

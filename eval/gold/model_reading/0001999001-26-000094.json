@@ -1,0 +1,274 @@
+{
+  "ticket": "P0-05b",
+  "accession": "0001999001-26-000094",
+  "ticker": "FUN",
+  "reader": "Claude (claude-opus-5-5)",
+  "read_on": "2026-10-14",
+  "method": "Read the approved table rendered as raw cell text (tools.gold.render_table); no use of tools.gold.draft or the extractor's parsing. Values transcribed as displayed.",
+  "scale": "thousands",
+  "scale_evidence": "RECONCILIATION OF MODIFIED EBITDA AND ADJUSTED EBITDA (In thousands)",
+  "metric_label_raw": "Adjusted EBITDA (4)",
+  "note": "Net income attributable to non-controlling interests is deducted from Modified EBITDA (268,157 - 25,084 = 243,073).",
+  "periods": [
+    {
+      "period_id": "3M-2026-06-28",
+      "label_raw": "Three months ended June 28, 2026"
+    },
+    {
+      "period_id": "3M-2025-06-29",
+      "label_raw": "Three months ended June 29, 2025"
+    },
+    {
+      "period_id": "6M-2026-06-28",
+      "label_raw": "Six months ended June 28, 2026"
+    },
+    {
+      "period_id": "6M-2025-06-29",
+      "label_raw": "Six months ended June 29, 2025"
+    },
+    {
+      "period_id": "12M-2025-12-31",
+      "label_raw": "Twelve months ended December 31, 2025"
+    },
+    {
+      "period_id": "12M-2026-06-28",
+      "label_raw": "Trailing twelve months ended (5) June 28, 2026"
+    }
+  ],
+  "lines": [
+    {
+      "label_raw": "Net loss",
+      "role": "gaap_start",
+      "sign": 1,
+      "values": [
+        "(177,536)",
+        "(74,832)",
+        "(446,136)",
+        "(294,550)",
+        "(1,549,466)",
+        "(1,701,052)"
+      ]
+    },
+    {
+      "label_raw": "Interest expense, net",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "102,052",
+        "92,409",
+        "196,980",
+        "179,444",
+        "359,958",
+        "377,494"
+      ]
+    },
+    {
+      "label_raw": "Provision (benefit) for taxes",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "157,410",
+        "76,283",
+        "9,047",
+        "(110,477)",
+        "(163,980)",
+        "(44,456)"
+      ]
+    },
+    {
+      "label_raw": "Depreciation and amortization",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "107,775",
+        "134,628",
+        "215,124",
+        "236,958",
+        "486,383",
+        "464,549"
+      ]
+    },
+    {
+      "label_raw": "EBITDA",
+      "role": "subtotal",
+      "sign": 1,
+      "values": [
+        "189,701",
+        "228,488",
+        "(24,985)",
+        "11,375",
+        "(867,105)",
+        "(903,465)"
+      ]
+    },
+    {
+      "label_raw": "Loss on early debt extinguishment",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "—",
+        "—",
+        "4,053",
+        "—",
+        "—",
+        "4,053"
+      ]
+    },
+    {
+      "label_raw": "Non-cash foreign currency loss (gain)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "6,655",
+        "(19,986)",
+        "11,794",
+        "(22,200)",
+        "(22,583)",
+        "11,411"
+      ]
+    },
+    {
+      "label_raw": "Non-cash equity compensation expense",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "19,585",
+        "8,935",
+        "23,357",
+        "26,011",
+        "64,157",
+        "61,503"
+      ]
+    },
+    {
+      "label_raw": "Loss on retirement of fixed assets, net",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "13,888",
+        "10,518",
+        "16,323",
+        "18,616",
+        "40,670",
+        "38,377"
+      ]
+    },
+    {
+      "label_raw": "Loss on impairment of goodwill and other intangibles",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "—",
+        "—",
+        "38,640",
+        "—",
+        "1,518,099",
+        "1,556,739"
+      ]
+    },
+    {
+      "label_raw": "Loss on disposal group",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "9,867",
+        "—",
+        "37,838",
+        "—",
+        "—",
+        "37,838"
+      ]
+    },
+    {
+      "label_raw": "Loss on other assets",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "—",
+        "—",
+        "—",
+        "791",
+        "791",
+        "—"
+      ]
+    },
+    {
+      "label_raw": "Costs related to the merger (1)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "3,716",
+        "11,030",
+        "8,630",
+        "26,670",
+        "48,911",
+        "30,871"
+      ]
+    },
+    {
+      "label_raw": "Severance (2)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "16,700",
+        "23,823",
+        "16,964",
+        "27,200",
+        "44,564",
+        "34,328"
+      ]
+    },
+    {
+      "label_raw": "Other (3)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "8,045",
+        "4,626",
+        "12,504",
+        "8,181",
+        "14,138",
+        "18,461"
+      ]
+    },
+    {
+      "label_raw": "Modified EBITDA (4)",
+      "role": "subtotal",
+      "sign": 1,
+      "values": [
+        "268,157",
+        "267,434",
+        "145,118",
+        "96,644",
+        "841,642",
+        "890,116"
+      ]
+    },
+    {
+      "label_raw": "Net income attributable to non-controlling interests",
+      "role": "adjustment",
+      "sign": -1,
+      "values": [
+        "25,084",
+        "24,816",
+        "25,084",
+        "24,816",
+        "49,632",
+        "49,900"
+      ]
+    },
+    {
+      "label_raw": "Adjusted EBITDA (4)",
+      "role": "total",
+      "sign": 1,
+      "values": [
+        "243,073",
+        "242,618",
+        "120,034",
+        "71,828",
+        "792,010",
+        "840,216"
+      ]
+    }
+  ]
+}

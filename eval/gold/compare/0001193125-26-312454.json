@@ -1,0 +1,328 @@
+{
+  "ticket": "P0-05b",
+  "accession": "0001193125-26-312454",
+  "ticker": "CYH",
+  "disagreements": [],
+  "values": [
+    {
+      "label_raw": "Net income attributable to Community Health Systems, Inc. stockholders",
+      "period_id": "3M-2026-06-30",
+      "value_raw": "70",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Net income attributable to Community Health Systems, Inc. stockholders",
+      "period_id": "3M-2025-06-30",
+      "value_raw": "282",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Net income attributable to Community Health Systems, Inc. stockholders",
+      "period_id": "6M-2026-06-30",
+      "value_raw": "12",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Net income attributable to Community Health Systems, Inc. stockholders",
+      "period_id": "6M-2025-06-30",
+      "value_raw": "269",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Provision for income taxes",
+      "period_id": "3M-2026-06-30",
+      "value_raw": "76",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Provision for income taxes",
+      "period_id": "3M-2025-06-30",
+      "value_raw": "118",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Provision for income taxes",
+      "period_id": "6M-2026-06-30",
+      "value_raw": "165",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Provision for income taxes",
+      "period_id": "6M-2025-06-30",
+      "value_raw": "160",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Depreciation and amortization",
+      "period_id": "3M-2026-06-30",
+      "value_raw": "108",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Depreciation and amortization",
+      "period_id": "3M-2025-06-30",
+      "value_raw": "105",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Depreciation and amortization",
+      "period_id": "6M-2026-06-30",
+      "value_raw": "222",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Depreciation and amortization",
+      "period_id": "6M-2025-06-30",
+      "value_raw": "211",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Net income attributable to noncontrolling interests",
+      "period_id": "3M-2026-06-30",
+      "value_raw": "34",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Net income attributable to noncontrolling interests",
+      "period_id": "3M-2025-06-30",
+      "value_raw": "38",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Net income attributable to noncontrolling interests",
+      "period_id": "6M-2026-06-30",
+      "value_raw": "67",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Net income attributable to noncontrolling interests",
+      "period_id": "6M-2025-06-30",
+      "value_raw": "76",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Interest expense, net",
+      "period_id": "3M-2026-06-30",
+      "value_raw": "206",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Interest expense, net",
+      "period_id": "3M-2025-06-30",
+      "value_raw": "214",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Interest expense, net",
+      "period_id": "6M-2026-06-30",
+      "value_raw": "419",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Interest expense, net",
+      "period_id": "6M-2025-06-30",
+      "value_raw": "432",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss (gain) from early extinguishment of debt",
+      "period_id": "3M-2026-06-30",
+      "value_raw": "5",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss (gain) from early extinguishment of debt",
+      "period_id": "3M-2025-06-30",
+      "value_raw": "(138)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss (gain) from early extinguishment of debt",
+      "period_id": "6M-2026-06-30",
+      "value_raw": "12",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss (gain) from early extinguishment of debt",
+      "period_id": "6M-2025-06-30",
+      "value_raw": "(138)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Impairment and (gain) loss on sale of businesses, net",
+      "period_id": "3M-2026-06-30",
+      "value_raw": "(172)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Impairment and (gain) loss on sale of businesses, net",
+      "period_id": "3M-2025-06-30",
+      "value_raw": "(239)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Impairment and (gain) loss on sale of businesses, net",
+      "period_id": "6M-2026-06-30",
+      "value_raw": "(262)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Impairment and (gain) loss on sale of businesses, net",
+      "period_id": "6M-2025-06-30",
+      "value_raw": "(263)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Expense related to employee termination benefits and other restructuring charges",
+      "period_id": "3M-2026-06-30",
+      "value_raw": "3",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Expense related to employee termination benefits and other restructuring charges",
+      "period_id": "3M-2025-06-30",
+      "value_raw": "-",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Expense related to employee termination benefits and other restructuring charges",
+      "period_id": "6M-2026-06-30",
+      "value_raw": "3",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Expense related to employee termination benefits and other restructuring charges",
+      "period_id": "6M-2025-06-30",
+      "value_raw": "-",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Expense from business transformation costs",
+      "period_id": "3M-2026-06-30",
+      "value_raw": "-",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Expense from business transformation costs",
+      "period_id": "3M-2025-06-30",
+      "value_raw": "-",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Expense from business transformation costs",
+      "period_id": "6M-2026-06-30",
+      "value_raw": "-",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Expense from business transformation costs",
+      "period_id": "6M-2025-06-30",
+      "value_raw": "9",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Adjusted EBITDA",
+      "period_id": "3M-2026-06-30",
+      "value_raw": "330",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Adjusted EBITDA",
+      "period_id": "3M-2025-06-30",
+      "value_raw": "380",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Adjusted EBITDA",
+      "period_id": "6M-2026-06-30",
+      "value_raw": "638",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Adjusted EBITDA",
+      "period_id": "6M-2025-06-30",
+      "value_raw": "756",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    }
+  ]
+}

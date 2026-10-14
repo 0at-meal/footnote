@@ -1,0 +1,872 @@
+{
+  "ticket": "P0-05b",
+  "accession": "0001999001-26-000094",
+  "ticker": "FUN",
+  "disagreements": [],
+  "values": [
+    {
+      "label_raw": "Net loss",
+      "period_id": "3M-2026-06-28",
+      "value_raw": "(177,536)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Net loss",
+      "period_id": "3M-2025-06-29",
+      "value_raw": "(74,832)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Net loss",
+      "period_id": "6M-2026-06-28",
+      "value_raw": "(446,136)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Net loss",
+      "period_id": "6M-2025-06-29",
+      "value_raw": "(294,550)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Net loss",
+      "period_id": "12M-2025-12-31",
+      "value_raw": "(1,549,466)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Net loss",
+      "period_id": "12M-2026-06-28",
+      "value_raw": "(1,701,052)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Interest expense, net",
+      "period_id": "3M-2026-06-28",
+      "value_raw": "102,052",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Interest expense, net",
+      "period_id": "3M-2025-06-29",
+      "value_raw": "92,409",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Interest expense, net",
+      "period_id": "6M-2026-06-28",
+      "value_raw": "196,980",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Interest expense, net",
+      "period_id": "6M-2025-06-29",
+      "value_raw": "179,444",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Interest expense, net",
+      "period_id": "12M-2025-12-31",
+      "value_raw": "359,958",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Interest expense, net",
+      "period_id": "12M-2026-06-28",
+      "value_raw": "377,494",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Provision (benefit) for taxes",
+      "period_id": "3M-2026-06-28",
+      "value_raw": "157,410",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Provision (benefit) for taxes",
+      "period_id": "3M-2025-06-29",
+      "value_raw": "76,283",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Provision (benefit) for taxes",
+      "period_id": "6M-2026-06-28",
+      "value_raw": "9,047",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Provision (benefit) for taxes",
+      "period_id": "6M-2025-06-29",
+      "value_raw": "(110,477)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Provision (benefit) for taxes",
+      "period_id": "12M-2025-12-31",
+      "value_raw": "(163,980)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Provision (benefit) for taxes",
+      "period_id": "12M-2026-06-28",
+      "value_raw": "(44,456)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Depreciation and amortization",
+      "period_id": "3M-2026-06-28",
+      "value_raw": "107,775",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Depreciation and amortization",
+      "period_id": "3M-2025-06-29",
+      "value_raw": "134,628",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Depreciation and amortization",
+      "period_id": "6M-2026-06-28",
+      "value_raw": "215,124",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Depreciation and amortization",
+      "period_id": "6M-2025-06-29",
+      "value_raw": "236,958",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Depreciation and amortization",
+      "period_id": "12M-2025-12-31",
+      "value_raw": "486,383",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Depreciation and amortization",
+      "period_id": "12M-2026-06-28",
+      "value_raw": "464,549",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "EBITDA",
+      "period_id": "3M-2026-06-28",
+      "value_raw": "189,701",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "EBITDA",
+      "period_id": "3M-2025-06-29",
+      "value_raw": "228,488",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "EBITDA",
+      "period_id": "6M-2026-06-28",
+      "value_raw": "(24,985)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "EBITDA",
+      "period_id": "6M-2025-06-29",
+      "value_raw": "11,375",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "EBITDA",
+      "period_id": "12M-2025-12-31",
+      "value_raw": "(867,105)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "EBITDA",
+      "period_id": "12M-2026-06-28",
+      "value_raw": "(903,465)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss on early debt extinguishment",
+      "period_id": "3M-2026-06-28",
+      "value_raw": "—",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss on early debt extinguishment",
+      "period_id": "3M-2025-06-29",
+      "value_raw": "—",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss on early debt extinguishment",
+      "period_id": "6M-2026-06-28",
+      "value_raw": "4,053",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss on early debt extinguishment",
+      "period_id": "6M-2025-06-29",
+      "value_raw": "—",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss on early debt extinguishment",
+      "period_id": "12M-2025-12-31",
+      "value_raw": "—",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss on early debt extinguishment",
+      "period_id": "12M-2026-06-28",
+      "value_raw": "4,053",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Non-cash foreign currency loss (gain)",
+      "period_id": "3M-2026-06-28",
+      "value_raw": "6,655",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Non-cash foreign currency loss (gain)",
+      "period_id": "3M-2025-06-29",
+      "value_raw": "(19,986)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Non-cash foreign currency loss (gain)",
+      "period_id": "6M-2026-06-28",
+      "value_raw": "11,794",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Non-cash foreign currency loss (gain)",
+      "period_id": "6M-2025-06-29",
+      "value_raw": "(22,200)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Non-cash foreign currency loss (gain)",
+      "period_id": "12M-2025-12-31",
+      "value_raw": "(22,583)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Non-cash foreign currency loss (gain)",
+      "period_id": "12M-2026-06-28",
+      "value_raw": "11,411",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Non-cash equity compensation expense",
+      "period_id": "3M-2026-06-28",
+      "value_raw": "19,585",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Non-cash equity compensation expense",
+      "period_id": "3M-2025-06-29",
+      "value_raw": "8,935",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Non-cash equity compensation expense",
+      "period_id": "6M-2026-06-28",
+      "value_raw": "23,357",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Non-cash equity compensation expense",
+      "period_id": "6M-2025-06-29",
+      "value_raw": "26,011",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Non-cash equity compensation expense",
+      "period_id": "12M-2025-12-31",
+      "value_raw": "64,157",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Non-cash equity compensation expense",
+      "period_id": "12M-2026-06-28",
+      "value_raw": "61,503",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss on retirement of fixed assets, net",
+      "period_id": "3M-2026-06-28",
+      "value_raw": "13,888",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss on retirement of fixed assets, net",
+      "period_id": "3M-2025-06-29",
+      "value_raw": "10,518",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss on retirement of fixed assets, net",
+      "period_id": "6M-2026-06-28",
+      "value_raw": "16,323",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss on retirement of fixed assets, net",
+      "period_id": "6M-2025-06-29",
+      "value_raw": "18,616",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss on retirement of fixed assets, net",
+      "period_id": "12M-2025-12-31",
+      "value_raw": "40,670",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss on retirement of fixed assets, net",
+      "period_id": "12M-2026-06-28",
+      "value_raw": "38,377",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss on impairment of goodwill and other intangibles",
+      "period_id": "3M-2026-06-28",
+      "value_raw": "—",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss on impairment of goodwill and other intangibles",
+      "period_id": "3M-2025-06-29",
+      "value_raw": "—",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss on impairment of goodwill and other intangibles",
+      "period_id": "6M-2026-06-28",
+      "value_raw": "38,640",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss on impairment of goodwill and other intangibles",
+      "period_id": "6M-2025-06-29",
+      "value_raw": "—",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss on impairment of goodwill and other intangibles",
+      "period_id": "12M-2025-12-31",
+      "value_raw": "1,518,099",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss on impairment of goodwill and other intangibles",
+      "period_id": "12M-2026-06-28",
+      "value_raw": "1,556,739",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss on disposal group",
+      "period_id": "3M-2026-06-28",
+      "value_raw": "9,867",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss on disposal group",
+      "period_id": "3M-2025-06-29",
+      "value_raw": "—",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss on disposal group",
+      "period_id": "6M-2026-06-28",
+      "value_raw": "37,838",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss on disposal group",
+      "period_id": "6M-2025-06-29",
+      "value_raw": "—",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss on disposal group",
+      "period_id": "12M-2025-12-31",
+      "value_raw": "—",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss on disposal group",
+      "period_id": "12M-2026-06-28",
+      "value_raw": "37,838",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss on other assets",
+      "period_id": "3M-2026-06-28",
+      "value_raw": "—",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss on other assets",
+      "period_id": "3M-2025-06-29",
+      "value_raw": "—",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss on other assets",
+      "period_id": "6M-2026-06-28",
+      "value_raw": "—",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss on other assets",
+      "period_id": "6M-2025-06-29",
+      "value_raw": "791",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss on other assets",
+      "period_id": "12M-2025-12-31",
+      "value_raw": "791",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss on other assets",
+      "period_id": "12M-2026-06-28",
+      "value_raw": "—",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Costs related to the merger (1)",
+      "period_id": "3M-2026-06-28",
+      "value_raw": "3,716",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Costs related to the merger (1)",
+      "period_id": "3M-2025-06-29",
+      "value_raw": "11,030",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Costs related to the merger (1)",
+      "period_id": "6M-2026-06-28",
+      "value_raw": "8,630",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Costs related to the merger (1)",
+      "period_id": "6M-2025-06-29",
+      "value_raw": "26,670",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Costs related to the merger (1)",
+      "period_id": "12M-2025-12-31",
+      "value_raw": "48,911",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Costs related to the merger (1)",
+      "period_id": "12M-2026-06-28",
+      "value_raw": "30,871",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Severance (2)",
+      "period_id": "3M-2026-06-28",
+      "value_raw": "16,700",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Severance (2)",
+      "period_id": "3M-2025-06-29",
+      "value_raw": "23,823",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Severance (2)",
+      "period_id": "6M-2026-06-28",
+      "value_raw": "16,964",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Severance (2)",
+      "period_id": "6M-2025-06-29",
+      "value_raw": "27,200",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Severance (2)",
+      "period_id": "12M-2025-12-31",
+      "value_raw": "44,564",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Severance (2)",
+      "period_id": "12M-2026-06-28",
+      "value_raw": "34,328",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Other (3)",
+      "period_id": "3M-2026-06-28",
+      "value_raw": "8,045",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Other (3)",
+      "period_id": "3M-2025-06-29",
+      "value_raw": "4,626",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Other (3)",
+      "period_id": "6M-2026-06-28",
+      "value_raw": "12,504",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Other (3)",
+      "period_id": "6M-2025-06-29",
+      "value_raw": "8,181",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Other (3)",
+      "period_id": "12M-2025-12-31",
+      "value_raw": "14,138",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Other (3)",
+      "period_id": "12M-2026-06-28",
+      "value_raw": "18,461",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Modified EBITDA (4)",
+      "period_id": "3M-2026-06-28",
+      "value_raw": "268,157",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Modified EBITDA (4)",
+      "period_id": "3M-2025-06-29",
+      "value_raw": "267,434",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Modified EBITDA (4)",
+      "period_id": "6M-2026-06-28",
+      "value_raw": "145,118",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Modified EBITDA (4)",
+      "period_id": "6M-2025-06-29",
+      "value_raw": "96,644",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Modified EBITDA (4)",
+      "period_id": "12M-2025-12-31",
+      "value_raw": "841,642",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Modified EBITDA (4)",
+      "period_id": "12M-2026-06-28",
+      "value_raw": "890,116",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Net income attributable to non-controlling interests",
+      "period_id": "3M-2026-06-28",
+      "value_raw": "25,084",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Net income attributable to non-controlling interests",
+      "period_id": "3M-2025-06-29",
+      "value_raw": "24,816",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Net income attributable to non-controlling interests",
+      "period_id": "6M-2026-06-28",
+      "value_raw": "25,084",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Net income attributable to non-controlling interests",
+      "period_id": "6M-2025-06-29",
+      "value_raw": "24,816",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Net income attributable to non-controlling interests",
+      "period_id": "12M-2025-12-31",
+      "value_raw": "49,632",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Net income attributable to non-controlling interests",
+      "period_id": "12M-2026-06-28",
+      "value_raw": "49,900",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Adjusted EBITDA (4)",
+      "period_id": "3M-2026-06-28",
+      "value_raw": "243,073",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Adjusted EBITDA (4)",
+      "period_id": "3M-2025-06-29",
+      "value_raw": "242,618",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Adjusted EBITDA (4)",
+      "period_id": "6M-2026-06-28",
+      "value_raw": "120,034",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Adjusted EBITDA (4)",
+      "period_id": "6M-2025-06-29",
+      "value_raw": "71,828",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Adjusted EBITDA (4)",
+      "period_id": "12M-2025-12-31",
+      "value_raw": "792,010",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Adjusted EBITDA (4)",
+      "period_id": "12M-2026-06-28",
+      "value_raw": "840,216",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    }
+  ]
+}

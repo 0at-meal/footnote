@@ -1,0 +1,142 @@
+{
+  "ticket": "P0-05b",
+  "accession": "0001260221-26-000052",
+  "ticker": "TDG",
+  "reader": "Claude (claude-opus-5-5)",
+  "read_on": "2026-10-14",
+  "method": "Read the approved table rendered as raw cell text (tools.gold.render_table); no use of tools.gold.draft or the extractor's parsing. Values transcribed as displayed.",
+  "scale": "millions",
+  "scale_evidence": "(Amounts in millions, except per share amounts)",
+  "metric_label_raw": "EBITDA As Defined",
+  "note": null,
+  "periods": [
+    {
+      "period_id": "3M-2026-06-27",
+      "label_raw": "Thirteen Week Periods Ended June 27, 2026"
+    },
+    {
+      "period_id": "3M-2025-06-28",
+      "label_raw": "Thirteen Week Periods Ended June 28, 2025"
+    },
+    {
+      "period_id": "9M-2026-06-27",
+      "label_raw": "Thirty-Nine Week Periods Ended June 27, 2026"
+    },
+    {
+      "period_id": "9M-2025-06-28",
+      "label_raw": "Thirty-Nine Week Periods Ended June 28, 2025"
+    }
+  ],
+  "lines": [
+    {
+      "label_raw": "Net Income",
+      "role": "gaap_start",
+      "sign": 1,
+      "values": [
+        "540",
+        "493",
+        "1,521",
+        "1,465"
+      ]
+    },
+    {
+      "label_raw": "Depreciation and amortization expense",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "118",
+        "91",
+        "324",
+        "271"
+      ]
+    },
+    {
+      "label_raw": "Interest expense-net",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "514",
+        "397",
+        "1,472",
+        "1,152"
+      ]
+    },
+    {
+      "label_raw": "Income tax provision",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "173",
+        "142",
+        "464",
+        "411"
+      ]
+    },
+    {
+      "label_raw": "EBITDA",
+      "role": "subtotal",
+      "sign": 1,
+      "values": [
+        "1,345",
+        "1,123",
+        "3,781",
+        "3,299"
+      ]
+    },
+    {
+      "label_raw": "Acquisition transaction and integration-related expenses (1)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "35",
+        "9",
+        "66",
+        "32"
+      ]
+    },
+    {
+      "label_raw": "Non-cash stock and deferred compensation expense (2)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "65",
+        "51",
+        "118",
+        "124"
+      ]
+    },
+    {
+      "label_raw": "Other, net (3)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "2",
+        "34",
+        "16",
+        "(14)"
+      ]
+    },
+    {
+      "label_raw": "Gross Adjustments to EBITDA",
+      "role": "subtotal",
+      "sign": 1,
+      "values": [
+        "102",
+        "94",
+        "200",
+        "142"
+      ]
+    },
+    {
+      "label_raw": "EBITDA As Defined",
+      "role": "total",
+      "sign": 1,
+      "values": [
+        "1,447",
+        "1,217",
+        "3,981",
+        "3,441"
+      ]
+    }
+  ]
+}

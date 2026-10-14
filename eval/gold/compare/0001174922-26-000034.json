@@ -1,0 +1,232 @@
+{
+  "ticket": "P0-05b",
+  "accession": "0001174922-26-000034",
+  "ticker": "WYNN",
+  "disagreements": [],
+  "values": [
+    {
+      "label_raw": "Net income attributable to Wynn Resorts, Limited",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "120,454",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Net income attributable to Wynn Resorts, Limited",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "72,747",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Net income attributable to noncontrolling interests",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "30,084",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Net income attributable to noncontrolling interests",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "8,658",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Pre-opening expenses",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "11,745",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Pre-opening expenses",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "5,287",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Depreciation and amortization",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "160,527",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Depreciation and amortization",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "155,421",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Property charges and other",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "11,629",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Property charges and other",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "12,232",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Triple-net operating lease rent expense",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "35,364",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Triple-net operating lease rent expense",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "35,389",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Corporate expenses and other",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "34,810",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Corporate expenses and other",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "36,581",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Stock-based compensation",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "25,738",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Stock-based compensation",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "19,400",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Interest income",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "(13,092)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Interest income",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "(19,359)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Interest expense, net of amounts capitalized",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "152,362",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Interest expense, net of amounts capitalized",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "157,608",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Change in derivatives fair value",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "(46,770)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Change in derivatives fair value",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "29,539",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Other",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "29,434",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Other",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "8,374",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Provision for income taxes",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "10,132",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Provision for income taxes",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "11,022",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Adjusted Property EBITDAR",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "562,417",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Adjusted Property EBITDAR",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "532,899",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    }
+  ]
+}

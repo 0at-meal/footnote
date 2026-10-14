@@ -1,0 +1,200 @@
+{
+  "ticket": "P0-05b",
+  "accession": "0001657853-26-000021",
+  "ticker": "HTZ",
+  "disagreements": [],
+  "values": [
+    {
+      "label_raw": "Net income (loss)",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "(333)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Net income (loss)",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "(443)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Income tax provision (benefit)",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "29",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Income tax provision (benefit)",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "(82)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Non-vehicle depreciation and amortization",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "26",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Non-vehicle depreciation and amortization",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "30",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Non-vehicle debt interest, net of interest income (k)",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "137",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Non-vehicle debt interest, net of interest income (k)",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "121",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Vehicle debt-related charges (b)",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "12",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Vehicle debt-related charges (b)",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "11",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Restructuring and restructuring related charges (c)",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "8",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Restructuring and restructuring related charges (c)",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "3",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Net (gains) losses on financial instruments (e)",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "(29)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Net (gains) losses on financial instruments (e)",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "3",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Share-based compensation expense",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "17",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Share-based compensation expense",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "15",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Foreign currency (gains) losses (f)",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "—",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Foreign currency (gains) losses (f)",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "4",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Change in fair value of Public Warrants",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "(33)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Change in fair value of Public Warrants",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "9",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Other items (g)",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "5",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Other items (g)",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "27",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Adjusted Corporate EBITDA (l)",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "(161)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Adjusted Corporate EBITDA (l)",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "(302)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    }
+  ]
+}

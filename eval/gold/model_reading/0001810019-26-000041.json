@@ -1,0 +1,123 @@
+{
+  "ticket": "P0-05b",
+  "accession": "0001810019-26-000041",
+  "ticker": "RXT",
+  "reader": "Claude (claude-opus-5-5)",
+  "read_on": "2026-10-14",
+  "method": "Read the approved table rendered as raw cell text (tools.gold.render_table); no use of tools.gold.draft or the extractor's parsing. Values transcribed as displayed.",
+  "scale": "millions",
+  "scale_evidence": "(In millions)",
+  "metric_label_raw": "Adjusted EBITDA",
+  "note": null,
+  "periods": [
+    {
+      "period_id": "3M-2025-03-31",
+      "label_raw": "Three Months Ended March 31, 2025"
+    },
+    {
+      "period_id": "3M-2026-03-31",
+      "label_raw": "Three Months Ended March 31, 2026"
+    }
+  ],
+  "lines": [
+    {
+      "label_raw": "Net income (loss)",
+      "role": "gaap_start",
+      "sign": 1,
+      "values": [
+        "(71.5)",
+        "8.3"
+      ]
+    },
+    {
+      "label_raw": "Share-based compensation expense",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "12.0",
+        "6.6"
+      ]
+    },
+    {
+      "label_raw": "Transaction-related adjustments, net (a)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "1.5",
+        "1.6"
+      ]
+    },
+    {
+      "label_raw": "Restructuring and transformation expenses (b)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "13.1",
+        "9.0"
+      ]
+    },
+    {
+      "label_raw": "Net loss on divestiture and investments (c)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "0.1",
+        "0.1"
+      ]
+    },
+    {
+      "label_raw": "Gain on debt extinguishment",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "—",
+        "(55.8)"
+      ]
+    },
+    {
+      "label_raw": "Other expense, net (h)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "5.4",
+        "3.5"
+      ]
+    },
+    {
+      "label_raw": "Interest expense",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "19.4",
+        "26.2"
+      ]
+    },
+    {
+      "label_raw": "Provision (benefit) for income taxes",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "8.2",
+        "(0.1)"
+      ]
+    },
+    {
+      "label_raw": "Depreciation and amortization (i)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "73.1",
+        "71.8"
+      ]
+    },
+    {
+      "label_raw": "Adjusted EBITDA",
+      "role": "total",
+      "sign": 1,
+      "values": [
+        "61.3",
+        "71.2"
+      ]
+    }
+  ]
+}

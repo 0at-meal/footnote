@@ -1,0 +1,175 @@
+{
+  "ticket": "P0-05b",
+  "accession": "0000723612-26-000037",
+  "ticker": "CAR",
+  "reader": "Claude (claude-opus-5-5)",
+  "read_on": "2026-10-14",
+  "method": "Read the approved table rendered as raw cell text (tools.gold.render_table); no use of tools.gold.draft or the extractor's parsing. Values transcribed as displayed.",
+  "scale": "millions",
+  "scale_evidence": "RECONCILIATION OF NON-GAAP MEASURES (Unaudited) (In millions)",
+  "metric_label_raw": "Adjusted EBITDA (d)",
+  "note": null,
+  "periods": [
+    {
+      "period_id": "3M-2026-06-30",
+      "label_raw": "Three Months Ended June 30, 2026"
+    },
+    {
+      "period_id": "3M-2025-06-30",
+      "label_raw": "Three Months Ended June 30, 2025"
+    },
+    {
+      "period_id": "6M-2026-06-30",
+      "label_raw": "Six Months Ended June 30, 2026"
+    },
+    {
+      "period_id": "6M-2025-06-30",
+      "label_raw": "Six Months Ended June 30, 2025"
+    }
+  ],
+  "lines": [
+    {
+      "label_raw": "Net income (loss)",
+      "role": "gaap_start",
+      "sign": 1,
+      "values": [
+        "63",
+        "5",
+        "(171)",
+        "(499)"
+      ]
+    },
+    {
+      "label_raw": "Provision for (benefit from) income taxes",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "10",
+        "10",
+        "(96)",
+        "(163)"
+      ]
+    },
+    {
+      "label_raw": "Income (loss) before income taxes",
+      "role": "subtotal",
+      "sign": 1,
+      "values": [
+        "73",
+        "15",
+        "(267)",
+        "(662)"
+      ]
+    },
+    {
+      "label_raw": "Non-vehicle related depreciation and amortization",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "60",
+        "60",
+        "118",
+        "116"
+      ]
+    },
+    {
+      "label_raw": "Interest expense",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "108",
+        "110",
+        "217",
+        "207"
+      ]
+    },
+    {
+      "label_raw": "Early extinguishment of debt",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "3",
+        "3",
+        "3",
+        "3"
+      ]
+    },
+    {
+      "label_raw": "Other fleet charges (a)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "—",
+        "—",
+        "—",
+        "390"
+      ]
+    },
+    {
+      "label_raw": "Restructuring and other related charges",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "18",
+        "59",
+        "53",
+        "81"
+      ]
+    },
+    {
+      "label_raw": "Transaction-related costs, net",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "9",
+        "—",
+        "15",
+        "—"
+      ]
+    },
+    {
+      "label_raw": "Other (income) expense, net",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "1",
+        "5",
+        "7",
+        "11"
+      ]
+    },
+    {
+      "label_raw": "Legal matters, net (b)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "3",
+        "12",
+        "4",
+        "13"
+      ]
+    },
+    {
+      "label_raw": "Cloud computing costs (c)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "11",
+        "13",
+        "23",
+        "25"
+      ]
+    },
+    {
+      "label_raw": "Adjusted EBITDA (d)",
+      "role": "total",
+      "sign": 1,
+      "values": [
+        "286",
+        "277",
+        "173",
+        "184"
+      ]
+    }
+  ]
+}

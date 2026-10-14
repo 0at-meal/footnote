@@ -1,0 +1,177 @@
+{
+  "ticket": "P0-05b",
+  "accession": "0000885590-26-000051",
+  "ticker": "BHC",
+  "reader": "Claude (claude-opus-5-5)",
+  "read_on": "2026-10-14",
+  "method": "Read the approved table rendered as raw cell text (tools.gold.render_table); no use of tools.gold.draft or the extractor's parsing. Values transcribed as displayed.",
+  "scale": "millions",
+  "scale_evidence": "(in millions)",
+  "metric_label_raw": "Adjusted EBITDA attributable to Bausch Health Companies Inc. (non-GAAP) (c)",
+  "note": null,
+  "periods": [
+    {
+      "period_id": "3M-2026-03-31",
+      "label_raw": "Three Months Ended March 31, 2026"
+    },
+    {
+      "period_id": "3M-2025-03-31",
+      "label_raw": "Three Months Ended March 31, 2025"
+    }
+  ],
+  "lines": [
+    {
+      "label_raw": "Net loss",
+      "role": "gaap_start",
+      "sign": 1,
+      "values": [
+        "(1,431)",
+        "(86)"
+      ]
+    },
+    {
+      "label_raw": "Interest expense, net",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "392",
+        "319"
+      ]
+    },
+    {
+      "label_raw": "Provision for income taxes",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "77",
+        "39"
+      ]
+    },
+    {
+      "label_raw": "Depreciation and amortization",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "295",
+        "305"
+      ]
+    },
+    {
+      "label_raw": "EBITDA",
+      "role": "subtotal",
+      "sign": 1,
+      "values": [
+        "(667)",
+        "577"
+      ]
+    },
+    {
+      "label_raw": "Goodwill impairments",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "1,426",
+        "—"
+      ]
+    },
+    {
+      "label_raw": "Restructuring, integration and transformation costs",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "19",
+        "29"
+      ]
+    },
+    {
+      "label_raw": "Acquisition-related costs and adjustments (excluding amortization of intangible assets)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "16",
+        "12"
+      ]
+    },
+    {
+      "label_raw": "Loss on extinguishment of debt",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "1",
+        "—"
+      ]
+    },
+    {
+      "label_raw": "Share-based compensation",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "52",
+        "43"
+      ]
+    },
+    {
+      "label_raw": "Separation costs and separation-related costs",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "1",
+        "5"
+      ]
+    },
+    {
+      "label_raw": "Litigation and other matters, net of insurance recoveries and restitutions",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "10",
+        "(3)"
+      ]
+    },
+    {
+      "label_raw": "Gain on sale of assets, net",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "(3)",
+        "—"
+      ]
+    },
+    {
+      "label_raw": "Other",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "8",
+        "12"
+      ]
+    },
+    {
+      "label_raw": "Adjusted EBITDA (non-GAAP) (a)",
+      "role": "subtotal",
+      "sign": 1,
+      "values": [
+        "863",
+        "675"
+      ]
+    },
+    {
+      "label_raw": "Adjusted EBITDA attributable to noncontrolling interest (non-GAAP) (b)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "(26)",
+        "(14)"
+      ]
+    },
+    {
+      "label_raw": "Adjusted EBITDA attributable to Bausch Health Companies Inc. (non-GAAP) (c)",
+      "role": "total",
+      "sign": 1,
+      "values": [
+        "837",
+        "661"
+      ]
+    }
+  ]
+}

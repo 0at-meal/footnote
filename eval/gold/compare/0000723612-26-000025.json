@@ -1,0 +1,200 @@
+{
+  "ticket": "P0-05b",
+  "accession": "0000723612-26-000025",
+  "ticker": "CAR",
+  "disagreements": [],
+  "values": [
+    {
+      "label_raw": "Net loss",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "(234)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Net loss",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "(504)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Benefit from income taxes",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "(106)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Benefit from income taxes",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "(173)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss before income taxes",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "(340)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss before income taxes",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "(677)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Non-vehicle related depreciation and amortization",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "58",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Non-vehicle related depreciation and amortization",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "56",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Interest expense",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "109",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Interest expense",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "97",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Other fleet charges (a)",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "—",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Other fleet charges (a)",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "390",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Restructuring and other related charges",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "35",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Restructuring and other related charges",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "22",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Transaction-related costs, net",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "6",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Transaction-related costs, net",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "—",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Other (income) expense, net",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "6",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Other (income) expense, net",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "6",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Legal matters, net (b)",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "1",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Legal matters, net (b)",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "1",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Cloud computing costs (c)",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "12",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Cloud computing costs (c)",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "12",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Adjusted EBITDA (d)",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "(113)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Adjusted EBITDA (d)",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "(93)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    }
+  ]
+}

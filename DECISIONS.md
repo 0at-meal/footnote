@@ -5,6 +5,15 @@ Newest first. One entry per decision, with date and reason. Entries before
 those entries described features as deployed that were never wired into the
 running app (see the retraction below).
 
+- **2026-10-14: P0-05b independent reading done.** Claude transcribed all 30 bridges from the
+  approved tables rendered as raw cell text (`tools.gold.render_table`, no extractor logic),
+  recording periods, scale (with quoted evidence), labels, roles, signs and every value. The
+  comparison (`tools.gold.compare`) found one disagreement in 1,304 values: a sign on a row
+  that is blank in every column, which arithmetic cannot settle. 1,231 values (94.4%) are
+  `model_agreement` (both P0-05 checks pass and the reader agrees). The other 73 stay
+  unverified until the owner resolves them. Limits of independence: the reader used the
+  P0-01 table choice and the same HTML cell text, so table selection and source-text errors
+  are not covered; the owner's table confirmation in P0-06 covers the former.
 - **2026-10-14: P0-05 drafts; parser fix found on real filings.** `parse_numeric_cell` treated a
   cell that is only a single-digit negative, e.g. "(7)", as a footnote marker and dropped the
   value; it now strips a trailing footnote only when something remains. The draft tool also

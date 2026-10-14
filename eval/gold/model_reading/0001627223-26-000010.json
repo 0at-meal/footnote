@@ -1,0 +1,264 @@
+{
+  "ticket": "P0-05b",
+  "accession": "0001627223-26-000010",
+  "ticker": "CC",
+  "reader": "Claude (claude-opus-5-5)",
+  "read_on": "2026-10-14",
+  "method": "Read the approved table rendered as raw cell text (tools.gold.render_table); no use of tools.gold.draft or the extractor's parsing. Values transcribed as displayed.",
+  "scale": "millions",
+  "scale_evidence": "Dollars in millions",
+  "metric_label_raw": "Adjusted EBITDA",
+  "note": "'(Loss) income before income taxes' above the bridge is a memo row, not the starting line.",
+  "periods": [
+    {
+      "period_id": "3M-2026-03-31",
+      "label_raw": "Three Months Ended March 31, 2026"
+    },
+    {
+      "period_id": "3M-2025-03-31",
+      "label_raw": "Three Months Ended March 31, 2025"
+    },
+    {
+      "period_id": "3M-2025-12-31",
+      "label_raw": "Three Months Ended December 31, 2025"
+    },
+    {
+      "period_id": "12M-2026-03-31",
+      "label_raw": "Twelve Months Ended March 31, 2026"
+    },
+    {
+      "period_id": "12M-2025-03-31",
+      "label_raw": "Twelve Months Ended March 31, 2025"
+    }
+  ],
+  "lines": [
+    {
+      "label_raw": "Net (loss) income attributable to Chemours",
+      "role": "gaap_start",
+      "sign": 1,
+      "values": [
+        "(29)",
+        "(5)",
+        "(47)",
+        "(409)",
+        "12"
+      ]
+    },
+    {
+      "label_raw": "Non-operating pension and other post-retirement employee benefit (income) cost",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "(2)",
+        "(2)",
+        "(3)",
+        "(11)",
+        "(5)"
+      ]
+    },
+    {
+      "label_raw": "Exchange (gains) losses, net",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "(1)",
+        "3",
+        "4",
+        "8",
+        "13"
+      ]
+    },
+    {
+      "label_raw": "Restructuring, asset-related, and other charges (1)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "13",
+        "32",
+        "4",
+        "39",
+        "85"
+      ]
+    },
+    {
+      "label_raw": "Goodwill impairment charge (2)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "—",
+        "—",
+        "—",
+        "—",
+        "56"
+      ]
+    },
+    {
+      "label_raw": "Loss (gain) on extinguishment of debt (3)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "9",
+        "—",
+        "5",
+        "14",
+        "1"
+      ]
+    },
+    {
+      "label_raw": "Gain on sales of assets and businesses, net (4)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "—",
+        "(1)",
+        "—",
+        "(7)",
+        "(1)"
+      ]
+    },
+    {
+      "label_raw": "Transaction costs (5)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "2",
+        "—",
+        "4",
+        "8",
+        "2"
+      ]
+    },
+    {
+      "label_raw": "Qualified spend recovery (6)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "(5)",
+        "(9)",
+        "(7)",
+        "(38)",
+        "(28)"
+      ]
+    },
+    {
+      "label_raw": "Litigation-related charges (7)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "20",
+        "—",
+        "19",
+        "340",
+        "2"
+      ]
+    },
+    {
+      "label_raw": "Environmental charges (8)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "7",
+        "—",
+        "20",
+        "100",
+        "15"
+      ]
+    },
+    {
+      "label_raw": "Adjustments made to income taxes (9)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "1",
+        "1",
+        "19",
+        "181",
+        "9"
+      ]
+    },
+    {
+      "label_raw": "(Benefit from) provision for income taxes relating to reconciling items (10)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "(7)",
+        "—",
+        "(11)",
+        "(92)",
+        "(9)"
+      ]
+    },
+    {
+      "label_raw": "Adjusted Net Income",
+      "role": "subtotal",
+      "sign": 1,
+      "values": [
+        "8",
+        "19",
+        "7",
+        "133",
+        "152"
+      ]
+    },
+    {
+      "label_raw": "Net income attributable to non-controlling interests",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "—",
+        "—",
+        "(1)",
+        "—",
+        "—"
+      ]
+    },
+    {
+      "label_raw": "Interest expense, net",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "69",
+        "66",
+        "68",
+        "272",
+        "267"
+      ]
+    },
+    {
+      "label_raw": "Depreciation and amortization (11)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "79",
+        "77",
+        "81",
+        "319",
+        "299"
+      ]
+    },
+    {
+      "label_raw": "All remaining provision for income taxes (10)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "13",
+        "4",
+        "(27)",
+        "22",
+        "25"
+      ]
+    },
+    {
+      "label_raw": "Adjusted EBITDA",
+      "role": "total",
+      "sign": 1,
+      "values": [
+        "169",
+        "166",
+        "128",
+        "746",
+        "743"
+      ]
+    }
+  ]
+}

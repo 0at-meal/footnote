@@ -1,0 +1,141 @@
+{
+  "ticket": "P0-05b",
+  "accession": "0001628280-26-033471",
+  "ticker": "IHRT",
+  "reader": "Claude (claude-opus-5-5)",
+  "read_on": "2026-10-14",
+  "method": "Read the approved table rendered as raw cell text (tools.gold.render_table); no use of tools.gold.draft or the extractor's parsing. Values transcribed as displayed.",
+  "scale": "thousands",
+  "scale_evidence": "(In thousands)",
+  "metric_label_raw": "Adjusted EBITDA",
+  "note": null,
+  "periods": [
+    {
+      "period_id": "3M-2026-03-31",
+      "label_raw": "Three Months Ended March 31, 2026"
+    },
+    {
+      "period_id": "3M-2025-03-31",
+      "label_raw": "Three Months Ended March 31, 2025"
+    }
+  ],
+  "lines": [
+    {
+      "label_raw": "Net loss",
+      "role": "gaap_start",
+      "sign": 1,
+      "values": [
+        "(95,618)",
+        "(280,883)"
+      ]
+    },
+    {
+      "label_raw": "Income tax expense (benefit)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "289",
+        "135,359"
+      ]
+    },
+    {
+      "label_raw": "Interest expense, net",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "95,898",
+        "100,386"
+      ]
+    },
+    {
+      "label_raw": "Depreciation and amortization",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "81,377",
+        "91,901"
+      ]
+    },
+    {
+      "label_raw": "EBITDA",
+      "role": "subtotal",
+      "sign": 1,
+      "values": [
+        "81,946",
+        "46,763"
+      ]
+    },
+    {
+      "label_raw": "Loss on investments, net",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "545",
+        "18,594"
+      ]
+    },
+    {
+      "label_raw": "Other expense, net",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "320",
+        "1,160"
+      ]
+    },
+    {
+      "label_raw": "Equity in (earnings) loss of nonconsolidated affiliates",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "52",
+        "(50)"
+      ]
+    },
+    {
+      "label_raw": "Impairment charges",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "—",
+        "2,855"
+      ]
+    },
+    {
+      "label_raw": "Other operating expense",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "78",
+        "659"
+      ]
+    },
+    {
+      "label_raw": "Restructuring expenses",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "9,333",
+        "25,578"
+      ]
+    },
+    {
+      "label_raw": "Share-based compensation expense",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "359",
+        "9,029"
+      ]
+    },
+    {
+      "label_raw": "Adjusted EBITDA",
+      "role": "total",
+      "sign": 1,
+      "values": [
+        "92,633",
+        "104,588"
+      ]
+    }
+  ]
+}

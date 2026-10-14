@@ -1,0 +1,105 @@
+{
+  "ticket": "P0-05b",
+  "accession": "0001590895-26-000015",
+  "ticker": "CZR",
+  "reader": "Claude (claude-opus-5-5)",
+  "read_on": "2026-10-14",
+  "method": "Read the approved table rendered as raw cell text (tools.gold.render_table); no use of tools.gold.draft or the extractor's parsing. Values transcribed as displayed.",
+  "scale": "millions",
+  "scale_evidence": "(In millions)",
+  "metric_label_raw": "Total Adjusted EBITDA",
+  "note": null,
+  "periods": [
+    {
+      "period_id": "3M-2026-03-31",
+      "label_raw": "Three Months Ended March 31, 2026"
+    },
+    {
+      "period_id": "3M-2025-03-31",
+      "label_raw": "Three Months Ended March 31, 2025"
+    }
+  ],
+  "lines": [
+    {
+      "label_raw": "Net loss attributable to Caesars",
+      "role": "gaap_start",
+      "sign": 1,
+      "values": [
+        "(98)",
+        "(115)"
+      ]
+    },
+    {
+      "label_raw": "Net income attributable to noncontrolling interests",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "15",
+        "17"
+      ]
+    },
+    {
+      "label_raw": "Provision for income taxes",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "12",
+        "11"
+      ]
+    },
+    {
+      "label_raw": "Other loss",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "2",
+        "1"
+      ]
+    },
+    {
+      "label_raw": "Interest expense, net",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "569",
+        "574"
+      ]
+    },
+    {
+      "label_raw": "Depreciation and amortization",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "347",
+        "357"
+      ]
+    },
+    {
+      "label_raw": "Transaction costs and other, net (a)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "16",
+        "13"
+      ]
+    },
+    {
+      "label_raw": "Stock-based compensation expense",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "24",
+        "26"
+      ]
+    },
+    {
+      "label_raw": "Total Adjusted EBITDA",
+      "role": "total",
+      "sign": 1,
+      "values": [
+        "887",
+        "884"
+      ]
+    }
+  ]
+}

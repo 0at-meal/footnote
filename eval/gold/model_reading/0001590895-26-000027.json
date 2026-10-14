@@ -1,0 +1,131 @@
+{
+  "ticket": "P0-05b",
+  "accession": "0001590895-26-000027",
+  "ticker": "CZR",
+  "reader": "Claude (claude-opus-5-5)",
+  "read_on": "2026-10-14",
+  "method": "Read the approved table rendered as raw cell text (tools.gold.render_table); no use of tools.gold.draft or the extractor's parsing. Values transcribed as displayed.",
+  "scale": "millions",
+  "scale_evidence": "(In millions)",
+  "metric_label_raw": "Adjusted EBITDA",
+  "note": null,
+  "periods": [
+    {
+      "period_id": "3M-2026-06-30",
+      "label_raw": "Three Months Ended June 30, 2026"
+    },
+    {
+      "period_id": "3M-2025-06-30",
+      "label_raw": "Three Months Ended June 30, 2025"
+    },
+    {
+      "period_id": "6M-2026-06-30",
+      "label_raw": "Six Months Ended June 30, 2026"
+    },
+    {
+      "period_id": "6M-2025-06-30",
+      "label_raw": "Six Months Ended June 30, 2025"
+    }
+  ],
+  "lines": [
+    {
+      "label_raw": "Net loss attributable to Caesars",
+      "role": "gaap_start",
+      "sign": 1,
+      "values": [
+        "(62)",
+        "(82)",
+        "(160)",
+        "(197)"
+      ]
+    },
+    {
+      "label_raw": "Net income attributable to noncontrolling interests",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "21",
+        "17",
+        "36",
+        "34"
+      ]
+    },
+    {
+      "label_raw": "(Benefit) provision for income taxes",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "(12)",
+        "13",
+        "—",
+        "24"
+      ]
+    },
+    {
+      "label_raw": "Other income",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "(7)",
+        "(1)",
+        "(5)",
+        "—"
+      ]
+    },
+    {
+      "label_raw": "Interest expense, net",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "573",
+        "579",
+        "1,142",
+        "1,153"
+      ]
+    },
+    {
+      "label_raw": "Depreciation and amortization",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "355",
+        "364",
+        "702",
+        "721"
+      ]
+    },
+    {
+      "label_raw": "Transaction costs and other, net (a)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "29",
+        "41",
+        "45",
+        "54"
+      ]
+    },
+    {
+      "label_raw": "Stock-based compensation expense",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "23",
+        "24",
+        "47",
+        "50"
+      ]
+    },
+    {
+      "label_raw": "Adjusted EBITDA",
+      "role": "total",
+      "sign": 1,
+      "values": [
+        "920",
+        "955",
+        "1,807",
+        "1,839"
+      ]
+    }
+  ]
+}

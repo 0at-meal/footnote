@@ -1,0 +1,152 @@
+{
+  "ticket": "P0-05b",
+  "accession": "0001193125-26-167000",
+  "ticker": "CYH",
+  "disagreements": [],
+  "values": [
+    {
+      "label_raw": "Net loss attributable to Community Health Systems, Inc. stockholders",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "(58)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Net loss attributable to Community Health Systems, Inc. stockholders",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "(13)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Provision for income taxes",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "89",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Provision for income taxes",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "42",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Depreciation and amortization",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "114",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Depreciation and amortization",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "105",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Net income attributable to noncontrolling interests",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "33",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Net income attributable to noncontrolling interests",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "38",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Interest expense, net",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "213",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Interest expense, net",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "219",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss from early extinguishment of debt",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "8",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Loss from early extinguishment of debt",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "-",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Impairment and (gain) loss on sale of businesses, net",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "(90)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Impairment and (gain) loss on sale of businesses, net",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "(24)",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Expense from business transformation costs",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "-",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Expense from business transformation costs",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "9",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Adjusted EBITDA",
+      "period_id": "3M-2026-03-31",
+      "value_raw": "309",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    },
+    {
+      "label_raw": "Adjusted EBITDA",
+      "period_id": "3M-2025-03-31",
+      "value_raw": "376",
+      "reader_agrees": true,
+      "draft_verified_by": "tieout",
+      "proposed_verified_by": "model_agreement"
+    }
+  ]
+}

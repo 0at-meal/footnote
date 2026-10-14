@@ -1,0 +1,123 @@
+{
+  "ticket": "P0-05b",
+  "accession": "0000018926-26-000045",
+  "ticker": "LUMN",
+  "reader": "Claude (claude-opus-5-5)",
+  "read_on": "2026-10-14",
+  "method": "Read the approved table rendered as raw cell text (tools.gold.render_table); no use of tools.gold.draft or the extractor's parsing. Values transcribed as displayed.",
+  "scale": "millions",
+  "scale_evidence": "($ in millions)",
+  "metric_label_raw": "Adjusted EBITDA excluding Special Items",
+  "note": null,
+  "periods": [
+    {
+      "period_id": "3M-2026-03-31",
+      "label_raw": "Actual QTD 1Q26"
+    },
+    {
+      "period_id": "3M-2025-03-31",
+      "label_raw": "Actual QTD 1Q25"
+    }
+  ],
+  "lines": [
+    {
+      "label_raw": "Net loss",
+      "role": "gaap_start",
+      "sign": 1,
+      "values": [
+        "(200)",
+        "(201)"
+      ]
+    },
+    {
+      "label_raw": "Income tax expense (benefit)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "377",
+        "(44)"
+      ]
+    },
+    {
+      "label_raw": "Total other expense, net",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "425",
+        "352"
+      ]
+    },
+    {
+      "label_raw": "Depreciation and amortization expense",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "664",
+        "713"
+      ]
+    },
+    {
+      "label_raw": "Stock-based compensation expense",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "13",
+        "10"
+      ]
+    },
+    {
+      "label_raw": "Adjusted EBITDA",
+      "role": "subtotal",
+      "sign": 1,
+      "values": [
+        "1,279",
+        "830"
+      ]
+    },
+    {
+      "label_raw": "Net gain on sale of business (1)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "(596)",
+        "—"
+      ]
+    },
+    {
+      "label_raw": "Transaction and separation costs (1)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "53",
+        "16"
+      ]
+    },
+    {
+      "label_raw": "Modernization and simplification (1)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "106",
+        "50"
+      ]
+    },
+    {
+      "label_raw": "Other (1)",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        "7",
+        "33"
+      ]
+    },
+    {
+      "label_raw": "Adjusted EBITDA excluding Special Items",
+      "role": "total",
+      "sign": 1,
+      "values": [
+        "849",
+        "929"
+      ]
+    }
+  ]
+}
