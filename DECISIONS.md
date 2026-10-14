@@ -5,6 +5,18 @@ Newest first. One entry per decision, with date and reason. Entries before
 those entries described features as deployed that were never wired into the
 running app (see the retraction below).
 
+- **2026-10-14: Lean, tie-out-first gold-set labelling (ROADMAP Phase 0).** The extractor
+  auto-drafts each bridge. Two independent checks run: the sum tie-out (within
+  max(1, ⌈n/2⌉) units) and the GAAP anchor against XBRL `companyfacts`. Claude independently
+  reads every filing as a second reader. The owner only confirms table selection and resolves
+  exceptions: failed checks and Claude/extractor disagreements. Every label records
+  `verified_by` (`tieout` / `model_agreement` / `human`), and the scorer reports accuracy split
+  by it. Second-labeller agreement moves from the Phase 0 exit gate to a Phase 4 gate, required
+  before any accuracy number is shown or published.
+  *Why:* the same honesty guarantee (the answer key is never just the system under test) at
+  about 25% of the manual effort (~2–3 h instead of ~8–10 h). Arithmetic tie-outs and XBRL
+  anchors catch value, sign and scale errors; a human check covers what they cannot, namely
+  wrong table selection.
 - **2026-10-14: Direction adopted — see [docs/ROADMAP.md](docs/ROADMAP.md).** Footnote becomes
   the verified, versioned, normalized record of how US-listed issuers define and adjust EBITDA,
   for credit / leveraged-finance analysts first (fallback persona: equity earnings-quality).

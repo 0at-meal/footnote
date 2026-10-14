@@ -174,8 +174,10 @@ FastAPI read API (Cloud Run) → Web (Cloudflare Pages) · Excel export · email
 1. **Gates, not dates:** numeric exit criteria; the next phase opens only when they pass.
 2. **Measured truth:** gold set + `eval/RESULTS.md`, with sample size and label provenance;
    negative results kept.
-3. **Deterministic numbers:** no LLM ever produces or alters a value. LLMs may only *suggest
-   labels* for human confirmation.
+3. **Deterministic numbers:** no LLM ever produces or alters a *served* value. LLMs may only
+   *suggest labels* for human confirmation (P3-08). The one exception is evaluation data: in
+   P0-05b a model independently reads the gold-set filings as a second reader. Those labels
+   are never served and always carry `verified_by`.
 4. **No silent failure:** every skip or failure goes to the `failures` table with a stage and
    reason.
 5. **Provenance or it doesn't ship:** every served number has an accession, sha256, XPath and
@@ -231,8 +233,11 @@ issuers × 8 quarters × ~15 lines × ~2 periods ≈ 36K observation rows, which
 
 ### Phase 0 — Ground truth, ICP validation, normalization spec
 **Exit gate (all required):**
-- 30-release gold set labelled + 10 double-labelled (agreement reported);
-- scorer in CI;
+- 30-release gold set complete under the lean, tie-out-first procedure:
+  - the owner has confirmed table selection for all 30 releases;
+  - every exception is resolved;
+  - every label carries `verified_by`;
+- scorer in CI, reporting accuracy split by `verified_by`;
 - baseline published;
 - ICP pass rule met (§2);
 - normalization spec v0.1 reviewed by ≥2 analysts.
@@ -242,13 +247,33 @@ issuers × 8 quarters × ~15 lines × ~2 periods ≈ 36K observation rows, which
 - **P0-02 [YOU]** — Approve or edit the issuer list.
 - **P0-03** — Fetch and save 30 real EX-99.1 releases (15 × 2 quarters), sha256 + sec.gov URL
   manifest → `eval/gold/raw/`.
-- **P0-04** — Gold label JSON schema (line, period, value_raw, scale, sign, quote, labeler,
-  date, source URL) + validator → tests.
-- **P0-05** — `tools/label` CLI: pre-fills a draft from the extractor and opens the sec.gov
-  text fragment → works on 3 sample releases.
-- **P0-06 [YOU]** — Label 30 releases, verifying each row on sec.gov → validator passes.
-- **P0-07 [YOU + second person]** — Independently re-label 10 → agreement % in RESULTS.
-- **P0-08** — `eval/score.py`: line exact match, table-found, scale and sign accuracy → tests.
+- **P0-04** — Gold label JSON schema + validator → tests. Fields: line, period, value_raw,
+  scale, sign, quote, `verified_by` ∈ {`tieout`, `model_agreement`, `human`}, labeler, date,
+  source URL.
+- **P0-05** — `tools/gold_draft`, an auto-draft and verification tool. For each release it:
+  - extracts the headline Adjusted EBITDA bridge (all period columns; no guidance tables);
+  - runs two independent checks:
+    - (a) **sum tie-out:** lines add up to the stated total within max(1, ⌈n/2⌉) units of
+      reported scale;
+    - (b) **GAAP anchor:** the starting line equals the XBRL `companyfacts` value for the same
+      CIK, period and unit;
+  - writes draft labels plus a per-release exception list.
+  → runs on all 30 releases; check results are recorded per release.
+- **P0-05b** — Independent model reading. Claude labels all 30 releases by reading the saved
+  filing directly, not through the extractor code. Rows where Claude's reading and the
+  extractor disagree go to the owner's review queue; rows where they agree and pass both
+  checks get `verified_by=model_agreement`. The labels are evaluation data only, never served
+  → a disagreement report exists for each release.
+- **P0-06 [YOU]** — Lean verification, ~2–3 h in total:
+  - confirm the correct table was selected for every release (~30 s each);
+  - resolve exceptions: releases failing either check, and rows where Claude and the
+    extractor disagree (resolved rows get `verified_by=human`).
+  → validator passes; the exception queue is empty.
+- **P0-07 [YOU + second person]** — *Deferred to Phase 4* (see P4-13). Second-labeller
+  agreement is no longer a Phase 0 exit criterion.
+- **P0-08** — `eval/score.py`: line exact match, table-found rate, scale and sign accuracy,
+  each reported overall *and split by `verified_by`*, so the human-checked share of the gold
+  set is always visible → tests.
 - **P0-09** — Baseline run of current code → first `eval/RESULTS.md` entry.
 - **P0-10** — CI job: scorer must not regress below baseline → PR check.
 - **P0-11** — Interview script + scoring rubric (workflow, pain, normalization trust, existing
@@ -323,13 +348,16 @@ issuers × 8 quarters × ~15 lines × ~2 periods ≈ 36K observation rows, which
   `suggest/`.
 - **P3-09 [YOU]** — Label the alert sample (true / cosmetic / extraction error) → precision
   report.
-- **P3-10** — Extend the gold set to 100 releases (the owner labels 70 more with the CLI) → RESULTS.
+- **P3-10** — Extend the gold set to 100 releases using the P0-05/P0-05b/P0-06 lean
+  procedure → RESULTS (split by `verified_by`).
 - **P3-11** — Expand to 150 issuers + backlog report → coverage report.
 
 ### Phase 4 — Product v1 for design partners ($0)
 **Exit gate:**
 - 3 design partners use it weekly for 4 weeks;
-- ≥1 paid pilot (Stripe Payment Link).
+- ≥1 paid pilot (Stripe Payment Link);
+- second-labeller agreement reported (P4-13) before any accuracy number is shown to customers
+  or published.
 
 - **P4-01** — FastAPI read API + OpenAPI → contract tests.
 - **P4-02** — Clerk orgs; tenant tables + RLS; cross-tenant read test fails → test.
@@ -347,6 +375,9 @@ issuers × 8 quarters × ~15 lines × ~2 periods ≈ 36K observation rows, which
 - **P4-11** — Correction submission (opt-in per org, anonymized into the shared record after
   verification) → tests.
 - **P4-12** — Public read-only demo on HF Spaces (10 verified issuers) → URL.
+- **P4-13 [YOU + second person]** — *(Moved from P0-07.)* A second human independently
+  re-labels 10 gold releases → agreement % in `eval/RESULTS.md`. Required before any accuracy
+  number is shown to customers or published.
 
 ### Phase 5 — Commercial scale
 **Exit gate:**
@@ -380,11 +411,11 @@ Split into ≤1-day tickets at phase start:
 
 **Before Phase 0 starts:**
 - approve the issuer list (P0-02);
-- name a second labeler for 10 releases;
 - set `SEC_USER_AGENT` (the owner's real name and email) as a GitHub secret.
 
 **During Phase 0:**
-- ~8–10 h labelling;
+- ~2–3 h gold-set verification (P0-06: confirm table selection for 30 releases, resolve
+  exceptions);
 - 8 credit-analyst interviews (script provided);
 - 2 analysts to critique the normalization spec;
 - confirm the pricing hypothesis afterwards.
@@ -396,6 +427,8 @@ shared as environment secrets, never in chat:
 - Google Cloud (billing account + budget alert, used from Phase 4).
 
 **Before Phase 4:**
+- a second labeller for 10 releases (P4-13), before any accuracy number is shown or
+  published;
 - Clerk, Stripe, Resend, Hugging Face, a domain;
 - business entity, ToS/privacy;
 - 3–5 design-partner candidates (ideally from the interviewees).
@@ -403,7 +436,7 @@ shared as environment secrets, never in chat:
 **Ongoing:**
 - review CLI time (≈ hours per quarter, per §6);
 - alert-precision labelling (~2 h, P3-09);
-- 70 more gold labels (P3-10).
+- lean verification of 70 more gold releases (P3-10, ~5–7 h).
 
 ---
 

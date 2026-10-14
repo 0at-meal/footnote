@@ -20,8 +20,11 @@ UI, database or orchestration layer before the phase that introduces it.
 - Public filing data is global (keyed by CIK + accession + period); customer data
   is tenant-scoped. Reported values are append-only observations, never overwritten.
 - An LLM may at most *suggest labels* for human confirmation, and only where the
-  roadmap allows it (P3-08).
-- Numbers come only from deterministic code. Never let an LLM produce or alter a numeric value.
+  roadmap allows it (P3-08). Exception: as an independent second reader of gold-set
+  filings (P0-05b). That output is evaluation data, never served, and every gold
+  label records `verified_by` (`tieout` / `model_agreement` / `human`).
+- Served numbers come only from deterministic code. Never let an LLM produce or alter
+  a served numeric value (the P0-05b gold-set reading above is evaluation data only).
 - No silent failure. Return an explicit status or reason; never swallow an
   exception or default a value to keep things green (e.g. no `except: pass`, no
   guessed scale).
