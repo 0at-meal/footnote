@@ -12,6 +12,7 @@ Validates:
 
 from pathlib import Path
 
+import pytest
 from app.classification.models import (
     MasterTaxonomy,
     StatementType,
@@ -234,3 +235,10 @@ def test_classify_addback_category() -> None:
     }
     for label, expected in cases.items():
         assert classify_addback_category(label) == expected, label
+
+
+def test_corrupt_override_raises_instead_of_falling_back(tmp_path: Path) -> None:
+    (tmp_path / "taxonomy.json").write_text("{not json", encoding="utf-8")
+    repo = TaxonomyRepository(data_dir=tmp_path)
+    with pytest.raises(ValueError, match="unreadable or invalid"):
+        repo.load_taxonomy()

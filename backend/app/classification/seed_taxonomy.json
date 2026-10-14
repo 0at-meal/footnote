@@ -253,13 +253,7 @@
       "statement_type": "cash_flow",
       "display_order": 210,
       "is_debit": false,
-      "aliases": [
-        "Net income cash flow",
-        "Consolidated net income cf",
-        "Profit for the period cf",
-        "Net income (loss) cash flows",
-        "Net income from continuing operations cf"
-      ]
+      "aliases": []
     },
     {
       "canonical_name": "Depreciation & Amortization (CF)",
@@ -280,13 +274,7 @@
       "statement_type": "cash_flow",
       "display_order": 230,
       "is_debit": false,
-      "aliases": [
-        "Stock-based compensation cf",
-        "Share-based compensation cf",
-        "Stock based compensation cf",
-        "Share-based payment cf",
-        "SBC cf"
-      ]
+      "aliases": []
     },
     {
       "canonical_name": "Deferred Income Taxes (CF)",
@@ -566,8 +554,7 @@
       "is_debit": true,
       "aliases": [
         "Goodwill net",
-        "Total goodwill",
-        "Goodwill and other intangibles"
+        "Total goodwill"
       ]
     },
     {
@@ -722,7 +709,6 @@
         "Total equity",
         "Total stockholders' deficit",
         "Common stockholders' equity",
-        "Total stockholders? equity",
         "Stockholders' equity"
       ]
     },
@@ -734,8 +720,7 @@
       "aliases": [
         "Total liabilities and equity",
         "Total liabilities and shareholders' equity",
-        "Total liabilities and stockholders' equity",
-        "Total liabilities and stockholders? equity"
+        "Total liabilities and stockholders' equity"
       ]
     },
     {
@@ -815,8 +800,7 @@
         "M&A transaction costs",
         "Acquisition and integration costs",
         "Transaction-related expenses",
-        "Acquisition-Related Expenses",
-        "Acquisition, net of cash acquired, and purchases of intangible assets"
+        "Acquisition-Related Expenses"
       ]
     },
     {
@@ -868,61 +852,6 @@
         "Other expense (income) net adjustments",
         "Other Non-Operating Expenses",
         "Other non-operating expense"
-      ]
-    },
-    {
-      "canonical_name": "Adjusted EBITDA",
-      "statement_type": "kpi",
-      "display_order": 810,
-      "is_debit": false,
-      "aliases": [
-        "Non-GAAP EBITDA",
-        "EBITDA",
-        "Adjusted Operating Income",
-        "Adjusted EBITDA"
-      ]
-    },
-    {
-      "canonical_name": "Adjusted Net Income",
-      "statement_type": "kpi",
-      "display_order": 820,
-      "is_debit": false,
-      "aliases": [
-        "Non-GAAP Net Income",
-        "Adjusted earnings",
-        "Adjusted Net Income"
-      ]
-    },
-    {
-      "canonical_name": "Gross Margin %",
-      "statement_type": "kpi",
-      "display_order": 830,
-      "is_debit": false,
-      "aliases": [
-        "Gross profit margin",
-        "Gross margin percentage"
-      ]
-    },
-    {
-      "canonical_name": "Operating Margin %",
-      "statement_type": "kpi",
-      "display_order": 840,
-      "is_debit": false,
-      "aliases": [
-        "Operating profit margin",
-        "Operating income margin",
-        "Operating margin percentage"
-      ]
-    },
-    {
-      "canonical_name": "Net Margin %",
-      "statement_type": "kpi",
-      "display_order": 850,
-      "is_debit": false,
-      "aliases": [
-        "Net profit margin",
-        "Net income margin",
-        "Net margin percentage"
       ]
     },
     {
@@ -1064,6 +993,59 @@
         "Environmental liabilities adjustment",
         "Remediation expenses",
         "Environmental remediation"
+      ]
+    },
+    {
+      "canonical_name": "Adjusted EBITDA",
+      "statement_type": "kpi",
+      "display_order": 810,
+      "is_debit": false,
+      "aliases": [
+        "Non-GAAP EBITDA",
+        "Adjusted EBITDA"
+      ]
+    },
+    {
+      "canonical_name": "Adjusted Net Income",
+      "statement_type": "kpi",
+      "display_order": 820,
+      "is_debit": false,
+      "aliases": [
+        "Non-GAAP Net Income",
+        "Adjusted earnings",
+        "Adjusted Net Income"
+      ]
+    },
+    {
+      "canonical_name": "Gross Margin %",
+      "statement_type": "kpi",
+      "display_order": 830,
+      "is_debit": false,
+      "aliases": [
+        "Gross profit margin",
+        "Gross margin percentage"
+      ]
+    },
+    {
+      "canonical_name": "Operating Margin %",
+      "statement_type": "kpi",
+      "display_order": 840,
+      "is_debit": false,
+      "aliases": [
+        "Operating profit margin",
+        "Operating income margin",
+        "Operating margin percentage"
+      ]
+    },
+    {
+      "canonical_name": "Net Margin %",
+      "statement_type": "kpi",
+      "display_order": 850,
+      "is_debit": false,
+      "aliases": [
+        "Net profit margin",
+        "Net income margin",
+        "Net margin percentage"
       ]
     }
   ]

@@ -59,6 +59,13 @@ running app (see the retraction below).
     `unknown.pdf` locator.
   - Test fixtures that attached invented financials to real companies were
     relabeled as synthetic.
+  - Seed taxonomy cleanup from a full read of every entry: removed aliases
+    that conflate different metrics ("EBITDA" and "Adjusted Operating Income"
+    under Adjusted EBITDA), misfiled lines (a cash-flow acquisitions line as
+    an add-back; "Goodwill and other intangibles" as Goodwill), mojibake
+    duplicates, and invented " cf" aliases.
+  - A corrupt taxonomy override file now raises instead of silently falling
+    back to the seed and discarding user-confirmed entries.
 - **Carried forward (pre-2026-10-14, still holds):** numbers are produced only
   by deterministic code. An LLM may never read or write a numeric value.
   Deterministic alias matching comes before any probabilistic matching.

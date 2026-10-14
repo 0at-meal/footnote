@@ -357,45 +357,28 @@ class TaxonomyRepository:
 
     def load_taxonomy(self) -> MasterTaxonomy:
         """
-        Loads the active MasterTaxonomy from disk, falling back to SEED_MASTER_TAXONOMY if not present or invalid.
+        Loads the active MasterTaxonomy: the user override file if present,
+        otherwise the packaged seed.
+
+        Raises:
+            ValueError: If the override file exists but is unreadable or invalid.
+                It is never silently replaced by the seed, which would discard
+                user-confirmed entries without notice.
         """
         if not self._taxonomy_file.exists():
             return SEED_MASTER_TAXONOMY.model_copy(deep=True)
-
         try:
-            content = self._taxonomy_file.read_text(encoding="utf-8")
-            data = json.loads(content)
-            if isinstance(data, dict) and "items" in data:
-                return MasterTaxonomy.model_validate(data)
-            elif isinstance(data, list):
-                # Legacy flat list migration fallback
-                items = [
-                    TaxonomyItem(
-                        canonical_name=x,
-                        statement_type=StatementType.non_gaap_bridge,
-                        display_order=i * 10,
-                        is_debit=False,
-                        aliases=[],
-                    )
-                    for i, x in enumerate(data)
-                    if isinstance(x, str)
-                ]
-                return MasterTaxonomy(items=items)
-            logger.warning("taxonomy.json format invalid; falling back to default seed")
-            return SEED_MASTER_TAXONOMY.model_copy(deep=True)
-        except (
-            json.JSONDecodeError,
-            ValidationError,
-            OSError,
-            TypeError,
-            ValueError,
-        ) as err:
-            logger.error("Failed to read taxonomy.json: %s", err)
-            return SEED_MASTER_TAXONOMY.model_copy(deep=True)
+            return MasterTaxonomy.model_validate_json(
+                self._taxonomy_file.read_text(encoding="utf-8")
+            )
+        except (OSError, ValidationError) as err:
+            raise ValueError(
+                f"Taxonomy override {self._taxonomy_file} is unreadable or invalid: {err}"
+            ) from err
 
     def save_taxonomy(self, master: MasterTaxonomy) -> Path:
         """
-        Persists MasterTaxonomy to data/taxonomy.json atomically.
+        Persists MasterTaxonomy to <data dir>/taxonomy.json atomically.
         """
         self._ensure_dir()
         dest_path = self._taxonomy_file
@@ -421,13 +404,6 @@ class TaxonomyRepository:
         ]
         matching.sort(key=lambda x: x.display_order)
         return matching
-
-    def get_all_canonical_names(self) -> list[str]:
-        """
-        Returns a flat list of all canonical names for backward compatibility.
-        """
-        master = self.load_taxonomy()
-        return [item.canonical_name for item in master.items]
 
     def add_entry(
         self,
