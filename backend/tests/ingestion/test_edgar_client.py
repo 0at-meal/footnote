@@ -12,6 +12,7 @@ from app.ingestion.edgar.client import EdgarClient
 from app.ingestion.edgar.models import (
     EdgarCircuitBreakerOpenError,
     EdgarClientError,
+    EdgarCompanyNotFoundError,
     EdgarRateLimitError,
     ForeignFilerUnsupportedError,
 )
@@ -403,3 +404,25 @@ def test_exhibit_type_read_from_type_column_not_filename(tmp_path: Path) -> None
     assert exhibits[0].exhibit_number == "EX-99.1"
     assert exhibits[0].filename == "acme-ex991.htm"
     assert exhibits[0].description == "PRESS RELEASE"
+
+
+class _CompanyFactsTransport(MockTransport):
+    def handle_request(self, request: httpx.Request) -> httpx.Response:
+        url = str(request.url)
+        if "companyfacts/CIK0001652044.json" in url:
+            return httpx.Response(200, json={"cik": 1652044, "facts": {"us-gaap": {}}})
+        if "companyfacts/" in url:
+            return httpx.Response(404, text="Not Found")
+        return super().handle_request(request)
+
+
+def test_get_company_facts(tmp_path: Path) -> None:
+    client = EdgarClient(
+        user_agent=TEST_USER_AGENT,
+        cache_dir=tmp_path / "edgar_cache",
+        http_client=httpx.Client(transport=_CompanyFactsTransport()),
+    )
+    facts = client.get_company_facts("GOOGL")
+    assert facts["facts"] == {"us-gaap": {}}
+    with pytest.raises(EdgarCompanyNotFoundError):
+        client.get_company_facts("320193")

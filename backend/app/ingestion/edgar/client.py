@@ -242,6 +242,26 @@ class EdgarClient:
         data: dict[str, Any] = res.json()
         return data
 
+    def get_company_facts(self, cik: str) -> dict[str, Any]:
+        """
+        Fetches the XBRL companyfacts payload (all reported facts) for a CIK.
+
+        Not cached on disk: unlike filing documents, companyfacts grows as new
+        filings are made. Callers that need reproducibility must record the
+        facts they use (concept, value, period, accession).
+        """
+        cik10 = self.resolve_cik(cik)
+        url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik10}.json"
+        res = self._request_with_retry(url, host="data.sec.gov")
+        if res.status_code == 404:
+            raise EdgarCompanyNotFoundError(f"No XBRL company facts for CIK {cik10}")
+        if res.status_code != 200:
+            raise EdgarClientError(
+                f"EDGAR companyfacts API returned status {res.status_code} for CIK {cik10}"
+            )
+        data: dict[str, Any] = res.json()
+        return data
+
     def get_filings(
         self,
         ticker_or_cik: str,

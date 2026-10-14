@@ -1,6 +1,13 @@
 ticket: P0-01
 generated: '2026-10-14'
 approved_by: Niraj Jadhav (owner), 2026-10-14
+revisions:
+- date: '2026-10-14'
+  ticket: P0-05
+  change: 'FUN 0001999001-26-000053: table_index 9 -> 4. P0-01 had picked a trailing-quarters
+    table (periods ending 2025); the selection rule now prefers the table whose header
+    covers the period ending 0-120 days before the filing. Issuer list unchanged;
+    table choice is confirmed per release in P0-06.'
 selection_rules:
   item: 8-K Item 2.02 with an HTML EX-99.1
   table: EX-99.1 contains a table with EBITDA in its title or row labels
@@ -352,8 +359,8 @@ selected:
     filed: '2026-05-07'
     exhibit: sixflags-exh991xq12026.htm
     url: https://www.sec.gov/Archives/edgar/data/1999001/000199900126000053/sixflags-exh991xq12026.htm
-    table_index: 9
-    table_title: Table 10
-    metric_label: Adjusted EBITDA
+    table_index: 4
+    table_title: Table 5
+    metric_label: Adjusted EBITDA (3)
   reasons: []
 not_selected: []

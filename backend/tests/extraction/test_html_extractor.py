@@ -144,6 +144,13 @@ def test_parse_numeric_cell() -> None:
     num, text = parse_numeric_cell("2,450 (1)")
     assert num == 2450.0
 
+    # A cell that is only a single-digit negative is a value, not a footnote
+    # (regression: "(7)" used to be stripped as a footnote marker and lost).
+    num, text = parse_numeric_cell("(7)")
+    assert num == -7.0
+    num, text = parse_numeric_cell("$ (3)")
+    assert num == -3.0
+
     # Leading minus signs (ASCII hyphen and U+2212)
     num, text = parse_numeric_cell("-45")
     assert num == -45.0

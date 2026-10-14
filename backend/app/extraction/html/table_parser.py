@@ -52,10 +52,12 @@ def parse_numeric_cell(text: str) -> tuple[float | None, str]:
     if not raw or raw in {"—", "-", "–", "--", "N/A", "n/a", "None"}:
         return None, raw
 
-    # Strip footnote references at end
-    cleaned = FOOTNOTE_REF_PATTERN.sub("", raw).strip()
     # Strip currency symbol
-    cleaned = cleaned.replace("$", "").replace("€", "").replace("£", "").strip()
+    cleaned = raw.replace("$", "").replace("€", "").replace("£", "").strip()
+    # Strip a trailing footnote reference ("2,450 (1)"), but never the whole
+    # cell: a cell that is only "(7)" is an accounting negative, not a footnote.
+    stripped = FOOTNOTE_REF_PATTERN.sub("", cleaned).strip()
+    cleaned = stripped if stripped else cleaned
 
     # Check parentheses
     paren_match = PARENTHESES_PATTERN.match(cleaned)
