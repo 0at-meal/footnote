@@ -54,7 +54,13 @@ class HtmlExtractor:
         # Parse with BeautifulSoup (using lxml for high performance)
         try:
             soup = BeautifulSoup(html_content, self.parser_flavor)
-        except Exception:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
+            logger.warning(
+                "Parser %r failed for %s (%s); falling back to html.parser",
+                self.parser_flavor,
+                document_name,
+                exc,
+            )
             soup = BeautifulSoup(html_content, "html.parser")
 
         # 1. Parse authoritative iXBRL facts

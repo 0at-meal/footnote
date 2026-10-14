@@ -60,7 +60,7 @@ class TaxonomyStatus(str, Enum):
     """
 
     matched = "matched"
-    """Candidate label matches an active seed taxonomy entry by exact string match."""
+    """Candidate matches a taxonomy canonical name or alias (exact, cleaned, or canonicalized)."""
 
     fuzzy_matched = "fuzzy_matched"
     """Fuzzy token-set-ratio suggestion (>= 0.85); requires human confirmation, is_matched stays False."""
@@ -75,7 +75,7 @@ class TaxonomyCheckResult(BaseModel):
     """
 
     candidate_label: str = Field(
-        ..., description="Candidate label returned by classifier"
+        ..., description="Candidate line-item label being checked"
     )
     status: TaxonomyStatus = Field(
         ...,
@@ -83,7 +83,7 @@ class TaxonomyCheckResult(BaseModel):
     )
     matched_entry: str | None = Field(
         default=None,
-        description="Matched taxonomy entry if matched or fuzzy matched, otherwise None",
+        description="Matched entry, or the suggested entry for a fuzzy match; otherwise None",
     )
     matched_item: TaxonomyItem | None = Field(
         default=None,
@@ -91,7 +91,7 @@ class TaxonomyCheckResult(BaseModel):
     )
     is_matched: bool = Field(
         default=False,
-        description="Convenience boolean indicating whether exact or fuzzy match was found",
+        description="True only for an exact, alias, or canonicalized match; fuzzy suggestions stay False",
     )
     similarity_score: float | None = Field(
         default=None,
