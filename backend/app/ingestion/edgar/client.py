@@ -287,10 +287,7 @@ class EdgarClient:
             )
 
         filing_refs: list[FilingRef] = []
-        cik_int = int(cik10)
 
-        # Build exhibit lookups if available
-        # Note: recent may contain items
         target_forms = set(forms) if forms else None
 
         for idx, acc in enumerate(accession_list):
@@ -309,8 +306,7 @@ class EdgarClient:
             period = report_dates[idx] if idx < len(report_dates) else None
             primary_doc = primary_docs[idx] if idx < len(primary_docs) else ""
 
-            acc_nodash = acc.replace("-", "")
-            primary_url = f"https://www.sec.gov/Archives/edgar/data/{cik_int}/{acc_nodash}/{primary_doc}"
+            primary_url = self._archive_url(cik10, acc, primary_doc)
 
             # Filing year parsing
             filing_year: int | None = None
@@ -319,7 +315,7 @@ class EdgarClient:
             elif filed_at and len(filed_at) >= 4 and filed_at[:4].isdigit():
                 filing_year = int(filed_at[:4])
 
-            # Exhibit list placeholder - can be populated on exhibit discovery
+            # Exhibits are filled in by get_filing_directory_index().
             filing_ref = FilingRef(
                 cik=cik10,
                 accession=acc,

@@ -275,7 +275,7 @@ def match_master_taxonomy_fuzzy(
 
 def check_label_against_taxonomy(
     candidate_label: str,
-    active_taxonomy: list[str] | MasterTaxonomy,
+    active_taxonomy: MasterTaxonomy,
     fuzzy_threshold: float = 0.85,
 ) -> TaxonomyCheckResult:
     """
@@ -289,49 +289,29 @@ def check_label_against_taxonomy(
        noncontrolling interests" vs "Net Income"), so it cannot be trusted alone.
     3. Unrecognized -> TaxonomyStatus.pending_taxonomy_confirmation (is_matched=False)
     """
-    if isinstance(active_taxonomy, MasterTaxonomy):
-        matched_item = match_master_taxonomy(candidate_label, active_taxonomy)
-        if matched_item is not None:
-            return TaxonomyCheckResult(
-                candidate_label=candidate_label,
-                status=TaxonomyStatus.matched,
-                matched_entry=matched_item.canonical_name,
-                matched_item=matched_item,
-                is_matched=True,
-            )
-
-        # Fuzzy match pass
-        fuzzy_item, fuzzy_score = match_master_taxonomy_fuzzy(
-            candidate_label, active_taxonomy, threshold=fuzzy_threshold
-        )
-        if fuzzy_item is not None:
-            return TaxonomyCheckResult(
-                candidate_label=candidate_label,
-                status=TaxonomyStatus.fuzzy_matched,
-                matched_entry=fuzzy_item.canonical_name,
-                matched_item=fuzzy_item,
-                is_matched=False,
-                similarity_score=round(fuzzy_score, 2),
-            )
-
+    matched_item = match_master_taxonomy(candidate_label, active_taxonomy)
+    if matched_item is not None:
         return TaxonomyCheckResult(
             candidate_label=candidate_label,
-            status=TaxonomyStatus.pending_taxonomy_confirmation,
-            matched_entry=None,
-            matched_item=None,
-            is_matched=False,
+            status=TaxonomyStatus.matched,
+            matched_entry=matched_item.canonical_name,
+            matched_item=matched_item,
+            is_matched=True,
         )
 
-    # Legacy list[str] exact match
-    for entry in active_taxonomy:
-        if candidate_label == entry:
-            return TaxonomyCheckResult(
-                candidate_label=candidate_label,
-                status=TaxonomyStatus.matched,
-                matched_entry=entry,
-                matched_item=None,
-                is_matched=True,
-            )
+    # Fuzzy match pass
+    fuzzy_item, fuzzy_score = match_master_taxonomy_fuzzy(
+        candidate_label, active_taxonomy, threshold=fuzzy_threshold
+    )
+    if fuzzy_item is not None:
+        return TaxonomyCheckResult(
+            candidate_label=candidate_label,
+            status=TaxonomyStatus.fuzzy_matched,
+            matched_entry=fuzzy_item.canonical_name,
+            matched_item=fuzzy_item,
+            is_matched=False,
+            similarity_score=round(fuzzy_score, 2),
+        )
 
     return TaxonomyCheckResult(
         candidate_label=candidate_label,

@@ -140,12 +140,11 @@ def detect_scale_from_caption(
             flag_reason=f"Ambiguous scale: Unrecognized unit caption format in '{combined}'",
         )
 
-    # Magnitude cross-check:
-    # If millions declared but sample numbers exceed 100 billion, or thousands declared but sample values < 10
+    # Magnitude cross-check: a "millions" caption with sample values above 10
+    # million (i.e. > 10 trillion dollars) suggests unscaled dollars.
     if sample_values and len(sample_values) > 0:
         max_abs = max(abs(v) for v in sample_values if v is not None)
         if detected_scale == UnitScale.MILLIONS and max_abs > 10_000_000:
-            # Over 10 trillion in millions implies raw unscaled dollars were likely reported
             return ScaleDetectionResult(
                 scale=detected_scale,
                 multiplier=int(detected_scale),
@@ -162,11 +161,7 @@ def detect_scale_from_caption(
     )
 
 
-def detect_sign(
-    raw_value: str,
-    label: str,
-    table_header: str | None = None,
-) -> tuple[int, bool]:
+def detect_sign(raw_value: str, label: str) -> tuple[int, bool]:
     """
     Detects whether an item represents an addition (+1) or deduction (-1) in a reconciliation.
 
@@ -174,7 +169,6 @@ def detect_sign(
         tuple[int, bool]: (sign, is_parenthesized)
     """
     v_clean = raw_value.strip()
-    is_parenthesized = False
 
     # 1. Accounting parentheses e.g. "(1,234)" or "( 500 )"
     if v_clean.startswith("(") and v_clean.endswith(")"):
@@ -191,11 +185,8 @@ def detect_sign(
     if lbl_lower.startswith(("less:", "less ", "deduct:", "deductions:")):
         return -1, False
 
-    # "Add / (deduct) ..."
-    if "add / (deduct)" in lbl_lower or "add/(deduct)" in lbl_lower:
-        # If value was not in parentheses, it's an addition
-        return (1 if not is_parenthesized else -1), is_parenthesized
-
+    # Everything else, including "Add / (deduct)" rows whose value is not in
+    # parentheses (parenthesized values already returned -1 above), is +1.
     return 1, False
 
 

@@ -180,7 +180,7 @@ def extract_html_tables(soup: BeautifulSoup) -> list[HtmlTable]:
 
         num_rows = len(rows)
 
-        # Detect column periods from header rows (rows 0 to min(3, num_rows - 1))
+        # Detect column periods from the first four rows (header region)
         col_periods: dict[int, str] = {}
         for c in range(max_cols):
             periods_found: list[str] = []
