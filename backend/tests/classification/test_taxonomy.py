@@ -2,10 +2,12 @@
 Unit tests for Master Financial Taxonomy management and alias matching.
 
 Validates:
-- MasterTaxonomy validation from seed taxonomy.json
+- MasterTaxonomy validation from the packaged seed_taxonomy.json
 - TaxonomyRepository loading and persistence of MasterTaxonomy
 - match_master_taxonomy exact canonical and alias matching
 - get_items_by_statement filtering
+- fuzzy matches are suggestions only
+- add-back category classification
 """
 
 from pathlib import Path
@@ -18,14 +20,17 @@ from app.classification.models import (
 )
 from app.classification.taxonomy import (
     SEED_MASTER_TAXONOMY,
+    StandardAddBackCategory,
     TaxonomyRepository,
     check_label_against_taxonomy,
+    classify_addback_category,
     match_master_taxonomy,
 )
 
 
-def test_master_taxonomy_loads_from_seed_json() -> None:
-    repo = TaxonomyRepository()
+def test_master_taxonomy_loads_from_seed_json(tmp_path: Path) -> None:
+    # Empty data dir: the repository must fall back to the packaged seed.
+    repo = TaxonomyRepository(data_dir=tmp_path)
     master = repo.load_taxonomy()
     assert isinstance(master, MasterTaxonomy)
     assert len(master.items) >= 50
@@ -67,8 +72,8 @@ def test_match_master_taxonomy_canonical_and_aliases() -> None:
     assert res_unknown is None
 
 
-def test_get_items_by_statement() -> None:
-    repo = TaxonomyRepository()
+def test_get_items_by_statement(tmp_path: Path) -> None:
+    repo = TaxonomyRepository(data_dir=tmp_path)
     is_items = repo.get_items_by_statement(StatementType.income_statement)
     assert len(is_items) >= 10
     assert all(
@@ -118,20 +123,26 @@ def test_check_label_against_taxonomy_master() -> None:
 
 def test_fuzzy_alias_matching_token_set_ratio() -> None:
     """
-    Ticket C-3: Fuzzy alias matching matches similar labels with token-set-ratio >= 0.85
-    and produces TaxonomyStatus.fuzzy_matched without blocking matching.
+    Fuzzy matches (token-set-ratio >= 0.85) are suggestions only: they report the
+    candidate entry but never count as matched (no auto-merge).
     """
     master = SEED_MASTER_TAXONOMY
     # "Derivative fair value adjustment" vs alias "Derivative fair value adjustments"
     result = check_label_against_taxonomy("Derivative fair value adjustment", master)
-    assert result.is_matched is True
-    assert result.status in (TaxonomyStatus.matched, TaxonomyStatus.fuzzy_matched)
+    assert result.status == TaxonomyStatus.fuzzy_matched
+    assert result.is_matched is False
     assert result.matched_entry == "Change in FV of Derivatives"
+
+    # Token-subset false positive must not be treated as a match.
+    nci = check_label_against_taxonomy(
+        "Net income attributable to noncontrolling interests", master
+    )
+    assert nci.is_matched is False
 
 
 def test_expanded_taxonomy_coverage() -> None:
     """
-    Ticket C-1: Seed taxonomy contains 60+ items covering non-GAAP and key financial categories.
+    Seed taxonomy contains 60+ items covering non-GAAP and key financial categories.
     """
     master = SEED_MASTER_TAXONOMY
     assert len(master.items) >= 60
@@ -209,3 +220,17 @@ def test_match_master_taxonomy_with_parentheticals_and_headers() -> None:
     item5 = match_master_taxonomy("Restructuring and other charges (Note 14)")
     assert item5 is not None
     assert item5.canonical_name == "Restructuring Charges"
+
+
+def test_classify_addback_category() -> None:
+    cases = {
+        "Stock-based compensation expense": StandardAddBackCategory.SBC,
+        "Restructuring and severance": StandardAddBackCategory.RESTRUCTURING,
+        "Goodwill impairment": StandardAddBackCategory.IMPAIRMENT,
+        "Acquisition and integration costs": StandardAddBackCategory.MA_INTEGRATION,
+        "Legal settlement charges": StandardAddBackCategory.LITIGATION,
+        "Foreign exchange losses": StandardAddBackCategory.FX,
+        "Depreciation and amortization": StandardAddBackCategory.OTHER,
+    }
+    for label, expected in cases.items():
+        assert classify_addback_category(label) == expected, label

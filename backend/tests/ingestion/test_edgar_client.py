@@ -17,6 +17,9 @@ from app.ingestion.edgar.models import (
 )
 from app.ingestion.edgar.rate_limiter import TokenBucketRateLimiter
 
+# All HTTP below is mocked. Ticker -> CIK mappings are real; accession numbers,
+# dates and document names are illustrative and do not refer to real filings.
+
 # Sample mock data for company_tickers.json
 MOCK_TICKERS = {
     "0": {"cik_str": 1652044, "ticker": "GOOGL", "title": "Alphabet Inc."},
@@ -314,3 +317,89 @@ def test_exhibit_discovery_ex99_1(tmp_path: Path) -> None:
     assert ex99 is not None
     assert ex99.filename == "goog-ex991.htm"
     assert "Press Release" in (ex99.description or "")
+
+
+def test_cached_document_keeps_sec_url(tmp_path: Path) -> None:
+    client = EdgarClient(
+        user_agent=TEST_USER_AGENT,
+        cache_dir=tmp_path / "edgar_cache",
+        http_client=httpx.Client(transport=MockTransport()),
+    )
+    args = {
+        "accession": "0001652044-24-000088",
+        "document_name": "goog-20240930.htm",
+        "cik": "0001652044",
+    }
+    first = client.get_document(**args)
+    cached = client.get_document(**args)
+    expected = "https://www.sec.gov/Archives/edgar/data/1652044/000165204424000088/goog-20240930.htm"
+    assert first.url == expected
+    assert cached.url == expected
+
+
+class _MissingIndexTransport(MockTransport):
+    def handle_request(self, request: httpx.Request) -> httpx.Response:
+        if str(request.url).endswith("-index.htm"):
+            return httpx.Response(404, text="Not Found")
+        return super().handle_request(request)
+
+
+def test_directory_index_failure_raises(tmp_path: Path) -> None:
+    client = EdgarClient(
+        user_agent=TEST_USER_AGENT,
+        cache_dir=tmp_path / "edgar_cache",
+        http_client=httpx.Client(transport=_MissingIndexTransport()),
+    )
+    filing = client.get_filings("GOOGL", forms=["8-K"])[0]
+    # A failed index fetch must raise, not masquerade as "no exhibits".
+    with pytest.raises(EdgarClientError, match="status 404"):
+        client.get_filing_directory_index(filing)
+
+
+class _IndexTransport(MockTransport):
+    def handle_request(self, request: httpx.Request) -> httpx.Response:
+        if str(request.url).endswith("-index.htm"):
+            return httpx.Response(
+                200,
+                text='<table><tr><td><a href="acme-ex99.htm">acme-ex99.htm</a></td></tr></table>',
+            )
+        return super().handle_request(request)
+
+
+def test_exhibit_number_not_guessed_from_filename(tmp_path: Path) -> None:
+    client = EdgarClient(
+        user_agent=TEST_USER_AGENT,
+        cache_dir=tmp_path / "edgar_cache",
+        http_client=httpx.Client(transport=_IndexTransport()),
+    )
+    filing = client.get_filings("GOOGL", forms=["8-K"])[0]
+    exhibits = client.get_filing_directory_index(filing)
+    assert [e.exhibit_number for e in exhibits] == ["EX-99"]
+
+
+class _RealLayoutIndexTransport(MockTransport):
+    """EDGAR index column order: Seq | Description | Document | Type | Size."""
+
+    def handle_request(self, request: httpx.Request) -> httpx.Response:
+        if str(request.url).endswith("-index.htm"):
+            row = (
+                "<tr><td>2</td><td>PRESS RELEASE</td>"
+                '<td><a href="/Archives/x/acme-ex991.htm">acme-ex991.htm</a></td>'
+                "<td>EX-99.1</td><td>120000</td></tr>"
+            )
+            return httpx.Response(200, text=f"<table>{row}</table>")
+        return super().handle_request(request)
+
+
+def test_exhibit_type_read_from_type_column_not_filename(tmp_path: Path) -> None:
+    client = EdgarClient(
+        user_agent=TEST_USER_AGENT,
+        cache_dir=tmp_path / "edgar_cache",
+        http_client=httpx.Client(transport=_RealLayoutIndexTransport()),
+    )
+    filing = client.get_filings("GOOGL", forms=["8-K"])[0]
+    exhibits = client.get_filing_directory_index(filing)
+    assert len(exhibits) == 1
+    assert exhibits[0].exhibit_number == "EX-99.1"
+    assert exhibits[0].filename == "acme-ex991.htm"
+    assert exhibits[0].description == "PRESS RELEASE"

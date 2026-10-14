@@ -76,5 +76,6 @@ These are verified against the code as of 2026-10-14:
 | Table parser | Column → period binding is heuristic. Caption scale is not passed into `scale_and_sign`. |
 | iXBRL parser | Handles `ix:nonFraction` with `endDate`/`instant` only. No `startDate`, dimensions, unit resolution, or `ixt` transforms. Values that fail to parse are skipped without a reason. |
 | EX-99 extractor | HTML only. PDF and image exhibits log a warning and return no records. |
-| Taxonomy | `TaxonomyRepository` persists to `backend/data/taxonomy.json` (gitignored). The seed aliases are hand-written and unvalidated on a gold set. |
+| Taxonomy | The seed is `classification/seed_taxonomy.json` (84 items, tracked). `TaxonomyRepository` reads user overrides from `backend/data/taxonomy.json` (gitignored), and that file **replaces** the seed when present. The aliases are hand-written and unvalidated on a gold set. Fuzzy (token-set) matches are suggestions only (`is_matched=False`), because the metric scores 1.0 on token subsets. |
+| Scale exemptions | Per-share / percent detection is label-keyword based. Share-count rows are scaled like dollar rows (correct for "in millions, except per share" tables, wrong for tables that state share counts in units). |
 | Validation | No gold set and no runs on real filings. |

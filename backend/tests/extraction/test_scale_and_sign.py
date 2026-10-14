@@ -8,6 +8,7 @@ from app.extraction.scale_and_sign import (
     detect_sign,
     is_per_share_or_percentage,
     normalize_line_item,
+    parse_raw_numeric,
 )
 
 
@@ -104,6 +105,13 @@ def test_per_share_and_percentage_exemptions() -> None:
     assert is_per_share_or_percentage("Adjusted EPS", "2.10") is True
     assert is_per_share_or_percentage("Operating Margin", "18.5%") is True
     assert is_per_share_or_percentage("Stock-based compensation", "50,000") is False
+    # Dollar rows whose labels merely contain "margin", "shares" or "rate"
+    assert is_per_share_or_percentage("Gross margin", "12,400") is False
+    assert is_per_share_or_percentage("Repurchases of shares", "(3,000)") is False
+    assert is_per_share_or_percentage("Interest rate swap losses", "45") is False
+    assert is_per_share_or_percentage("Gross margin percentage", "41.2") is True
+    # Unicode minus sign
+    assert parse_raw_numeric("−1,200") == -1200.0
 
 
 def test_normalize_line_item_scale_and_sign() -> None:

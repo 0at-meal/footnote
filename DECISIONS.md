@@ -32,6 +32,23 @@ running app (see the retraction below).
 - **2026-10-14: No fabricated SEC URLs.** The HTML extractor no longer builds
   archive URLs (it put the accession where the CIK belongs). A URL is recorded
   only when the caller supplies one.
+- **2026-10-14: Second review pass: correctness fixes in kept code.**
+  - The taxonomy seed is now a tracked file (`seed_taxonomy.json`). It was
+    previously read from untracked runtime data, so tests failed on a fresh
+    clone. Junk entries and aliases that the old review UI had added (e.g.
+    "Comprehensive income / 23,662") were dropped.
+  - Fuzzy taxonomy matches are suggestions only and never count as matched.
+  - Scale exemptions no longer treat any label containing "margin", "shares",
+    or "rate" as unscaled.
+  - EDGAR exhibit types are read from the index's type column. Previously
+    filenames such as `x-ex991.htm` produced a bogus "EX991." type, and a
+    filename-only match was guessed as EX-99.1.
+  - Index fetch failures now raise instead of returning an empty list.
+  - Leading minus signs (including U+2212) now parse as negatives.
+  - Unknown locator payloads now raise instead of becoming a fake
+    `unknown.pdf` locator.
+  - Test fixtures that attached invented financials to real companies were
+    relabeled as synthetic.
 - **Carried forward (pre-2026-10-14, still holds):** numbers are produced only
   by deterministic code. An LLM may never read or write a numeric value.
   Deterministic alias matching comes before any probabilistic matching.

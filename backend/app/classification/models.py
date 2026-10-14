@@ -63,7 +63,7 @@ class TaxonomyStatus(str, Enum):
     """Candidate label matches an active seed taxonomy entry by exact string match."""
 
     fuzzy_matched = "fuzzy_matched"
-    """Candidate label matches an active taxonomy entry by fuzzy token-set-ratio similarity (>= 0.85)."""
+    """Fuzzy token-set-ratio suggestion (>= 0.85); requires human confirmation, is_matched stays False."""
 
     pending_taxonomy_confirmation = "pending_taxonomy_confirmation"
     """Candidate label does not match taxonomy; queued for explicit human review."""

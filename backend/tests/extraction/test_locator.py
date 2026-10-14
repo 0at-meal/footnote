@@ -8,6 +8,7 @@ Tests:
 4. ExtractedRecord backward compatibility (both PDF and HTML locators).
 """
 
+import pytest
 from app.extraction.locator import (
     HtmlLocator,
     PdfLocator,
@@ -40,16 +41,16 @@ def test_html_locator_creation_and_auto_source_file() -> None:
     """Verifies HtmlLocator creation, XPath validation, and source_file auto-population."""
     loc = HtmlLocator(
         type="html",
-        accession="0000320193-23-000106",
-        document="aapl-20230930.htm",
+        accession="0000000000-23-000106",
+        document="fixture-20230930.htm",
         element_path="/html/body/div[2]/table[3]/tr[5]/td[2]",
         char_range=(140, 160),
-        url="https://www.sec.gov/ix?doc=/Archives/edgar/data/0000320193/000032019323000106/aapl-20230930.htm",
+        url="https://example.com/fixture-20230930.htm",
     )
     assert loc.type == "html"
-    assert loc.accession == "0000320193-23-000106"
-    assert loc.document == "aapl-20230930.htm"
-    assert loc.source_file == "aapl-20230930.htm"
+    assert loc.accession == "0000000000-23-000106"
+    assert loc.document == "fixture-20230930.htm"
+    assert loc.source_file == "fixture-20230930.htm"
     assert loc.char_range == (140, 160)
 
     serialized = loc.model_dump()
@@ -72,13 +73,13 @@ def test_legacy_locator_deserialization() -> None:
     assert loc.source_file == "old_filing.pdf"
 
     legacy_html_dict = {
-        "accession": "0000104169-24-000020",
-        "document": "wmt-20240131.htm",
+        "accession": "0000000000-24-000020",
+        "document": "fixture-20240131.htm",
         "element_path": "/html/body/table[1]/tr[2]/td[1]",
     }
     html_loc = deserialize_locator(legacy_html_dict)
     assert isinstance(html_loc, HtmlLocator)
-    assert html_loc.accession == "0000104169-24-000020"
+    assert html_loc.accession == "0000000000-24-000020"
 
 
 def test_extracted_record_backward_compatibility() -> None:
@@ -101,15 +102,21 @@ def test_extracted_record_with_html_locator() -> None:
     """Verifies ExtractedRecord populated with HtmlLocator maintains valid legacy fallbacks."""
     html_loc = HtmlLocator(
         type="html",
-        accession="0001018724-24-000008",
-        document="amzn-20231231.htm",
+        accession="0000000000-24-000008",
+        document="fixture-20231231.htm",
         element_path="/html/body/table[4]/tr[2]/td[3]",
     )
     rec = ExtractedRecord(
         value="3,200.00",
-        label="AWS Segment Income",
+        label="Segment Income",
         locator=html_loc,
     )
     assert rec.locator == html_loc
-    assert rec.source_file == "amzn-20231231.htm"
+    assert rec.source_file == "fixture-20231231.htm"
     assert rec.page == 1
+
+
+def test_unrecognized_locator_payload_raises() -> None:
+    """A payload matching neither variant is rejected, never coerced into a fake PDF locator."""
+    with pytest.raises(ValueError, match="Unrecognized locator payload"):
+        deserialize_locator({"foo": "bar"})

@@ -63,7 +63,6 @@ NON_GAAP_END_TERMS = [
 def score_reconciliation_table(
     table: HtmlTable,
     target_metric: str = "Adjusted EBITDA",
-    workflow_pack: str = "non_gaap_bridge",
 ) -> float:
     """
     Scores how likely an HTML table is to be a non-GAAP reconciliation table.
@@ -120,7 +119,6 @@ def score_reconciliation_table(
 def detect_reconciliation_tables(
     tables: list[HtmlTable],
     target_metric: str = "Adjusted EBITDA",
-    workflow_pack: str = "non_gaap_bridge",
     threshold: float = 0.5,
 ) -> list[HtmlTable]:
     """
@@ -128,9 +126,7 @@ def detect_reconciliation_tables(
     """
     candidate_tables: list[HtmlTable] = []
     for table in tables:
-        score = score_reconciliation_table(
-            table, target_metric=target_metric, workflow_pack=workflow_pack
-        )
+        score = score_reconciliation_table(table, target_metric=target_metric)
         table.reconciliation_score = score
         if score >= threshold:
             table.is_reconciliation = True

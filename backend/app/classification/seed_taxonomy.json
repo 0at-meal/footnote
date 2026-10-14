@@ -1,0 +1,1070 @@
+{
+  "items": [
+    {
+      "canonical_name": "Revenue",
+      "statement_type": "income_statement",
+      "display_order": 10,
+      "is_debit": false,
+      "aliases": [
+        "Total revenues",
+        "Revenues",
+        "Net sales",
+        "Sales",
+        "Total revenue",
+        "Operating revenues",
+        "Total operating revenues",
+        "Revenue from contracts with customers"
+      ]
+    },
+    {
+      "canonical_name": "Cost of Revenue",
+      "statement_type": "income_statement",
+      "display_order": 20,
+      "is_debit": true,
+      "aliases": [
+        "Cost of revenues",
+        "Cost of sales",
+        "Cost of goods sold",
+        "Total cost of revenues",
+        "COGS",
+        "Cost of products sold",
+        "Cost of services",
+        "Total cost of sales"
+      ]
+    },
+    {
+      "canonical_name": "Gross Profit",
+      "statement_type": "income_statement",
+      "display_order": 30,
+      "is_debit": false,
+      "aliases": [
+        "Gross margin",
+        "Gross income",
+        "Total gross profit",
+        "Gross profit / (loss)"
+      ]
+    },
+    {
+      "canonical_name": "Research & Development",
+      "statement_type": "income_statement",
+      "display_order": 40,
+      "is_debit": true,
+      "aliases": [
+        "Research and development",
+        "R&D expense",
+        "Research and development expense",
+        "R&D expenses",
+        "Research, development, and engineering",
+        "R&D",
+        "Research & development expense"
+      ]
+    },
+    {
+      "canonical_name": "Sales & Marketing",
+      "statement_type": "income_statement",
+      "display_order": 50,
+      "is_debit": true,
+      "aliases": [
+        "Sales and marketing",
+        "Selling and marketing",
+        "SG&A - Sales and Marketing",
+        "Marketing and sales",
+        "Selling, general and marketing",
+        "Marketing expense"
+      ]
+    },
+    {
+      "canonical_name": "General & Administrative",
+      "statement_type": "income_statement",
+      "display_order": 60,
+      "is_debit": true,
+      "aliases": [
+        "General and administrative",
+        "SG&A - General and Administrative",
+        "Administrative expenses",
+        "G&A expenses",
+        "General & administrative expense",
+        "G&A"
+      ]
+    },
+    {
+      "canonical_name": "Total Operating Expenses",
+      "statement_type": "income_statement",
+      "display_order": 70,
+      "is_debit": true,
+      "aliases": [
+        "Total operating costs and expenses",
+        "Total costs and expenses",
+        "Total operating charges",
+        "Total operating cost",
+        "Total operating expenses",
+        "Operating expenses"
+      ]
+    },
+    {
+      "canonical_name": "Operating Income",
+      "statement_type": "income_statement",
+      "display_order": 80,
+      "is_debit": false,
+      "aliases": [
+        "Operating profit",
+        "Operating income (loss)",
+        "Income from operations",
+        "Operating income / loss",
+        "EBIT",
+        "Operating earnings",
+        "Income (loss) from operations",
+        "Operating income"
+      ]
+    },
+    {
+      "canonical_name": "Interest Income",
+      "statement_type": "income_statement",
+      "display_order": 90,
+      "is_debit": false,
+      "aliases": [
+        "Interest and dividend income",
+        "Investment income",
+        "Finance income",
+        "Interest income net",
+        "Interest and other investment income"
+      ]
+    },
+    {
+      "canonical_name": "Interest Expense",
+      "statement_type": "income_statement",
+      "display_order": 100,
+      "is_debit": true,
+      "aliases": [
+        "Interest expense net",
+        "Finance costs",
+        "Interest and other financial charges",
+        "Total interest expense",
+        "Interest expense(1)"
+      ]
+    },
+    {
+      "canonical_name": "Other Income / Expense Net",
+      "statement_type": "income_statement",
+      "display_order": 110,
+      "is_debit": false,
+      "aliases": [
+        "Other income (expense), net",
+        "Other non-operating income (expense)",
+        "Other income / (expense), net",
+        "Total other income (expense), net",
+        "Other income, net",
+        "Other income (expense)",
+        "Other expense, net"
+      ]
+    },
+    {
+      "canonical_name": "Income Before Income Taxes",
+      "statement_type": "income_statement",
+      "display_order": 120,
+      "is_debit": false,
+      "aliases": [
+        "Income before taxes",
+        "Income (loss) before income taxes",
+        "Earnings before income taxes",
+        "Income before provision for income taxes",
+        "EBT",
+        "Income before income tax"
+      ]
+    },
+    {
+      "canonical_name": "Provision for Income Taxes",
+      "statement_type": "income_statement",
+      "display_order": 130,
+      "is_debit": true,
+      "aliases": [
+        "Income tax expense",
+        "Income tax provision",
+        "Provision for taxes",
+        "Income taxes",
+        "Income tax expense (benefit)",
+        "Provision for (benefit from) income taxes"
+      ]
+    },
+    {
+      "canonical_name": "Net Income",
+      "statement_type": "income_statement",
+      "display_order": 140,
+      "is_debit": false,
+      "aliases": [
+        "Net earnings",
+        "Net income (loss)",
+        "Net profit",
+        "Consolidated net income",
+        "Net income attributable to company"
+      ]
+    },
+    {
+      "canonical_name": "Basic EPS",
+      "statement_type": "income_statement",
+      "display_order": 150,
+      "is_debit": false,
+      "aliases": [
+        "Basic earnings per share",
+        "Net income per share - basic",
+        "Basic net income per share",
+        "EPS - Basic",
+        "Earnings per share basic"
+      ]
+    },
+    {
+      "canonical_name": "Diluted EPS",
+      "statement_type": "income_statement",
+      "display_order": 160,
+      "is_debit": false,
+      "aliases": [
+        "Diluted earnings per share",
+        "Net income per share - diluted",
+        "Diluted net income per share",
+        "EPS - Diluted",
+        "Diluted net profit per share",
+        "Earnings per share diluted"
+      ]
+    },
+    {
+      "canonical_name": "Weighted Average Shares - Basic",
+      "statement_type": "income_statement",
+      "display_order": 170,
+      "is_debit": false,
+      "aliases": [
+        "Basic shares",
+        "Weighted-average shares outstanding - basic",
+        "Basic weighted average shares"
+      ]
+    },
+    {
+      "canonical_name": "Weighted Average Shares - Diluted",
+      "statement_type": "income_statement",
+      "display_order": 180,
+      "is_debit": false,
+      "aliases": [
+        "Diluted shares",
+        "Weighted-average shares outstanding - diluted",
+        "Diluted weighted average shares"
+      ]
+    },
+    {
+      "canonical_name": "Net Income (CF)",
+      "statement_type": "cash_flow",
+      "display_order": 210,
+      "is_debit": false,
+      "aliases": [
+        "Net income cash flow",
+        "Consolidated net income cf",
+        "Profit for the period cf",
+        "Net income (loss) cash flows",
+        "Net income from continuing operations cf"
+      ]
+    },
+    {
+      "canonical_name": "Depreciation & Amortization (CF)",
+      "statement_type": "cash_flow",
+      "display_order": 220,
+      "is_debit": false,
+      "aliases": [
+        "Depreciation of property and equipment",
+        "Depreciation and amortization",
+        "Depreciation, amortization and impairment",
+        "D&A",
+        "Total depreciation and amortization",
+        "Depreciation and amortization expense"
+      ]
+    },
+    {
+      "canonical_name": "Stock-Based Compensation (CF)",
+      "statement_type": "cash_flow",
+      "display_order": 230,
+      "is_debit": false,
+      "aliases": [
+        "Stock-based compensation cf",
+        "Share-based compensation cf",
+        "Stock based compensation cf",
+        "Share-based payment cf",
+        "SBC cf"
+      ]
+    },
+    {
+      "canonical_name": "Deferred Income Taxes (CF)",
+      "statement_type": "cash_flow",
+      "display_order": 235,
+      "is_debit": false,
+      "aliases": [
+        "Deferred income taxes",
+        "Deferred income tax benefit (expense)",
+        "Deferred taxes"
+      ]
+    },
+    {
+      "canonical_name": "Other Non-Cash Items (CF)",
+      "statement_type": "cash_flow",
+      "display_order": 238,
+      "is_debit": false,
+      "aliases": [
+        "Other non-cash operating items",
+        "Other adjustments to net income",
+        "Other non-cash reconciling items"
+      ]
+    },
+    {
+      "canonical_name": "Change in Working Capital",
+      "statement_type": "cash_flow",
+      "display_order": 240,
+      "is_debit": false,
+      "aliases": [
+        "Changes in operating assets and liabilities",
+        "Change in operating assets and liabilities, net",
+        "Working capital changes",
+        "Operating assets and liabilities changes",
+        "Change in working capital items"
+      ]
+    },
+    {
+      "canonical_name": "Cash Provided by Operating Activities",
+      "statement_type": "cash_flow",
+      "display_order": 250,
+      "is_debit": false,
+      "aliases": [
+        "Net cash provided by operating activities",
+        "Cash generated from operations",
+        "Net cash from operating activities",
+        "Operating cash flows",
+        "Cash flow from operations",
+        "Cash provided by operating activities"
+      ]
+    },
+    {
+      "canonical_name": "Capital Expenditures",
+      "statement_type": "cash_flow",
+      "display_order": 260,
+      "is_debit": true,
+      "aliases": [
+        "Purchases of property and equipment",
+        "Additions to property and equipment",
+        "Payments for property and equipment",
+        "CapEx",
+        "Purchases of PP&E",
+        "Capital expenditures",
+        "Additions to property, plant and equipment"
+      ]
+    },
+    {
+      "canonical_name": "Purchases of Marketable Securities",
+      "statement_type": "cash_flow",
+      "display_order": 262,
+      "is_debit": true,
+      "aliases": [
+        "Purchases of available-for-sale securities",
+        "Purchases of marketable securities",
+        "Payments for investments in marketable securities"
+      ]
+    },
+    {
+      "canonical_name": "Proceeds from Marketable Securities",
+      "statement_type": "cash_flow",
+      "display_order": 264,
+      "is_debit": false,
+      "aliases": [
+        "Sales of marketable securities",
+        "Maturities of marketable securities",
+        "Proceeds from sales and maturities of marketable securities"
+      ]
+    },
+    {
+      "canonical_name": "Acquisitions, Net of Cash Acquired",
+      "statement_type": "cash_flow",
+      "display_order": 266,
+      "is_debit": true,
+      "aliases": [
+        "Acquisitions, net of cash acquired, and purchases of intangible assets",
+        "Business acquisitions, net of cash acquired",
+        "Payments for acquisitions"
+      ]
+    },
+    {
+      "canonical_name": "Cash Used in Investing Activities",
+      "statement_type": "cash_flow",
+      "display_order": 268,
+      "is_debit": true,
+      "aliases": [
+        "Net cash used in investing activities",
+        "Cash flows from investing activities",
+        "Net cash from investing activities"
+      ]
+    },
+    {
+      "canonical_name": "Proceeds from / Repayments of Debt",
+      "statement_type": "cash_flow",
+      "display_order": 280,
+      "is_debit": false,
+      "aliases": [
+        "Issuance of debt",
+        "Repayments of long-term debt",
+        "Repayment of borrowings",
+        "Principal payments on debt",
+        "Net debt issuance",
+        "Payments on long-term debt",
+        "Proceeds from issuance of long-term debt"
+      ]
+    },
+    {
+      "canonical_name": "Repurchases of Common Stock",
+      "statement_type": "cash_flow",
+      "display_order": 290,
+      "is_debit": true,
+      "aliases": [
+        "Purchases of treasury stock",
+        "Share repurchases",
+        "Repurchases of stock",
+        "Payments for repurchase of common stock",
+        "Repurchase of capital stock",
+        "Repurchases of common stock"
+      ]
+    },
+    {
+      "canonical_name": "Dividends Paid",
+      "statement_type": "cash_flow",
+      "display_order": 300,
+      "is_debit": true,
+      "aliases": [
+        "Payments of dividends",
+        "Common stock dividends",
+        "Dividends paid to shareholders",
+        "Cash dividends paid",
+        "Dividends paid"
+      ]
+    },
+    {
+      "canonical_name": "Cash Used in Financing Activities",
+      "statement_type": "cash_flow",
+      "display_order": 305,
+      "is_debit": true,
+      "aliases": [
+        "Net cash used in financing activities",
+        "Cash flows from financing activities",
+        "Net cash provided by (used in) financing activities"
+      ]
+    },
+    {
+      "canonical_name": "Free Cash Flow",
+      "statement_type": "cash_flow",
+      "display_order": 310,
+      "is_debit": false,
+      "aliases": [
+        "Free cash flow non-gaap",
+        "FCF",
+        "Adjusted free cash flow",
+        "Free cash flow"
+      ]
+    },
+    {
+      "canonical_name": "Cash and Cash Equivalents",
+      "statement_type": "balance_sheet",
+      "display_order": 410,
+      "is_debit": true,
+      "aliases": [
+        "Cash and equivalents",
+        "Cash, cash equivalents and restricted cash",
+        "Total cash and cash equivalents",
+        "Cash and cash equivalents at end of period"
+      ]
+    },
+    {
+      "canonical_name": "Short-Term Investments",
+      "statement_type": "balance_sheet",
+      "display_order": 420,
+      "is_debit": true,
+      "aliases": [
+        "Marketable securities",
+        "Current marketable securities",
+        "Available-for-sale investments",
+        "Short term marketable securities",
+        "Short-term marketable securities"
+      ]
+    },
+    {
+      "canonical_name": "Accounts Receivable",
+      "statement_type": "balance_sheet",
+      "display_order": 430,
+      "is_debit": true,
+      "aliases": [
+        "Accounts receivable net",
+        "Trade receivables net",
+        "Accounts and notes receivable net",
+        "Accounts receivable, net of allowance",
+        "Trade accounts receivable, net"
+      ]
+    },
+    {
+      "canonical_name": "Inventory",
+      "statement_type": "balance_sheet",
+      "display_order": 440,
+      "is_debit": true,
+      "aliases": [
+        "Inventories",
+        "Merchandise inventories",
+        "Total inventory",
+        "Finished goods and raw materials",
+        "Inventories, net"
+      ]
+    },
+    {
+      "canonical_name": "Other Current Assets",
+      "statement_type": "balance_sheet",
+      "display_order": 450,
+      "is_debit": true,
+      "aliases": [
+        "Prepaid expenses and other current assets",
+        "Other current assets net",
+        "Prepaid expenses",
+        "Other current assets"
+      ]
+    },
+    {
+      "canonical_name": "Total Current Assets",
+      "statement_type": "balance_sheet",
+      "display_order": 460,
+      "is_debit": true,
+      "aliases": [
+        "Total current assets",
+        "Current assets"
+      ]
+    },
+    {
+      "canonical_name": "Property, Plant and Equipment, Net",
+      "statement_type": "balance_sheet",
+      "display_order": 470,
+      "is_debit": true,
+      "aliases": [
+        "Property and equipment net",
+        "PP&E net",
+        "Property, plant and equipment, net of accumulated depreciation",
+        "Property and equipment, net",
+        "Property, plant and equipment, net"
+      ]
+    },
+    {
+      "canonical_name": "Operating Lease Right-of-Use Assets",
+      "statement_type": "balance_sheet",
+      "display_order": 480,
+      "is_debit": true,
+      "aliases": [
+        "Operating lease assets",
+        "Right-of-use assets net",
+        "Lease right of use assets",
+        "Operating lease right-of-use assets, net"
+      ]
+    },
+    {
+      "canonical_name": "Goodwill",
+      "statement_type": "balance_sheet",
+      "display_order": 490,
+      "is_debit": true,
+      "aliases": [
+        "Goodwill net",
+        "Total goodwill",
+        "Goodwill and other intangibles"
+      ]
+    },
+    {
+      "canonical_name": "Intangible Assets, Net",
+      "statement_type": "balance_sheet",
+      "display_order": 500,
+      "is_debit": true,
+      "aliases": [
+        "Other intangible assets, net",
+        "Intangibles net",
+        "Acquired intangible assets net",
+        "Patents and technology net",
+        "Intangible assets, net"
+      ]
+    },
+    {
+      "canonical_name": "Other Non-Current Assets",
+      "statement_type": "balance_sheet",
+      "display_order": 505,
+      "is_debit": true,
+      "aliases": [
+        "Other assets",
+        "Other non-current assets",
+        "Non-current assets",
+        "Other long-term assets"
+      ]
+    },
+    {
+      "canonical_name": "Total Assets",
+      "statement_type": "balance_sheet",
+      "display_order": 510,
+      "is_debit": true,
+      "aliases": [
+        "Total consolidated assets",
+        "Total assets net",
+        "Total assets"
+      ]
+    },
+    {
+      "canonical_name": "Accounts Payable",
+      "statement_type": "balance_sheet",
+      "display_order": 520,
+      "is_debit": false,
+      "aliases": [
+        "Trade payables",
+        "Accounts payable trade",
+        "Accounts payable and accrued expenses",
+        "Accounts payable"
+      ]
+    },
+    {
+      "canonical_name": "Accrued Expenses and Other Current Liabilities",
+      "statement_type": "balance_sheet",
+      "display_order": 525,
+      "is_debit": false,
+      "aliases": [
+        "Accrued expenses",
+        "Accrued liabilities",
+        "Other current liabilities",
+        "Accrued expenses and other current liabilities"
+      ]
+    },
+    {
+      "canonical_name": "Short-Term Debt",
+      "statement_type": "balance_sheet",
+      "display_order": 530,
+      "is_debit": false,
+      "aliases": [
+        "Current portion of long-term debt",
+        "Commercial paper",
+        "Short-term borrowings",
+        "Current debt",
+        "Short-term debt obligations",
+        "Short-term debt"
+      ]
+    },
+    {
+      "canonical_name": "Total Current Liabilities",
+      "statement_type": "balance_sheet",
+      "display_order": 535,
+      "is_debit": false,
+      "aliases": [
+        "Total current liabilities",
+        "Current liabilities"
+      ]
+    },
+    {
+      "canonical_name": "Long-Term Debt",
+      "statement_type": "balance_sheet",
+      "display_order": 540,
+      "is_debit": false,
+      "aliases": [
+        "Long-term debt, non-current",
+        "Long-term borrowings",
+        "Notes payable non-current",
+        "Senior notes",
+        "Long-term debt",
+        "Long-term debt, net"
+      ]
+    },
+    {
+      "canonical_name": "Operating Lease Liabilities, Non-Current",
+      "statement_type": "balance_sheet",
+      "display_order": 542,
+      "is_debit": false,
+      "aliases": [
+        "Operating lease liabilities",
+        "Non-current operating lease liabilities",
+        "Long-term lease liabilities"
+      ]
+    },
+    {
+      "canonical_name": "Other Non-Current Liabilities",
+      "statement_type": "balance_sheet",
+      "display_order": 545,
+      "is_debit": false,
+      "aliases": [
+        "Other liabilities",
+        "Other non-current liabilities",
+        "Other long-term liabilities"
+      ]
+    },
+    {
+      "canonical_name": "Total Liabilities",
+      "statement_type": "balance_sheet",
+      "display_order": 548,
+      "is_debit": false,
+      "aliases": [
+        "Total liabilities",
+        "Total consolidated liabilities"
+      ]
+    },
+    {
+      "canonical_name": "Retained Earnings",
+      "statement_type": "balance_sheet",
+      "display_order": 552,
+      "is_debit": false,
+      "aliases": [
+        "Retained earnings (accumulated deficit)",
+        "Retained earnings / (accumulated deficit)",
+        "Accumulated earnings",
+        "Retained earnings"
+      ]
+    },
+    {
+      "canonical_name": "Total Stockholders' Equity",
+      "statement_type": "balance_sheet",
+      "display_order": 555,
+      "is_debit": false,
+      "aliases": [
+        "Total shareholders' equity",
+        "Total equity",
+        "Total stockholders' deficit",
+        "Common stockholders' equity",
+        "Total stockholders? equity",
+        "Stockholders' equity"
+      ]
+    },
+    {
+      "canonical_name": "Total Liabilities and Stockholders' Equity",
+      "statement_type": "balance_sheet",
+      "display_order": 560,
+      "is_debit": false,
+      "aliases": [
+        "Total liabilities and equity",
+        "Total liabilities and shareholders' equity",
+        "Total liabilities and stockholders' equity",
+        "Total liabilities and stockholders? equity"
+      ]
+    },
+    {
+      "canonical_name": "Stock-Based Compensation",
+      "statement_type": "non_gaap_bridge",
+      "display_order": 610,
+      "is_debit": false,
+      "aliases": [
+        "Stock-based compensation expense",
+        "Share-based compensation expense",
+        "Stock compensation expense",
+        "SBC add-back",
+        "Share-based payment",
+        "Stock-based compensation",
+        "Stock based compensation"
+      ]
+    },
+    {
+      "canonical_name": "Restructuring Charges",
+      "statement_type": "non_gaap_bridge",
+      "display_order": 620,
+      "is_debit": false,
+      "aliases": [
+        "Restructuring and other charges",
+        "Severance costs",
+        "Facility exit costs",
+        "Restructuring expenses",
+        "Restructuring Charges",
+        "Restructuring and related charges"
+      ]
+    },
+    {
+      "canonical_name": "Litigation Charges",
+      "statement_type": "non_gaap_bridge",
+      "display_order": 630,
+      "is_debit": false,
+      "aliases": [
+        "Legal settlement charges",
+        "Legal reserves",
+        "Litigation and regulatory matters",
+        "Litigation Charges",
+        "Legal settlements"
+      ]
+    },
+    {
+      "canonical_name": "Lease Adjustments",
+      "statement_type": "non_gaap_bridge",
+      "display_order": 640,
+      "is_debit": false,
+      "aliases": [
+        "Lease termination costs",
+        "Right-of-use impairment",
+        "Excess lease expense",
+        "Lease Adjustments",
+        "Lease modification costs"
+      ]
+    },
+    {
+      "canonical_name": "Amortization of Intangibles",
+      "statement_type": "non_gaap_bridge",
+      "display_order": 650,
+      "is_debit": false,
+      "aliases": [
+        "Intangible amortization expense",
+        "Amortization of acquired intangibles",
+        "Acquired intangible asset amortization",
+        "Amortization of Intangibles",
+        "Amortization of purchased intangibles"
+      ]
+    },
+    {
+      "canonical_name": "Acquisition-Related Expenses",
+      "statement_type": "non_gaap_bridge",
+      "display_order": 660,
+      "is_debit": false,
+      "aliases": [
+        "M&A transaction costs",
+        "Acquisition and integration costs",
+        "Transaction-related expenses",
+        "Acquisition-Related Expenses",
+        "Acquisition, net of cash acquired, and purchases of intangible assets"
+      ]
+    },
+    {
+      "canonical_name": "Impairment of Assets",
+      "statement_type": "non_gaap_bridge",
+      "display_order": 670,
+      "is_debit": false,
+      "aliases": [
+        "Asset impairment charges",
+        "Goodwill impairment",
+        "Impairment of long-lived assets",
+        "Impairment of Assets"
+      ]
+    },
+    {
+      "canonical_name": "Gain/Loss on Divestitures",
+      "statement_type": "non_gaap_bridge",
+      "display_order": 680,
+      "is_debit": false,
+      "aliases": [
+        "Net gain on sale of business",
+        "Loss on sale of assets",
+        "Divestiture-related gain (loss)",
+        "Gain/Loss on Divestitures",
+        "Gain on divestitures"
+      ]
+    },
+    {
+      "canonical_name": "Foreign Currency Adjustments",
+      "statement_type": "non_gaap_bridge",
+      "display_order": 690,
+      "is_debit": false,
+      "aliases": [
+        "FX translation gain (loss)",
+        "Foreign exchange remeasurement",
+        "Currency hedge gains (losses)",
+        "Foreign Currency Adjustments",
+        "Foreign currency exchange gains (losses)"
+      ]
+    },
+    {
+      "canonical_name": "Other Non-Operating Expenses",
+      "statement_type": "non_gaap_bridge",
+      "display_order": 700,
+      "is_debit": false,
+      "aliases": [
+        "Other non-GAAP adjustments",
+        "Miscellaneous non-operating",
+        "Other expense (income) net adjustments",
+        "Other Non-Operating Expenses",
+        "Other non-operating expense"
+      ]
+    },
+    {
+      "canonical_name": "Adjusted EBITDA",
+      "statement_type": "kpi",
+      "display_order": 810,
+      "is_debit": false,
+      "aliases": [
+        "Non-GAAP EBITDA",
+        "EBITDA",
+        "Adjusted Operating Income",
+        "Adjusted EBITDA"
+      ]
+    },
+    {
+      "canonical_name": "Adjusted Net Income",
+      "statement_type": "kpi",
+      "display_order": 820,
+      "is_debit": false,
+      "aliases": [
+        "Non-GAAP Net Income",
+        "Adjusted earnings",
+        "Adjusted Net Income"
+      ]
+    },
+    {
+      "canonical_name": "Gross Margin %",
+      "statement_type": "kpi",
+      "display_order": 830,
+      "is_debit": false,
+      "aliases": [
+        "Gross profit margin",
+        "Gross margin percentage"
+      ]
+    },
+    {
+      "canonical_name": "Operating Margin %",
+      "statement_type": "kpi",
+      "display_order": 840,
+      "is_debit": false,
+      "aliases": [
+        "Operating profit margin",
+        "Operating income margin",
+        "Operating margin percentage"
+      ]
+    },
+    {
+      "canonical_name": "Net Margin %",
+      "statement_type": "kpi",
+      "display_order": 850,
+      "is_debit": false,
+      "aliases": [
+        "Net profit margin",
+        "Net income margin",
+        "Net margin percentage"
+      ]
+    },
+    {
+      "canonical_name": "Change in FV of Derivatives",
+      "statement_type": "non_gaap_bridge",
+      "display_order": 710,
+      "is_debit": false,
+      "aliases": [
+        "Change in fair value of derivatives",
+        "Derivative fair value adjustments",
+        "Mark-to-market derivative adjustments",
+        "Gain (loss) on derivative instruments",
+        "Unrealized gain (loss) on derivatives",
+        "Fair value adjustments of derivative contracts"
+      ]
+    },
+    {
+      "canonical_name": "Non-cash Lease Expense",
+      "statement_type": "non_gaap_bridge",
+      "display_order": 720,
+      "is_debit": false,
+      "aliases": [
+        "Non-cash lease cost",
+        "Operating lease non-cash cost",
+        "Non-cash rent expense",
+        "Operating lease right-of-use asset amortization",
+        "Non-cash lease expense"
+      ]
+    },
+    {
+      "canonical_name": "Earn-out Payments",
+      "statement_type": "non_gaap_bridge",
+      "display_order": 730,
+      "is_debit": false,
+      "aliases": [
+        "Earn-out adjustments",
+        "Earnout consideration",
+        "Changes in earnout liabilities",
+        "Fair value adjustment to earn-out liability",
+        "Earn-out payments"
+      ]
+    },
+    {
+      "canonical_name": "IPO-related Costs",
+      "statement_type": "non_gaap_bridge",
+      "display_order": 740,
+      "is_debit": false,
+      "aliases": [
+        "Initial public offering costs",
+        "IPO expenses",
+        "Public company readiness costs",
+        "IPO transaction expenses",
+        "IPO-related costs"
+      ]
+    },
+    {
+      "canonical_name": "Spin-off Costs",
+      "statement_type": "non_gaap_bridge",
+      "display_order": 750,
+      "is_debit": false,
+      "aliases": [
+        "Separation costs",
+        "Spin-off transaction expenses",
+        "Disentanglement costs",
+        "Separation-related expenses",
+        "Spin-off costs"
+      ]
+    },
+    {
+      "canonical_name": "COVID Costs",
+      "statement_type": "non_gaap_bridge",
+      "display_order": 760,
+      "is_debit": false,
+      "aliases": [
+        "COVID-19 related charges",
+        "Pandemic response expenses",
+        "COVID-19 costs",
+        "COVID-related facility costs",
+        "COVID costs"
+      ]
+    },
+    {
+      "canonical_name": "Contingent Consideration",
+      "statement_type": "non_gaap_bridge",
+      "display_order": 770,
+      "is_debit": false,
+      "aliases": [
+        "Change in fair value of contingent consideration",
+        "Contingent consideration fair value adjustment",
+        "Contingent consideration expense",
+        "Contingent consideration"
+      ]
+    },
+    {
+      "canonical_name": "Loss on Debt Extinguishment",
+      "statement_type": "non_gaap_bridge",
+      "display_order": 780,
+      "is_debit": false,
+      "aliases": [
+        "Debt extinguishment costs",
+        "Loss on early extinguishment of debt",
+        "Extinguishment of debt",
+        "Prepayment penalty on debt",
+        "Debt refinancing charges"
+      ]
+    },
+    {
+      "canonical_name": "Cloud Computing Implementation Costs",
+      "statement_type": "non_gaap_bridge",
+      "display_order": 790,
+      "is_debit": false,
+      "aliases": [
+        "Cloud implementation expenses",
+        "Implementation costs for hosting arrangements",
+        "Cloud computing transition costs",
+        "Cloud implementation costs"
+      ]
+    },
+    {
+      "canonical_name": "Strategic Transformation Costs",
+      "statement_type": "non_gaap_bridge",
+      "display_order": 800,
+      "is_debit": false,
+      "aliases": [
+        "Transformation expenses",
+        "Business optimization costs",
+        "Strategic initiative costs",
+        "Transformation and restructuring",
+        "Strategic transformation"
+      ]
+    },
+    {
+      "canonical_name": "Environmental Remediation",
+      "statement_type": "non_gaap_bridge",
+      "display_order": 805,
+      "is_debit": false,
+      "aliases": [
+        "Environmental remediation costs",
+        "Environmental liabilities adjustment",
+        "Remediation expenses",
+        "Environmental remediation"
+      ]
+    }
+  ]
+}

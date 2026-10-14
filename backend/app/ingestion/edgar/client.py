@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any
 
 import httpx
+from bs4 import BeautifulSoup
 
 from app.ingestion.edgar.circuit_breaker import CircuitBreaker
 from app.ingestion.edgar.models import (
@@ -35,6 +36,7 @@ from app.ingestion.edgar.rate_limiter import TokenBucketRateLimiter
 
 logger = logging.getLogger(__name__)
 
+_EXHIBIT_TYPE = re.compile(r"EX-\d+(?:\.[0-9A-Z]+)?", re.IGNORECASE)
 FOREIGN_FORMS = {"20-F", "20-F/A", "40-F", "40-F/A", "6-K", "6-K/A"}
 
 
@@ -82,6 +84,12 @@ class EdgarClient:
         self._ticker_map: dict[str, str] = {}
         self._ticker_map_loaded = False
 
+    @staticmethod
+    def _archive_url(cik: str, accession: str, document_name: str) -> str:
+        """SEC archive URL: unpadded CIK, then the accession without dashes."""
+        acc_nodash = accession.replace("-", "")
+        return f"https://www.sec.gov/Archives/edgar/data/{int(cik)}/{acc_nodash}/{document_name}"
+
     def _get_headers(self, host: str = "data.sec.gov") -> dict[str, str]:
         return {
             "User-Agent": self.user_agent,
@@ -119,13 +127,11 @@ class EdgarClient:
                         res = client.get(url)
 
                 if res.status_code == 429:
-                    self.circuit_breaker.record_failure()
                     raise EdgarRateLimitError(
                         f"SEC EDGAR returned 429 Too Many Requests for URL: {url}"
                     )
 
                 if res.status_code >= 500:
-                    self.circuit_breaker.record_failure()
                     res.raise_for_status()
 
                 # Success
@@ -138,8 +144,8 @@ class EdgarClient:
                 EdgarRateLimitError,
             ) as exc:
                 last_exception = exc
+                self.circuit_breaker.record_failure()
                 if attempt == self.max_retries:
-                    self.circuit_breaker.record_failure()
                     break
                 sleep_sec = self.backoff_factor * (2 ** (attempt - 1))
                 logger.warning(
@@ -334,81 +340,62 @@ class EdgarClient:
 
     def get_filing_directory_index(self, filing: FilingRef) -> list[FilingExhibit]:
         """
-        Discovers exhibits and files in the filing accession directory.
-        Fetches {accession}-index.htm or directory index.
+        Discovers exhibits in the filing accession directory via {accession}-index.htm.
+
+        Raises:
+            EdgarClientError: If the index page cannot be fetched. A fetch failure
+                is never masked as an empty exhibit list.
         """
-        cik_int = int(filing.cik)
-        acc_nodash = filing.accession.replace("-", "")
-        # The SEC directory listing or index page
-        index_url = f"https://www.sec.gov/Archives/edgar/data/{cik_int}/{acc_nodash}/{filing.accession}-index.htm"
+        index_url = self._archive_url(
+            filing.cik, filing.accession, f"{filing.accession}-index.htm"
+        )
+        res = self._request_with_retry(index_url, host="www.sec.gov")
+        if res.status_code != 200:
+            raise EdgarClientError(
+                f"EDGAR returned status {res.status_code} fetching {index_url}"
+            )
 
+        soup = BeautifulSoup(res.text, "html.parser")
         exhibits: list[FilingExhibit] = []
-        try:
-            res = self._request_with_retry(index_url, host="www.sec.gov")
-            if res.status_code == 200:
-                html = res.text
-                from bs4 import BeautifulSoup
+        for tr in soup.find_all("tr"):
+            cells = tr.find_all(["td", "th"])
+            if not cells:
+                continue
+            cell_texts = [c.get_text(strip=True) for c in cells]
+            a_tag = tr.find("a", href=True)
+            if not a_tag:
+                continue
+            filename = str(a_tag["href"]).split("/")[-1]
 
-                soup = BeautifulSoup(html, "html.parser")
-                for tr in soup.find_all("tr"):
-                    cells = tr.find_all(["td", "th"])
-                    if not cells:
-                        continue
-                    cell_texts = [c.get_text(strip=True) for c in cells]
-                    a_tag = tr.find("a", href=True)
-                    if not a_tag:
-                        continue
-                    href = str(a_tag["href"])
-                    filename = href.split("/")[-1]
+            # Exhibit type comes from the index's "Type" column, a cell that is
+            # exactly e.g. "EX-99.1". Match whole cells only so filenames such as
+            # "acme-ex991.htm" are never mistaken for a type.
+            ex_num = next(
+                (txt.upper() for txt in cell_texts if _EXHIBIT_TYPE.fullmatch(txt)),
+                None,
+            )
 
-                    # Detect exhibit type
-                    ex_num = None
-                    for txt in cell_texts:
-                        m = re.search(
-                            r"\b(EX(?:HIBIT)?-?[\d\.]+)\b", txt, re.IGNORECASE
-                        )
-                        if m:
-                            ex_num = (
-                                m.group(1)
-                                .upper()
-                                .replace("EXHIBIT-", "EX-")
-                                .replace("EXHIBIT", "EX-")
-                            )
-                            break
+            lower_name = filename.lower()
+            if not ex_num and ("ex99" in lower_name or "ex-99" in lower_name):
+                # Sub-number is unknown from the filename alone; do not guess ".1".
+                ex_num = "EX-99"
 
-                    if not ex_num and (
-                        "ex99" in filename.lower() or "ex-99" in filename.lower()
-                    ):
-                        ex_num = "EX-99.1"
+            if not ex_num:
+                continue
 
-                    if ex_num:
-                        # Find description text among cells
-                        desc = ""
-                        for txt in cell_texts:
-                            if (
-                                txt != ex_num
-                                and txt != filename
-                                and txt != a_tag.get_text(strip=True)
-                                and len(txt) > len(desc)
-                            ):
-                                desc = txt
-                        if not desc:
-                            desc = a_tag.get_text(strip=True)
+            link_text = a_tag.get_text(strip=True)
+            desc = ""
+            for txt in cell_texts:
+                if txt not in (ex_num, filename, link_text) and len(txt) > len(desc):
+                    desc = txt
 
-                        full_url = f"https://www.sec.gov/Archives/edgar/data/{cik_int}/{acc_nodash}/{filename}"
-                        exhibits.append(
-                            FilingExhibit(
-                                exhibit_number=ex_num,
-                                filename=filename,
-                                description=desc or filename,
-                                url=full_url,
-                            )
-                        )
-        except Exception as exc:  # noqa: BLE001
-            logger.warning(
-                "Could not fetch filing directory index for %s: %s",
-                filing.accession,
-                exc,
+            exhibits.append(
+                FilingExhibit(
+                    exhibit_number=ex_num,
+                    filename=filename,
+                    description=desc or link_text or filename,
+                    url=self._archive_url(filing.cik, filing.accession, filename),
+                )
             )
 
         filing.exhibits = exhibits
@@ -433,7 +420,11 @@ class EdgarClient:
                 if document_name.lower().endswith(".pdf")
                 else "text/html"
             )
-            url = f"local://{accession}/{document_name}"
+            url = (
+                self._archive_url(cik, accession, document_name)
+                if cik
+                else f"local://{accession}/{document_name}"
+            )
             return FilingDocument(
                 accession=accession,
                 document_name=document_name,
@@ -447,9 +438,7 @@ class EdgarClient:
                 f"CIK required to fetch un-cached document '{document_name}' for accession {accession}"
             )
 
-        cik_int = int(cik)
-        acc_nodash = accession.replace("-", "")
-        doc_url = f"https://www.sec.gov/Archives/edgar/data/{cik_int}/{acc_nodash}/{document_name}"
+        doc_url = self._archive_url(cik, accession, document_name)
 
         res = self._request_with_retry(doc_url, host="www.sec.gov")
         if res.status_code == 404:

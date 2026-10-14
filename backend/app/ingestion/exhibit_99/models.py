@@ -21,7 +21,9 @@ class EarningsReleaseMetadata(BaseModel):
     filing_date: str
     period: str | None = None
     has_item_2_02: bool = False
-    exhibit_number: str = "EX-99.1"
+    exhibit_number: str | None = None
+    """Exhibit type as listed in the filing index; None if no exhibit was found."""
     exhibit_filename: str | None = None
     exhibit_url: str | None = None
-    format: ExhibitFormat = ExhibitFormat.HTML
+    format: ExhibitFormat | None = None
+    """Exhibit file format; None if no exhibit was found."""

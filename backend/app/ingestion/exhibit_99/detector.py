@@ -69,19 +69,15 @@ def detect_earnings_release_exhibit(
     if not ex99 and not has_item_202:
         return None
 
-    filename = ex99.filename if ex99 else None
-    fmt = classify_exhibit_format(filename) if filename else ExhibitFormat.HTML
-    url = ex99.url if ex99 else None
-
     return EarningsReleaseMetadata(
         accession=filing.accession,
         filing_date=filing.filed_at,
         period=filing.period,
         has_item_2_02=has_item_202,
-        exhibit_number="EX-99.1",
-        exhibit_filename=filename,
-        exhibit_url=url,
-        format=fmt,
+        exhibit_number=ex99.exhibit_number if ex99 else None,
+        exhibit_filename=ex99.filename if ex99 else None,
+        exhibit_url=ex99.url if ex99 else None,
+        format=classify_exhibit_format(ex99.filename) if ex99 else None,
     )
 
 

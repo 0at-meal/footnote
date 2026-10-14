@@ -8,6 +8,7 @@ Enforces:
 - Atomic persistence via temporary file rename.
 """
 
+import difflib
 import json
 import logging
 import os
@@ -30,250 +31,21 @@ logger = logging.getLogger(__name__)
 _DEFAULT_DATA_DIR: Path = Path(__file__).parent.parent.parent / "data"
 
 
-def _build_default_seed_taxonomy() -> MasterTaxonomy:
-    seed_file = _DEFAULT_DATA_DIR / "taxonomy.json"
-    if seed_file.exists():
-        try:
-            content = seed_file.read_text(encoding="utf-8")
-            data = json.loads(content)
-            if isinstance(data, dict) and "items" in data:
-                return MasterTaxonomy.model_validate(data)
-        except (
-            json.JSONDecodeError,
-            OSError,
-            ValidationError,
-            TypeError,
-            ValueError,
-        ) as err:
-            logger.debug(
-                "Failed to load taxonomy.json in _build_default_seed_taxonomy: %s", err
-            )
-
-    # Built-in fallback if file cannot be read
-    default_items = [
-        TaxonomyItem(
-            canonical_name="Revenue",
-            statement_type=StatementType.income_statement,
-            display_order=10,
-            is_debit=False,
-            aliases=[
-                "Total revenues",
-                "Revenues",
-                "Net sales",
-                "Sales",
-                "Total revenue",
-                "Operating revenues",
-            ],
-        ),
-        TaxonomyItem(
-            canonical_name="Cost of Revenue",
-            statement_type=StatementType.income_statement,
-            display_order=20,
-            is_debit=True,
-            aliases=[
-                "Cost of revenues",
-                "Cost of sales",
-                "Cost of goods sold",
-                "Total cost of revenues",
-                "COGS",
-            ],
-        ),
-        TaxonomyItem(
-            canonical_name="Gross Profit",
-            statement_type=StatementType.income_statement,
-            display_order=30,
-            is_debit=False,
-            aliases=["Gross margin", "Gross income", "Total gross profit"],
-        ),
-        TaxonomyItem(
-            canonical_name="Research & Development",
-            statement_type=StatementType.income_statement,
-            display_order=40,
-            is_debit=True,
-            aliases=[
-                "Research and development",
-                "R&D expense",
-                "Research and development expense",
-                "R&D",
-            ],
-        ),
-        TaxonomyItem(
-            canonical_name="Sales & Marketing",
-            statement_type=StatementType.income_statement,
-            display_order=50,
-            is_debit=True,
-            aliases=[
-                "Sales and marketing",
-                "Selling and marketing",
-                "SG&A - Sales and Marketing",
-                "Marketing and sales",
-            ],
-        ),
-        TaxonomyItem(
-            canonical_name="General & Administrative",
-            statement_type=StatementType.income_statement,
-            display_order=60,
-            is_debit=True,
-            aliases=[
-                "General and administrative",
-                "SG&A - General and Administrative",
-                "Administrative expenses",
-                "G&A",
-            ],
-        ),
-        TaxonomyItem(
-            canonical_name="Operating Income",
-            statement_type=StatementType.income_statement,
-            display_order=80,
-            is_debit=False,
-            aliases=[
-                "Operating profit",
-                "Operating income (loss)",
-                "Income from operations",
-                "EBIT",
-                "Operating earnings",
-            ],
-        ),
-        TaxonomyItem(
-            canonical_name="Net Income",
-            statement_type=StatementType.income_statement,
-            display_order=140,
-            is_debit=False,
-            aliases=[
-                "Net earnings",
-                "Net income (loss)",
-                "Net profit",
-                "Consolidated net income",
-            ],
-        ),
-        TaxonomyItem(
-            canonical_name="Stock-Based Compensation",
-            statement_type=StatementType.non_gaap_bridge,
-            display_order=610,
-            is_debit=False,
-            aliases=[
-                "Share-based compensation expense",
-                "Stock compensation expense",
-                "SBC add-back",
-                "Share-based payment",
-                "Stock-based compensation",
-            ],
-        ),
-        TaxonomyItem(
-            canonical_name="Restructuring Charges",
-            statement_type=StatementType.non_gaap_bridge,
-            display_order=620,
-            is_debit=False,
-            aliases=[
-                "Restructuring and other charges",
-                "Severance costs",
-                "Facility exit costs",
-                "Restructuring expenses",
-                "Restructuring Charges",
-            ],
-        ),
-        TaxonomyItem(
-            canonical_name="Litigation Charges",
-            statement_type=StatementType.non_gaap_bridge,
-            display_order=630,
-            is_debit=False,
-            aliases=[
-                "Legal settlement charges",
-                "Legal reserves",
-                "Litigation and regulatory matters",
-                "Litigation Charges",
-            ],
-        ),
-        TaxonomyItem(
-            canonical_name="Lease Adjustments",
-            statement_type=StatementType.non_gaap_bridge,
-            display_order=640,
-            is_debit=False,
-            aliases=[
-                "Lease termination costs",
-                "Right-of-use impairment",
-                "Excess lease expense",
-                "Lease Adjustments",
-            ],
-        ),
-        TaxonomyItem(
-            canonical_name="Amortization of Intangibles",
-            statement_type=StatementType.non_gaap_bridge,
-            display_order=650,
-            is_debit=False,
-            aliases=[
-                "Intangible amortization expense",
-                "Amortization of acquired intangibles",
-                "Acquired intangible asset amortization",
-                "Amortization of Intangibles",
-            ],
-        ),
-        TaxonomyItem(
-            canonical_name="Acquisition-Related Expenses",
-            statement_type=StatementType.non_gaap_bridge,
-            display_order=660,
-            is_debit=False,
-            aliases=[
-                "M&A transaction costs",
-                "Acquisition and integration costs",
-                "Transaction-related expenses",
-                "Acquisition-Related Expenses",
-            ],
-        ),
-        TaxonomyItem(
-            canonical_name="Impairment of Assets",
-            statement_type=StatementType.non_gaap_bridge,
-            display_order=670,
-            is_debit=False,
-            aliases=[
-                "Asset impairment charges",
-                "Goodwill impairment",
-                "Impairment of long-lived assets",
-                "Impairment of Assets",
-            ],
-        ),
-        TaxonomyItem(
-            canonical_name="Gain/Loss on Divestitures",
-            statement_type=StatementType.non_gaap_bridge,
-            display_order=680,
-            is_debit=False,
-            aliases=[
-                "Net gain on sale of business",
-                "Loss on sale of assets",
-                "Divestiture-related gain (loss)",
-                "Gain/Loss on Divestitures",
-            ],
-        ),
-        TaxonomyItem(
-            canonical_name="Foreign Currency Adjustments",
-            statement_type=StatementType.non_gaap_bridge,
-            display_order=690,
-            is_debit=False,
-            aliases=[
-                "FX translation gain (loss)",
-                "Foreign exchange remeasurement",
-                "Currency hedge gains (losses)",
-                "Foreign Currency Adjustments",
-            ],
-        ),
-        TaxonomyItem(
-            canonical_name="Other Non-Operating Expenses",
-            statement_type=StatementType.non_gaap_bridge,
-            display_order=700,
-            is_debit=False,
-            aliases=[
-                "Other non-GAAP adjustments",
-                "Miscellaneous non-operating",
-                "Other expense (income) net adjustments",
-                "Other Non-Operating Expenses",
-            ],
-        ),
-    ]
-    return MasterTaxonomy(items=default_items)
+_SEED_FILE: Path = Path(__file__).with_name("seed_taxonomy.json")
 
 
-SEED_MASTER_TAXONOMY: MasterTaxonomy = _build_default_seed_taxonomy()
-SEED_TAXONOMY: list[str] = [item.canonical_name for item in SEED_MASTER_TAXONOMY.items]
+def _load_seed_taxonomy() -> MasterTaxonomy:
+    """
+    Loads the version-controlled seed taxonomy shipped with the package.
+
+    The seed never depends on runtime data; user-confirmed additions live in
+    ``TaxonomyRepository``. An unreadable or invalid seed raises at import time
+    rather than silently degrading matching.
+    """
+    return MasterTaxonomy.model_validate_json(_SEED_FILE.read_text(encoding="utf-8"))
+
+
+SEED_MASTER_TAXONOMY: MasterTaxonomy = _load_seed_taxonomy()
 
 
 def clean_raw_label(label: str) -> str:
@@ -438,27 +210,6 @@ def match_master_taxonomy(
     return None
 
 
-def match_canonical_taxonomy(
-    candidate_label: str,
-    active_taxonomy: list[str] | MasterTaxonomy | None = None,
-) -> str | None:
-    """
-    Legacy compatibility wrapper returning canonical name string or None.
-    """
-    if isinstance(active_taxonomy, MasterTaxonomy):
-        matched = match_master_taxonomy(candidate_label, active_taxonomy)
-        return matched.canonical_name if matched else None
-
-    master_to_use = SEED_MASTER_TAXONOMY
-    matched = match_master_taxonomy(candidate_label, master_to_use)
-    if matched:
-        return matched.canonical_name
-    return None
-
-
-import difflib
-
-
 def compute_token_set_ratio(s1: str, s2: str) -> float:
     """
     Computes token-set-ratio similarity between two financial strings in [0.0, 1.0].
@@ -530,7 +281,11 @@ def check_label_against_taxonomy(
     Checks candidate label against the active taxonomy.
 
     1. Exact & canonicalized match -> TaxonomyStatus.matched (is_matched=True)
-    2. Fuzzy token-set-ratio match (>= 0.85) -> TaxonomyStatus.fuzzy_matched (is_matched=True)
+    2. Fuzzy token-set-ratio match (>= 0.85) -> TaxonomyStatus.fuzzy_matched
+       (is_matched=False): a *suggestion* for human confirmation, never an
+       automatic match. Token-set ratio scores 1.0 whenever one label's tokens
+       are a subset of the other's (e.g. "Net income attributable to
+       noncontrolling interests" vs "Net Income"), so it cannot be trusted alone.
     3. Unrecognized -> TaxonomyStatus.pending_taxonomy_confirmation (is_matched=False)
     """
     if isinstance(active_taxonomy, MasterTaxonomy):
@@ -554,7 +309,7 @@ def check_label_against_taxonomy(
                 status=TaxonomyStatus.fuzzy_matched,
                 matched_entry=fuzzy_item.canonical_name,
                 matched_item=fuzzy_item,
-                is_matched=True,
+                is_matched=False,
                 similarity_score=round(fuzzy_score, 2),
             )
 
@@ -726,8 +481,9 @@ class StandardAddBackCategory(str, Enum):
 
 def classify_addback_category(label: str) -> StandardAddBackCategory:
     """
-    Deterministically maps a line item label to a standard add-back category.
-    Alias match first, with robust financial keyword matching.
+    Deterministically maps a line item label to a standard add-back category by
+    ordered keyword matching (first category whose keywords appear wins).
+    D&A, interest, and taxes are not add-back categories here and map to OTHER.
     """
     norm = label.lower().strip()
 

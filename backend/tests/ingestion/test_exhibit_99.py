@@ -12,6 +12,7 @@ from app.ingestion.exhibit_99.detector import (
 from app.ingestion.exhibit_99.extractor import Exhibit99Extractor
 from app.ingestion.exhibit_99.models import ExhibitFormat
 
+# Synthetic fixture (not a real filing). Foots: 26,301 + 3,450 + 5,120 + 150 = 35,021.
 SAMPLE_8K_EX99_HTML = """
 <html>
 <body>
@@ -39,24 +40,24 @@ SAMPLE_8K_EX99_HTML = """
 
 def test_item_2_02_and_ex99_detection() -> None:
     # 8-K text with Item 2.02
-    text = "Item 2.02 Results of Operations and Financial Condition. On October 29, 2024, Alphabet released..."
+    text = "Item 2.02 Results of Operations and Financial Condition. On October 29, 2024, the Company released..."
     assert is_item_2_02_text(text) is True
     assert is_item_2_02_text("Item 5.02 Departure of Directors") is False
 
     # FilingRef with EX-99.1
     filing = FilingRef(
-        cik="0001652044",
-        accession="0001652044-24-000005",
+        cik="0000000000",
+        accession="0000000000-24-000005",
         form="8-K",
         filed_at="2024-10-29",
-        primary_document="goog-8k.htm",
-        primary_url="https://sec.gov/...",
+        primary_document="fixture-8k.htm",
+        primary_url="https://example.com/fixture-8k.htm",
         exhibits=[
             FilingExhibit(
                 exhibit_number="EX-99.1",
-                filename="goog-ex991.htm",
+                filename="fixture-ex991.htm",
                 description="Earnings Release Q3 2024",
-                url="https://sec.gov/goog-ex991.htm",
+                url="https://example.com/fixture-ex991.htm",
             )
         ],
     )
@@ -65,7 +66,7 @@ def test_item_2_02_and_ex99_detection() -> None:
     assert metadata is not None
     assert metadata.has_item_2_02 is True
     assert metadata.exhibit_number == "EX-99.1"
-    assert metadata.exhibit_filename == "goog-ex991.htm"
+    assert metadata.exhibit_filename == "fixture-ex991.htm"
     assert metadata.format == ExhibitFormat.HTML
 
 
@@ -86,8 +87,8 @@ def test_exhibit_99_extractor_html() -> None:
     extractor = Exhibit99Extractor()
     records = extractor.extract_from_content(
         content=SAMPLE_8K_EX99_HTML,
-        filename="goog-ex991.htm",
-        accession="0001652044-24-000005",
+        filename="fixture-ex991.htm",
+        accession="0000000000-24-000005",
     )
 
     assert len(records) > 0
@@ -104,3 +105,24 @@ def test_exhibit_99_extractor_html() -> None:
         r.label for r in records if "Guidance" in r.label or "Outlook" in r.label
     ]
     assert len(guidance_labels) > 0
+
+
+def test_no_exhibit_reports_no_exhibit_metadata() -> None:
+    """Item 2.02 without a discovered exhibit must not invent an exhibit number or format."""
+    filing = FilingRef(
+        cik="0000000000",
+        accession="0000000000-24-000006",
+        form="8-K",
+        filed_at="2024-10-29",
+        primary_document="fixture-8k.htm",
+        primary_url="https://example.com/fixture-8k.htm",
+        exhibits=[],
+    )
+    metadata = detect_earnings_release_exhibit(
+        filing, raw_8k_content="Item 2.02 Results of Operations and Financial Condition"
+    )
+    assert metadata is not None
+    assert metadata.has_item_2_02 is True
+    assert metadata.exhibit_number is None
+    assert metadata.exhibit_filename is None
+    assert metadata.format is None

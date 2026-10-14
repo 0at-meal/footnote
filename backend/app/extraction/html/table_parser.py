@@ -34,7 +34,8 @@ PERIOD_PATTERNS = [
 
 # Patterns for accounting parentheses
 PARENTHESES_PATTERN = re.compile(r"^\s*\(\s*([0-9,]+(?:\.[0-9]+)?)\s*\)\s*$")
-CLEAN_NUM_PATTERN = re.compile(r"^\s*([0-9,]+(?:\.[0-9]+)?)\s*$")
+# Optional leading minus: ASCII hyphen or U+2212 MINUS SIGN.
+CLEAN_NUM_PATTERN = re.compile(r"^\s*([-−]?)\s*([0-9,]+(?:\.[0-9]+)?)\s*$")
 FOOTNOTE_REF_PATTERN = re.compile(
     r"\s*(?:\([a-z0-9]\)|\[[a-z0-9]\]|\*+)\s*$", re.IGNORECASE
 )
@@ -43,7 +44,8 @@ FOOTNOTE_REF_PATTERN = re.compile(
 def parse_numeric_cell(text: str) -> tuple[float | None, str]:
     """
     Parses a string into a float and cleaned representation.
-    Handles parentheses for negative values: (123) -> -123.0
+    Handles parentheses and leading minus signs (ASCII or U+2212) for negative values:
+    (123) -> -123.0, -123 -> -123.0
     Strips currency symbols ($) and footnote markers.
     """
     raw = text.strip()
@@ -67,7 +69,9 @@ def parse_numeric_cell(text: str) -> tuple[float | None, str]:
     # Normal number
     clean_match = CLEAN_NUM_PATTERN.match(cleaned)
     if clean_match:
-        val_str = clean_match.group(1).replace(",", "")
+        val_str = clean_match.group(2).replace(",", "")
+        if clean_match.group(1):
+            val_str = f"-{val_str}"
         try:
             return float(val_str), val_str
         except ValueError:
@@ -189,7 +193,7 @@ def extract_html_tables(soup: BeautifulSoup) -> list[HtmlTable]:
                             periods_found.append(match.group(1))
                             break
             if periods_found:
-                # Use the most specific period found
+                # Use the first (topmost) period label found in the column
                 col_periods[c] = periods_found[0]
 
         # Handle split currency columns: if col c has "$" and col c+1 has a number

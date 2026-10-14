@@ -11,7 +11,6 @@ from app.classification.models import (
 )
 from app.classification.taxonomy import (
     SEED_MASTER_TAXONOMY,
-    SEED_TAXONOMY,
     StandardAddBackCategory,
     TaxonomyRepository,
     check_label_against_taxonomy,
@@ -21,7 +20,6 @@ from app.classification.taxonomy import (
 
 __all__ = [
     "SEED_MASTER_TAXONOMY",
-    "SEED_TAXONOMY",
     "MasterTaxonomy",
     "StandardAddBackCategory",
     "StatementType",

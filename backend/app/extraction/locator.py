@@ -127,7 +127,7 @@ def locator_from_legacy(
         type="pdf",
         page=max(1, page),
         bbox=normalized_bbox,
-        source_file=source_file or "unknown.pdf",
+        source_file=source_file,
     )
 
 
@@ -135,6 +135,7 @@ def deserialize_locator(data: dict[str, Any] | Locator | None) -> Locator | None
     """
     Deserializes raw JSON or dictionary into the appropriate Locator variant.
     Supports legacy dicts without 'type' by inspecting presence of 'accession' or 'page'.
+    Raises ValueError for payloads that match neither variant (never guesses).
     """
     if data is None:
         return None
@@ -149,9 +150,6 @@ def deserialize_locator(data: dict[str, Any] | Locator | None) -> Locator | None
     elif locator_type == "pdf" or "page" in data or "bbox" in data:
         return PdfLocator.model_validate(data)
 
-    # Fallback to pdf locator
-    return locator_from_legacy(
-        page=int(data.get("page", 1)),
-        bbox=data.get("bbox", {}),
-        source_file=str(data.get("source_file", "unknown.pdf")),
+    raise ValueError(
+        "Unrecognized locator payload: expected 'type', 'accession', or 'page'/'bbox' keys"
     )

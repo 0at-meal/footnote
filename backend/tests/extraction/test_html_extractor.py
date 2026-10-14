@@ -1,5 +1,8 @@
 """
-Unit and benchmark tests for HTML and iXBRL Extractor.
+Unit and throughput tests for the HTML and iXBRL extractor.
+
+All HTML here is synthetic; identifiers use a zero CIK prefix so they cannot be
+mistaken for real filings.
 """
 
 import time
@@ -14,11 +17,12 @@ from app.extraction.html.table_parser import extract_html_tables, parse_numeric_
 from app.extraction.locator import HtmlLocator
 from bs4 import BeautifulSoup
 
+# Synthetic fixture. The reconciliation foots: 26,301 + 120 + 3,845 + 3,450 + 5,120 - 45 = 38,791.
 SAMPLE_IXBRL_HTML = """
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Form 10-Q Q3 2024</title>
+    <title>Synthetic fixture (not a real filing)</title>
 </head>
 <body>
     <xbrli:context id="c-2024-q3">
@@ -140,8 +144,17 @@ def test_parse_numeric_cell() -> None:
     num, text = parse_numeric_cell("2,450 (1)")
     assert num == 2450.0
 
+    # Leading minus signs (ASCII hyphen and U+2212)
+    num, text = parse_numeric_cell("-45")
+    assert num == -45.0
+    assert text == "-45"
+    num, text = parse_numeric_cell("− 1,200")
+    assert num == -1200.0
+
     # Financial placeholders
     num, text = parse_numeric_cell("—")
+    assert num is None
+    num, text = parse_numeric_cell("-")
     assert num is None
 
 
@@ -182,8 +195,8 @@ def test_html_extractor_end_to_end() -> None:
     extractor = HtmlExtractor(parser_flavor="html.parser")
     result: HtmlExtractionResult = extractor.extract(
         html_content=SAMPLE_IXBRL_HTML,
-        accession="0001652044-24-000088",
-        document_name="goog-20240930.htm",
+        accession="0000000000-24-000001",
+        document_name="fixture-20240930.htm",
         target_metric="Adjusted EBITDA",
     )
 
@@ -194,11 +207,11 @@ def test_html_extractor_end_to_end() -> None:
     # Check records have valid HtmlLocator
     for rec in result.records:
         assert isinstance(rec.locator, HtmlLocator)
-        assert rec.locator.accession == "0001652044-24-000088"
-        assert rec.locator.document == "goog-20240930.htm"
+        assert rec.locator.accession == "0000000000-24-000001"
+        assert rec.locator.document == "fixture-20240930.htm"
         assert rec.locator.element_path.startswith("/html/")
         assert rec.page == 1
-        assert rec.source_file == "goog-20240930.htm"
+        assert rec.source_file == "fixture-20240930.htm"
         assert rec.is_reconciliation_candidate is True
 
     # Check specific line extracted: Adjusted EBITDA
@@ -208,7 +221,7 @@ def test_html_extractor_end_to_end() -> None:
     assert any("38,791" in v or "38791" in v for v in values)
 
 
-def test_html_extractor_explicit_not_found_invariant_i3() -> None:
+def test_html_extractor_explicit_not_found() -> None:
     unrelated_html = """
     <html>
     <body>
@@ -224,8 +237,8 @@ def test_html_extractor_explicit_not_found_invariant_i3() -> None:
     extractor = HtmlExtractor(parser_flavor="html.parser")
     result = extractor.extract(
         html_content=unrelated_html,
-        accession="0001652044-24-000099",
-        document_name="goog-def14a.htm",
+        accession="0000000000-24-000002",
+        document_name="fixture-def14a.htm",
         target_metric="Adjusted EBITDA",
     )
 
@@ -265,7 +278,7 @@ def test_html_extractor_throughput_benchmark() -> None:
     start = time.monotonic()
     result = extractor.extract(
         html_content=large_doc,
-        accession="0001652044-24-000001",
+        accession="0000000000-24-000003",
         document_name="large-10k.htm",
     )
     elapsed = time.monotonic() - start

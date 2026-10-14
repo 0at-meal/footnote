@@ -74,8 +74,12 @@ _RE_DOLLARS = re.compile(
 )
 
 # Per-share and percentage exemption patterns
+# Deliberately narrow: "margin", "shares" and "rate" are NOT exemptions on their
+# own. "Gross margin" and "Repurchases of shares" are dollar rows, and share
+# counts in an "in millions, except per share" table are scaled. Percent rows
+# are caught by a "%" in the label or the value.
 _RE_PER_SHARE_OR_PCT = re.compile(
-    r"(\bper\s+share\b|\beps\b|\bshares\b|\%|\bmargin\b|\brate\b|\bratio\b)",
+    r"(\bper\s+(?:basic\s+|diluted\s+)?share\b|\beps\b|%|\bpercent(?:age)?\b|\bratio\b)",
     re.IGNORECASE,
 )
 
@@ -176,8 +180,8 @@ def detect_sign(
     if v_clean.startswith("(") and v_clean.endswith(")"):
         return -1, True
 
-    # 2. Leading minus sign
-    if v_clean.startswith("-"):
+    # 2. Leading minus sign (ASCII hyphen or U+2212)
+    if v_clean.startswith(("-", "−")):
         return -1, False
 
     # 3. Structural label directives
@@ -214,7 +218,7 @@ def parse_raw_numeric(raw_val: str | None) -> float | None:
     if s.startswith("(") and s.endswith(")"):
         is_neg = True
         s = s[1:-1].strip()
-    elif s.startswith("-"):
+    elif s.startswith(("-", "−")):
         is_neg = True
         s = s[1:].strip()
 

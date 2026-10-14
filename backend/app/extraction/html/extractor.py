@@ -41,7 +41,6 @@ class HtmlExtractor:
         document_name: str,
         url: str | None = None,
         target_metric: str = "Adjusted EBITDA",
-        workflow_pack: str = "non_gaap_bridge",
     ) -> HtmlExtractionResult:
         """
         Extracts records and authoritative facts from an HTML filing.
@@ -67,7 +66,6 @@ class HtmlExtractor:
         candidate_tables = detect_reconciliation_tables(
             tables,
             target_metric=target_metric,
-            workflow_pack=workflow_pack,
         )
 
         elapsed = time.monotonic() - start_time
