@@ -1,4 +1,4 @@
-.PHONY: install test lint typecheck format check
+.PHONY: install test lint typecheck format check gold-verify
 
 install:
 	pip install -r requirements-dev.txt
@@ -17,4 +17,7 @@ format:
 	ruff check backend --fix
 	ruff format backend
 
-check: lint typecheck test
+gold-verify:
+	cd backend && python -m tools.gold.fetch_releases --verify
+
+check: lint typecheck test gold-verify

@@ -26,3 +26,6 @@ jobs:
       - name: pytest
         working-directory: backend
         run: python -m pytest -q
+      - name: Gold-set inputs unchanged (sha256)
+        working-directory: backend
+        run: python -m tools.gold.fetch_releases --verify
