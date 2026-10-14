@@ -130,3 +130,22 @@ def test_period_disagreement() -> None:
     ]
     found = compare(DRAFT, reading).disagreements
     assert any(d.startswith("periods:") for d in found)
+
+
+def test_table_pointer_gives_link_and_searchable_labels() -> None:
+    from tools.gold.compare import table_pointer
+
+    rel = {
+        "source_url": "https://www.sec.gov/Archives/edgar/data/0/000000000026000001/fixture.htm",
+        "metric_label_raw": "Adjusted EBITDA",
+        "table": {"table_index": 3},
+        "lines": [
+            {"label_raw": "Net income", "values": [{"value_raw": "100"}]},
+            {"label_raw": "Adjusted EBITDA", "values": [{"value_raw": "150"}]},
+        ],
+    }
+    out = table_pointer(rel)
+    assert out[0].endswith("fixture.htm")
+    assert "**Net income** (first number: 100)" in out[1]
+    assert "ending with **Adjusted EBITDA**" in out[1]
+    assert out[2].startswith("- [ ] ") and "table 3" in out[2]
