@@ -17,7 +17,8 @@ backend/app/
 │   ├── models.py       ExtractedRecord
 │   └── scale_and_sign.py
 └── classification/
-    ├── taxonomy.py     master taxonomy, alias + fuzzy matching, add-back categories
+    ├── taxonomy.py     master taxonomy, alias matching, fuzzy suggestions, add-back categories
+    ├── seed_taxonomy.json  tracked seed (84 canonical items + aliases)
     └── models.py
 ```
 

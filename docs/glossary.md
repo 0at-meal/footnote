@@ -59,6 +59,13 @@ such as "Less:" mark a deduction.
 document, XPath, an optional character range, and a URL. `PdfLocator` holds a
 page and a bbox normalized to 0–1000.
 
-**Master taxonomy.** Canonical line items with aliases, used for deterministic
-label matching (`match_master_taxonomy`). Unmatched labels become
-`pending_taxonomy_confirmation`; they are never auto-accepted.
+**Master taxonomy.** Canonical line items with aliases, seeded from
+`backend/app/classification/seed_taxonomy.json` and used for deterministic
+label matching (`match_master_taxonomy`). In `check_label_against_taxonomy`,
+exact and alias matches are `matched`. Near-misses are `fuzzy_matched`
+suggestions with `is_matched=False`. Anything else is
+`pending_taxonomy_confirmation`. Only exact or alias matches count as matched.
+
+**Add-back category.** `StandardAddBackCategory` (SBC, Restructuring,
+Impairment, M&A/Integration, Litigation, FX, Other), assigned by ordered keyword
+matching in `classify_addback_category`.

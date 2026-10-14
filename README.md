@@ -27,7 +27,7 @@ provenance on every number.
 | `backend/app/extraction/html/` | HTML table parser (colspan/rowspan grid, numeric cells, XPath per cell), reconciliation-table detector, iXBRL fact parser, and the `HtmlExtractor` that ties them together. |
 | `backend/app/extraction/locator.py`, `models.py` | `ExtractedRecord` and its provenance `Locator` (`HtmlLocator` for EDGAR documents, `PdfLocator` for page + bbox). |
 | `backend/app/extraction/scale_and_sign.py` | Pure scale ("in millions") and sign ("(1,234)", "Less:") normalization. Unknown scale is flagged, never guessed. |
-| `backend/app/classification/` | Master financial taxonomy with deterministic alias / fuzzy matching and add-back categories. No LLM. |
+| `backend/app/classification/` | Master financial taxonomy (tracked seed JSON) with deterministic alias matching, fuzzy *suggestions* that never auto-match, and add-back categories. No LLM. |
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for boundaries, principles, and known gaps.
 
