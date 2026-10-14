@@ -139,12 +139,22 @@ def table_pointer(rel: dict[str, Any]) -> list[str]:
     """Queue lines that let the owner find the selected table on sec.gov."""
     lines = rel["lines"]
     first, last = lines[0], lines[-1]
-    first_value = next((v["value_raw"] for v in first["values"]), None)
+    # The same row label often recurs (highlights, guidance), so also give the
+    # column and the last row's number: together they identify one table.
+    periods = rel.get("periods") or []
+    column = periods[0]["label_raw"] if periods else None
+
+    def number(line: dict[str, Any]) -> str | None:
+        return next((v["value_raw"] for v in line["values"] if v["value_raw"]), None)
+
+    first_value, last_value = number(first), number(last)
     return [
         f"- open: {rel['source_url']}",
         f"- look for the table starting with **{first['label_raw']}**"
         + (f" (first number: {first_value})" if first_value else "")
-        + f" and ending with **{last['label_raw']}**",
+        + f" and ending with **{last['label_raw']}**"
+        + (f" (first number: {last_value})" if last_value else "")
+        + (f"; first column: {column}" if column else ""),
         (
             f"- [ ] that table is the headline {rel.get('metric_label_raw')} bridge"
             f" (table {rel['table']['table_index']}, counted from 0)"
