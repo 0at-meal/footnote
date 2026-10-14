@@ -69,14 +69,16 @@ def parse_ixbrl_facts(soup: BeautifulSoup) -> list[IxbrlFact]:
         if not raw_text:
             continue
 
-        # Parse scale and sign
-        scale_val = 0
+        # Parse scale. An invalid scale would make the value wrong by orders of
+        # magnitude, so the fact is skipped (with a logged reason), not defaulted.
+        scale_str = _attr(tag, "scale")
         try:
-            scale_str = _attr(tag, "scale")
-            if scale_str is not None:
-                scale_val = int(scale_str)
-        except (ValueError, TypeError):
-            scale_val = 0
+            scale_val = int(scale_str) if scale_str is not None else 0
+        except ValueError:
+            logger.warning(
+                "Skipping iXBRL fact %s: invalid scale attribute %r", concept, scale_str
+            )
+            continue
 
         sign_mult = -1 if (_attr(tag, "sign") or "").strip() == "-" else 1
 
@@ -90,6 +92,10 @@ def parse_ixbrl_facts(soup: BeautifulSoup) -> list[IxbrlFact]:
         try:
             base_val = float(clean_num_str)
         except ValueError:
+            # e.g. ixt transforms such as "—" or "no" are not supported yet.
+            logger.warning(
+                "Skipping iXBRL fact %s: unparseable value %r", concept, raw_text
+            )
             continue
 
         final_val = base_val * (10**scale_val) * sign_mult
@@ -97,7 +103,7 @@ def parse_ixbrl_facts(soup: BeautifulSoup) -> list[IxbrlFact]:
         ctx_ref = _attr(tag, "contextref", "contextRef") or ""
         period_str = context_dates.get(ctx_ref, ctx_ref)
 
-        unit = _attr(tag, "unitref", "unitRef") or "USD"
+        unit = _attr(tag, "unitref", "unitRef")
         decimals = _attr(tag, "decimals")
 
         facts.append(

@@ -48,7 +48,9 @@ class IxbrlFact(BaseModel):
     )
     scale: int = Field(default=0, description="Scale power of 10 (e.g. 6 for millions)")
     sign: int = Field(default=1, description="Sign multiplier (1 or -1)")
-    unit: str = Field(default="USD", description="Unit currency or measurement")
+    unit: str | None = Field(
+        default=None, description="unitRef as tagged (e.g. 'usd'); None if absent"
+    )
     decimals: str | int | None = Field(
         default=None, description="Decimals accuracy attribute"
     )

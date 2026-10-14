@@ -287,3 +287,17 @@ def test_html_extractor_throughput_benchmark() -> None:
     assert len(result.records) > 0
     # Throughput benchmark: must be well under 3.0 seconds
     assert elapsed < 3.0
+
+
+def test_ixbrl_invalid_scale_or_value_is_skipped_not_defaulted() -> None:
+    html = """
+    <html><body>
+      <ix:nonfraction name="us-gaap:Revenues" scale="six" contextRef="c1">100</ix:nonfraction>
+      <ix:nonfraction name="us-gaap:CostOfRevenue" scale="6" contextRef="c1">—</ix:nonfraction>
+      <ix:nonfraction name="us-gaap:NetIncomeLoss" scale="3" contextRef="c1">7</ix:nonfraction>
+    </body></html>
+    """
+    facts = parse_ixbrl_facts(BeautifulSoup(html, "html.parser"))
+    assert [f.concept for f in facts] == ["us-gaap:NetIncomeLoss"]
+    assert facts[0].value == 7000
+    assert facts[0].unit is None  # no unitRef: not assumed to be USD
