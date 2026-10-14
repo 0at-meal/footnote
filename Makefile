@@ -19,5 +19,6 @@ format:
 
 gold-verify:
 	cd backend && python -m tools.gold.fetch_releases --verify
+	cd backend && python -m tools.gold.labels --validate
 
 check: lint typecheck test gold-verify

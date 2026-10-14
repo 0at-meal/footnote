@@ -1,0 +1,307 @@
+{
+  "$defs": {
+    "GoldLine": {
+      "additionalProperties": false,
+      "properties": {
+        "row_order": {
+          "minimum": 0,
+          "title": "Row Order",
+          "type": "integer"
+        },
+        "label_raw": {
+          "minLength": 1,
+          "title": "Label Raw",
+          "type": "string"
+        },
+        "role": {
+          "$ref": "#/$defs/LineRole"
+        },
+        "sign": {
+          "enum": [
+            1,
+            -1
+          ],
+          "title": "Sign",
+          "type": "integer"
+        },
+        "values": {
+          "items": {
+            "$ref": "#/$defs/GoldValue"
+          },
+          "minItems": 1,
+          "title": "Values",
+          "type": "array"
+        }
+      },
+      "required": [
+        "row_order",
+        "label_raw",
+        "role",
+        "sign",
+        "values"
+      ],
+      "title": "GoldLine",
+      "type": "object"
+    },
+    "GoldValue": {
+      "additionalProperties": false,
+      "properties": {
+        "period_id": {
+          "title": "Period Id",
+          "type": "string"
+        },
+        "value_raw": {
+          "minLength": 1,
+          "title": "Value Raw",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        },
+        "verified_by": {
+          "$ref": "#/$defs/VerifiedBy"
+        },
+        "labeler": {
+          "minLength": 1,
+          "title": "Labeler",
+          "type": "string"
+        },
+        "labeled_on": {
+          "format": "date",
+          "title": "Labeled On",
+          "type": "string"
+        }
+      },
+      "required": [
+        "period_id",
+        "value_raw",
+        "value",
+        "verified_by",
+        "labeler",
+        "labeled_on"
+      ],
+      "title": "GoldValue",
+      "type": "object"
+    },
+    "LineRole": {
+      "enum": [
+        "gaap_start",
+        "adjustment",
+        "subtotal",
+        "total",
+        "memo"
+      ],
+      "title": "LineRole",
+      "type": "string"
+    },
+    "Period": {
+      "additionalProperties": false,
+      "properties": {
+        "period_id": {
+          "description": "e.g. '3M-2026-06-30'",
+          "minLength": 1,
+          "title": "Period Id",
+          "type": "string"
+        },
+        "label_raw": {
+          "description": "column header as shown",
+          "minLength": 1,
+          "title": "Label Raw",
+          "type": "string"
+        },
+        "end_date": {
+          "format": "date",
+          "title": "End Date",
+          "type": "string"
+        },
+        "months": {
+          "enum": [
+            3,
+            6,
+            9,
+            12
+          ],
+          "title": "Months",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "period_id",
+        "label_raw",
+        "end_date",
+        "months"
+      ],
+      "title": "Period",
+      "type": "object"
+    },
+    "Scale": {
+      "enum": [
+        "units",
+        "thousands",
+        "millions",
+        "billions"
+      ],
+      "title": "Scale",
+      "type": "string"
+    },
+    "TableSelection": {
+      "additionalProperties": false,
+      "properties": {
+        "table_index": {
+          "minimum": 0,
+          "title": "Table Index",
+          "type": "integer"
+        },
+        "caption_raw": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Caption Raw"
+        },
+        "confirmed_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confirmed By"
+        },
+        "confirmed_on": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confirmed On"
+        }
+      },
+      "required": [
+        "table_index"
+      ],
+      "title": "TableSelection",
+      "type": "object"
+    },
+    "VerifiedBy": {
+      "description": "How a label's value was established (P0-05 / P0-05b / P0-06).",
+      "enum": [
+        "tieout",
+        "model_agreement",
+        "human"
+      ],
+      "title": "VerifiedBy",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "ticker": {
+      "minLength": 1,
+      "title": "Ticker",
+      "type": "string"
+    },
+    "cik": {
+      "title": "Cik",
+      "type": "string"
+    },
+    "accession": {
+      "title": "Accession",
+      "type": "string"
+    },
+    "exhibit": {
+      "minLength": 1,
+      "title": "Exhibit",
+      "type": "string"
+    },
+    "source_url": {
+      "title": "Source Url",
+      "type": "string"
+    },
+    "sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Sha256",
+      "type": "string"
+    },
+    "metric_label_raw": {
+      "minLength": 1,
+      "title": "Metric Label Raw",
+      "type": "string"
+    },
+    "scale": {
+      "$ref": "#/$defs/Scale"
+    },
+    "scale_quote": {
+      "description": "caption text giving scale",
+      "minLength": 1,
+      "title": "Scale Quote",
+      "type": "string"
+    },
+    "table": {
+      "$ref": "#/$defs/TableSelection"
+    },
+    "periods": {
+      "items": {
+        "$ref": "#/$defs/Period"
+      },
+      "minItems": 1,
+      "title": "Periods",
+      "type": "array"
+    },
+    "lines": {
+      "items": {
+        "$ref": "#/$defs/GoldLine"
+      },
+      "minItems": 2,
+      "title": "Lines",
+      "type": "array"
+    }
+  },
+  "required": [
+    "ticker",
+    "cik",
+    "accession",
+    "exhibit",
+    "source_url",
+    "sha256",
+    "metric_label_raw",
+    "scale",
+    "scale_quote",
+    "table",
+    "periods",
+    "lines"
+  ],
+  "title": "GoldRelease",
+  "type": "object"
+}
