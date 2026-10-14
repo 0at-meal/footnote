@@ -18,16 +18,18 @@ filings are in separate JSON files listed under `filings.files`.
 item used to furnish an earnings release.
 
 **EX-99.1.** The exhibit that typically carries the earnings press release on
-an Item 2.02 8-K. It is usually HTML, and its tables are generally not
-XBRL-tagged.
+an Item 2.02 8-K. It is usually HTML. Its tables are *believed* not to be
+XBRL-tagged; this is unverified, so check real exhibits before relying on it.
 
 **iXBRL (Inline XBRL).** XBRL facts embedded in HTML via `ix:nonFraction` and
 similar tags. Each tag carries a concept (e.g. `us-gaap:NetIncomeLoss`), a
 context (period), unit, scale, and sign.
 
 **Foreign filer.** Files 20-F / 40-F / 6-K instead of 10-K / 10-Q / 8-K. These
-filers are unsupported, and the EDGAR client raises
-`ForeignFilerUnsupportedError` for them.
+are unsupported. `EdgarClient.get_filings` raises
+`ForeignFilerUnsupportedError` when a company's recent filings are only foreign
+forms, or when a foreign form is explicitly requested. Otherwise it skips
+foreign-form filings.
 
 ### Financial terms
 
@@ -40,8 +42,8 @@ line.
 
 **Add-back / adjustment.** A reconciliation line added to or subtracted from
 the GAAP starting point, e.g. stock-based compensation, D&A, restructuring,
-impairment, acquisition costs, litigation. These map to
-`StandardAddBackCategory`.
+impairment, acquisition costs, litigation. `StandardAddBackCategory` groups
+the non-recurring ones; D&A, interest, and taxes fall under `OTHER`.
 
 **Scale.** The unit caption of a table ("in thousands", "in millions").
 Per-share and percentage rows are exempt from scaling.
