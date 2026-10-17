@@ -12,7 +12,7 @@ agreement is reported (P4-13).
 **What was run.** `cd backend && python -m tools.eval.score --json ../eval/results/baseline-2026-10-17.json`
 (scorer v1, P0-08). Full report: [results/baseline-2026-10-17.json](results/baseline-2026-10-17.json).
 
-- **Code.** Scorer at commit `8df6cc1` (branch `p0-08-scorer`). `backend/app/` there is identical to
+- **Code.** Scorer at commit `3406fcc` (branch `p0-08-scorer`). `backend/app/` there is identical to
   `main` at `1f41440`, so this is the extractor as merged after P0-06. No extractor
   change was made for this ticket.
 - **How the extractor is called.** It runs with its default `target_metric="Adjusted EBITDA"`.
@@ -21,7 +21,9 @@ agreement is reported (P4-13).
   - 30 releases (15 issuers × 2 quarters) with 1,304 values.
   - 102 dash placeholders are not scored, which leaves **1,202 scored values**.
   - Provenance: `model_agreement` 1,297 (1,197 scored), `human` 7 (5 scored), `tieout` 0.
-  - Label files sha256 `944a60bea101e9ed428ff9774842d7431f74091634ce4055b2824cdfe34a21ee`.
+  - Label files sha256 `5d0953b0cb034279eb3ae634b1925bcb274cb7cc2ef722f3c180cedbbf073d20`,
+    over LF-normalized files. The first recording (`944a60be…`, at `8df6cc1`) hashed
+    a Windows CRLF checkout and did not match CI. The metrics are identical.
 - **Determinism.** A second run gave a byte-identical JSON.
 - **Unit.** One gold value (line × period). Metric definitions are in
   [DECISIONS.md](../DECISIONS.md) (2026-10-17, P0-08) and the scorer's docstring.
