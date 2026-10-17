@@ -7,6 +7,67 @@ agreement is reported (P4-13).
 
 ---
 
+## Phase 0 exit gate: status as of 2026-10-17
+
+**Phase 0 is not complete, and Phase 1 stays closed.** Three of five criteria are met. The
+two that are open are the owner's (P0-12, P0-14). The engineering evidence below sits on the
+stacked branches `p0-08-scorer` … `p0-gate-status` and counts once those PRs are merged to
+`main`.
+
+| # | Exit criterion (ROADMAP §7) | Status | Evidence |
+|---|---|---|---|
+| 1 | 30-release gold set complete under the lean, tie-out-first procedure | **Met** | See the three sub-checks below |
+| 1a | Owner confirmed table selection for all 30 releases | Met | `eval/gold/review_decisions.yaml`: 30 entries under `tables_confirmed`, reviewer Niraj Jadhav, 2026-10-17. `labels --validate --strict` fails on any unconfirmed table, and it passes: "30 label files checked, 0 problems" |
+| 1b | Every exception resolved | Met | 7 resolutions in `review_decisions.yaml`; `review_queue.md` says "0 item(s) still open". Promotion refuses to write labels while any queue item is unresolved (DECISIONS 2026-10-17, P0-06) |
+| 1c | Every label carries `verified_by` | Met | It is a required field of the schema (`tools/gold/labels.py`). 1,304 values: 1,297 `model_agreement`, 7 `human`. Exhibits are unchanged: `fetch_releases --verify` gives "30 releases checked, 0 problems" |
+| 2 | Scorer in CI, reporting accuracy split by `verified_by` | **Met on merge** | `backend/tools/eval/score.py` (P0-08). CI step "Extractor scorer must not regress below the baseline (P0-10)" runs it with `--check eval/thresholds.yaml`. Every metric is printed overall and per `verified_by` |
+| 3 | Baseline published | **Met on merge** | The P0-09 entry below, plus `eval/results/baseline-2026-10-17.json` |
+| 4 | ICP pass rule met (§2) | **Not met. Owner: P0-12** | `docs/discovery/tracker.md` reads OPEN: 0 of 8 interviews |
+| 5 | Normalization spec v0.1 reviewed by ≥2 analysts | **Not met. Owner: P0-14** | `docs/NORMALIZATION.md` v0.1 is drafted; 0 feedback forms received |
+
+### What the owner must do to close the gate
+
+**A. Review the spec draft (P0-13 acceptance), before sending it out.**
+1. Read `docs/NORMALIZATION.md` v0.1. Correct anything you disagree with, especially:
+   - the default treatments (§5);
+   - the category illustrations in §4 and §9.
+2. Closing artefact: your go-ahead in the P0-13 PR, or a commit with your edits.
+
+**B. ICP interviews (P0-12).** Kit: `docs/discovery/`.
+1. Recruit with `recruiting.md`. Send the outreach messages yourself; plan on 40–60 messages.
+2. Run each call with `interview-script.md` (40 min).
+3. Within 24 h, fill in `interviews/I-NN-notes.md` and `interviews/I-NN-scoresheet.md` from
+   the templates. Score with `scoring-rubric.md`: every "yes" needs a quote.
+4. Update the tally in `tracker.md` after each interview. Stop at 8, or earlier if rubric §4
+   gives an early PASS (5 A, at least 3 B, 0 C after 5 interviews) or an early FAIL.
+5. **Closing artefact:**
+   - 8 scoresheets (or 5+ with an early decision);
+   - `tracker.md` showing **PASS**;
+   - a DECISIONS.md entry;
+   - this table updated.
+6. If the result is **FAIL**: switch to the fallback persona (equity earnings-quality /
+   forensic analysts), log the switch in DECISIONS, and re-interview 5 with the same kit.
+
+**C. Spec review (P0-14).**
+1. Send `docs/discovery/spec-review-brief.md`, the spec and `templates/spec-feedback.md` to
+   at least 2 interviewees who said yes to script question T4.
+2. File each reply as `docs/discovery/spec-feedback/R-NN.md`, linked to its interview ID.
+3. **Closing artefact:** 2 or more completed forms. Engineering then revises the spec to
+   v0.2 and fills in the disposition table on each form. v0.2 must be frozen before
+   **Phase 2** (not Phase 1).
+
+**D. Human check of the scorer output (needed to call P0-08/P0-09 done, per CLAUDE.md).**
+This is not a gate row.
+1. Open `eval/results/baseline-2026-10-17.json` and pick one example per failure class
+   (wrong table, period ambiguous, period missing, label not found, value mismatch, sign
+   direction wrong) and one exact match.
+2. Confirm each one against the release on sec.gov.
+3. Closing artefact: a one-line note per example under the P0-09 entry, or in its PR.
+
+Phase 1 opens only when rows 4 and 5 read **Met** with their artefacts committed.
+
+---
+
 ## 2026-10-17 — P0-09 baseline: `HtmlExtractor` on `main`
 
 **What was run.** `cd backend && python -m tools.eval.score --json ../eval/results/baseline-2026-10-17.json`
