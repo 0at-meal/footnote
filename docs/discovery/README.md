@@ -19,6 +19,8 @@ feedback are the owner's evidence, and nothing here may be filled in on the owne
 | [templates/scoresheet.md](templates/scoresheet.md) | Fill in one copy per interview, within 24 h |
 | [templates/notes.md](templates/notes.md) | Running notes during the call |
 | [tracker.md](tracker.md) | Status of every candidate and interview, and the pass-rule tally |
+| [spec-review-brief.md](spec-review-brief.md) | P0-14: a 1–2 page brief to send a reviewer with the spec |
+| [templates/spec-feedback.md](templates/spec-feedback.md) | P0-14: the reviewer's feedback form |
 
 Filled-in copies go in `interviews/I-NN-scoresheet.md`, `interviews/I-NN-notes.md` and
 `spec-feedback/R-NN.md`.

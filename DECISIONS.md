@@ -5,6 +5,21 @@ Newest first. One entry per decision, with date and reason. Entries before
 those entries described features as deployed that were never wired into the
 running app (see the retraction below).
 
+- **2026-10-17: Normalization spec v0.1 drafted (P0-13); not frozen.**
+  [docs/NORMALIZATION.md](docs/NORMALIZATION.md) now defines 24 codes in four groups:
+  components, adjustments, scope (`RENT`, `CORP`) and control (`MIXED`, `OTHER`). Main
+  choices beyond ROADMAP §3, each open for analyst review (P0-14):
+  - `NCI` and `NONOP` are components, accepted.
+  - `RESTR`, `TRANSFORM`, `MA`, `LITIG` and `ENV` are *accept-unless-recurring*.
+  - `RENT` and `CORP` are excluded, so normalized EBITDA is consolidated EBITDA.
+  - `MIXED` lines take the strictest treatment among their constituents.
+  - Any `OTHER` line blocks the computation.
+
+  The recurrence rule has three outcomes (recurring / not recurring / unknown). An unknown
+  result never flips a treatment, and quarters are not derived from LTM/YTD in v0.1. Worked
+  examples use real gold-set bridges cited by accession and line. Their category assignments
+  are the author's illustration, not label memory. The reviewer brief and feedback form are
+  in `docs/discovery/`.
 - **2026-10-17: P0-11 interview kit and pass-rule scoring.** The kit is in
   `docs/discovery/`: recruiting, script, rubric, scoresheet, notes template and tracker. The
   ICP pass rule (ROADMAP §2) is applied as follows:
