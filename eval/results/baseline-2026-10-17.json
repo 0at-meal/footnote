@@ -1,0 +1,903 @@
+{
+  "scorer": "tools.eval.score",
+  "scorer_version": 1,
+  "extractor": "app.extraction.html.HtmlExtractor (default target_metric)",
+  "unit": "gold value (one line x one period); dash placeholders not scored",
+  "gold": {
+    "releases": 30,
+    "values": 1304,
+    "null_values": 102,
+    "verified_by": {
+      "tieout": 0,
+      "model_agreement": 1297,
+      "human": 7
+    },
+    "labels_sha256": "944a60bea101e9ed428ff9774842d7431f74091634ce4055b2824cdfe34a21ee"
+  },
+  "headline_metrics": [
+    "table_found",
+    "line_exact_match",
+    "scale_accuracy",
+    "sign_accuracy"
+  ],
+  "metrics": {
+    "table_found": {
+      "overall": {
+        "n": 1202,
+        "correct": 729,
+        "rate": 0.6065
+      },
+      "by_verified_by": {
+        "tieout": {
+          "n": 0,
+          "correct": 0,
+          "rate": null
+        },
+        "model_agreement": {
+          "n": 1197,
+          "correct": 727,
+          "rate": 0.6074
+        },
+        "human": {
+          "n": 5,
+          "correct": 2,
+          "rate": 0.4
+        }
+      },
+      "releases": {
+        "n": 30,
+        "correct": 20,
+        "rate": 0.6667
+      }
+    },
+    "line_exact_match": {
+      "overall": {
+        "n": 1202,
+        "correct": 186,
+        "rate": 0.1547
+      },
+      "by_verified_by": {
+        "tieout": {
+          "n": 0,
+          "correct": 0,
+          "rate": null
+        },
+        "model_agreement": {
+          "n": 1197,
+          "correct": 186,
+          "rate": 0.1554
+        },
+        "human": {
+          "n": 5,
+          "correct": 0,
+          "rate": 0.0
+        }
+      }
+    },
+    "line_label_value_match": {
+      "overall": {
+        "n": 1202,
+        "correct": 651,
+        "rate": 0.5416
+      },
+      "by_verified_by": {
+        "tieout": {
+          "n": 0,
+          "correct": 0,
+          "rate": null
+        },
+        "model_agreement": {
+          "n": 1197,
+          "correct": 649,
+          "rate": 0.5422
+        },
+        "human": {
+          "n": 5,
+          "correct": 2,
+          "rate": 0.4
+        }
+      }
+    },
+    "scale_accuracy": {
+      "overall": {
+        "n": 1202,
+        "correct": 0,
+        "rate": 0.0
+      },
+      "by_verified_by": {
+        "tieout": {
+          "n": 0,
+          "correct": 0,
+          "rate": null
+        },
+        "model_agreement": {
+          "n": 1197,
+          "correct": 0,
+          "rate": 0.0
+        },
+        "human": {
+          "n": 5,
+          "correct": 0,
+          "rate": 0.0
+        }
+      },
+      "releases": {
+        "n": 30,
+        "correct": 0,
+        "rate": 0.0
+      }
+    },
+    "sign_accuracy": {
+      "overall": {
+        "n": 1202,
+        "correct": 594,
+        "rate": 0.4942
+      },
+      "by_verified_by": {
+        "tieout": {
+          "n": 0,
+          "correct": 0,
+          "rate": null
+        },
+        "model_agreement": {
+          "n": 1197,
+          "correct": 592,
+          "rate": 0.4946
+        },
+        "human": {
+          "n": 5,
+          "correct": 2,
+          "rate": 0.4
+        }
+      }
+    }
+  },
+  "failures": {
+    "line_exact_match": {
+      "wrong_table": {
+        "count": 473,
+        "releases": 10,
+        "examples": [
+          "LUMN 0000018926-26-000045 line 0 'Net loss' 3M-2026-03-31 = (200): extractor table 11",
+          "LUMN 0000018926-26-000045 line 0 'Net loss' 3M-2025-03-31 = (201): extractor table 11",
+          "LUMN 0000018926-26-000045 line 1 'Income tax expense (benefit)' 3M-2026-03-31 = 377: extractor table 11",
+          "LUMN 0000018926-26-000045 line 1 'Income tax expense (benefit)' 3M-2025-03-31 = (44): extractor table 11",
+          "LUMN 0000018926-26-000045 line 2 'Total other expense, net' 3M-2026-03-31 = 425: extractor table 11"
+        ]
+      },
+      "period_ambiguous": {
+        "count": 355,
+        "releases": 8,
+        "examples": [
+          "THC 0000070318-26-000032 line 0 'Net income available to Tenet Healthcare Corporation common shareholders' 3M-2026-06-30 = 826: period string '2026'",
+          "THC 0000070318-26-000032 line 0 'Net income available to Tenet Healthcare Corporation common shareholders' 3M-2025-06-30 = 288: period string '2025'",
+          "THC 0000070318-26-000032 line 0 'Net income available to Tenet Healthcare Corporation common shareholders' 6M-2026-06-30 = 1,528: period string '2026'",
+          "THC 0000070318-26-000032 line 0 'Net income available to Tenet Healthcare Corporation common shareholders' 6M-2025-06-30 = 694: period string '2025'",
+          "THC 0000070318-26-000032 line 1 'Net income available to noncontrolling interests' 3M-2026-06-30 = (219): period string '2026'"
+        ]
+      },
+      "period_missing": {
+        "count": 110,
+        "releases": 4,
+        "examples": [
+          "BHC 0000885590-26-000051 line 0 'Net loss' 3M-2026-03-31 = (1,431): period string None",
+          "BHC 0000885590-26-000051 line 0 'Net loss' 3M-2025-03-31 = (86): period string None",
+          "BHC 0000885590-26-000051 line 4 'EBITDA' 3M-2026-03-31 = (667): period string None",
+          "BHC 0000885590-26-000051 line 4 'EBITDA' 3M-2025-03-31 = 577: period string None",
+          "BHC 0000885590-26-000051 line 14 'Adjusted EBITDA (non-GAAP) (a)' 3M-2026-03-31 = 863: period string None"
+        ]
+      },
+      "label_not_found": {
+        "count": 76,
+        "releases": 4,
+        "examples": [
+          "BHC 0000885590-26-000051 line 1 'Interest expense, net' 3M-2026-03-31 = 392: no extractor row labelled 'Interest expense, net'",
+          "BHC 0000885590-26-000051 line 1 'Interest expense, net' 3M-2025-03-31 = 319: no extractor row labelled 'Interest expense, net'",
+          "BHC 0000885590-26-000051 line 2 'Provision for income taxes' 3M-2026-03-31 = 77: no extractor row labelled 'Provision for income taxes'",
+          "BHC 0000885590-26-000051 line 2 'Provision for income taxes' 3M-2025-03-31 = 39: no extractor row labelled 'Provision for income taxes'",
+          "BHC 0000885590-26-000051 line 3 'Depreciation and amortization' 3M-2026-03-31 = 295: no extractor row labelled 'Depreciation and amortization'"
+        ]
+      },
+      "value_mismatch": {
+        "count": 2,
+        "releases": 1,
+        "examples": [
+          "CYH 0001193125-26-312454 line 5 'Loss (gain) from early extinguishment of debt' 3M-2025-06-30 = (138): row values 5, 12",
+          "CYH 0001193125-26-312454 line 5 'Loss (gain) from early extinguishment of debt' 6M-2025-06-30 = (138): row values 5, 12"
+        ]
+      }
+    },
+    "scale_accuracy": {
+      "scale_not_detected": {
+        "count": 1202,
+        "releases": 30,
+        "examples": [
+          "LUMN 0000018926-26-000045 line 0 'Net loss' 3M-2026-03-31 = (200): table 11 title 'Table 12': Ambiguous scale: Unrecognized unit caption format in 'Table 12'",
+          "LUMN 0000018926-26-000045 line 0 'Net loss' 3M-2025-03-31 = (201): table 11 title 'Table 12': Ambiguous scale: Unrecognized unit caption format in 'Table 12'",
+          "LUMN 0000018926-26-000045 line 1 'Income tax expense (benefit)' 3M-2026-03-31 = 377: table 11 title 'Table 12': Ambiguous scale: Unrecognized unit caption format in 'Table 12'",
+          "LUMN 0000018926-26-000045 line 1 'Income tax expense (benefit)' 3M-2025-03-31 = (44): table 11 title 'Table 12': Ambiguous scale: Unrecognized unit caption format in 'Table 12'",
+          "LUMN 0000018926-26-000045 line 2 'Total other expense, net' 3M-2026-03-31 = 425: table 11 title 'Table 12': Ambiguous scale: Unrecognized unit caption format in 'Table 12'"
+        ]
+      }
+    },
+    "sign_accuracy": {
+      "not_located": {
+        "count": 551,
+        "releases": 14,
+        "examples": [
+          "LUMN 0000018926-26-000045 line 0 'Net loss' 3M-2026-03-31 = (200): line match failed: wrong_table",
+          "LUMN 0000018926-26-000045 line 0 'Net loss' 3M-2025-03-31 = (201): line match failed: wrong_table",
+          "LUMN 0000018926-26-000045 line 1 'Income tax expense (benefit)' 3M-2026-03-31 = 377: line match failed: wrong_table",
+          "LUMN 0000018926-26-000045 line 1 'Income tax expense (benefit)' 3M-2025-03-31 = (44): line match failed: wrong_table",
+          "LUMN 0000018926-26-000045 line 2 'Total other expense, net' 3M-2026-03-31 = 425: line match failed: wrong_table"
+        ]
+      },
+      "direction_wrong": {
+        "count": 57,
+        "releases": 3,
+        "examples": [
+          "THC 0000070318-26-000023 line 1 'Net income available to noncontrolling interests' 3M-2026-03-31 = (204): cell '(204)' read as -1, gold contribution +1 (line sign -1)",
+          "THC 0000070318-26-000023 line 1 'Net income available to noncontrolling interests' 3M-2025-03-31 = (216): cell '(216)' read as -1, gold contribution +1 (line sign -1)",
+          "THC 0000070318-26-000023 line 3 'Income tax expense' 3M-2026-03-31 = (226): cell '(226)' read as -1, gold contribution +1 (line sign -1)",
+          "THC 0000070318-26-000023 line 3 'Income tax expense' 3M-2025-03-31 = (143): cell '(143)' read as -1, gold contribution +1 (line sign -1)",
+          "THC 0000070318-26-000023 line 4 'Other non-operating income, net' 3M-2026-03-31 = 41: cell '41' read as +1, gold contribution -1 (line sign -1)"
+        ]
+      }
+    }
+  },
+  "releases": [
+    {
+      "ticker": "LUMN",
+      "accession": "0000018926-26-000045",
+      "gold_table": 10,
+      "extractor_table": 11,
+      "gold_table_rank": 4,
+      "candidate_tables": [
+        11,
+        1,
+        8,
+        10
+      ],
+      "extractor_title": "Table 12",
+      "gold_scale": "millions",
+      "extractor_scale": null,
+      "scale_reason": "Ambiguous scale: Unrecognized unit caption format in 'Table 12'",
+      "not_found_reason": null,
+      "null_values": 1,
+      "values": 21,
+      "line_exact": 0
+    },
+    {
+      "ticker": "LUMN",
+      "accession": "0000018926-26-000058",
+      "gold_table": 10,
+      "extractor_table": 1,
+      "gold_table_rank": 3,
+      "candidate_tables": [
+        1,
+        8,
+        10
+      ],
+      "extractor_title": "Table 2",
+      "gold_scale": "millions",
+      "extractor_scale": null,
+      "scale_reason": "Ambiguous scale: Unrecognized unit caption format in 'Table 2'",
+      "not_found_reason": null,
+      "null_values": 4,
+      "values": 44,
+      "line_exact": 0
+    },
+    {
+      "ticker": "THC",
+      "accession": "0000070318-26-000023",
+      "gold_table": 13,
+      "extractor_table": 13,
+      "gold_table_rank": 1,
+      "candidate_tables": [
+        13,
+        16,
+        0,
+        1,
+        2,
+        7,
+        14,
+        17,
+        10,
+        12,
+        15
+      ],
+      "extractor_title": "Table 14",
+      "gold_scale": "millions",
+      "extractor_scale": null,
+      "scale_reason": "Ambiguous scale: Unrecognized unit caption format in 'Table 14'",
+      "not_found_reason": null,
+      "null_values": 1,
+      "values": 25,
+      "line_exact": 25
+    },
+    {
+      "ticker": "THC",
+      "accession": "0000070318-26-000032",
+      "gold_table": 14,
+      "extractor_table": 14,
+      "gold_table_rank": 1,
+      "candidate_tables": [
+        14,
+        18,
+        0,
+        1,
+        2,
+        7,
+        15,
+        16,
+        19,
+        11,
+        13,
+        17
+      ],
+      "extractor_title": "Table 15",
+      "gold_scale": "millions",
+      "extractor_scale": null,
+      "scale_reason": "Ambiguous scale: Unrecognized unit caption format in 'Table 15'",
+      "not_found_reason": null,
+      "null_values": 2,
+      "values": 50,
+      "line_exact": 0
+    },
+    {
+      "ticker": "CAR",
+      "accession": "0000723612-26-000025",
+      "gold_table": 9,
+      "extractor_table": 9,
+      "gold_table_rank": 1,
+      "candidate_tables": [
+        9,
+        3,
+        8
+      ],
+      "extractor_title": "Table 10",
+      "gold_scale": "millions",
+      "extractor_scale": null,
+      "scale_reason": "Ambiguous scale: Unrecognized unit caption format in 'Table 10'",
+      "not_found_reason": null,
+      "null_values": 2,
+      "values": 22,
+      "line_exact": 22
+    },
+    {
+      "ticker": "CAR",
+      "accession": "0000723612-26-000037",
+      "gold_table": 9,
+      "extractor_table": 9,
+      "gold_table_rank": 1,
+      "candidate_tables": [
+        9,
+        3,
+        8
+      ],
+      "extractor_title": "Table 10",
+      "gold_scale": "millions",
+      "extractor_scale": null,
+      "scale_reason": "Ambiguous scale: Unrecognized unit caption format in 'Table 10'",
+      "not_found_reason": null,
+      "null_values": 5,
+      "values": 47,
+      "line_exact": 0
+    },
+    {
+      "ticker": "BHC",
+      "accession": "0000885590-26-000051",
+      "gold_table": 24,
+      "extractor_table": 24,
+      "gold_table_rank": 1,
+      "candidate_tables": [
+        24,
+        25,
+        32,
+        18
+      ],
+      "extractor_title": "Table 25",
+      "gold_scale": "millions",
+      "extractor_scale": null,
+      "scale_reason": "Ambiguous scale: Unrecognized unit caption format in 'Table 25'",
+      "not_found_reason": null,
+      "null_values": 3,
+      "values": 31,
+      "line_exact": 0
+    },
+    {
+      "ticker": "BHC",
+      "accession": "0000885590-26-000105",
+      "gold_table": 24,
+      "extractor_table": 24,
+      "gold_table_rank": 1,
+      "candidate_tables": [
+        24,
+        36,
+        25,
+        18
+      ],
+      "extractor_title": "Table 25",
+      "gold_scale": "millions",
+      "extractor_scale": null,
+      "scale_reason": "Ambiguous scale: Unrecognized unit caption format in 'Table 25'",
+      "not_found_reason": null,
+      "null_values": 9,
+      "values": 63,
+      "line_exact": 0
+    },
+    {
+      "ticker": "CHTR",
+      "accession": "0001091667-26-000027",
+      "gold_table": 3,
+      "extractor_table": 3,
+      "gold_table_rank": 1,
+      "candidate_tables": [
+        3,
+        1,
+        4,
+        7
+      ],
+      "extractor_title": "Table 4",
+      "gold_scale": "millions",
+      "extractor_scale": null,
+      "scale_reason": "Ambiguous scale: Unrecognized unit caption format in 'Table 4'",
+      "not_found_reason": null,
+      "null_values": 0,
+      "values": 32,
+      "line_exact": 0
+    },
+    {
+      "ticker": "CHTR",
+      "accession": "0001091667-26-000051",
+      "gold_table": 3,
+      "extractor_table": 3,
+      "gold_table_rank": 1,
+      "candidate_tables": [
+        3,
+        1,
+        4,
+        7
+      ],
+      "extractor_title": "Table 4",
+      "gold_scale": "millions",
+      "extractor_scale": null,
+      "scale_reason": "Ambiguous scale: Unrecognized unit caption format in 'Table 4'",
+      "not_found_reason": null,
+      "null_values": 0,
+      "values": 48,
+      "line_exact": 0
+    },
+    {
+      "ticker": "WYNN",
+      "accession": "0001174922-26-000034",
+      "gold_table": 4,
+      "extractor_table": 2,
+      "gold_table_rank": 3,
+      "candidate_tables": [
+        2,
+        3,
+        4,
+        1
+      ],
+      "extractor_title": "Table 3",
+      "gold_scale": "thousands",
+      "extractor_scale": null,
+      "scale_reason": "Ambiguous scale: Unrecognized unit caption format in 'Table 3'",
+      "not_found_reason": null,
+      "null_values": 0,
+      "values": 28,
+      "line_exact": 0
+    },
+    {
+      "ticker": "WYNN",
+      "accession": "0001174922-26-000051",
+      "gold_table": 6,
+      "extractor_table": 2,
+      "gold_table_rank": 5,
+      "candidate_tables": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        1
+      ],
+      "extractor_title": "Table 3",
+      "gold_scale": "thousands",
+      "extractor_scale": null,
+      "scale_reason": "Ambiguous scale: Unrecognized unit caption format in 'Table 3'",
+      "not_found_reason": null,
+      "null_values": 2,
+      "values": 58,
+      "line_exact": 0
+    },
+    {
+      "ticker": "CYH",
+      "accession": "0001193125-26-167000",
+      "gold_table": 9,
+      "extractor_table": 9,
+      "gold_table_rank": 1,
+      "candidate_tables": [
+        9,
+        5
+      ],
+      "extractor_title": "Table 10",
+      "gold_scale": "millions",
+      "extractor_scale": null,
+      "scale_reason": "Ambiguous scale: Unrecognized unit caption format in 'Table 10'",
+      "not_found_reason": null,
+      "null_values": 2,
+      "values": 16,
+      "line_exact": 12
+    },
+    {
+      "ticker": "CYH",
+      "accession": "0001193125-26-312454",
+      "gold_table": 11,
+      "extractor_table": 11,
+      "gold_table_rank": 1,
+      "candidate_tables": [
+        11,
+        15,
+        6,
+        7,
+        14,
+        2,
+        9,
+        13
+      ],
+      "extractor_title": "Table 12",
+      "gold_scale": "millions",
+      "extractor_scale": null,
+      "scale_reason": "Ambiguous scale: Unrecognized unit caption format in 'Table 12'",
+      "not_found_reason": null,
+      "null_values": 5,
+      "values": 35,
+      "line_exact": 0
+    },
+    {
+      "ticker": "TDG",
+      "accession": "0001260221-26-000039",
+      "gold_table": 7,
+      "extractor_table": 7,
+      "gold_table_rank": 1,
+      "candidate_tables": [
+        7,
+        13,
+        17
+      ],
+      "extractor_title": "Table 8",
+      "gold_scale": "millions",
+      "extractor_scale": null,
+      "scale_reason": "Ambiguous scale: Unrecognized unit caption format in 'Table 8'",
+      "not_found_reason": null,
+      "null_values": 0,
+      "values": 40,
+      "line_exact": 0
+    },
+    {
+      "ticker": "TDG",
+      "accession": "0001260221-26-000052",
+      "gold_table": 7,
+      "extractor_table": 7,
+      "gold_table_rank": 1,
+      "candidate_tables": [
+        7,
+        13,
+        17
+      ],
+      "extractor_title": "Table 8",
+      "gold_scale": "millions",
+      "extractor_scale": null,
+      "scale_reason": "Ambiguous scale: Unrecognized unit caption format in 'Table 8'",
+      "not_found_reason": null,
+      "null_values": 0,
+      "values": 40,
+      "line_exact": 0
+    },
+    {
+      "ticker": "CZR",
+      "accession": "0001590895-26-000015",
+      "gold_table": 6,
+      "extractor_table": 6,
+      "gold_table_rank": 1,
+      "candidate_tables": [
+        6
+      ],
+      "extractor_title": "Table 7",
+      "gold_scale": "millions",
+      "extractor_scale": null,
+      "scale_reason": "Ambiguous scale: Unrecognized unit caption format in 'Table 7'",
+      "not_found_reason": null,
+      "null_values": 0,
+      "values": 18,
+      "line_exact": 18
+    },
+    {
+      "ticker": "CZR",
+      "accession": "0001590895-26-000027",
+      "gold_table": 9,
+      "extractor_table": 9,
+      "gold_table_rank": 1,
+      "candidate_tables": [
+        9
+      ],
+      "extractor_title": "Table 10",
+      "gold_scale": "millions",
+      "extractor_scale": null,
+      "scale_reason": "Ambiguous scale: Unrecognized unit caption format in 'Table 10'",
+      "not_found_reason": null,
+      "null_values": 2,
+      "values": 34,
+      "line_exact": 0
+    },
+    {
+      "ticker": "CC",
+      "accession": "0001627223-26-000010",
+      "gold_table": 11,
+      "extractor_table": 15,
+      "gold_table_rank": 8,
+      "candidate_tables": [
+        15,
+        0,
+        1,
+        2,
+        3,
+        13,
+        14,
+        11,
+        6
+      ],
+      "extractor_title": "Table 16",
+      "gold_scale": "millions",
+      "extractor_scale": null,
+      "scale_reason": "Ambiguous scale: Unrecognized unit caption format in 'Table 16'",
+      "not_found_reason": null,
+      "null_values": 15,
+      "values": 80,
+      "line_exact": 0
+    },
+    {
+      "ticker": "CC",
+      "accession": "0001627223-26-000021",
+      "gold_table": 11,
+      "extractor_table": 15,
+      "gold_table_rank": 3,
+      "candidate_tables": [
+        15,
+        0,
+        11,
+        1,
+        2,
+        3,
+        13,
+        14,
+        6
+      ],
+      "extractor_title": "Table 16",
+      "gold_scale": "millions",
+      "extractor_scale": null,
+      "scale_reason": "Ambiguous scale: Unrecognized unit caption format in 'Table 16'",
+      "not_found_reason": null,
+      "null_values": 14,
+      "values": 119,
+      "line_exact": 0
+    },
+    {
+      "ticker": "IHRT",
+      "accession": "0001628280-26-033471",
+      "gold_table": 9,
+      "extractor_table": 8,
+      "gold_table_rank": 2,
+      "candidate_tables": [
+        8,
+        9,
+        5,
+        3,
+        0,
+        1,
+        2,
+        13,
+        14
+      ],
+      "extractor_title": "Table 9",
+      "gold_scale": "thousands",
+      "extractor_scale": null,
+      "scale_reason": "Ambiguous scale: Unrecognized unit caption format in 'Table 9'",
+      "not_found_reason": null,
+      "null_values": 1,
+      "values": 25,
+      "line_exact": 0
+    },
+    {
+      "ticker": "IHRT",
+      "accession": "0001628280-26-055243",
+      "gold_table": 9,
+      "extractor_table": 8,
+      "gold_table_rank": 2,
+      "candidate_tables": [
+        8,
+        9,
+        5,
+        3,
+        0,
+        1,
+        2,
+        14,
+        15,
+        16
+      ],
+      "extractor_title": "Table 9",
+      "gold_scale": "thousands",
+      "extractor_scale": null,
+      "scale_reason": "Ambiguous scale: Unrecognized unit caption format in 'Table 9'",
+      "not_found_reason": null,
+      "null_values": 1,
+      "values": 25,
+      "line_exact": 0
+    },
+    {
+      "ticker": "HTZ",
+      "accession": "0001657853-26-000021",
+      "gold_table": 7,
+      "extractor_table": 6,
+      "gold_table_rank": 2,
+      "candidate_tables": [
+        6,
+        7,
+        12,
+        0,
+        4
+      ],
+      "extractor_title": "Table 7",
+      "gold_scale": "millions",
+      "extractor_scale": null,
+      "scale_reason": "Ambiguous scale: Unrecognized unit caption format in 'Table 7'",
+      "not_found_reason": null,
+      "null_values": 1,
+      "values": 23,
+      "line_exact": 0
+    },
+    {
+      "ticker": "HTZ",
+      "accession": "0001657853-26-000045",
+      "gold_table": 8,
+      "extractor_table": 7,
+      "gold_table_rank": 2,
+      "candidate_tables": [
+        7,
+        8,
+        15,
+        0,
+        4
+      ],
+      "extractor_title": "Table 8",
+      "gold_scale": "millions",
+      "extractor_scale": null,
+      "scale_reason": "Ambiguous scale: Unrecognized unit caption format in 'Table 8'",
+      "not_found_reason": null,
+      "null_values": 2,
+      "values": 50,
+      "line_exact": 0
+    },
+    {
+      "ticker": "CVNA",
+      "accession": "0001690820-26-000034",
+      "gold_table": 13,
+      "extractor_table": 13,
+      "gold_table_rank": 1,
+      "candidate_tables": [
+        13,
+        4
+      ],
+      "extractor_title": "Table 14",
+      "gold_scale": "millions",
+      "extractor_scale": null,
+      "scale_reason": "Ambiguous scale: Unrecognized unit caption format in 'Table 14'",
+      "not_found_reason": null,
+      "null_values": 3,
+      "values": 23,
+      "line_exact": 23
+    },
+    {
+      "ticker": "CVNA",
+      "accession": "0001690820-26-000054",
+      "gold_table": 12,
+      "extractor_table": 12,
+      "gold_table_rank": 1,
+      "candidate_tables": [
+        12,
+        3
+      ],
+      "extractor_title": "Table 13",
+      "gold_scale": "millions",
+      "extractor_scale": null,
+      "scale_reason": "Ambiguous scale: Unrecognized unit caption format in 'Table 13'",
+      "not_found_reason": null,
+      "null_values": 3,
+      "values": 21,
+      "line_exact": 21
+    },
+    {
+      "ticker": "RXT",
+      "accession": "0001810019-26-000041",
+      "gold_table": 19,
+      "extractor_table": 19,
+      "gold_table_rank": 1,
+      "candidate_tables": [
+        19,
+        4,
+        17
+      ],
+      "extractor_title": "Table 20",
+      "gold_scale": "millions",
+      "extractor_scale": null,
+      "scale_reason": "Ambiguous scale: Unrecognized unit caption format in 'Table 20'",
+      "not_found_reason": null,
+      "null_values": 1,
+      "values": 21,
+      "line_exact": 21
+    },
+    {
+      "ticker": "RXT",
+      "accession": "0001810019-26-000092",
+      "gold_table": 20,
+      "extractor_table": 20,
+      "gold_table_rank": 1,
+      "candidate_tables": [
+        20,
+        5,
+        18
+      ],
+      "extractor_title": "Table 21",
+      "gold_scale": "millions",
+      "extractor_scale": null,
+      "scale_reason": "Ambiguous scale: Unrecognized unit caption format in 'Table 21'",
+      "not_found_reason": null,
+      "null_values": 3,
+      "values": 41,
+      "line_exact": 0
+    },
+    {
+      "ticker": "FUN",
+      "accession": "0001999001-26-000053",
+      "gold_table": 4,
+      "extractor_table": 4,
+      "gold_table_rank": 1,
+      "candidate_tables": [
+        4,
+        9,
+        8
+      ],
+      "extractor_title": "Table 5",
+      "gold_scale": "thousands",
+      "extractor_scale": null,
+      "scale_reason": "Ambiguous scale: Unrecognized unit caption format in 'Table 5'",
+      "not_found_reason": null,
+      "null_values": 6,
+      "values": 28,
+      "line_exact": 28
+    },
+    {
+      "ticker": "FUN",
+      "accession": "0001999001-26-000094",
+      "gold_table": 5,
+      "extractor_table": 5,
+      "gold_table_rank": 1,
+      "candidate_tables": [
+        5,
+        6,
+        2
+      ],
+      "extractor_title": "Table 6",
+      "gold_scale": "thousands",
+      "extractor_scale": null,
+      "scale_reason": "Ambiguous scale: Unrecognized unit caption format in 'Table 6'",
+      "not_found_reason": null,
+      "null_values": 14,
+      "values": 94,
+      "line_exact": 16
+    }
+  ]
+}
