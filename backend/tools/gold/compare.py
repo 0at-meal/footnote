@@ -10,6 +10,8 @@ normalized label), roles, signs and every value. Output:
   P0-05 checks; otherwise ``null``) plus the list of disagreements;
 - ``eval/gold/review_queue.md``: everything the owner must look at in P0-06
   (draft exceptions, draft notes, reader/draft disagreements), per release.
+  Once ``eval/gold/review_decisions.yaml`` exists, confirmed tables and resolved
+  items are ticked with the owner's decision.
 
 Usage (from ``backend/``)::
 
@@ -26,9 +28,11 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
+import yaml
 from app.extraction.scale_and_sign import parse_raw_numeric
 
 GOLD_DIR = Path(__file__).resolve().parents[3] / "eval" / "gold"
+DECISIONS_FILE = GOLD_DIR / "review_decisions.yaml"
 DASHES = {"—", "–", "-", "--"}
 _FOOTNOTE = re.compile(
     r"\s*\((?:[a-z]|\d{1,2})\)(?:,\s*\((?:[a-z]|\d{1,2})\))*\s*$", re.IGNORECASE
@@ -135,7 +139,24 @@ def compare(draft: dict[str, Any], reading: dict[str, Any]) -> Comparison:
     return out
 
 
-def table_pointer(rel: dict[str, Any]) -> list[str]:
+def queue_items(draft: dict[str, Any], result: Comparison) -> list[str]:
+    """The items the owner must resolve for one release (P0-06)."""
+    return (
+        [f"draft exception: {e}" for e in draft["exceptions"]]
+        + [f"draft note: {n}" for n in draft.get("notes", [])]
+        + [f"disagreement: {d}" for d in result.disagreements]
+    )
+
+
+def load_decisions(path: Path = DECISIONS_FILE) -> dict[str, Any] | None:
+    """The owner's P0-06 decisions, or None before the review is recorded."""
+    if not path.exists():
+        return None
+    data: dict[str, Any] = yaml.safe_load(path.read_text(encoding="utf-8"))
+    return data
+
+
+def table_pointer(rel: dict[str, Any], confirmed_by: str | None = None) -> list[str]:
     """Queue lines that let the owner find the selected table on sec.gov."""
     lines = rel["lines"]
     first, last = lines[0], lines[-1]
@@ -156,8 +177,10 @@ def table_pointer(rel: dict[str, Any]) -> list[str]:
         + (f" (first number: {last_value})" if last_value else "")
         + (f"; first column: {column}" if column else ""),
         (
-            f"- [ ] that table is the headline {rel.get('metric_label_raw')} bridge"
+            f"- [{'x' if confirmed_by else ' '}] that table is the headline "
+            f"{rel.get('metric_label_raw')} bridge"
             f" (table {rel['table']['table_index']}, counted from 0)"
+            + (f": confirmed by {confirmed_by}" if confirmed_by else "")
         ),
     ]
 
@@ -176,7 +199,17 @@ def main() -> int:
         "",
     ]
     header_len = len(queue)
+    decisions = load_decisions()
+    confirmed: dict[str, int] = {}
+    resolved: dict[tuple[str, str], str] = {}
+    if decisions is not None:
+        confirmed = {str(k): int(v) for k, v in decisions["tables_confirmed"].items()}
+        resolved = {
+            (str(r["accession"]), r["item"]): " ".join(str(r["decision"]).split())
+            for r in decisions["resolutions"]
+        }
     totals = {"values": 0, "model_agreement": 0, "releases_clear": 0}
+    open_items = 0
     for draft_path in sorted((GOLD_DIR / "drafts").glob("*.json")):
         draft = json.loads(draft_path.read_text(encoding="utf-8"))
         reading_path = GOLD_DIR / "model_reading" / draft_path.name
@@ -190,15 +223,29 @@ def main() -> int:
         )
         totals["values"] += len(result.values)
         totals["model_agreement"] += agree
-        items = (
-            [f"- [ ] draft exception: {e}" for e in draft["exceptions"]]
-            + [f"- [ ] draft note: {n}" for n in draft.get("notes", [])]
-            + [f"- [ ] disagreement: {d}" for d in result.disagreements]
+        raw_items = queue_items(draft, result)
+        totals["releases_clear"] += not raw_items
+        items: list[str] = []
+        for item in raw_items:
+            decision = resolved.get((result.accession, item))
+            if decision is None:
+                open_items += 1
+                items.append(f"- [ ] {item}")
+            else:
+                items.append(f"- [x] {item}")
+                items.append(f"  - decision: {decision}")
+        table_ok = (
+            confirmed.get(result.accession) == draft["release"]["table"]["table_index"]
         )
-        totals["releases_clear"] += not items
+        open_items += not table_ok
         queue.append(f"## {result.ticker} `{result.accession}`")
         queue.append("")
-        queue.extend(table_pointer(draft["release"]))
+        queue.extend(
+            table_pointer(
+                draft["release"],
+                decisions["reviewer"] if decisions is not None and table_ok else None,
+            )
+        )
         queue.extend(items or ["- nothing else to resolve"])
         queue.append(f"- values with model agreement: {agree} / {len(result.values)}")
         queue.append("")
@@ -227,6 +274,13 @@ def main() -> int:
         f"`model_agreement`; {totals['releases_clear']} / 30 releases need only the table "
         "confirmation.\n",
     )
+    if decisions is not None:
+        queue.insert(
+            header_len,
+            f"**Review:** recorded by {decisions['reviewer']} on "
+            f"{decisions['reviewed_on']} in `review_decisions.yaml`; "
+            f"{open_items} item(s) still open.\n",
+        )
     (GOLD_DIR / "review_queue.md").write_text("\n".join(queue) + "\n", encoding="utf-8")
     print(f"model_agreement {totals['model_agreement']}/{totals['values']}")
     return 0

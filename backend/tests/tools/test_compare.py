@@ -151,3 +151,6 @@ def test_table_pointer_gives_link_and_searchable_labels() -> None:
     assert "ending with **Adjusted EBITDA** (first number: 150)" in out[1]
     assert out[1].endswith("first column: Three Months Ended June 30, 2026")
     assert out[2].startswith("- [ ] ") and "table 3" in out[2]
+    ticked = table_pointer(rel, confirmed_by="Fixture Reviewer")
+    assert ticked[2].startswith("- [x] ")
+    assert ticked[2].endswith("confirmed by Fixture Reviewer")
