@@ -5,6 +5,16 @@ Newest first. One entry per decision, with date and reason. Entries before
 those entries described features as deployed that were never wired into the
 running app (see the retraction below).
 
+- **2026-10-17: P0-11 interview kit and pass-rule scoring.** The kit is in
+  `docs/discovery/`: recruiting, script, rubric, scoresheet, notes template and tracker. The
+  ICP pass rule (ROADMAP §2) is applied as follows:
+  - Each criterion is scored yes / no / unclear, and every yes needs a quote or fact.
+  - *Unclear* counts against passing: as no for A and B, as yes for C.
+  - "At least 3 name a price anchor or ask for a trial" is computed both over all 8 and
+    over those who meet A. If the two disagree, the stricter reading decides.
+  - The result may be declared early only when the remaining interviews cannot change it.
+    So Phase 1 can open after 5 interviews only on an early PASS (5 A, ≥3 B, 0 C).
+  - Interviewees are pseudonymous in the repository; identities stay outside git.
 - **2026-10-17: P0-10 extractor regression gate.** CI (and `make check`) runs
   `python -m tools.eval.score --check eval/thresholds.yaml`. It fails if any headline metric's
   overall rate (table_found, line_exact_match, scale_accuracy, sign_accuracy) drops below the
