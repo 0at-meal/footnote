@@ -32,3 +32,6 @@ jobs:
       - name: Gold labels valid and complete (schema, manifest, P0-06 review)
         working-directory: backend
         run: python -m tools.gold.labels --validate --strict
+      - name: Extractor scorer must not regress below the baseline (P0-10)
+        working-directory: backend
+        run: python -m tools.eval.score --check ../eval/thresholds.yaml

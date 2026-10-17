@@ -1,4 +1,4 @@
-.PHONY: install test lint typecheck format check gold-verify score
+.PHONY: install test lint typecheck format check gold-verify score score-gate
 
 install:
 	pip install -r requirements-dev.txt
@@ -24,4 +24,7 @@ gold-verify:
 score:
 	cd backend && python -m tools.eval.score
 
-check: lint typecheck test gold-verify
+score-gate:
+	cd backend && python -m tools.eval.score --check ../eval/thresholds.yaml
+
+check: lint typecheck test gold-verify score-gate
