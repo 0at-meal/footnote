@@ -5,6 +5,15 @@ Newest first. One entry per decision, with date and reason. Entries before
 those entries described features as deployed that were never wired into the
 running app (see the retraction below).
 
+- **2026-10-17: ADRs written for the current direction (P0-15).** `docs/adr/`:
+  - ADR-005 ingest: scheduled batch, one EDGAR gateway, write-once R2 raw store;
+  - ADR-006 global append-only public data vs. tenant data under RLS;
+  - ADR-007 no pack abstraction before Phase 5, and declarative `PackSpec` then;
+  - ADR-008 all processing offline, with a read-only online path;
+  - ADR-009 $0 infrastructure with migration triggers.
+
+  They restate decisions already taken on 2026-10-14 and add none. ADR-001 to ADR-004
+  (removed product, tag `v0-extraction`) are retired, and their numbers are not reused.
 - **2026-10-17: Normalization spec v0.1 drafted (P0-13); not frozen.**
   [docs/NORMALIZATION.md](docs/NORMALIZATION.md) now defines 24 codes in four groups:
   components, adjustments, scope (`RENT`, `CORP`) and control (`MIXED`, `OTHER`). Main
