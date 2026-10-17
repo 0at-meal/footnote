@@ -11,7 +11,7 @@
 #
 # Recorded from: eval/results/baseline-2026-10-17.json (P0-09; backend/app at main 1f41440).
 scorer_version: 1
-labels_sha256: 944a60bea101e9ed428ff9774842d7431f74091634ce4055b2824cdfe34a21ee
+labels_sha256: 5d0953b0cb034279eb3ae634b1925bcb274cb7cc2ef722f3c180cedbbf073d20  # LF-normalized label files
 metrics:
   table_found: 0.6065       # 729/1202 values; 20/30 releases
   line_exact_match: 0.1547  # 186/1202

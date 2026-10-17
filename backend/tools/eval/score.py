@@ -564,10 +564,20 @@ def label_files(labels_dir: Path) -> list[Path]:
     return sorted(p for p in labels_dir.glob("*.json") if p.name != SCHEMA_FILE.name)
 
 
-def gold_info(labels_dir: Path, releases: Sequence[GoldRelease]) -> dict[str, Any]:
+def labels_fingerprint(labels_dir: Path) -> str:
+    """
+    sha256 over the label files as git stores them. Line endings are normalized
+    to LF first: a Windows checkout with ``core.autocrlf`` has CRLF files, and
+    the fingerprint must not depend on the machine that computes it.
+    """
     digest = hashlib.sha256()
     for path in label_files(labels_dir):
-        digest.update(path.name.encode() + b"\0" + path.read_bytes())
+        text = path.read_bytes().replace(b"\r\n", b"\n")
+        digest.update(path.name.encode() + b"\0" + text)
+    return digest.hexdigest()
+
+
+def gold_info(labels_dir: Path, releases: Sequence[GoldRelease]) -> dict[str, Any]:
     values = [v for r in releases for v in r.all_values()]
     by = Counter(v.verified_by.value for v in values)
     return {
@@ -575,7 +585,7 @@ def gold_info(labels_dir: Path, releases: Sequence[GoldRelease]) -> dict[str, An
         "values": len(values),
         "null_values": sum(1 for v in values if v.value is None),
         "verified_by": {g: by.get(g, 0) for g in GROUPS},
-        "labels_sha256": digest.hexdigest(),
+        "labels_sha256": labels_fingerprint(labels_dir),
     }
 
 
