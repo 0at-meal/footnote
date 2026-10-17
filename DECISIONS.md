@@ -5,6 +5,14 @@ Newest first. One entry per decision, with date and reason. Entries before
 those entries described features as deployed that were never wired into the
 running app (see the retraction below).
 
+- **2026-10-17: P0-10 extractor regression gate.** CI (and `make check`) runs
+  `python -m tools.eval.score --check eval/thresholds.yaml`. It fails if any headline metric's
+  overall rate (table_found, line_exact_match, scale_accuracy, sign_accuracy) drops below the
+  committed floor, or if the scorer version or gold-label sha256 differ from the ones the
+  floors were recorded on, since rates across different gold sets or scorers are not
+  comparable. Floors start at the P0-09 baseline and move only deliberately: in their own
+  commit, with a RESULTS entry and a DECISIONS entry, never lowered to make CI green. The
+  `verified_by` split is reported but not gated: the `human` group has 5 scored values.
 - **2026-10-17: P0-08 scorer lives at `backend/tools/eval/score.py`.** ROADMAP names
   `eval/score.py`, but mypy strict and the import root cover only `backend/`, so the scorer
   sits with the other gold tools and runs as `python -m tools.eval.score` (`make score`).

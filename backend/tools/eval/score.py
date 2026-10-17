@@ -640,10 +640,46 @@ def summary(report: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+# ---------------------------------------------------------------- P0-10 gate
+
+
+def check_thresholds(report: dict[str, Any], thresholds: dict[str, Any]) -> list[str]:
+    """
+    Regressions against the recorded baseline; an empty list means the gate passes.
+
+    The thresholds hold an overall rate per headline metric, plus the scorer
+    version and gold-label fingerprint they were recorded against. A different
+    scorer or gold set is a failure too: comparing rates across them would be
+    meaningless, so the baseline must be re-recorded deliberately.
+    """
+    problems: list[str] = []
+    if thresholds.get("scorer_version") != report["scorer_version"]:
+        problems.append(
+            f"scorer_version {report['scorer_version']} != thresholds "
+            f"{thresholds.get('scorer_version')}: re-record the baseline"
+        )
+    if thresholds.get("labels_sha256") != report["gold"]["labels_sha256"]:
+        problems.append("gold labels changed since the baseline: re-record it")
+    floors: dict[str, Any] = thresholds.get("metrics") or {}
+    for name in sorted(set(floors) - set(HEADLINE_METRICS)):
+        problems.append(f"unknown metric in thresholds: {name}")
+    for name in HEADLINE_METRICS:
+        if name not in floors:
+            problems.append(f"no threshold recorded for {name}")
+            continue
+        rate = report["metrics"][name]["overall"]["rate"]
+        if rate is None or rate < float(floors[name]):
+            problems.append(f"{name} regressed: {rate} < baseline {floors[name]}")
+    return problems
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--json", type=Path, help="write the full report here")
     parser.add_argument("--examples", type=int, default=5, help="per failure class")
+    parser.add_argument(
+        "--check", type=Path, help="thresholds file; exit 1 on any regression (P0-10)"
+    )
     args = parser.parse_args(argv)
 
     report = score_gold_set(examples=args.examples)
@@ -653,6 +689,19 @@ def main(argv: Sequence[str] | None = None) -> int:
             json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
         )
     print(summary(report))
+    if args.check:
+        thresholds = yaml.safe_load(args.check.read_text(encoding="utf-8"))
+        problems = check_thresholds(report, thresholds)
+        print()
+        for p in problems:
+            print(f"GATE FAIL: {p}")
+        for name in HEADLINE_METRICS:
+            floor = (thresholds.get("metrics") or {}).get(name)
+            rate = report["metrics"][name]["overall"]["rate"]
+            if floor is not None and rate is not None and rate > float(floor):
+                print(f"note: {name} {rate} is above baseline {floor}")
+        print(f"gate: {'FAIL' if problems else 'pass'} ({args.check.name})")
+        return 1 if problems else 0
     return 0
 
 
