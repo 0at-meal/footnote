@@ -5,6 +5,32 @@ Newest first. One entry per decision, with date and reason. Entries before
 those entries described features as deployed that were never wired into the
 running app (see the retraction below).
 
+- **2026-10-17: P0-08 scorer lives at `backend/tools/eval/score.py`.** ROADMAP names
+  `eval/score.py`, but mypy strict and the import root cover only `backend/`, so the scorer
+  sits with the other gold tools and runs as `python -m tools.eval.score` (`make score`).
+  It is offline (reads only the saved `.gz` exhibits, sha256-checked; it never imports
+  `app.ingestion`) and deterministic. Metric definitions, fixed with the scorer:
+  - The unit is one gold *value* (line x period), so every metric splits by `verified_by`.
+    Dash placeholders (102 of 1,304) are not scored. Table-found and scale are also
+    reported per release.
+  - **Line exact match** needs the right table (the extractor's top-ranked candidate),
+    the label (normalized as in `tools.gold.compare`; k-th occurrence aligns to k-th), the
+    period (the extractor's period string must identify exactly one gold period) and the
+    value. A period-agnostic `line_label_value_match` is reported beside it as a diagnostic
+    so period binding (P2-03) can be measured on its own.
+  - **Scale** is what `detect_scale_from_caption` finds in the extractor's table title,
+    the only caption the extractor passes on today.
+  - **Sign** compares the direction `detect_sign` gives the located cell with the gold
+    contribution sign(sign x value). Unlocated values count as wrong, so the metric cannot
+    rise when coverage falls.
+  - The extractor is run with its default `target_metric`; gold metric labels are not
+    passed in, so the score is what a caller gets today.
+
+  Finding: `get_element_xpath` uses `list.index`, and BeautifulSoup compares tags by
+  content, so structurally identical siblings share an XPath. On the gold set, hundreds of
+  cell XPaths per release collide. The scorer therefore attributes records to tables by
+  replaying the extractor's public pipeline and checking it record by record against the
+  real output (any divergence raises). The XPath bug is logged for Phase 1/2, not fixed here.
 - **2026-10-17: P0-06 review done; gold set promoted.** The owner confirmed all 30 table
   selections on sec.gov and resolved the 7 queue items. Decisions are recorded in
   `eval/gold/review_decisions.yaml`, the single source for `tools.gold.promote` and for the
