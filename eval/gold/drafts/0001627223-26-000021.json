@@ -1,7 +1,7 @@
 {
   "ticket": "P0-05",
   "generated_by": "tools.gold.draft",
-  "generated_on": "2026-10-14",
+  "generated_on": "2026-10-17",
   "status": "ok",
   "release": {
     "schema_version": 1,
@@ -21,43 +21,43 @@
     "periods": [
       {
         "period_id": "3M-2026-06-30",
-        "label_raw": "Three Months Ended June 30, 2026 (1",
+        "label_raw": "Three Months Ended June 30, 2026",
         "end_date": "2026-06-30",
         "months": 3
       },
       {
         "period_id": "3M-2025-06-30",
-        "label_raw": "Three Months Ended June 30, 2025 (248",
+        "label_raw": "Three Months Ended June 30, 2025",
         "end_date": "2025-06-30",
         "months": 3
       },
       {
         "period_id": "3M-2026-03-31",
-        "label_raw": "Three Months Ended March 31, 2026 (22",
+        "label_raw": "Three Months Ended March 31, 2026",
         "end_date": "2026-03-31",
         "months": 3
       },
       {
         "period_id": "6M-2026-06-30",
-        "label_raw": "Six Months Ended June 30, 2026 (22",
+        "label_raw": "Six Months Ended June 30, 2026",
         "end_date": "2026-06-30",
         "months": 6
       },
       {
         "period_id": "6M-2025-06-30",
-        "label_raw": "Six Months Ended June 30, 2025 (249",
+        "label_raw": "Six Months Ended June 30, 2025",
         "end_date": "2025-06-30",
         "months": 6
       },
       {
         "period_id": "12M-2026-06-30",
-        "label_raw": "Twelve Months Ended June 30, 2026 (52",
+        "label_raw": "Twelve Months Ended June 30, 2026",
         "end_date": "2026-06-30",
         "months": 12
       },
       {
         "period_id": "12M-2025-06-30",
-        "label_raw": "Twelve Months Ended June 30, 2025 (292",
+        "label_raw": "Twelve Months Ended June 30, 2025",
         "end_date": "2025-06-30",
         "months": 12
       }
@@ -75,7 +75,7 @@
             "value": "-274",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2025-06-30",
@@ -83,7 +83,7 @@
             "value": "-380",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2026-03-31",
@@ -91,7 +91,7 @@
             "value": "-29",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2026-06-30",
@@ -99,7 +99,7 @@
             "value": "-303",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2025-06-30",
@@ -107,7 +107,7 @@
             "value": "-385",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2026-06-30",
@@ -115,7 +115,7 @@
             "value": "-303",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2025-06-30",
@@ -123,7 +123,7 @@
             "value": "-428",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           }
         ]
       },
@@ -139,7 +139,7 @@
             "value": "-3",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2025-06-30",
@@ -147,7 +147,7 @@
             "value": "-2",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2026-03-31",
@@ -155,7 +155,7 @@
             "value": "-2",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2026-06-30",
@@ -163,7 +163,7 @@
             "value": "-5",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2025-06-30",
@@ -171,7 +171,7 @@
             "value": "-4",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2026-06-30",
@@ -179,7 +179,7 @@
             "value": "-12",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2025-06-30",
@@ -187,7 +187,7 @@
             "value": "-5",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           }
         ]
       },
@@ -203,7 +203,7 @@
             "value": "1",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2025-06-30",
@@ -211,7 +211,7 @@
             "value": "4",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2026-03-31",
@@ -219,7 +219,7 @@
             "value": "-1",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2026-06-30",
@@ -227,7 +227,7 @@
             "value": "1",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2025-06-30",
@@ -235,7 +235,7 @@
             "value": "7",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2026-06-30",
@@ -243,7 +243,7 @@
             "value": "5",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2025-06-30",
@@ -251,7 +251,7 @@
             "value": "10",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           }
         ]
       },
@@ -267,7 +267,7 @@
             "value": "3",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2025-06-30",
@@ -275,7 +275,7 @@
             "value": "18",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2026-03-31",
@@ -283,7 +283,7 @@
             "value": "13",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2026-06-30",
@@ -291,7 +291,7 @@
             "value": "16",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2025-06-30",
@@ -299,7 +299,7 @@
             "value": "50",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2026-06-30",
@@ -307,7 +307,7 @@
             "value": "24",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2025-06-30",
@@ -315,7 +315,7 @@
             "value": "100",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           }
         ]
       },
@@ -331,7 +331,7 @@
             "value": null,
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2025-06-30",
@@ -339,7 +339,7 @@
             "value": null,
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2026-03-31",
@@ -347,7 +347,7 @@
             "value": null,
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2026-06-30",
@@ -355,7 +355,7 @@
             "value": null,
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2025-06-30",
@@ -363,7 +363,7 @@
             "value": null,
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2026-06-30",
@@ -371,7 +371,7 @@
             "value": null,
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2025-06-30",
@@ -379,7 +379,7 @@
             "value": "56",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           }
         ]
       },
@@ -395,7 +395,7 @@
             "value": "2",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2025-06-30",
@@ -403,7 +403,7 @@
             "value": null,
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2026-03-31",
@@ -411,7 +411,7 @@
             "value": "9",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2026-06-30",
@@ -419,7 +419,7 @@
             "value": "11",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2025-06-30",
@@ -427,7 +427,7 @@
             "value": null,
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2026-06-30",
@@ -435,7 +435,7 @@
             "value": "16",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2025-06-30",
@@ -443,7 +443,7 @@
             "value": "1",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           }
         ]
       },
@@ -459,7 +459,7 @@
             "value": "-266",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2025-06-30",
@@ -467,7 +467,7 @@
             "value": null,
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2026-03-31",
@@ -475,7 +475,7 @@
             "value": null,
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2026-06-30",
@@ -483,7 +483,7 @@
             "value": "-266",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2025-06-30",
@@ -491,7 +491,7 @@
             "value": "-1",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2026-06-30",
@@ -499,7 +499,7 @@
             "value": "-273",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2025-06-30",
@@ -507,7 +507,7 @@
             "value": "-1",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           }
         ]
       },
@@ -523,7 +523,7 @@
             "value": null,
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2025-06-30",
@@ -531,7 +531,7 @@
             "value": "2",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2026-03-31",
@@ -539,7 +539,7 @@
             "value": "2",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2026-06-30",
@@ -547,7 +547,7 @@
             "value": "2",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2025-06-30",
@@ -555,7 +555,7 @@
             "value": "2",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2026-06-30",
@@ -563,7 +563,7 @@
             "value": "6",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2025-06-30",
@@ -571,7 +571,7 @@
             "value": "4",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           }
         ]
       },
@@ -587,7 +587,7 @@
             "value": "-6",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2025-06-30",
@@ -595,7 +595,7 @@
             "value": "-13",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2026-03-31",
@@ -603,7 +603,7 @@
             "value": "-5",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2026-06-30",
@@ -611,7 +611,7 @@
             "value": "-11",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2025-06-30",
@@ -619,7 +619,7 @@
             "value": "-22",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2026-06-30",
@@ -627,7 +627,7 @@
             "value": "-31",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2025-06-30",
@@ -635,7 +635,7 @@
             "value": "-33",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           }
         ]
       },
@@ -651,7 +651,7 @@
             "value": "225",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2025-06-30",
@@ -659,7 +659,7 @@
             "value": "293",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2026-03-31",
@@ -667,7 +667,7 @@
             "value": "20",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2026-06-30",
@@ -675,7 +675,7 @@
             "value": "244",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2025-06-30",
@@ -683,7 +683,7 @@
             "value": "293",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2026-06-30",
@@ -691,7 +691,7 @@
             "value": "272",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2025-06-30",
@@ -699,7 +699,7 @@
             "value": "296",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           }
         ]
       },
@@ -715,7 +715,7 @@
             "value": "144",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2025-06-30",
@@ -723,7 +723,7 @@
             "value": "60",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2026-03-31",
@@ -731,7 +731,7 @@
             "value": "7",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2026-06-30",
@@ -739,7 +739,7 @@
             "value": "150",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2025-06-30",
@@ -747,7 +747,7 @@
             "value": "60",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2026-06-30",
@@ -755,7 +755,7 @@
             "value": "184",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2025-06-30",
@@ -763,7 +763,7 @@
             "value": "75",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           }
         ]
       },
@@ -779,7 +779,7 @@
             "value": "207",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2025-06-30",
@@ -787,7 +787,7 @@
             "value": "179",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2026-03-31",
@@ -795,7 +795,7 @@
             "value": "1",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2026-06-30",
@@ -803,7 +803,7 @@
             "value": "208",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2025-06-30",
@@ -811,7 +811,7 @@
             "value": "181",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2026-06-30",
@@ -819,7 +819,7 @@
             "value": "209",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2025-06-30",
@@ -827,7 +827,7 @@
             "value": "191",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           }
         ]
       },
@@ -843,7 +843,7 @@
             "value": "31",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2025-06-30",
@@ -851,7 +851,7 @@
             "value": "-70",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2026-03-31",
@@ -859,7 +859,7 @@
             "value": "-7",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2026-06-30",
@@ -867,7 +867,7 @@
             "value": "25",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2025-06-30",
@@ -875,7 +875,7 @@
             "value": "-70",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2026-06-30",
@@ -883,7 +883,7 @@
             "value": "8",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2025-06-30",
@@ -891,7 +891,7 @@
             "value": "-81",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           }
         ]
       },
@@ -907,7 +907,7 @@
             "value": "64",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2025-06-30",
@@ -915,7 +915,7 @@
             "value": "91",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2026-03-31",
@@ -923,7 +923,7 @@
             "value": "8",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2026-06-30",
@@ -931,7 +931,7 @@
             "value": "72",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2025-06-30",
@@ -939,7 +939,7 @@
             "value": "111",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2026-06-30",
@@ -947,7 +947,7 @@
             "value": "105",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2025-06-30",
@@ -955,7 +955,7 @@
             "value": "185",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           }
         ]
       },
@@ -971,7 +971,7 @@
             "value": null,
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2025-06-30",
@@ -979,7 +979,7 @@
             "value": "1",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2026-03-31",
@@ -987,7 +987,7 @@
             "value": null,
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2026-06-30",
@@ -995,7 +995,7 @@
             "value": null,
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2025-06-30",
@@ -1003,7 +1003,7 @@
             "value": "1",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2026-06-30",
@@ -1011,7 +1011,7 @@
             "value": "-1",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2025-06-30",
@@ -1019,7 +1019,7 @@
             "value": "1",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           }
         ]
       },
@@ -1035,7 +1035,7 @@
             "value": "68",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2025-06-30",
@@ -1043,7 +1043,7 @@
             "value": "67",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2026-03-31",
@@ -1051,7 +1051,7 @@
             "value": "69",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2026-06-30",
@@ -1059,7 +1059,7 @@
             "value": "137",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2025-06-30",
@@ -1067,7 +1067,7 @@
             "value": "133",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2026-06-30",
@@ -1075,7 +1075,7 @@
             "value": "273",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2025-06-30",
@@ -1083,7 +1083,7 @@
             "value": "268",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           }
         ]
       },
@@ -1099,7 +1099,7 @@
             "value": "80",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2025-06-30",
@@ -1107,7 +1107,7 @@
             "value": "79",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2026-03-31",
@@ -1115,7 +1115,7 @@
             "value": "79",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2026-06-30",
@@ -1123,7 +1123,7 @@
             "value": "159",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2025-06-30",
@@ -1131,7 +1131,7 @@
             "value": "157",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2026-06-30",
@@ -1139,7 +1139,7 @@
             "value": "320",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2025-06-30",
@@ -1147,7 +1147,7 @@
             "value": "304",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           }
         ]
       },
@@ -1163,7 +1163,7 @@
             "value": "35",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2025-06-30",
@@ -1171,7 +1171,7 @@
             "value": "22",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2026-03-31",
@@ -1179,7 +1179,7 @@
             "value": "13",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2026-06-30",
@@ -1187,7 +1187,7 @@
             "value": "48",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2025-06-30",
@@ -1195,7 +1195,7 @@
             "value": "24",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2026-06-30",
@@ -1203,7 +1203,7 @@
             "value": "36",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2025-06-30",
@@ -1211,7 +1211,7 @@
             "value": "37",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           }
         ]
       },
@@ -1227,7 +1227,7 @@
             "value": "247",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2025-06-30",
@@ -1235,7 +1235,7 @@
             "value": "260",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "3M-2026-03-31",
@@ -1243,7 +1243,7 @@
             "value": "169",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2026-06-30",
@@ -1251,7 +1251,7 @@
             "value": "416",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "6M-2025-06-30",
@@ -1259,7 +1259,7 @@
             "value": "426",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2026-06-30",
@@ -1267,7 +1267,7 @@
             "value": "733",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           },
           {
             "period_id": "12M-2025-06-30",
@@ -1275,7 +1275,7 @@
             "value": "795",
             "verified_by": "tieout",
             "labeler": "extractor (tools.gold.draft)",
-            "labeled_on": "2026-10-14"
+            "labeled_on": "2026-10-17"
           }
         ]
       }
