@@ -6,13 +6,15 @@ reconciliation (otherwise write which table it should be). Then resolve any
 other item listed. Values not listed here were verified by both P0-05 checks
 *and* agreed with the independent reading (P0-05b).
 
+**Review:** recorded by Niraj Jadhav on 2026-10-17 in `review_decisions.yaml`; 0 item(s) still open.
+
 **Summary:** 1231 / 1304 values have `model_agreement`; 25 / 30 releases need only the table confirmation.
 
 ## LUMN `0000018926-26-000045`
 
 - open: https://www.sec.gov/Archives/edgar/data/18926/000001892626000045/lumnq120268-kexhibit991.htm
 - look for the table starting with **Net loss** (first number: (200)) and ending with **Adjusted EBITDA excluding Special Items** (first number: 849); first column: Actual QTD 1Q26
-- [ ] that table is the headline Adjusted EBITDA excluding Special Items bridge (table 10, counted from 0)
+- [x] that table is the headline Adjusted EBITDA excluding Special Items bridge (table 10, counted from 0): confirmed by Niraj Jadhav
 - nothing else to resolve
 - values with model agreement: 22 / 22
 
@@ -20,7 +22,7 @@ other item listed. Values not listed here were verified by both P0-05 checks
 
 - open: https://www.sec.gov/Archives/edgar/data/18926/000001892626000058/lumnq220268-kexhibit991.htm
 - look for the table starting with **Net loss** (first number: (201)) and ending with **Adjusted EBITDA excluding Special Items** (first number: 802); first column: Actual QTD 2Q26
-- [ ] that table is the headline Adjusted EBITDA excluding Special Items bridge (table 10, counted from 0)
+- [x] that table is the headline Adjusted EBITDA excluding Special Items bridge (table 10, counted from 0): confirmed by Niraj Jadhav
 - nothing else to resolve
 - values with model agreement: 48 / 48
 
@@ -28,7 +30,7 @@ other item listed. Values not listed here were verified by both P0-05 checks
 
 - open: https://www.sec.gov/Archives/edgar/data/70318/000007031826000023/thc-20260331ex991earningsr.htm
 - look for the table starting with **Net income available to Tenet Healthcare Corporation common shareholders** (first number: 702) and ending with **Adjusted EBITDA** (first number: 1,162); first column: Three Months Ended March 31, 2026
-- [ ] that table is the headline Adjusted EBITDA bridge (table 13, counted from 0)
+- [x] that table is the headline Adjusted EBITDA bridge (table 13, counted from 0): confirmed by Niraj Jadhav
 - nothing else to resolve
 - values with model agreement: 26 / 26
 
@@ -36,7 +38,7 @@ other item listed. Values not listed here were verified by both P0-05 checks
 
 - open: https://www.sec.gov/Archives/edgar/data/70318/000007031826000032/thc-20260630ex991earningsr.htm
 - look for the table starting with **Net income available to Tenet Healthcare Corporation common shareholders** (first number: 826) and ending with **Adjusted EBITDA** (first number: 1,304); first column: Three Months Ended June 30, 2026
-- [ ] that table is the headline Adjusted EBITDA bridge (table 14, counted from 0)
+- [x] that table is the headline Adjusted EBITDA bridge (table 14, counted from 0): confirmed by Niraj Jadhav
 - nothing else to resolve
 - values with model agreement: 52 / 52
 
@@ -44,7 +46,7 @@ other item listed. Values not listed here were verified by both P0-05 checks
 
 - open: https://www.sec.gov/Archives/edgar/data/723612/000072361226000025/a03-pressreleasexq1f26.htm
 - look for the table starting with **Net loss** (first number: (234)) and ending with **Adjusted EBITDA (d)** (first number: (113)); first column: Three Months Ended March 31, 2026 (assigned by column order)
-- [ ] that table is the headline Adjusted EBITDA (d) bridge (table 9, counted from 0)
+- [x] that table is the headline Adjusted EBITDA (d) bridge (table 9, counted from 0): confirmed by Niraj Jadhav
 - nothing else to resolve
 - values with model agreement: 24 / 24
 
@@ -52,16 +54,18 @@ other item listed. Values not listed here were verified by both P0-05 checks
 
 - open: https://www.sec.gov/Archives/edgar/data/723612/000072361226000037/a03-pressreleasexq2f26.htm
 - look for the table starting with **Net income (loss)** (first number: 63) and ending with **Adjusted EBITDA (d)** (first number: 286); first column: Three Months Ended June 30, 2026
-- [ ] that table is the headline Adjusted EBITDA (d) bridge (table 9, counted from 0)
-- [ ] draft exception: GAAP anchor unavailable for 3M-2026-06-30: 'Net income (loss)' = 63 vs XBRL n/a
-- [ ] draft exception: GAAP anchor unavailable for 6M-2026-06-30: 'Net income (loss)' = -171 vs XBRL n/a
+- [x] that table is the headline Adjusted EBITDA (d) bridge (table 9, counted from 0): confirmed by Niraj Jadhav
+- [x] draft exception: GAAP anchor unavailable for 3M-2026-06-30: 'Net income (loss)' = 63 vs XBRL n/a
+  - decision: 63 confirmed: ProfitLoss 3M to 2026-06-30 = 63 (millions) in the 10-Q's inline XBRL
+- [x] draft exception: GAAP anchor unavailable for 6M-2026-06-30: 'Net income (loss)' = -171 vs XBRL n/a
+  - decision: -171 confirmed: ProfitLoss 6M to 2026-06-30 = -171 (millions) in the 10-Q's inline XBRL
 - values with model agreement: 26 / 52
 
 ## BHC `0000885590-26-000051`
 
 - open: https://www.sec.gov/Archives/edgar/data/885590/000088559026000051/ex991-q1x2026.htm
 - look for the table starting with **Net loss** (first number: (1,431)) and ending with **Adjusted EBITDA attributable to Bausch Health Companies Inc. (non-GAAP) (c)** (first number: 837); first column: Three Months Ended March 31, 2026
-- [ ] that table is the headline Adjusted EBITDA attributable to Bausch Health Companies Inc. (non-GAAP) (c) bridge (table 24, counted from 0)
+- [x] that table is the headline Adjusted EBITDA attributable to Bausch Health Companies Inc. (non-GAAP) (c) bridge (table 24, counted from 0): confirmed by Niraj Jadhav
 - nothing else to resolve
 - values with model agreement: 34 / 34
 
@@ -69,7 +73,7 @@ other item listed. Values not listed here were verified by both P0-05 checks
 
 - open: https://www.sec.gov/Archives/edgar/data/885590/000088559026000105/ex991-q22026.htm
 - look for the table starting with **Net income (loss)** (first number: 260) and ending with **Adjusted EBITDA attributable to Bausch Health Companies Inc. (non-GAAP) (c)** (first number: 1,075); first column: Three Months Ended June 30, 2026
-- [ ] that table is the headline Adjusted EBITDA attributable to Bausch Health Companies Inc. (non-GAAP) (c) bridge (table 24, counted from 0)
+- [x] that table is the headline Adjusted EBITDA attributable to Bausch Health Companies Inc. (non-GAAP) (c) bridge (table 24, counted from 0): confirmed by Niraj Jadhav
 - nothing else to resolve
 - values with model agreement: 72 / 72
 
@@ -77,7 +81,7 @@ other item listed. Values not listed here were verified by both P0-05 checks
 
 - open: https://www.sec.gov/Archives/edgar/data/1091667/000109166726000027/chtrex991earningsrelease33.htm
 - look for the table starting with **Net income attributable to Charter shareholders** (first number: 1,163) and ending with **Adjusted EBITDA (a)** (first number: 5,637); first column: Three Months Ended March 31, 2026 (assigned by column order)
-- [ ] that table is the headline Adjusted EBITDA (a) bridge (table 3, counted from 0)
+- [x] that table is the headline Adjusted EBITDA (a) bridge (table 3, counted from 0): confirmed by Niraj Jadhav
 - nothing else to resolve
 - values with model agreement: 32 / 32
 
@@ -85,7 +89,7 @@ other item listed. Values not listed here were verified by both P0-05 checks
 
 - open: https://www.sec.gov/Archives/edgar/data/1091667/000109166726000051/chtrex991earningsrelease63.htm
 - look for the table starting with **Net income attributable to Charter shareholders** (first number: 1,292) and ending with **Adjusted EBITDA (a)** (first number: 5,449); first column: Three Months Ended June 30, 2026
-- [ ] that table is the headline Adjusted EBITDA (a) bridge (table 3, counted from 0)
+- [x] that table is the headline Adjusted EBITDA (a) bridge (table 3, counted from 0): confirmed by Niraj Jadhav
 - nothing else to resolve
 - values with model agreement: 48 / 48
 
@@ -93,7 +97,7 @@ other item listed. Values not listed here were verified by both P0-05 checks
 
 - open: https://www.sec.gov/Archives/edgar/data/1174922/000117492226000034/ex991wrlq12026pressrelease.htm
 - look for the table starting with **Net income attributable to Wynn Resorts, Limited** (first number: 120,454) and ending with **Adjusted Property EBITDAR** (first number: 562,417); first column: Three Months Ended March 31, 2026
-- [ ] that table is the headline Adjusted Property EBITDAR bridge (table 4, counted from 0)
+- [x] that table is the headline Adjusted Property EBITDAR bridge (table 4, counted from 0): confirmed by Niraj Jadhav
 - nothing else to resolve
 - values with model agreement: 28 / 28
 
@@ -101,7 +105,7 @@ other item listed. Values not listed here were verified by both P0-05 checks
 
 - open: https://www.sec.gov/Archives/edgar/data/1174922/000117492226000051/ex991wrlq22026pressrelease.htm
 - look for the table starting with **Net income attributable to Wynn Resorts, Limited** (first number: 140,062) and ending with **Adjusted Property EBITDAR** (first number: 568,309); first column: Three Months Ended June 30, 2026
-- [ ] that table is the headline Adjusted Property EBITDAR bridge (table 6, counted from 0)
+- [x] that table is the headline Adjusted Property EBITDAR bridge (table 6, counted from 0): confirmed by Niraj Jadhav
 - nothing else to resolve
 - values with model agreement: 60 / 60
 
@@ -109,7 +113,7 @@ other item listed. Values not listed here were verified by both P0-05 checks
 
 - open: https://www.sec.gov/Archives/edgar/data/1108109/000119312526167000/cyh-ex99_1.htm
 - look for the table starting with **Net loss attributable to Community Health Systems, Inc. stockholders** (first number: (58)) and ending with **Adjusted EBITDA** (first number: 309); first column: Three Months Ended March 31, 2026
-- [ ] that table is the headline Adjusted EBITDA bridge (table 9, counted from 0)
+- [x] that table is the headline Adjusted EBITDA bridge (table 9, counted from 0): confirmed by Niraj Jadhav
 - nothing else to resolve
 - values with model agreement: 18 / 18
 
@@ -117,7 +121,7 @@ other item listed. Values not listed here were verified by both P0-05 checks
 
 - open: https://www.sec.gov/Archives/edgar/data/1108109/000119312526312454/cyh-ex99_1.htm
 - look for the table starting with **Net income attributable to Community Health Systems, Inc. stockholders** (first number: 70) and ending with **Adjusted EBITDA** (first number: 330); first column: Three Months Ended June 30, 2026
-- [ ] that table is the headline Adjusted EBITDA bridge (table 11, counted from 0)
+- [x] that table is the headline Adjusted EBITDA bridge (table 11, counted from 0): confirmed by Niraj Jadhav
 - nothing else to resolve
 - values with model agreement: 40 / 40
 
@@ -125,7 +129,7 @@ other item listed. Values not listed here were verified by both P0-05 checks
 
 - open: https://www.sec.gov/Archives/edgar/data/1260221/000126022126000039/exhibit991tdg2026q2earning.htm
 - look for the table starting with **Net Income** (first number: 536) and ending with **EBITDA As Defined** (first number: 1,337); first column: Thirteen Week Periods Ended March 28, 2026
-- [ ] that table is the headline EBITDA As Defined bridge (table 7, counted from 0)
+- [x] that table is the headline EBITDA As Defined bridge (table 7, counted from 0): confirmed by Niraj Jadhav
 - nothing else to resolve
 - values with model agreement: 40 / 40
 
@@ -133,7 +137,7 @@ other item listed. Values not listed here were verified by both P0-05 checks
 
 - open: https://www.sec.gov/Archives/edgar/data/1260221/000126022126000052/exhibit991tdg2026q3earning.htm
 - look for the table starting with **Net Income** (first number: 540) and ending with **EBITDA As Defined** (first number: 1,447); first column: Thirteen Week Periods Ended June 27, 2026
-- [ ] that table is the headline EBITDA As Defined bridge (table 7, counted from 0)
+- [x] that table is the headline EBITDA As Defined bridge (table 7, counted from 0): confirmed by Niraj Jadhav
 - nothing else to resolve
 - values with model agreement: 40 / 40
 
@@ -141,7 +145,7 @@ other item listed. Values not listed here were verified by both P0-05 checks
 
 - open: https://www.sec.gov/Archives/edgar/data/1590895/000159089526000015/ex991-2026q1ceiearningsrel.htm
 - look for the table starting with **Net loss attributable to Caesars** (first number: (98)) and ending with **Total Adjusted EBITDA** (first number: 887); first column: Three Months Ended March 31, 2026 (assigned by column order)
-- [ ] that table is the headline Total Adjusted EBITDA bridge (table 6, counted from 0)
+- [x] that table is the headline Total Adjusted EBITDA bridge (table 6, counted from 0): confirmed by Niraj Jadhav
 - nothing else to resolve
 - values with model agreement: 18 / 18
 
@@ -149,7 +153,7 @@ other item listed. Values not listed here were verified by both P0-05 checks
 
 - open: https://www.sec.gov/Archives/edgar/data/1590895/000159089526000027/ex991-2026q2ceiearningsrel.htm
 - look for the table starting with **Net loss attributable to Caesars** (first number: (62)) and ending with **Adjusted EBITDA** (first number: 920); first column: Three Months Ended June 30, 2026
-- [ ] that table is the headline Adjusted EBITDA bridge (table 9, counted from 0)
+- [x] that table is the headline Adjusted EBITDA bridge (table 9, counted from 0): confirmed by Niraj Jadhav
 - nothing else to resolve
 - values with model agreement: 36 / 36
 
@@ -157,15 +161,16 @@ other item listed. Values not listed here were verified by both P0-05 checks
 
 - open: https://www.sec.gov/Archives/edgar/data/1627223/000162722326000010/cc-ex99_1.htm
 - look for the table starting with **Net (loss) income attributable to Chemours** (first number: (29)) and ending with **Adjusted EBITDA** (first number: 169); first column: Three Months Ended March 31, 2026
-- [ ] that table is the headline Adjusted EBITDA bridge (table 11, counted from 0)
-- [ ] draft exception: GAAP anchor mismatch for 12M-2025-03-31: 'Net (loss) income attributable to Chemours' = 12 vs XBRL 10
+- [x] that table is the headline Adjusted EBITDA bridge (table 11, counted from 0): confirmed by Niraj Jadhav
+- [x] draft exception: GAAP anchor mismatch for 12M-2025-03-31: 'Net (loss) income attributable to Chemours' = 12 vs XBRL 10
+  - decision: Release value 12 is correct. XBRL 10 mixes restated vintages (FY2024 69 + Q1 2025 -5 - Q1 2024 54). The latest four quarters (60 - 32 - 11 - 5) and the May 2025 10-Q vintage (70 - 4 - 54) both give 12.
 - values with model agreement: 76 / 95
 
 ## CC `0001627223-26-000021`
 
 - open: https://www.sec.gov/Archives/edgar/data/1627223/000162722326000021/cc-ex99_1.htm
 - look for the table starting with **Net loss attributable to Chemours** (first number: (274)) and ending with **Adjusted EBITDA** (first number: 247); first column: Three Months Ended June 30, 2026
-- [ ] that table is the headline Adjusted EBITDA bridge (table 11, counted from 0)
+- [x] that table is the headline Adjusted EBITDA bridge (table 11, counted from 0): confirmed by Niraj Jadhav
 - nothing else to resolve
 - values with model agreement: 133 / 133
 
@@ -173,7 +178,7 @@ other item listed. Values not listed here were verified by both P0-05 checks
 
 - open: https://www.sec.gov/Archives/edgar/data/1400891/000162828026033471/ihmediaearningsrelease2026.htm
 - look for the table starting with **Net loss** (first number: (95,618)) and ending with **Adjusted EBITDA** (first number: 92,633); first column: Three Months Ended March 31, 2026
-- [ ] that table is the headline Adjusted EBITDA bridge (table 9, counted from 0)
+- [x] that table is the headline Adjusted EBITDA bridge (table 9, counted from 0): confirmed by Niraj Jadhav
 - nothing else to resolve
 - values with model agreement: 26 / 26
 
@@ -181,7 +186,7 @@ other item listed. Values not listed here were verified by both P0-05 checks
 
 - open: https://www.sec.gov/Archives/edgar/data/1400891/000162828026055243/ihmediaearningsrelease2026.htm
 - look for the table starting with **Net loss** (first number: (82,536)) and ending with **Adjusted EBITDA** (first number: 151,523); first column: Three Months Ended June 30, 2026
-- [ ] that table is the headline Adjusted EBITDA bridge (table 9, counted from 0)
+- [x] that table is the headline Adjusted EBITDA bridge (table 9, counted from 0): confirmed by Niraj Jadhav
 - nothing else to resolve
 - values with model agreement: 26 / 26
 
@@ -189,7 +194,7 @@ other item listed. Values not listed here were verified by both P0-05 checks
 
 - open: https://www.sec.gov/Archives/edgar/data/1657853/000165785326000021/q12026earningsrelease.htm
 - look for the table starting with **Net income (loss)** (first number: (333)) and ending with **Adjusted Corporate EBITDA (l)** (first number: (161)); first column: Three Months Ended March 31, 2026
-- [ ] that table is the headline Adjusted Corporate EBITDA (l) bridge (table 7, counted from 0)
+- [x] that table is the headline Adjusted Corporate EBITDA (l) bridge (table 7, counted from 0): confirmed by Niraj Jadhav
 - nothing else to resolve
 - values with model agreement: 24 / 24
 
@@ -197,16 +202,18 @@ other item listed. Values not listed here were verified by both P0-05 checks
 
 - open: https://www.sec.gov/Archives/edgar/data/1657853/000165785326000045/q22026earningsrelease.htm
 - look for the table starting with **Net income (loss)** (first number: 64) and ending with **Adjusted Corporate EBITDA (n)** (first number: 81); first column: Three Months Ended June 30, 2026
-- [ ] that table is the headline Adjusted Corporate EBITDA (n) bridge (table 8, counted from 0)
-- [ ] draft exception: GAAP anchor unavailable for 3M-2026-06-30: 'Net income (loss)' = 64 vs XBRL n/a
-- [ ] draft exception: GAAP anchor unavailable for 6M-2026-06-30: 'Net income (loss)' = -269 vs XBRL n/a
+- [x] that table is the headline Adjusted Corporate EBITDA (n) bridge (table 8, counted from 0): confirmed by Niraj Jadhav
+- [x] draft exception: GAAP anchor unavailable for 3M-2026-06-30: 'Net income (loss)' = 64 vs XBRL n/a
+  - decision: 64 confirmed: NetIncomeLoss 3M to 2026-06-30 = 64 (millions) in the 10-Q's inline XBRL
+- [x] draft exception: GAAP anchor unavailable for 6M-2026-06-30: 'Net income (loss)' = -269 vs XBRL n/a
+  - decision: -269 confirmed: NetIncomeLoss 6M to 2026-06-30 = -269 (millions) in the 10-Q's inline XBRL
 - values with model agreement: 26 / 52
 
 ## CVNA `0001690820-26-000034`
 
 - open: https://www.sec.gov/Archives/edgar/data/1690820/000169082026000034/ex99_1q12026.htm
 - look for the table starting with **Net income** (first number: 373) and ending with **Adjusted EBITDA** (first number: 488); first column: Three Months Ended March 31, 2025
-- [ ] that table is the headline Adjusted EBITDA bridge (table 13, counted from 0)
+- [x] that table is the headline Adjusted EBITDA bridge (table 13, counted from 0): confirmed by Niraj Jadhav
 - nothing else to resolve
 - values with model agreement: 26 / 26
 
@@ -214,7 +221,7 @@ other item listed. Values not listed here were verified by both P0-05 checks
 
 - open: https://www.sec.gov/Archives/edgar/data/1690820/000169082026000054/ex99_1q22026.htm
 - look for the table starting with **Net income** (first number: 308) and ending with **Adjusted EBITDA** (first number: 601); first column: Three Months Ended June 30, 2025
-- [ ] that table is the headline Adjusted EBITDA bridge (table 12, counted from 0)
+- [x] that table is the headline Adjusted EBITDA bridge (table 12, counted from 0): confirmed by Niraj Jadhav
 - nothing else to resolve
 - values with model agreement: 24 / 24
 
@@ -222,7 +229,7 @@ other item listed. Values not listed here were verified by both P0-05 checks
 
 - open: https://www.sec.gov/Archives/edgar/data/1810019/000181001926000041/rxt991_q12026.htm
 - look for the table starting with **Net income (loss)** (first number: (71.5)) and ending with **Adjusted EBITDA** (first number: 61.3); first column: Three Months Ended March 31, 2025
-- [ ] that table is the headline Adjusted EBITDA bridge (table 19, counted from 0)
+- [x] that table is the headline Adjusted EBITDA bridge (table 19, counted from 0): confirmed by Niraj Jadhav
 - nothing else to resolve
 - values with model agreement: 22 / 22
 
@@ -230,7 +237,7 @@ other item listed. Values not listed here were verified by both P0-05 checks
 
 - open: https://www.sec.gov/Archives/edgar/data/1810019/000181001926000092/rxt991_q22026.htm
 - look for the table starting with **Net loss** (first number: (54.5)) and ending with **Adjusted EBITDA** (first number: 64.4); first column: Three Months Ended June 30, 2025
-- [ ] that table is the headline Adjusted EBITDA bridge (table 20, counted from 0)
+- [x] that table is the headline Adjusted EBITDA bridge (table 20, counted from 0): confirmed by Niraj Jadhav
 - nothing else to resolve
 - values with model agreement: 44 / 44
 
@@ -238,15 +245,17 @@ other item listed. Values not listed here were verified by both P0-05 checks
 
 - open: https://www.sec.gov/Archives/edgar/data/1999001/000199900126000053/sixflags-exh991xq12026.htm
 - look for the table starting with **Net loss** (first number: (268,600)) and ending with **Adjusted EBITDA (3)** (first number: (123,039)); first column: Three months ended 2026-03-29 (assigned by column order)
-- [ ] that table is the headline Adjusted EBITDA (3) bridge (table 4, counted from 0)
-- [ ] disagreement: sign of 'Net income attributable to non-controlling interests': draft 1 vs reading -1
+- [x] that table is the headline Adjusted EBITDA (3) bridge (table 4, counted from 0): confirmed by Niraj Jadhav
+- [x] disagreement: sign of 'Net income attributable to non-controlling interests': draft 1 vs reading -1
+  - decision: Deducted (-1). Both values are blank here; the same line in the Q2 2026 release ties out only as a deduction (268,157 - 25,084 = 243,073).
 - values with model agreement: 32 / 34
 
 ## FUN `0001999001-26-000094`
 
 - open: https://www.sec.gov/Archives/edgar/data/1999001/000199900126000094/sixflags-exh991xq22026.htm
 - look for the table starting with **Net loss** (first number: (177,536)) and ending with **Adjusted EBITDA (4)** (first number: 243,073); first column: Three months ended June 28, 2026
-- [ ] that table is the headline Adjusted EBITDA (4) bridge (table 5, counted from 0)
-- [ ] draft note: sign inferred by tie-out: 'Net income attributable to non-controlling interests' is deducted in every period although shown without a 'Less:' directive (confirm in P0-06)
+- [x] that table is the headline Adjusted EBITDA (4) bridge (table 5, counted from 0): confirmed by Niraj Jadhav
+- [x] draft note: sign inferred by tie-out: 'Net income attributable to non-controlling interests' is deducted in every period although shown without a 'Less:' directive (confirm in P0-06)
+  - decision: Deduction confirmed (268,157 - 25,084 = 243,073); values already verified by model agreement.
 - values with model agreement: 108 / 108
 

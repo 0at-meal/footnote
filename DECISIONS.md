@@ -5,6 +5,24 @@ Newest first. One entry per decision, with date and reason. Entries before
 those entries described features as deployed that were never wired into the
 running app (see the retraction below).
 
+- **2026-10-17: P0-06 review done; gold set promoted.** The owner confirmed all 30 table
+  selections on sec.gov and resolved the 7 queue items. Decisions are recorded in
+  `eval/gold/review_decisions.yaml`, the single source for `tools.gold.promote` and for the
+  review status in `review_queue.md`. Promotion refuses to write any label unless every table
+  is confirmed at the drafted index, every queue item has exactly one resolution, and every
+  value is verified. Result: 30 label files and 1,304 values (1,297 `model_agreement`,
+  7 `human`). `labels --validate --strict` passes and now runs in CI and `make gold-verify`.
+  Resolutions:
+  - The 4 anchors missing from companyfacts (CAR and HTZ Q2) were confirmed against each
+    10-Q's inline XBRL.
+  - The CC LTM "mismatch" was the anchor mixing restated XBRL vintages (FY2024 69 +
+    Q1 2025 −5 − Q1 2024 54 = 10). Every consistent vintage gives the release's 12, so
+    this is not a recast.
+  - The FUN Q1 non-controlling-interest row, blank in both columns, is a deduction (−1),
+    as the same row ties out in Q2.
+
+  Review also found that a data row above the GAAP start leaked into period labels (CC).
+  This is fixed in the draft tool; no values changed.
 - **2026-10-14: P0-05b independent reading done.** Claude transcribed all 30 bridges from the
   approved tables rendered as raw cell text (`tools.gold.render_table`, no extractor logic),
   recording periods, scale (with quoted evidence), labels, roles, signs and every value. The

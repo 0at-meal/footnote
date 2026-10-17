@@ -1,0 +1,84 @@
+# P0-06 owner review of the gold set. Source of truth for tools.gold.promote
+# (writes eval/gold/labels/) and for the status shown in review_queue.md.
+#
+# tables_confirmed: the owner opened each release on sec.gov and confirmed the
+#   selected table (index counted from 0) is the headline bridge.
+# resolutions: one per review-queue item, quoted exactly. A resolution's scope
+#   (`periods`, or `line` with an optional `sign`) names the values it verifies;
+#   those values are promoted with verified_by=human.
+
+reviewer: Niraj Jadhav
+reviewed_on: 2026-10-17
+
+tables_confirmed:
+  0000018926-26-000045: 10  # LUMN
+  0000018926-26-000058: 10  # LUMN
+  0000070318-26-000023: 13  # THC
+  0000070318-26-000032: 14  # THC
+  0000723612-26-000025: 9  # CAR
+  0000723612-26-000037: 9  # CAR
+  0000885590-26-000051: 24  # BHC
+  0000885590-26-000105: 24  # BHC
+  0001091667-26-000027: 3  # CHTR
+  0001091667-26-000051: 3  # CHTR
+  0001174922-26-000034: 4  # WYNN
+  0001174922-26-000051: 6  # WYNN
+  0001193125-26-167000: 9  # CYH
+  0001193125-26-312454: 11  # CYH
+  0001260221-26-000039: 7  # TDG
+  0001260221-26-000052: 7  # TDG
+  0001590895-26-000015: 6  # CZR
+  0001590895-26-000027: 9  # CZR
+  0001627223-26-000010: 11  # CC
+  0001627223-26-000021: 11  # CC
+  0001628280-26-033471: 9  # IHRT
+  0001628280-26-055243: 9  # IHRT
+  0001657853-26-000021: 7  # HTZ
+  0001657853-26-000045: 8  # HTZ
+  0001690820-26-000034: 13  # CVNA
+  0001690820-26-000054: 12  # CVNA
+  0001810019-26-000041: 19  # RXT
+  0001810019-26-000092: 20  # RXT
+  0001999001-26-000053: 4  # FUN
+  0001999001-26-000094: 5  # FUN
+
+resolutions:
+  - accession: 0000723612-26-000037  # CAR Q2 2026
+    item: "draft exception: GAAP anchor unavailable for 3M-2026-06-30: 'Net income (loss)' = 63 vs XBRL n/a"
+    periods: [3M-2026-06-30]
+    decision: "63 confirmed: ProfitLoss 3M to 2026-06-30 = 63 (millions) in the 10-Q's inline XBRL"
+    evidence: https://www.sec.gov/Archives/edgar/data/723612/000072361226000039/car-20260630.htm
+  - accession: 0000723612-26-000037
+    item: "draft exception: GAAP anchor unavailable for 6M-2026-06-30: 'Net income (loss)' = -171 vs XBRL n/a"
+    periods: [6M-2026-06-30]
+    decision: "-171 confirmed: ProfitLoss 6M to 2026-06-30 = -171 (millions) in the 10-Q's inline XBRL"
+    evidence: https://www.sec.gov/Archives/edgar/data/723612/000072361226000039/car-20260630.htm
+  - accession: 0001627223-26-000010  # CC Q1 2026
+    item: "draft exception: GAAP anchor mismatch for 12M-2025-03-31: 'Net (loss) income attributable to Chemours' = 12 vs XBRL 10"
+    periods: [12M-2025-03-31]
+    decision: >-
+      Release value 12 is correct. XBRL 10 mixes restated vintages (FY2024 69 +
+      Q1 2025 -5 - Q1 2024 54). The latest four quarters (60 - 32 - 11 - 5) and
+      the May 2025 10-Q vintage (70 - 4 - 54) both give 12.
+    evidence: https://www.sec.gov/Archives/edgar/data/1627223/000162722326000010/cc-ex99_1.htm
+  - accession: 0001657853-26-000045  # HTZ Q2 2026
+    item: "draft exception: GAAP anchor unavailable for 3M-2026-06-30: 'Net income (loss)' = 64 vs XBRL n/a"
+    periods: [3M-2026-06-30]
+    decision: "64 confirmed: NetIncomeLoss 3M to 2026-06-30 = 64 (millions) in the 10-Q's inline XBRL"
+    evidence: https://www.sec.gov/Archives/edgar/data/1657853/000165785326000046/htzz-20260630.htm
+  - accession: 0001657853-26-000045
+    item: "draft exception: GAAP anchor unavailable for 6M-2026-06-30: 'Net income (loss)' = -269 vs XBRL n/a"
+    periods: [6M-2026-06-30]
+    decision: "-269 confirmed: NetIncomeLoss 6M to 2026-06-30 = -269 (millions) in the 10-Q's inline XBRL"
+    evidence: https://www.sec.gov/Archives/edgar/data/1657853/000165785326000046/htzz-20260630.htm
+  - accession: 0001999001-26-000053  # FUN Q1 2026
+    item: "disagreement: sign of 'Net income attributable to non-controlling interests': draft 1 vs reading -1"
+    line: Net income attributable to non-controlling interests
+    sign: -1
+    decision: >-
+      Deducted (-1). Both values are blank here; the same line in the Q2 2026
+      release ties out only as a deduction (268,157 - 25,084 = 243,073).
+    evidence: https://www.sec.gov/Archives/edgar/data/1999001/000199900126000094/sixflags-exh991xq22026.htm
+  - accession: 0001999001-26-000094  # FUN Q2 2026
+    item: "draft note: sign inferred by tie-out: 'Net income attributable to non-controlling interests' is deducted in every period although shown without a 'Less:' directive (confirm in P0-06)"
+    decision: "Deduction confirmed (268,157 - 25,084 = 243,073); values already verified by model agreement."

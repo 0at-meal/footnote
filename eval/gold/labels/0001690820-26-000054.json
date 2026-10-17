@@ -1,0 +1,322 @@
+{
+  "schema_version": 1,
+  "ticker": "CVNA",
+  "cik": "0001690820",
+  "accession": "0001690820-26-000054",
+  "exhibit": "ex99_1q22026.htm",
+  "source_url": "https://www.sec.gov/Archives/edgar/data/1690820/000169082026000054/ex99_1q22026.htm",
+  "sha256": "dbe37382ead218ee9b854ec765e4ff55b2d5384c9d416fbe1c78138a6a55ff20",
+  "metric_label_raw": "Adjusted EBITDA",
+  "scale": "millions",
+  "scale_quote": "(dollars in millions, except per unit amounts)",
+  "table": {
+    "table_index": 12,
+    "caption_raw": null,
+    "confirmed_by": "Niraj Jadhav",
+    "confirmed_on": "2026-10-17"
+  },
+  "periods": [
+    {
+      "period_id": "3M-2025-06-30",
+      "label_raw": "Three Months Ended June 30, 2025",
+      "end_date": "2025-06-30",
+      "months": 3
+    },
+    {
+      "period_id": "3M-2026-06-30",
+      "label_raw": "Three Months Ended June 30, 2026",
+      "end_date": "2026-06-30",
+      "months": 3
+    }
+  ],
+  "lines": [
+    {
+      "row_order": 0,
+      "label_raw": "Net income",
+      "role": "gaap_start",
+      "sign": 1,
+      "values": [
+        {
+          "period_id": "3M-2025-06-30",
+          "value_raw": "308",
+          "value": "308",
+          "verified_by": "model_agreement",
+          "labeler": "extractor (tools.gold.draft)",
+          "labeled_on": "2026-10-14"
+        },
+        {
+          "period_id": "3M-2026-06-30",
+          "value_raw": "513",
+          "value": "513",
+          "verified_by": "model_agreement",
+          "labeler": "extractor (tools.gold.draft)",
+          "labeled_on": "2026-10-14"
+        }
+      ]
+    },
+    {
+      "row_order": 1,
+      "label_raw": "Income tax provision",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        {
+          "period_id": "3M-2025-06-30",
+          "value_raw": "—",
+          "value": null,
+          "verified_by": "model_agreement",
+          "labeler": "extractor (tools.gold.draft)",
+          "labeled_on": "2026-10-14"
+        },
+        {
+          "period_id": "3M-2026-06-30",
+          "value_raw": "66",
+          "value": "66",
+          "verified_by": "model_agreement",
+          "labeler": "extractor (tools.gold.draft)",
+          "labeled_on": "2026-10-14"
+        }
+      ]
+    },
+    {
+      "row_order": 2,
+      "label_raw": "Interest expense, net",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        {
+          "period_id": "3M-2025-06-30",
+          "value_raw": "143",
+          "value": "143",
+          "verified_by": "model_agreement",
+          "labeler": "extractor (tools.gold.draft)",
+          "labeled_on": "2026-10-14"
+        },
+        {
+          "period_id": "3M-2026-06-30",
+          "value_raw": "101",
+          "value": "101",
+          "verified_by": "model_agreement",
+          "labeler": "extractor (tools.gold.draft)",
+          "labeled_on": "2026-10-14"
+        }
+      ]
+    },
+    {
+      "row_order": 3,
+      "label_raw": "Other expense, net",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        {
+          "period_id": "3M-2025-06-30",
+          "value_raw": "60",
+          "value": "60",
+          "verified_by": "model_agreement",
+          "labeler": "extractor (tools.gold.draft)",
+          "labeled_on": "2026-10-14"
+        },
+        {
+          "period_id": "3M-2026-06-30",
+          "value_raw": "—",
+          "value": null,
+          "verified_by": "model_agreement",
+          "labeler": "extractor (tools.gold.draft)",
+          "labeled_on": "2026-10-14"
+        }
+      ]
+    },
+    {
+      "row_order": 4,
+      "label_raw": "Operating income",
+      "role": "subtotal",
+      "sign": 1,
+      "values": [
+        {
+          "period_id": "3M-2025-06-30",
+          "value_raw": "511",
+          "value": "511",
+          "verified_by": "model_agreement",
+          "labeler": "extractor (tools.gold.draft)",
+          "labeled_on": "2026-10-14"
+        },
+        {
+          "period_id": "3M-2026-06-30",
+          "value_raw": "680",
+          "value": "680",
+          "verified_by": "model_agreement",
+          "labeler": "extractor (tools.gold.draft)",
+          "labeled_on": "2026-10-14"
+        }
+      ]
+    },
+    {
+      "row_order": 5,
+      "label_raw": "Other operating expense, net",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        {
+          "period_id": "3M-2025-06-30",
+          "value_raw": "2",
+          "value": "2",
+          "verified_by": "model_agreement",
+          "labeler": "extractor (tools.gold.draft)",
+          "labeled_on": "2026-10-14"
+        },
+        {
+          "period_id": "3M-2026-06-30",
+          "value_raw": "—",
+          "value": null,
+          "verified_by": "model_agreement",
+          "labeler": "extractor (tools.gold.draft)",
+          "labeled_on": "2026-10-14"
+        }
+      ]
+    },
+    {
+      "row_order": 6,
+      "label_raw": "Depreciation and amortization expense in cost of sales",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        {
+          "period_id": "3M-2025-06-30",
+          "value_raw": "27",
+          "value": "27",
+          "verified_by": "model_agreement",
+          "labeler": "extractor (tools.gold.draft)",
+          "labeled_on": "2026-10-14"
+        },
+        {
+          "period_id": "3M-2026-06-30",
+          "value_raw": "27",
+          "value": "27",
+          "verified_by": "model_agreement",
+          "labeler": "extractor (tools.gold.draft)",
+          "labeled_on": "2026-10-14"
+        }
+      ]
+    },
+    {
+      "row_order": 7,
+      "label_raw": "Depreciation and amortization expense in SG&A expenses",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        {
+          "period_id": "3M-2025-06-30",
+          "value_raw": "41",
+          "value": "41",
+          "verified_by": "model_agreement",
+          "labeler": "extractor (tools.gold.draft)",
+          "labeled_on": "2026-10-14"
+        },
+        {
+          "period_id": "3M-2026-06-30",
+          "value_raw": "42",
+          "value": "42",
+          "verified_by": "model_agreement",
+          "labeler": "extractor (tools.gold.draft)",
+          "labeled_on": "2026-10-14"
+        }
+      ]
+    },
+    {
+      "row_order": 8,
+      "label_raw": "Share-based compensation expense in cost of sales",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        {
+          "period_id": "3M-2025-06-30",
+          "value_raw": "1",
+          "value": "1",
+          "verified_by": "model_agreement",
+          "labeler": "extractor (tools.gold.draft)",
+          "labeled_on": "2026-10-14"
+        },
+        {
+          "period_id": "3M-2026-06-30",
+          "value_raw": "1",
+          "value": "1",
+          "verified_by": "model_agreement",
+          "labeler": "extractor (tools.gold.draft)",
+          "labeled_on": "2026-10-14"
+        }
+      ]
+    },
+    {
+      "row_order": 9,
+      "label_raw": "Share-based compensation expense in SG&A expenses",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        {
+          "period_id": "3M-2025-06-30",
+          "value_raw": "25",
+          "value": "25",
+          "verified_by": "model_agreement",
+          "labeler": "extractor (tools.gold.draft)",
+          "labeled_on": "2026-10-14"
+        },
+        {
+          "period_id": "3M-2026-06-30",
+          "value_raw": "25",
+          "value": "25",
+          "verified_by": "model_agreement",
+          "labeler": "extractor (tools.gold.draft)",
+          "labeled_on": "2026-10-14"
+        }
+      ]
+    },
+    {
+      "row_order": 10,
+      "label_raw": "Warrant revenue",
+      "role": "adjustment",
+      "sign": 1,
+      "values": [
+        {
+          "period_id": "3M-2025-06-30",
+          "value_raw": "(6)",
+          "value": "-6",
+          "verified_by": "model_agreement",
+          "labeler": "extractor (tools.gold.draft)",
+          "labeled_on": "2026-10-14"
+        },
+        {
+          "period_id": "3M-2026-06-30",
+          "value_raw": "(6)",
+          "value": "-6",
+          "verified_by": "model_agreement",
+          "labeler": "extractor (tools.gold.draft)",
+          "labeled_on": "2026-10-14"
+        }
+      ]
+    },
+    {
+      "row_order": 11,
+      "label_raw": "Adjusted EBITDA",
+      "role": "total",
+      "sign": 1,
+      "values": [
+        {
+          "period_id": "3M-2025-06-30",
+          "value_raw": "601",
+          "value": "601",
+          "verified_by": "model_agreement",
+          "labeler": "extractor (tools.gold.draft)",
+          "labeled_on": "2026-10-14"
+        },
+        {
+          "period_id": "3M-2026-06-30",
+          "value_raw": "769",
+          "value": "769",
+          "verified_by": "model_agreement",
+          "labeler": "extractor (tools.gold.draft)",
+          "labeled_on": "2026-10-14"
+        }
+      ]
+    }
+  ]
+}

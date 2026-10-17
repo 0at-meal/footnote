@@ -29,6 +29,6 @@ jobs:
       - name: Gold-set inputs unchanged (sha256)
         working-directory: backend
         run: python -m tools.gold.fetch_releases --verify
-      - name: Gold labels valid (schema + manifest)
+      - name: Gold labels valid and complete (schema, manifest, P0-06 review)
         working-directory: backend
-        run: python -m tools.gold.labels --validate
+        run: python -m tools.gold.labels --validate --strict
