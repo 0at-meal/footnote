@@ -20,6 +20,7 @@ from tools.eval.score import (
     PeriodHint,
     ScoreError,
     aggregate,
+    labels_fingerprint,
     parse_period_hint,
     resolve_period,
     run_extractor,
@@ -343,6 +344,17 @@ def test_score_gold_set_is_deterministic(tmp_path: Path) -> None:
         "human": 2,
     }
     assert first["metrics"]["line_exact_match"]["overall"]["rate"] == 1.0
+
+
+def test_labels_fingerprint_ignores_line_endings(tmp_path: Path) -> None:
+    gold_dir = _gold_dir(tmp_path)
+    label = gold_dir / "labels" / f"{ACC}.json"
+    label.write_bytes(json.dumps(gold_dict(), indent=2).encode())
+    lf = labels_fingerprint(gold_dir / "labels")
+    label.write_bytes(label.read_bytes().replace(b"\n", b"\r\n"))
+    assert labels_fingerprint(gold_dir / "labels") == lf
+    label.write_bytes(label.read_bytes().replace(b"145", b"146"))
+    assert labels_fingerprint(gold_dir / "labels") != lf
 
 
 def test_tampered_exhibit_raises(tmp_path: Path) -> None:
