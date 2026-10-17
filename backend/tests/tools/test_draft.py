@@ -93,6 +93,23 @@ def test_bottom_up_bridge_with_subtotals() -> None:
     assert draft.exceptions == []
 
 
+def test_data_row_above_start_is_not_header() -> None:
+    # A memo row above the start line (CC Q1 2026) must not leak into the
+    # period labels: "Three Months Ended June 30, 2026 (22" was the bug.
+    html = f"""<table>{HEADER}
+    <tr><td>Income before income taxes</td><td>(22)</td><td>38</td></tr>
+    <tr><td>Net income</td><td>50</td><td>45</td></tr>
+    <tr><td>Interest expense</td><td>40</td><td>40</td></tr>
+    <tr><td>Adjusted EBITDA</td><td>90</td><td>85</td></tr>
+    </table>"""
+    draft = _draft(html)
+    assert [p.header for p in draft.periods] == [
+        "Three Months Ended June 30, 2026",
+        "Three Months Ended June 30, 2025",
+    ]
+    assert all(c.passed for c in draft.sum_checks)
+
+
 def test_top_down_bridge_direction() -> None:
     # Items shown with income-statement signs: EBITDA = start - sum(items).
     html = f"""<table>{HEADER}

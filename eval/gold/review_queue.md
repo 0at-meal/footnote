@@ -156,7 +156,7 @@ other item listed. Values not listed here were verified by both P0-05 checks
 ## CC `0001627223-26-000010`
 
 - open: https://www.sec.gov/Archives/edgar/data/1627223/000162722326000010/cc-ex99_1.htm
-- look for the table starting with **Net (loss) income attributable to Chemours** (first number: (29)) and ending with **Adjusted EBITDA** (first number: 169); first column: Three Months Ended March 31, 2026 (22
+- look for the table starting with **Net (loss) income attributable to Chemours** (first number: (29)) and ending with **Adjusted EBITDA** (first number: 169); first column: Three Months Ended March 31, 2026
 - [ ] that table is the headline Adjusted EBITDA bridge (table 11, counted from 0)
 - [ ] draft exception: GAAP anchor mismatch for 12M-2025-03-31: 'Net (loss) income attributable to Chemours' = 12 vs XBRL 10
 - values with model agreement: 76 / 95
@@ -164,7 +164,7 @@ other item listed. Values not listed here were verified by both P0-05 checks
 ## CC `0001627223-26-000021`
 
 - open: https://www.sec.gov/Archives/edgar/data/1627223/000162722326000021/cc-ex99_1.htm
-- look for the table starting with **Net loss attributable to Chemours** (first number: (274)) and ending with **Adjusted EBITDA** (first number: 247); first column: Three Months Ended June 30, 2026 (1
+- look for the table starting with **Net loss attributable to Chemours** (first number: (274)) and ending with **Adjusted EBITDA** (first number: 247); first column: Three Months Ended June 30, 2026
 - [ ] that table is the headline Adjusted EBITDA bridge (table 11, counted from 0)
 - nothing else to resolve
 - values with model agreement: 133 / 133

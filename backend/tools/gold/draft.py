@@ -112,6 +112,7 @@ def _is_value_cell(cell: HtmlCell) -> bool:
 
 
 _OPEN_PAREN_NUMBER = re.compile(r"^\(\s*\$?\s*([\d,]+(?:\.\d+)?)$")
+_YEAR = re.compile(r"^(?:19|20)\d{2}$")
 
 
 def merge_split_parentheses(cells: list[HtmlCell]) -> list[HtmlCell]:
@@ -244,10 +245,24 @@ def period_columns(
         (c.col_idx for c in start_cells if c.text.strip() == "$" or _is_value_cell(c)),
         default=0,
     )
+    # A labelled row with values above the start row (e.g. a memo "Income
+    # before income taxes" line) is data, not header; year rows are header.
+    labelled = {
+        c.row_idx for c in table.cells if c.col_idx < value_area and c.text.strip()
+    }
+    data_rows = {
+        c.row_idx
+        for c in table.cells
+        if c.row_idx in labelled
+        and c.col_idx >= value_area
+        and (_is_value_cell(c) or _OPEN_PAREN_NUMBER.match(c.text.strip()))
+        and not _YEAR.match(c.text.strip())
+    }
     header_cells = [
         c
         for c in table.cells
         if c.row_idx < start.idx
+        and c.row_idx not in data_rows
         and c.col_idx >= value_area
         and c.text.strip()
         and c.text.strip() != "$"
