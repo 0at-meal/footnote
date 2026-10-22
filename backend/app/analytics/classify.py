@@ -15,54 +15,58 @@ from dataclasses import dataclass
 
 # Order matters only for readability; every matching code is collected.
 _RULES: list[tuple[str, re.Pattern[str]]] = [
-    ("NCI", re.compile(r"non-?controlling|minority interest")),
+    ("NCI", re.compile(r"non[- ]?controlling|minority interest")),
     (
         "TAX",
         re.compile(
             r"income tax|tax (?:provision|benefit|expense)|provision for .{0,30}tax"
-            r"|benefit from .{0,30}tax|\btaxes\b"
+            r"|benefit from .{0,30}tax|\btaxes\b|tax[- ]effect"
         ),
     ),
     (
         "DEBT",
         re.compile(
             r"extinguishment|debt financing|refinanc|retirement of debt|(?:gain|loss)"
-            r" on debt|debt modification|early redemption"
+            r" on debt|debt modification|early redemption|financing arrangement"
         ),
     ),
-    ("INT", re.compile(r"\binterest\b(?! in\b)")),
+    # Receivables securitization costs are a financing cost.
+    ("INT", re.compile(r"\binterest\b(?! in\b)|securitization")),
     ("DA", re.compile(r"depreciation|amortization|depletion")),
     (
         "SBC",
         re.compile(
             r"stock[- ]based|share[- ]based|stock compensation|equity[- ]based comp"
-            r"|equity compensation|non-?cash compensation|stock and deferred comp"
-            r"|stock-settled|restricted stock"
+            r"|equity compensation|non[- ]?cash compensation|stock and deferred comp"
+            r"|stock[- ]settled|restricted stock|deferred compensation"
         ),
     ),
     (
         "RESTR",
         re.compile(
             r"restructuring|severance|termination benefits|exit (?:cost|activit)"
-            r"|reorganization"
+            r"|reorganization|idled? facilit|indefinite idle|office closure"
         ),
     ),
     (
         "TRANSFORM",
         re.compile(
             r"transformation|modernization|simplification|cloud computing"
-            r"|implementation cost|\berp\b|optimization"
+            r"|implementation (?:cost|expense)|\berp\b|optimization|it infrastructure"
         ),
     ),
-    ("IMPAIR", re.compile(r"impairment|write-?downs?|write-?offs?|property charges")),
+    (
+        "IMPAIR",
+        re.compile(r"impairment|write[- ]?downs?|write[- ]?offs?|property charges"),
+    ),
     (
         "MA",
         re.compile(
-            r"acquisition|transaction|integration|merger|separation|spin-?off"
-            r"|business combination"
+            r"acquisition|transaction|integration|merger|separation|spin[- ]?off"
+            r"|business combination|purchase accounting|former parent"
         ),
     ),
-    ("LITIG", re.compile(r"litigation|legal|settlement|investigation")),
+    ("LITIG", re.compile(r"litigation|legal|settlement|investigation|arbitration")),
     ("ENV", re.compile(r"environmental|remediation")),
     (
         "FX",
@@ -73,33 +77,40 @@ _RULES: list[tuple[str, re.Pattern[str]]] = [
     (
         "DERIV",
         re.compile(
-            r"fair value|derivative|warrant|contingent consideration|earn-?out"
-            r"|mark-to-market|financial instruments"
+            r"fair value|derivative|warrant|contingent consideration|earn[- ]?out"
+            r"|mark[- ]to[- ]market|financial instruments|contingent purchase price"
+            r"|\bswaps?\b|\bhedg"
         ),
     ),
     (
         "DIVEST",
         re.compile(
             r"\bsales? of\b|disposal|disposition|retirement of (?:fixed )?assets"
-            r"|deconsolidation|divestiture"
+            r"|deconsolidation|divestiture|property transactions|held for sale"
         ),
     ),
-    ("PREOPEN", re.compile(r"pre-?opening|start-?up|launch")),
+    ("PREOPEN", re.compile(r"pre[- ]?opening|start[- ]?up|launch")),
     ("RENT", re.compile(r"\brent\b|\blease")),
-    ("CORP", re.compile(r"corporate (?:expense|cost|overhead)")),
+    ("CORP", re.compile(r"corporate (?:general|g&a|expense|cost|overhead)")),
     (
         "NONOP",
         re.compile(
-            r"other \(?(?:income|expense)|non-?operating|pension|equity (?:in|method)"
-            r"|(?:gain|loss)e?s? on investments?|investment (?:gain|loss)"
-            r"|other (?:income|expense)(?:\)|,)"
+            r"other \(?(?:income|expense)|non[- ]?operating|pension|equity (?:in|method)"
+            r"|(?:gain|loss)e?s? on investments?|investment (?:gain|loss|income)"
+            r"|other (?:income|expense)(?:\)|,)|unconsolidated affiliates"
+            r"|miscellaneous \(?(?:income|expense)|joint venture ebitda"
+            r"|attributable ebitda|investment (?:expense|\(?income)"
         ),
     ),
-    ("SYNERGY", re.compile(r"synerg|run-?rate|cost savings")),
-    ("REV", re.compile(r"\brevenues?\b")),
+    ("SYNERGY", re.compile(r"synerg|run[- ]?rate|cost savings")),
+    # Cost recoveries shown as revenue are revenue-side (spec §4.2, CC).
+    ("REV", re.compile(r"\brevenues?\b|spend recovery")),
 ]
 _OTHER_NR = re.compile(
-    r"^other\b|other items|other adjustments|non-?recurring|unusual|special items"
+    r"^other\b|other items|other adjustments|non[- ]?recurring|unusual|special items"
+    r"|:\s*other$|recall|incident|weather|insurance|\blifo\b|special bonus"
+    r"|certain operating expense|professional (?:advisory )?fees|advisory income"
+    r"|indemnified"
 )
 _RESIDUAL = re.compile(r"\band other\b|,\s*and other\b|\bother,? net\b")
 _NETTED = re.compile(r"net of (?:insurance|recover)|a portion of|partially offset")
@@ -112,6 +123,9 @@ _SUBSUMED = {
     ("DEBT", "MA"),  # "debt financing transactions"
     ("REV", "MA"),
     ("REV", "DERIV"),  # "warrant revenue" is revenue-side (spec §4.2)
+    # Gaming "property transactions, net": gains, losses and impairments on
+    # property, not M&A.
+    ("DIVEST", "MA"),
 }
 # "(excluding amortization of intangible assets)" names what is *not* included.
 _EXCLUDING = re.compile(r"\((?:excluding|excludes|other than)[^)]*\)")

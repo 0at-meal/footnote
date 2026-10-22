@@ -1,45 +1,52 @@
 # Footnote Architecture
 
-The current state is a library of deterministic pieces, not an application.
-There is no API server, UI, database, or orchestrator yet. The target
-architecture and the phase that introduces each part are in
-[docs/ROADMAP.md](docs/ROADMAP.md) §4; this file describes what exists today.
+The repository now holds a working pipeline: EDGAR ingest, a deterministic bridge
+engine, an append-only observation store, analytics, a read API, a web app and an
+Excel export. It runs locally on SQLite (ADR-010). The hosted target (Neon, R2,
+Cloud Run, Cloudflare Pages) and the phase that introduces each part are in
+[docs/ROADMAP.md](docs/ROADMAP.md) §4. Phase 0's exit gate is still open (owner-only
+interviews and spec review), so everything past Phase 0 is built but not yet
+gate-approved.
 
 ## Modules
 
 ```
 backend/app/
-├── ingestion/
-│   ├── edgar/          client.py, rate_limiter.py, circuit_breaker.py, models.py
-│   └── exhibit_99/     detector.py, extractor.py, models.py
+├── ingestion/edgar/     EDGAR gateway (only network code): submissions, 8-K item filter,
+│                        cached filing index and documents, same-day companyfacts cache
+├── ingestion/exhibit_99/ legacy EX-99 extractor (kept for the P0-10 baseline scorer)
 ├── extraction/
-│   ├── html/           table_parser.py, detector.py, ixbrl_parser.py, extractor.py, models.py
-│   ├── locator.py      PdfLocator | HtmlLocator discriminated union
-│   ├── models.py       ExtractedRecord
-│   └── scale_and_sign.py
-└── classification/
-    ├── taxonomy.py     master taxonomy, alias matching, fuzzy suggestions, add-back categories
-    ├── seed_taxonomy.json  tracked seed (84 canonical items + aliases)
-    └── models.py
+│   ├── bridge/          core.py (rows, periods, tie-out solver, scale, XBRL anchor),
+│   │                    engine.py (headline-table selection), keys.py, patterns.py
+│   ├── html/            table_parser, detector, ixbrl_parser, legacy extractor
+│   ├── locator.py, models.py, scale_and_sign.py
+├── classification/      seed taxonomy (legacy alias matching)
+├── store/               schema.sql + db.py: append-only SQLite observation store
+├── pipeline/            ingest.py (orchestration), universe.py, cli.py
+├── analytics/           classify.py (rule suggestions), history.py (quarters, recasts,
+│                        definition changes), normalize.py (policy, recurrence),
+│                        snapshot.py (read model), policies/footnote-default-v0.1.yaml
+├── api/                 FastAPI read API + web app host
+└── export/              Excel workbook (live formulas, source comments)
+web/index.html           single-page app (served by the API, or static with snapshot.json)
+config/universe.yaml     50 issuers, CIKs resolved from EDGAR (tools.universe.build)
 ```
 
-Data flow available today:
+Data flow:
 
 ```
-EdgarClient.get_filings / get_filing_directory_index / get_document
-        │  (raw HTML, cached by accession)
-        ▼
-Exhibit99Extractor  ──►  HtmlExtractor
-                           ├─ extract_html_tables      (grid, numeric cells, XPath)
-                           ├─ detect_reconciliation_tables
-                           └─ parse_ixbrl_facts
-        ▼
-list[ExtractedRecord]  (value as reported, label path, HtmlLocator)
-        ▼
-scale_and_sign.normalize_line_item   taxonomy.match_master_taxonomy
+EDGAR ─► pipeline.ingest ─► extraction.bridge.engine ─► store (bridges, periods,
+         (Item 2.02 8-Ks,      (table selection, sum      observations, checks,
+          EX-99.1, XBRL)        tie-out, XBRL anchor)      failures, runs)
+                                                              │
+                         analytics (quarters, recasts, changes, normalization)
+                                                              │
+                         api / web / export ◄── snapshot (read model)
 ```
 
-No orchestration connects these steps yet. Callers compose them directly.
+Commands (from `backend/`, `SEC_USER_AGENT` set for ingest):
+`python -m app.pipeline.cli ingest --quarters 8`, `python -m app.pipeline.cli export`,
+`uvicorn app.api.main:app --port 8000`, `python -m tools.eval.score_bridge`.
 
 ## Dependency rules
 
@@ -49,6 +56,9 @@ These are enforced by `backend/tests/test_architecture_boundaries.py`:
 2. No module imports an LLM SDK (groq, openai, anthropic, ...).
 3. `extraction/` and `classification/` never import `ingestion/`.
 4. `classification/` never imports `extraction/`.
+5. `store/` imports neither `ingestion/` nor `extraction/`.
+6. `analytics/`, `api/` and `export/` never import `ingestion/` or `pipeline/`:
+   served numbers come from stored observations, never a live fetch.
 
 ## Engineering principles
 
@@ -70,15 +80,14 @@ These carry over from the earlier product because they still hold:
 
 ## Known gaps
 
-These are verified against the code as of 2026-10-14:
+Verified against the code and the 2026-10-23 run (`eval/RESULTS.md`):
 
 | Area | Gap |
 |---|---|
-| EDGAR client | Reads only `filings.recent` from the submissions API. Older filings (`filings.files` pages) are not fetched. There is no 8-K `items` filter (e.g. 2.02). Default cache dir is relative to the working directory. |
-| HTML extractor | Records use placeholder legacy PDF fields (`page=1`, full-page bbox). `HtmlLocator.url` is a CIK-qualified Archives URL when the caller passes `cik` (or a valid Archives URL); otherwise it is `None`, never derived from the accession alone. The detector is keyword-based and defaults to "Adjusted EBITDA". |
-| Table parser | Column → period binding is heuristic. Caption scale is not passed into `scale_and_sign`. `row_headers` only reads label text in columns 0–1, so indented bridge labels in later columns are missed (seen in a real EX-99.1, 2026-10-14). Titles placed in elements before the table are often not captured, so many tables fall back to `Table N` (all 30 gold tables do, 2026-10-17). Period headers are searched only in the first four rows. `get_element_xpath` uses `list.index`, and BeautifulSoup compares tags by content, so identical sibling elements get the same XPath; cell XPaths are not unique. |
-| iXBRL parser | Handles `ix:nonFraction` with `endDate`/`instant` only. No `startDate`, dimensions, unit resolution, or `ixt` transforms. Facts with an invalid scale or unparseable value are skipped with a logged warning. There is no structured skip list yet. |
-| EX-99 extractor | HTML only. PDF and image exhibits log a warning and return no records. |
-| Taxonomy | The seed is `classification/seed_taxonomy.json` (84 items, tracked). `TaxonomyRepository` reads user overrides from `$FOOTNOTE_DATA_DIR/taxonomy.json` (default `backend/data/`, gitignored), and that file **replaces** the seed when present. The aliases are hand-written and unvalidated on a gold set. Fuzzy (token-set) matches are suggestions only (`is_matched=False`), because the metric scores 1.0 on token subsets. |
-| Scale exemptions | Per-share / percent detection is label-keyword based. Share-count rows are scaled like dollar rows (correct for "in millions, except per share" tables, wrong for tables that state share counts in units). |
-| Validation | 30-release gold set (`eval/gold/labels/`) and scorer (`tools.eval.score`). Baseline on 2026-10-17: table found 20/30 releases, line exact match 15.5%, scale 0%, sign 49.4% ([eval/RESULTS.md](eval/RESULTS.md)). |
+| EDGAR client | Reads only `filings.recent` (enough for 8 quarters of the 50 issuers); `filings.files` paging (P1-04) not built. |
+| Bridge engine | Bridges laid out in reverse (EBITDA down to net income, e.g. BYD), tables that interleave amount and margin columns (USFD), and metrics other than EBITDA/OIBDA (AMCX "Adjusted Operating Income") are not found and are recorded as failures with a reason. Only one bridge per release (the headline) is kept. |
+| XBRL anchor | Net income / operating income / pre-tax concepts only; dimensional facts are not used. |
+| Categories | Deterministic label rules suggest categories (`source='rule'`); no human has confirmed any yet. Unmatched labels are `OTHER` and block the normalized figure. |
+| Normalization | Policy v0.1 is a draft (P0-14 open): every normalized figure is a preview. |
+| Hosting | Local only (SQLite, accession cache). Neon/R2/Cloud Run need the owner's accounts. |
+| Validation | Gold set: 1,297 of 1,304 labels are `model_agreement`; second-labeller agreement (P4-13) not done, so no accuracy figure may be published. |

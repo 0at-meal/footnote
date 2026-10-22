@@ -245,3 +245,37 @@ def test_anchor_derived_ltm() -> None:
     assert ok["status"] == "pass" and "derived" in ok
     bad = anchor_check(FACTS, "Net income", col, Decimal(212), 1_000_000, Decimal(1))
     assert bad["status"] == "mismatch"
+
+
+def test_anchor_derives_fiscal_fourth_quarter() -> None:
+    """Q4 has no 3-month XBRL fact; it is FY minus the 9-month YTD (fixture facts)."""
+    facts: dict[str, Any] = {
+        "facts": {
+            "us-gaap": {
+                "NetIncomeLoss": {
+                    "units": {
+                        "USD": [
+                            {
+                                "start": "2025-01-01",
+                                "end": "2025-12-31",
+                                "val": 400_000_000,
+                                "accn": "a",
+                                "filed": "2026-02-20",
+                            },
+                            {
+                                "start": "2025-01-01",
+                                "end": "2025-09-30",
+                                "val": 310_000_000,
+                                "accn": "b",
+                                "filed": "2025-10-30",
+                            },
+                        ]
+                    }
+                }
+            }
+        }
+    }
+    col = PeriodColumn(span=(1, 2), header="", months=3, end_date=date(2025, 12, 31))
+    result = anchor_check(facts, "Net income", col, Decimal(90), 1_000_000, Decimal(1))
+    assert result["status"] == "pass"
+    assert result["derived"] == "fiscal year - nine-month YTD"

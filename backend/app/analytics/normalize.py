@@ -76,14 +76,23 @@ class Category:
 
 
 def category_for(store: Store, cik: str, key: str) -> Category:
-    """Label memory first; otherwise record a rule suggestion and return it."""
+    """
+    A human decision in label memory wins. Otherwise the current rules decide,
+    and label memory is refreshed so it always shows what the rules say now.
+    """
     rows = store.query(
         "SELECT code, components, flags, source FROM label_memory "
         "WHERE cik = ? AND line_key = ?",
         (cik, key),
     )
-    if not rows:
+    if not rows or rows[0]["source"] == "rule":
         s = suggest(key)
+        if rows and (
+            rows[0]["code"],
+            tuple(json.loads(rows[0]["components"])),
+            tuple(json.loads(rows[0]["flags"])),
+        ) == (s.code, s.components, s.flags):
+            return Category(s.code, s.components, s.flags, "rule")
         store.set_label(cik, key, s.code, "rule", RULES_VERSION, s.components, s.flags)
         return Category(s.code, s.components, s.flags, "rule")
     r = rows[0]

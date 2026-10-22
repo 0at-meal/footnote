@@ -93,3 +93,23 @@ def test_headline_label_skips_ratios_and_parts() -> None:
     </table>"""
     table = extract_html_tables(BeautifulSoup(html, "lxml"))[0]
     assert headline_label(table) == "Adjusted EBITDA"
+
+
+def test_line_key_ignores_invisible_characters_and_footnotes() -> None:
+    from app.extraction.bridge.keys import line_key
+
+    zw = "\u200b"
+    assert line_key(f"Attributable EBITDA (4) {zw} {zw}") == "attributable ebitda"
+    assert line_key("Other income (6)\N{NO-BREAK SPACE}") == "other income"
+
+
+def test_line_key_bracket_footnotes_and_hyphens() -> None:
+    from app.extraction.bridge.keys import line_key
+
+    assert line_key("Normalized depreciation and amortization [2] [4] [5]") == (
+        "normalized depreciation and amortization"
+    )
+    assert line_key("Stock-based compensation [4]") == line_key(
+        "Stock based compensation"
+    )
+    assert line_key("Adjusted EBITDA 3") == "adjusted ebitda"

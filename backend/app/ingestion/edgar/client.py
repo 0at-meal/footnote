@@ -11,10 +11,12 @@ Implements:
 - Explicit ForeignFilerUnsupportedError on 20-F, 40-F, 6-K (no silent failure).
 """
 
+import json
 import logging
 import os
 import re
 import time
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -242,15 +244,23 @@ class EdgarClient:
         data: dict[str, Any] = res.json()
         return data
 
-    def get_company_facts(self, cik: str) -> dict[str, Any]:
+    def get_company_facts(
+        self, cik: str, same_day_cache: bool = True
+    ) -> dict[str, Any]:
         """
         Fetches the XBRL companyfacts payload (all reported facts) for a CIK.
 
-        Not cached on disk: unlike filing documents, companyfacts grows as new
-        filings are made. Callers that need reproducibility must record the
-        facts they use (concept, value, period, accession).
+        companyfacts grows as new filings are made, so it is cached for the
+        current UTC day only (``<cache_dir>/companyfacts/CIK<cik>-<date>.json``):
+        re-running an ingest on the same day reuses it, a later day refetches.
+        Callers that need reproducibility must record the facts they use.
         """
         cik10 = self.resolve_cik(cik)
+        day = datetime.now(UTC).date().isoformat()
+        cache_file = self.cache_dir / "companyfacts" / f"CIK{cik10}-{day}.json"
+        if same_day_cache and cache_file.exists():
+            cached: dict[str, Any] = json.loads(cache_file.read_text(encoding="utf-8"))
+            return cached
         url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik10}.json"
         res = self._request_with_retry(url, host="data.sec.gov")
         if res.status_code == 404:
@@ -260,6 +270,9 @@ class EdgarClient:
                 f"EDGAR companyfacts API returned status {res.status_code} for CIK {cik10}"
             )
         data: dict[str, Any] = res.json()
+        if same_day_cache:
+            cache_file.parent.mkdir(parents=True, exist_ok=True)
+            cache_file.write_text(json.dumps(data), encoding="utf-8")
         return data
 
     def get_filings(

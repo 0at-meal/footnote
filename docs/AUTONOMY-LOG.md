@@ -40,3 +40,31 @@ drift, not a repo defect. Fix: `python -m pip install -r requirements-dev.txt`.
 
 **Stop reason.** Every remaining Phase 0 item is manual-only (P0-12, P0-13 acceptance,
 P0-14, human check of P0-08/09), and Phase 1 is behind the unmet gate.
+
+---
+
+## 2026-10-23 — run 2 (Claude Code, owner directive: "go through all the phases")
+
+**Directive.** The owner asked for the whole platform before an investor meeting the next
+day, with every human step done by the agent. The parts an agent may not or cannot do
+honestly are listed under "Owner must do next". They were not simulated.
+
+| Item | Type | What happened | Owner must do next |
+|---|---|---|---|
+| P1-04/05/08/09/10 ingest | built | 8-K Item 2.02 filter, cached index, same-day companyfacts cache, 50-issuer EDGAR-resolved universe, idempotent ingest with a failures table | Review `config/universe.yaml` |
+| P1-01 store | built (local edition) | SQLite append-only schema v1 (ADR-010) | Open Neon/R2 accounts when ready |
+| P2-01/04/05/06 bridge engine | built | 30/30 gold table selection; 338/344 held-out bridges tie out in every period | **Human check**: confirm 10 held-out bridges against sec.gov (RESULTS B) |
+| P2-07/08, P3-03..06 | built | Label memory with rule suggestions, policy file, recasts, definition changes, recurrence, normalized EBITDA (preview) | Confirm or correct categories (all 992 are `rule`) |
+| P2-14 | built | Bridge scorer and CI gate | — |
+| P4-01/03/04/05/07 | built | API, web app, Excel export | — |
+| P4-12 public demo | built (artifact) | Static snapshot published as a private claude.ai artifact | Share it from the page's Share menu if you want others to open it |
+| Market research | desk research | `docs/research/market.md`, with sources | Not customer evidence |
+| Pitch deck | drafted | Slides artifact; the raise amount and contact are placeholders | Fill `[$__]` and contact; rehearse |
+| P0-12 interviews, P0-14 spec review | **not done** | An agent cannot hold real customer interviews; desk research does not count | Run them (kit in `docs/discovery/`) |
+| Paid users, Stripe, Clerk, ToS, entity | **not done** | Creating accounts and taking payments are owner actions | P4-10 |
+| P4-13 second labeller | **not done** | Needs a second person | Before any accuracy figure is published |
+
+**Sources.** See `docs/research/market.md`.
+
+**Stop reason.** The engineering is built and measured. The open items need the owner.
+

@@ -149,12 +149,13 @@ svg text { fill: var(--muted); font-family: var(--font-data); font-size: 11px; }
     return x < 0 ? "(" + s + ")" : s;
   }
   function pct(v) { return v == null ? "—" : (v * 100).toFixed(1) + "%"; }
-  function qlabel(pid) {
-    var d = pid.slice(3); var p = d.split("-");
-    var mon = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][+p[1] - 1];
-    return mon + " " + p[2] + ", " + p[0];
+  var MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  function parts(pid) { var i = pid.indexOf("-"); var d = pid.slice(i + 1).split("-"); return { months: +pid.slice(0, i - 1), y: d[0], m: +d[1], day: +d[2] }; }
+  function qlabel(pid) { var p = parts(pid); return MON[p.m - 1] + " " + p.day + ", " + p.y; }
+  function short(pid) {
+    var p = parts(pid); var base = MON[p.m - 1] + " '" + p.y.slice(2);
+    return p.months === 3 ? base : (p.months === 12 ? "12M to " : p.months + "M to ") + base;
   }
-  function short(pid) { var p = pid.slice(3).split("-"); return ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][+p[1] - 1] + " '" + p[0].slice(2); }
   function src(url, text) { return url ? '<a href="' + esc(url) + '" target="_blank" rel="noopener" title="Open the exact line on sec.gov">' + (text || "sec.gov ↗") + "</a>" : '<span class="tag">no link</span>'; }
   function issuer(t) { return S.issuers.find(function (d) { return d.ticker === t; }); }
   function latest(d) { return d.quarters.length ? d.quarters[d.quarters.length - 1] : null; }
@@ -216,7 +217,7 @@ svg text { fill: var(--muted); font-family: var(--font-data); font-size: 11px; }
   function chart(d) {
     var qs = d.quarters.filter(function (q) { return q.reported_usd != null; });
     if (qs.length < 2) return '<div class="empty">Fewer than two verified quarters so far.</div>';
-    var W = 720, H = 220, L = 64, R = 16, T = 14, B = 30;
+    var W = 720, H = 220, L = 64, R = 34, T = 14, B = 30;
     var vals = [];
     qs.forEach(function (q) { vals.push(q.reported_usd); if (q.normalized_usd != null) vals.push(q.normalized_usd); });
     var lo = Math.min(0, Math.min.apply(null, vals)), hi = Math.max.apply(null, vals);
@@ -292,10 +293,10 @@ svg text { fill: var(--muted); font-family: var(--font-data); font-size: 11px; }
   }
   function changePanel(d) {
     var c = d.changes;
-    var K = { added: ["Added", "warn"], removed: ["Dropped", "muted"], metric_renamed: ["Renamed metric", "bad"] };
+    var K = { added: ["Added", "warn"], removed: ["Dropped", "muted"], renamed: ["Renamed", "muted"], metric_renamed: ["Renamed metric", "bad"], layout_changed: ["New layout", "muted"] };
     return '<div class="panel"><h2>Definition changes</h2><p class="sub" style="font-size:13px">Add-backs that appear or disappear between consecutive quarters, and renamed headline metrics.</p>' +
       (c.length ? '<div class="scroll"><table><thead><tr><th>Quarter</th><th>Change</th><th>Line</th><th class="n">As shown</th></tr></thead><tbody>' +
-        c.slice(-14).reverse().map(function (x) { var k = K[x.kind]; return '<tr><td class="mono">' + short(x.period_id) + '</td><td><span class="chip ' + k[1] + '">' + k[0] + "</span></td><td>" + (x.kind === "metric_renamed" ? esc(x.prior_label) + " → " : "") + src(x.url, esc(x.label)) + '</td><td class="n">' + esc(x.value_raw || "") + "</td></tr>"; }).join("") + "</tbody></table></div>" : '<div class="empty">No changes between the quarters ingested.</div>') + "</div>";
+        c.slice(-14).reverse().map(function (x) { var k = K[x.kind] || [x.kind, "muted"]; return '<tr><td class="mono">' + (x.period_id ? short(x.period_id) : esc(x.filed)) + '</td><td><span class="chip ' + k[1] + '">' + k[0] + "</span></td><td>" + (x.prior_label && x.kind !== "layout_changed" ? esc(x.prior_label) + " → " : "") + src(x.url, esc(x.label)) + '</td><td class="n">' + esc(x.value_raw || "") + "</td></tr>"; }).join("") + "</tbody></table></div>" : '<div class="empty">No changes between the quarters ingested.</div>') + "</div>";
   }
   function releases(d) {
     return '<div class="panel"><h2>Every release read</h2><p class="sub" style="font-size:13px">Nothing is dropped silently: each Item 2.02 release appears here with what was found and every check that did not pass.</p><div class="scroll"><table><thead><tr><th>Filed</th><th>Release</th><th>Headline</th><th>Status</th><th>Exceptions</th></tr></thead><tbody>' +
@@ -307,7 +308,7 @@ svg text { fill: var(--muted); font-family: var(--font-data); font-size: 11px; }
 
   // ---------------------------------------------------------------- feed
   function changes() {
-    var K = { recast: ["Recast", "bad"], added: ["Add-back added", "warn"], removed: ["Add-back dropped", "muted"], metric_renamed: ["Metric renamed", "bad"], recurring_addback: ["Recurring “one-off”", "warn"] };
+    var K = { recast: ["Recast", "bad"], recurring_addback: ["Recurring “one-off”", "warn"], added: ["Add-back added", "warn"], removed: ["Add-back dropped", "muted"], metric_renamed: ["Metric renamed", "bad"], renamed: ["Line renamed", "muted"], layout_changed: ["New layout", "muted"] };
     var items = S.feed.filter(function (i) { return !state.feedType || i.type === state.feedType; });
     var opts = '<option value="">All changes (' + S.feed.length + ")</option>" + Object.keys(K).map(function (k) { var n = S.feed.filter(function (i) { return i.type === k; }).length; return '<option value="' + k + '"' + (state.feedType === k ? " selected" : "") + ">" + K[k][0] + " (" + n + ")</option>"; }).join("");
     main.innerHTML = '<div class="fade" style="display:flex;flex-direction:column;gap:20px"><div><h1>What changed in the bridges</h1><p class="sub">Restated prior-period numbers, add-backs that appear or vanish, renamed metrics, and “non-recurring” items that recur in 3 of the last 4 quarters. These are the changes aggregators merge away.</p></div>' +
@@ -315,9 +316,10 @@ svg text { fill: var(--muted); font-family: var(--font-data); font-size: 11px; }
       '<div class="panel"><div class="feed">' + (items.length ? items.slice(0, 400).map(function (i) {
         var k = K[i.type] || [i.type, "muted"];
         var what = i.type === "recast" ? esc(i.label) + " for " + short(i.period_id) + ": " + src(i.first_url, m(i.first_usd)) + " → " + src(i.latest_url, m(i.latest_usd)) + ' <span class="tag">(' + (i.delta_usd >= 0 ? "+" : "") + m(i.delta_usd) + "m)</span>"
-          : i.type === "metric_renamed" ? esc(i.prior_label) + " → " + src(i.url, esc(i.label))
+          : (i.type === "metric_renamed" || i.type === "renamed") ? esc(i.prior_label) + " → " + src(i.url, esc(i.label)) + (i.value_raw ? " " + esc(i.value_raw) : "")
+          : i.type === "layout_changed" ? "Bridge layout changed (" + esc(i.value_raw) + "): " + src(i.url, esc(i.label))
           : i.type === "recurring_addback" ? src(i.url, esc(i.label)) + ' <span class="chip">' + esc(i.code) + "</span> " + esc(i.value_raw) + " in " + short(i.period_id)
-          : src(i.url, esc(i.label)) + " " + esc(i.value_raw || "") + " in " + short(i.period_id);
+          : src(i.url, esc(i.label)) + " " + esc(i.value_raw || "") + (i.period_id ? " in " + short(i.period_id) : "");
         return '<div class="item"><span class="mono tag">' + esc(i.filed || "") + '</span><a href="#' + i.ticker + '" data-t="' + i.ticker + '"><strong>' + i.ticker + '</strong></a><span class="kind"><span class="chip ' + k[1] + '">' + k[0] + '</span></span><span class="what">' + what + "</span></div>";
       }).join("") : '<div class="empty">No changes of this type.</div>') + "</div></div></div>";
     document.getElementById("ft").addEventListener("change", function (e) { state.feedType = e.target.value; changes(); });

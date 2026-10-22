@@ -52,7 +52,7 @@ def main(argv: list[str] | None = None) -> int:
             store,
             universe,
             quarters=args.quarters,
-            command=" ".join(["ingest", *(argv or sys.argv[1:])]),
+            command=" ".join(argv or sys.argv[1:]),
         )
         print(json.dumps(stats.as_dict(), indent=2))
     elif args.cmd == "export":

@@ -7,6 +7,100 @@ agreement is reported (P4-13).
 
 ---
 
+## 2026-10-23: bridge engine (bridge-5) on the gold set and on 388 held-out releases
+
+Agent run under the owner directive of 2026-10-23 (ADR-010). **The Phase 0 gate is still
+open**: rows 4 and 5 of the gate table below are unchanged. These numbers are internal (P4-13).
+
+### A. Gold set (in-sample regression check)
+
+`cd backend && python -m tools.eval.score_bridge --json ../eval/results/bridge-2026-10-23.json`
+
+- Engine: `app.extraction.bridge.engine.extract_headline_bridge`. It reads the whole document
+  and selects the table itself; no gold table index or metric label is passed in.
+- 30 releases, 1,202 scored values (`model_agreement` 1,197, `human` 5, `tieout` 0).
+- table_found **100.0%** (30/30 releases; the P0-09 extractor: 20/30). line_exact_match, role,
+  sign and scale accuracy are all **100.0%** (1,202/1,202).
+- **Caveat.** The gold values were drafted by the same row and period parsing (P0-05, on the
+  owner-chosen table) and then confirmed by an independent model reading or the owner. So
+  these figures show the engine reproduces verified labels *with automatic table
+  selection*. They are not an independent estimate of parsing accuracy. Gated in CI by
+  `eval/thresholds-bridge.yaml` (P2-14).
+
+### B. Held-out releases (independent, arithmetic verification)
+
+`python -m app.pipeline.cli ingest --quarters 8` (run 9, engine `bridge-5`, 2026-10-23).
+
+- Universe: `config/universe.yaml`, 50 issuers with CIKs resolved from EDGAR. Every Item 2.02
+  8-K from 2024-09-30 to 2026-10-22: 421 releases, 418 with an HTML EX-99.1. **388 of them
+  are not in the gold set**, and their results come from code never tuned on them, except
+  through the error analysis listed in section C.
+- Verification is arithmetic, not labels. The **sum tie-out** checks that the start plus
+  the adjustments equals the stated total within max(1, ⌈n/2⌉) units. The **GAAP anchor**
+  checks that the start equals the XBRL companyfacts value for the same period.
+
+| | Held-out (388) | Gold (30) | All (418) |
+|---|---|---|---|
+| Releases with a headline bridge found | 344 (88.7%) | 30 | 374 (89.5%) |
+| …that tie out in **every** period | **338 / 344 (98.3%)** | 30 / 30 | 368 / 374 (98.4%) |
+| Period-level sum tie-outs passed | 1,191 / 1,209 (98.5%) | 100 / 100 | 1,291 / 1,309 |
+| GAAP anchor: match / mismatch / no XBRL fact | 1,009 / 83 / 71 | 95 / 1 / 4 | 1,104 / 84 / 75 |
+
+Anchor matches where XBRL has a comparable fact: **1,104 / 1,188 (92.9%)**. The 84
+mismatches are concentrated: SPB 28, CNK 16, CC 8, MAT 6, and 4 or fewer elsewhere. By
+column: 54 are 3M, 15 are 12M, 9 are 9M and 6 are 6M. CC's line up with its recasts: CC
+re-reported earlier periods with different values (for example, Q2 2024 net income was 70
+in its Nov 2024 release and 60 in its Aug 2025 release), and the XBRL facts carry the
+later values. The
+others are **not yet investigated**. A mismatch never changes a stored value; it is shown
+as an exception on the release.
+
+**Not found (44 releases), each with a recorded reason.** By reason: no EBITDA total with
+a GAAP start above it (25), only estimate or repeated-period columns (11), and no tables
+at all, meaning image or PDF-only exhibits (8). By issuer:
+- USFD 11: amount and margin columns are interleaved;
+- BYD 9: the bridge runs in reverse, from EBITDA down to net income;
+- AMCX 8: the metric is "Adjusted Operating Income", not EBITDA;
+- CLF 3, GTN 2, OLN 2, and 1 each for THC, RXT, PENN, NCLH, CNK, SBGI, CCO, ACHC and COTY.
+
+The 3 releases without an HTML EX-99.1 are recorded as index failures.
+
+**Human check.** Not done. CLAUDE.md requires a person to check output against sec.gov
+before a feature counts as done. This agent spot-checked rendered bridges (CC, MGM) against
+their own arithmetic only.
+
+### C. Error analysis that changed the engine (P2-10, P2-11..13)
+
+| Class (held-out) | Fix | Engine |
+|---|---|---|
+| Segment breakdown repeats the total under the bridge (RRR, CHDN) | try every EBITDA row as the total | bridge-2 |
+| Per-unit and same-facility totals picked (RCL "per APCD", ACHC) | excluded as totals | bridge-2 |
+| Start "income from continuing operations" not recognized (CCO) | added to GAAP starts | bridge-2 |
+| Estimate ranges ("Low/High (Estimated)") stored as actuals (RXT) | columns not stored | bridge-2 |
+| "Total adjustments" spanning headed blocks read as an adjustment (CHDN) | cross-heading subtotal | bridge-3 |
+| Margin rows inside the bridge (COTY) | memo, not summed | bridge-3 |
+| "Net Earnings" start (POST), "Adjusted OIBDA" (OUT), "$ (268.6)" (CLVT) | recognized | bridge-3 |
+| Segment-per-column tables (OUT) | ranked below consolidated | bridge-3 |
+| "% of sales" columns beside amounts (AVTR) | ratio columns not stored | bridge-4 |
+| Zero-width characters and `[2]` footnotes splitting line keys (AMC, NWL) | ignored in keys | bridge-4 |
+| Fiscal Q4 has no 3-month XBRL fact | FY − 9M YTD | bridge-3 |
+| "(Millions of U.S. dollars)" caption (TROX) | recognized | bridge-5 |
+
+### D. Normalization preview (draft policy v0.1, rule-suggested categories)
+
+- Latest quarter computed for 40 of 46 issuers with a verified quarter. The rest are blocked
+  by an unclassified line (5) or an unknown scale (1). 992 label-memory entries, all
+  `source=rule`, pending human review.
+- **The deterministic code reproduces the spec's hand-worked examples.** CC Q2 2026: 247
+  becomes **−125** (spec §9.1). WYNN Q2 2026: 568,309 becomes **498,805** (§9.3). In §9.2
+  (TDG) recurrence was *unknown* with two quarters. With eight quarters of history, `MA`
+  is now recurring, so normalized is 1,447 − 35 = 1,412: the history resolved it, as §9.2
+  predicted.
+- Change feed: 205 recasts, 50 recurring "non-recurring" add-backs, 142 add-backs added,
+  163 dropped, 336 renamed lines, 7 renamed metrics, 20 layout changes.
+
+---
+
 ## Phase 0 exit gate: status as of 2026-10-17
 
 **Phase 0 is not complete, and Phase 1 stays closed.** Three of five criteria are met. The

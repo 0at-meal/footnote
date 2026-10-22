@@ -20,6 +20,8 @@ from app.analytics.classify import suggest
         ("loss on extinguishment of debt", "DEBT"),
         ("loss on debt financing transactions", "DEBT"),
         ("gain on sales of assets and businesses, net", "DIVEST"),
+        ("property transactions, net", "DIVEST"),
+        ("qualified spend recovery", "REV"),
         ("pre-opening expenses", "PREOPEN"),
         ("warrant revenue", "REV"),
         ("other, net", "OTHER_NR"),

@@ -206,3 +206,13 @@ def test_recurring_category_is_reversed(store: Store) -> None:
     assert restr.recurrence["RESTR"] == "recurring"
     assert restr.treatment == "exclude"
     assert latest.normalized == Decimal(115) - Decimal(9)
+
+
+def test_coverage_counts_only_the_current_extraction(store: Store) -> None:
+    """Re-extracting with a new engine version must not double the check counts."""
+    before = build_snapshot(store)["coverage"]["sum_checks"]
+    hb = extract_headline_bridge(Q1, accession="0000000001-26-000001")
+    row = bridge_row(hb, "0000000001-26-000001", CIK, "ex991.htm")
+    row.engine_version = "test-next"
+    assert store.add_bridge(row, CIK, "2026-04-30", 1)
+    assert build_snapshot(store)["coverage"]["sum_checks"] == before

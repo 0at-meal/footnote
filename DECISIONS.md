@@ -5,6 +5,36 @@ Newest first. One entry per decision, with date and reason. Entries before
 those entries described features as deployed that were never wired into the
 running app (see the retraction below).
 
+- **2026-10-23: Phases 1–4 engineering built ahead of the open Phase 0 gate (ADR-010).**
+  The owner directed the agent to "go through all the phases" before an investor meeting.
+  The gates are unchanged, and nothing here marks Phase 0 complete or a later phase open.
+  Decisions taken in the run:
+  - The bridge engine is the P0-05 parser moved into `app/extraction/bridge/`, with
+    automatic headline-table selection. Ranking: ties out in every period, then distinct
+    periods, then a current-quarter column, then a net-income start, then more lines, then
+    the earlier table. `tools.gold.draft` now imports it, so gold drafting and the product
+    share one engine.
+  - The local SQLite edition of schema v1 is append-only. Each engine version re-extracts
+    into new rows; `current_bridges` serves the newest one.
+  - The second scorer `tools.eval.score_bridge` and its CI floor `eval/thresholds-bridge.yaml`
+    are in-sample. Its caveat (gold values drafted by the same parser) is printed in every
+    report.
+  - Categories are suggested by deterministic label rules (`app/analytics/classify.py`),
+    stored as `source='rule'` and refreshed when the rules change. A human decision always
+    wins. No LLM is used. This extends spec §4.5 (label memory or human) with rule
+    suggestions that are shown as pending review.
+  - Normalized EBITDA is computed under draft policy v0.1 and labelled a preview while the
+    spec is unfrozen.
+  - Line keys ignore zero-width characters, non-breaking spaces, `[n]` and `(n)` footnotes,
+    and hyphens between letters. Definition changes are compared release over release. A
+    dropped line and an added line with the same category are reported as *renamed*. When
+    fewer than half the lines carry over, one *layout changed* event is reported instead
+    of a line diff.
+  - When a period repeats in a table, only a column headed Total or Consolidated is kept;
+    otherwise none is. Estimate and ratio columns are never stored.
+  - The XBRL anchor derives a fiscal Q4 as FY − 9M YTD, as it already derived LTM.
+  - Market and competitor desk research is in `docs/research/market.md`. It is not customer
+    evidence and does not count toward P0-12.
 - **2026-10-17: ADRs written for the current direction (P0-15).** `docs/adr/`:
   - ADR-005 ingest: scheduled batch, one EDGAR gateway, write-once R2 raw store;
   - ADR-006 global append-only public data vs. tenant data under RLS;

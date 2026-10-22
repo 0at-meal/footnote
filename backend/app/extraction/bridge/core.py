@@ -294,6 +294,9 @@ def to_decimal(raw: str) -> Decimal | None:
         return None
     parsed = parse_raw_numeric(raw.strip())
     if parsed is None:
+        # "$ (268.6)": a currency sign before an accounting negative.
+        parsed = parse_raw_numeric(raw.replace("$", "").strip())
+    if parsed is None:
         return None
     d = Decimal(str(parsed))
     return d.quantize(Decimal(1)) if d == d.to_integral_value() else d.normalize()
@@ -358,15 +361,26 @@ def solve(
             abs(v - targets[i]) <= tolerance(k[i], units[i]) for i, v in present
         )
 
+    # Adjustments since the last subtotal, across headings: a "Total
+    # adjustments" row can sum several headed blocks.
+    since = [Decimal(0)] * n
+    since_count = 0
     for line in body:
         if line is None:
             block, block_count = [Decimal(0)] * n, 0
             continue
-        if close_all(line.values, running, summed) or (
-            block_count >= 2 and close_all(line.values, block, [block_count] * n)
+        if (
+            close_all(line.values, running, summed)
+            or (block_count >= 2 and close_all(line.values, block, [block_count] * n))
+            or (
+                since_count > block_count >= 0
+                and since_count >= 2
+                and close_all(line.values, since, [since_count] * n)
+            )
         ):
             roles.append(LineRole.subtotal)
             block, block_count = [Decimal(0)] * n, 0
+            since, since_count = [Decimal(0)] * n, 0
             continue
         roles.append(LineRole.adjustment)
         for i, v in enumerate(line.values):
@@ -375,8 +389,10 @@ def solve(
             c = direction * line.sign * v
             running[i] += c
             block[i] += c
+            since[i] += c
             summed[i] += 1
         block_count += 1
+        since_count += 1
 
     passes = sum(
         1
@@ -474,6 +490,7 @@ def extract_bridge(
 
 
 _NCI = re.compile(r"non-?controlling", re.IGNORECASE)
+_MARGIN_ROW = re.compile(r"\bmargin\b|% of (?:net )?(?:sales|revenue)", re.IGNORECASE)
 
 
 def _find_total(data: list[Row], metric_label: str, draft: Draft) -> Row | None:
@@ -546,6 +563,11 @@ def _attempt(
         if not row.value_cells:
             if row.label:
                 body.append(None)
+            continue
+        if _MARGIN_ROW.search(row.label):
+            # A ratio shown inside the bridge ("operating income margin") is a
+            # memo line, never an amount that sums to the total.
+            notes.append(f"margin row not part of the bridge: {row.label!r}")
             continue
         body.append(line_from(row, LineRole.adjustment))
     last = line_from(total, LineRole.total)
@@ -681,7 +703,25 @@ def detect_scale(
                 re.sub(r"\s+", " ", quote.group(0)).strip() if quote else ""
             )
             return
+    # "(Millions of U.S. dollars)" / "(Thousands of dollars)": the unit word
+    # first, then "of ... dollars". Only the nearest statement is used.
+    for text in (header_text, preceding_text):
+        m = _UNIT_OF_DOLLARS.search(text)
+        if m:
+            draft.scale = _UNIT_WORDS[m.group(1).lower()]
+            draft.scale_quote = m.group(0).strip()
+            return
     draft.exceptions.append("scale not found in table header or preceding text")
+
+
+_UNIT_OF_DOLLARS = re.compile(
+    r"\(?\s*(thousands|millions|billions) of (?:u\.?s\.? )?dollars\s*\)?", re.IGNORECASE
+)
+_UNIT_WORDS = {
+    "thousands": UnitScale.THOUSANDS,
+    "millions": UnitScale.MILLIONS,
+    "billions": UnitScale.BILLIONS,
+}
 
 
 # ---------------------------------------------------------------- XBRL anchor
@@ -804,6 +844,25 @@ def anchor_check(
         "label": label,
         "concepts": anchor_concepts(label),
     }
+    if not found and period.months == 3:
+        # A fiscal fourth quarter has no 3-month XBRL fact: derive it as the
+        # fiscal year minus the nine-month YTD ending one quarter earlier.
+        for concept in anchor_concepts(label):
+            items = _usd_facts(facts, concept)
+            fy = _fact_for(items, period.end_date, 12, 3)
+            ytd = _fact_for(items, period.end_date - timedelta(days=91), 9, 10)
+            if fy is None or ytd is None:
+                continue
+            derived = (Decimal(str(fy["val"])) - Decimal(str(ytd["val"]))) / multiplier
+            status = "pass" if abs(derived - value) <= unit else "mismatch"
+            return {
+                **base,
+                "status": status,
+                "concept": concept,
+                "xbrl_value": str(derived),
+                "derived": "fiscal year - nine-month YTD",
+                "accn": [fy.get("accn"), ytd.get("accn")],
+            }
     if not found and period.months == 12:
         # Trailing twelve months ending mid-year have no direct XBRL fact; derive
         # them as prior fiscal year + current YTD - prior-year YTD (same concept).

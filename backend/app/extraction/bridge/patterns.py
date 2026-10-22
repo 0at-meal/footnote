@@ -6,7 +6,8 @@ import re
 
 # The GAAP measure a non-GAAP bridge starts from.
 GAAP_START = re.compile(
-    r"\bnet (?:\(loss\) income|income \(loss\)|income|loss)\b"
+    r"\bnet (?:\(loss\) income|income \(loss\)|income|loss|earnings|\(loss\) earnings"
+    r"|earnings \(loss\))\b"
     r"|\boperating (?:income|loss)\b|\bincome (?:\(loss\) )?before\b"
     r"|\b(?:income|loss|income \(loss\)) from continuing operations\b",
     re.IGNORECASE,

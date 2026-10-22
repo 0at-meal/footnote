@@ -20,6 +20,7 @@ from datetime import date
 from decimal import Decimal
 from typing import Any
 
+from app.analytics.classify import suggest
 from app.extraction.bridge.keys import line_key
 from app.store.db import Store
 
@@ -219,7 +220,7 @@ class DefinitionChange:
     filed: str
     period_id: str
     prior_accession: str
-    kind: str  # added | removed | metric_renamed
+    kind: str  # added | removed | renamed | metric_renamed | layout_changed
     label: str
     prior_label: str | None = None
     value_raw: str | None = None
@@ -277,7 +278,59 @@ def definition_changes(store: Store, cik: str) -> list[DefinitionChange]:
     out: list[DefinitionChange] = []
     for prev, cur in itertools.pairwise(ordered):
         period = cur["lead"] or ""
-        for key in sorted(set(cur["lines"]) - set(prev["lines"])):
+        before, after = set(prev["lines"]), set(cur["lines"])
+        if (
+            before
+            and after
+            and len(before & after) < 0.5 * max(len(before), len(after))
+        ):
+            # Most lines differ: the release switched to another table layout
+            # (e.g. a summary bridge). Line-by-line diffs would be noise.
+            out.append(
+                DefinitionChange(
+                    cik,
+                    cur["accession"],
+                    cur["filed"],
+                    period,
+                    prev["accession"],
+                    "layout_changed",
+                    cur["metric"] or "bridge",
+                    prior_label=prev["metric"],
+                    url=cur["total_url"],
+                    value_raw=f"{len(before & after)} of {len(after)} lines carried over",
+                )
+            )
+            continue
+        added = sorted(after - before)
+        removed = sorted(before - after)
+        # A dropped line and a new line in the same category are one renamed
+        # line ("Equity-based compensation" -> "Equity-based compensation
+        # expense"). Unclassified lines are never paired.
+        for new_key in list(added):
+            code = suggest(new_key).code
+            if code == "OTHER":
+                continue
+            old_key = next((k for k in removed if suggest(k).code == code), None)
+            if old_key is None:
+                continue
+            added.remove(new_key)
+            removed.remove(old_key)
+            label, raw, url = cur["lines"][new_key]
+            out.append(
+                DefinitionChange(
+                    cik,
+                    cur["accession"],
+                    cur["filed"],
+                    period,
+                    prev["accession"],
+                    "renamed",
+                    label,
+                    prior_label=prev["lines"][old_key][0],
+                    value_raw=raw,
+                    url=url,
+                )
+            )
+        for key in added:
             label, raw, url = cur["lines"][key]
             out.append(
                 DefinitionChange(
@@ -292,7 +345,7 @@ def definition_changes(store: Store, cik: str) -> list[DefinitionChange]:
                     url=url,
                 )
             )
-        for key in sorted(set(prev["lines"]) - set(cur["lines"])):
+        for key in removed:
             label, raw, url = prev["lines"][key]
             out.append(
                 DefinitionChange(

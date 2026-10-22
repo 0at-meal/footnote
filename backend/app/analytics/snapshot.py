@@ -164,7 +164,11 @@ def _coverage(store: Store) -> dict[str, Any]:
     )
     found = [r for r in per_bridge if r["status"] != "not_found"]
     checks = Counter(
-        (r["kind"], r["status"]) for r in store.query("SELECT kind, status FROM checks")
+        (r["kind"], r["status"])
+        for r in store.query(
+            "SELECT kind, status FROM checks "
+            "WHERE bridge_id IN (SELECT bridge_id FROM current_bridges)"
+        )
     )
     failures = store.query(
         """

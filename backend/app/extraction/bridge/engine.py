@@ -25,6 +25,7 @@ from typing import Any, Literal
 
 from app.extraction.bridge.core import (
     Draft,
+    PeriodColumn,
     build_rows,
     detect_scale,
     extract_bridge,
@@ -41,11 +42,20 @@ _NOT_HEADLINE = re.compile(
     r"|\bper\b|same[- ](?:facility|store)|\bsegments?\b",
     re.IGNORECASE,
 )
+# OIBDA (operating income before D&A) is EBITDA under another name.
+_EBITDA = re.compile(r"ebitda|\boibda\b", re.IGNORECASE)
+# "Adjusted EBITDA and Adjusted EBITDA margin": the margin sits in its own
+# column, the amount is still the bridge total.
+_PAIRED_MARGIN = re.compile(r"\s+and\s+[\w\s]*margin\b.*$", re.IGNORECASE)
 _NET_START = re.compile(r"^\s*(?:gaap\s+)?net\b", re.IGNORECASE)
 # Columns that hold estimates or ranges, not reported results.
 _ESTIMATE = re.compile(
     r"\b(?:estimated?|outlook|guidance|forecast|expected|low|high|range)\b",
     re.IGNORECASE,
+)
+_CONSOLIDATED = re.compile(r"\b(?:total|consolidated)\b", re.IGNORECASE)
+_RATIO_COLUMN = re.compile(
+    r"%\s*$|\bmargin\b|\bpercent\b|% of (?:net )?(?:sales|revenue)", re.IGNORECASE
 )
 _CURRENT_QUARTER_DAYS = (0, 120)
 
@@ -62,11 +72,14 @@ class Candidate:
     net_start: bool
 
     total_row: int = 0
+    distinct_periods: bool = True
 
     @property
-    def rank(self) -> tuple[bool, bool, bool, int, int, int]:
+    def rank(self) -> tuple[bool, bool, bool, bool, int, int, int]:
         return (
             self.ties_out,
+            # Repeated periods mean one column per segment, not the consolidated bridge.
+            self.distinct_periods,
             self.current_quarter,
             self.net_start,
             len(self.draft.lines),
@@ -111,8 +124,8 @@ def headline_rows(table: HtmlTable) -> list[tuple[int, str]]:
         for r in build_rows(table)
         if r.value_cells
         and r.label
-        and "ebitda" in r.label.lower()
-        and not NOT_A_TOTAL.search(r.label)
+        and _EBITDA.search(r.label)
+        and not NOT_A_TOTAL.search(_PAIRED_MARGIN.sub("", r.label))
         and not _NOT_HEADLINE.search(r.label)
     ]
 
@@ -137,6 +150,13 @@ def _candidate(
     extract_bridge(table, label, draft, fiscal_year_end, total_row=total_idx)
     if not draft.lines:
         return None
+    pids = [
+        p.period_id
+        for p in draft.periods
+        if p.period_id
+        and not _RATIO_COLUMN.search(p.header)
+        and not _ESTIMATE.search(p.header)
+    ]
     checks = draft.sum_checks
     ties_out = bool(checks) and all(c.passed for c in checks)
     lo, hi = _CURRENT_QUARTER_DAYS
@@ -154,6 +174,7 @@ def _candidate(
         current_quarter=current,
         net_start=bool(_NET_START.search(draft.lines[0].label)),
         total_row=total_idx,
+        distinct_periods=len(pids) == len(set(pids)),
     )
 
 
@@ -241,20 +262,32 @@ def _drop_unusable_columns(draft: Draft) -> None:
     """
     Estimate / outlook columns and repeated periods are not observations of a
     reported result. Their period is unset (so nothing is stored for them) and
-    each one is listed as an exception.
+    each one is listed as an exception. When a period repeats (one column per
+    segment), only a column headed Total or Consolidated is kept; if there is
+    none, no column of that period is stored rather than guessing.
     """
-    seen: set[str] = set()
+    by_pid: dict[str, list[PeriodColumn]] = {}
     for col in draft.periods:
-        pid = col.period_id
-        if pid is None:
+        if col.period_id is None:
             continue
         if _ESTIMATE.search(col.header):
             draft.exceptions.append(f"estimate column not stored: {col.header!r}")
-        elif pid in seen:
-            draft.exceptions.append(
-                f"duplicate period column not stored: {col.header!r}"
-            )
-        else:
-            seen.add(pid)
+            col.end_date = None
             continue
-        col.end_date = None
+        if _RATIO_COLUMN.search(col.header):
+            # "% of net sales" beside each amount: a ratio, not a bridge value.
+            draft.notes.append(f"ratio column not stored: {col.header!r}")
+            col.end_date = None
+            continue
+        by_pid.setdefault(col.period_id, []).append(col)
+    for cols in by_pid.values():
+        if len(cols) == 1:
+            continue
+        keep = [c for c in cols if _CONSOLIDATED.search(c.header)]
+        for col in cols:
+            if len(keep) == 1 and col is keep[0]:
+                continue
+            draft.exceptions.append(
+                f"repeated period column not stored: {col.header!r}"
+            )
+            col.end_date = None
