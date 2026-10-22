@@ -1,0 +1,605 @@
+{
+  "scorer": "tools.eval.score_bridge",
+  "scorer_version": 1,
+  "engine": "app.extraction.bridge.engine.extract_headline_bridge",
+  "unit": "gold value (one line x one period); dash placeholders not scored",
+  "caveat": "gold values were drafted by the same row/period parsing and confirmed by a model reading or a human; this is not an independent parsing accuracy estimate",
+  "gold": {
+    "releases": 30,
+    "values": 1304,
+    "null_values": 102,
+    "verified_by": {
+      "tieout": 0,
+      "model_agreement": 1297,
+      "human": 7
+    },
+    "labels_sha256": "5d0953b0cb034279eb3ae634b1925bcb274cb7cc2ef722f3c180cedbbf073d20"
+  },
+  "headline_metrics": [
+    "table_found",
+    "line_exact_match",
+    "role_accuracy",
+    "sign_accuracy",
+    "scale_accuracy"
+  ],
+  "metrics": {
+    "table_found": {
+      "overall": {
+        "n": 1202,
+        "correct": 1202,
+        "rate": 1.0
+      },
+      "by_verified_by": {
+        "tieout": {
+          "n": 0,
+          "correct": 0,
+          "rate": null
+        },
+        "model_agreement": {
+          "n": 1197,
+          "correct": 1197,
+          "rate": 1.0
+        },
+        "human": {
+          "n": 5,
+          "correct": 5,
+          "rate": 1.0
+        }
+      },
+      "releases": {
+        "n": 30,
+        "correct": 30,
+        "rate": 1.0
+      }
+    },
+    "line_exact_match": {
+      "overall": {
+        "n": 1202,
+        "correct": 1202,
+        "rate": 1.0
+      },
+      "by_verified_by": {
+        "tieout": {
+          "n": 0,
+          "correct": 0,
+          "rate": null
+        },
+        "model_agreement": {
+          "n": 1197,
+          "correct": 1197,
+          "rate": 1.0
+        },
+        "human": {
+          "n": 5,
+          "correct": 5,
+          "rate": 1.0
+        }
+      }
+    },
+    "role_accuracy": {
+      "overall": {
+        "n": 1202,
+        "correct": 1202,
+        "rate": 1.0
+      },
+      "by_verified_by": {
+        "tieout": {
+          "n": 0,
+          "correct": 0,
+          "rate": null
+        },
+        "model_agreement": {
+          "n": 1197,
+          "correct": 1197,
+          "rate": 1.0
+        },
+        "human": {
+          "n": 5,
+          "correct": 5,
+          "rate": 1.0
+        }
+      }
+    },
+    "sign_accuracy": {
+      "overall": {
+        "n": 1202,
+        "correct": 1202,
+        "rate": 1.0
+      },
+      "by_verified_by": {
+        "tieout": {
+          "n": 0,
+          "correct": 0,
+          "rate": null
+        },
+        "model_agreement": {
+          "n": 1197,
+          "correct": 1197,
+          "rate": 1.0
+        },
+        "human": {
+          "n": 5,
+          "correct": 5,
+          "rate": 1.0
+        }
+      }
+    },
+    "scale_accuracy": {
+      "overall": {
+        "n": 1202,
+        "correct": 1202,
+        "rate": 1.0
+      },
+      "by_verified_by": {
+        "tieout": {
+          "n": 0,
+          "correct": 0,
+          "rate": null
+        },
+        "model_agreement": {
+          "n": 1197,
+          "correct": 1197,
+          "rate": 1.0
+        },
+        "human": {
+          "n": 5,
+          "correct": 5,
+          "rate": 1.0
+        }
+      }
+    }
+  },
+  "failures": {},
+  "releases": [
+    {
+      "ticker": "LUMN",
+      "accession": "0000018926-26-000045",
+      "status": "exceptions",
+      "gold_table": 10,
+      "engine_table": 10,
+      "gold_scale": "millions",
+      "engine_scale": "millions",
+      "sum_tieouts": "2/2",
+      "values": 21,
+      "line_exact": 21,
+      "exceptions": [
+        "XBRL company facts not supplied; GAAP anchor not run"
+      ]
+    },
+    {
+      "ticker": "LUMN",
+      "accession": "0000018926-26-000058",
+      "status": "exceptions",
+      "gold_table": 10,
+      "engine_table": 10,
+      "gold_scale": "millions",
+      "engine_scale": "millions",
+      "sum_tieouts": "4/4",
+      "values": 44,
+      "line_exact": 44,
+      "exceptions": [
+        "XBRL company facts not supplied; GAAP anchor not run"
+      ]
+    },
+    {
+      "ticker": "THC",
+      "accession": "0000070318-26-000023",
+      "status": "exceptions",
+      "gold_table": 13,
+      "engine_table": 13,
+      "gold_scale": "millions",
+      "engine_scale": "millions",
+      "sum_tieouts": "2/2",
+      "values": 25,
+      "line_exact": 25,
+      "exceptions": [
+        "XBRL company facts not supplied; GAAP anchor not run"
+      ]
+    },
+    {
+      "ticker": "THC",
+      "accession": "0000070318-26-000032",
+      "status": "exceptions",
+      "gold_table": 14,
+      "engine_table": 14,
+      "gold_scale": "millions",
+      "engine_scale": "millions",
+      "sum_tieouts": "4/4",
+      "values": 50,
+      "line_exact": 50,
+      "exceptions": [
+        "XBRL company facts not supplied; GAAP anchor not run"
+      ]
+    },
+    {
+      "ticker": "CAR",
+      "accession": "0000723612-26-000025",
+      "status": "exceptions",
+      "gold_table": 9,
+      "engine_table": 9,
+      "gold_scale": "millions",
+      "engine_scale": "millions",
+      "sum_tieouts": "2/2",
+      "values": 22,
+      "line_exact": 22,
+      "exceptions": [
+        "XBRL company facts not supplied; GAAP anchor not run"
+      ]
+    },
+    {
+      "ticker": "CAR",
+      "accession": "0000723612-26-000037",
+      "status": "exceptions",
+      "gold_table": 9,
+      "engine_table": 9,
+      "gold_scale": "millions",
+      "engine_scale": "millions",
+      "sum_tieouts": "4/4",
+      "values": 47,
+      "line_exact": 47,
+      "exceptions": [
+        "XBRL company facts not supplied; GAAP anchor not run"
+      ]
+    },
+    {
+      "ticker": "BHC",
+      "accession": "0000885590-26-000051",
+      "status": "exceptions",
+      "gold_table": 24,
+      "engine_table": 24,
+      "gold_scale": "millions",
+      "engine_scale": "millions",
+      "sum_tieouts": "2/2",
+      "values": 31,
+      "line_exact": 31,
+      "exceptions": [
+        "XBRL company facts not supplied; GAAP anchor not run"
+      ]
+    },
+    {
+      "ticker": "BHC",
+      "accession": "0000885590-26-000105",
+      "status": "exceptions",
+      "gold_table": 24,
+      "engine_table": 24,
+      "gold_scale": "millions",
+      "engine_scale": "millions",
+      "sum_tieouts": "4/4",
+      "values": 63,
+      "line_exact": 63,
+      "exceptions": [
+        "XBRL company facts not supplied; GAAP anchor not run"
+      ]
+    },
+    {
+      "ticker": "CHTR",
+      "accession": "0001091667-26-000027",
+      "status": "exceptions",
+      "gold_table": 3,
+      "engine_table": 3,
+      "gold_scale": "millions",
+      "engine_scale": "millions",
+      "sum_tieouts": "4/4",
+      "values": 32,
+      "line_exact": 32,
+      "exceptions": [
+        "XBRL company facts not supplied; GAAP anchor not run"
+      ]
+    },
+    {
+      "ticker": "CHTR",
+      "accession": "0001091667-26-000051",
+      "status": "exceptions",
+      "gold_table": 3,
+      "engine_table": 3,
+      "gold_scale": "millions",
+      "engine_scale": "millions",
+      "sum_tieouts": "6/6",
+      "values": 48,
+      "line_exact": 48,
+      "exceptions": [
+        "XBRL company facts not supplied; GAAP anchor not run"
+      ]
+    },
+    {
+      "ticker": "WYNN",
+      "accession": "0001174922-26-000034",
+      "status": "exceptions",
+      "gold_table": 4,
+      "engine_table": 4,
+      "gold_scale": "thousands",
+      "engine_scale": "thousands",
+      "sum_tieouts": "2/2",
+      "values": 28,
+      "line_exact": 28,
+      "exceptions": [
+        "XBRL company facts not supplied; GAAP anchor not run"
+      ]
+    },
+    {
+      "ticker": "WYNN",
+      "accession": "0001174922-26-000051",
+      "status": "exceptions",
+      "gold_table": 6,
+      "engine_table": 6,
+      "gold_scale": "thousands",
+      "engine_scale": "thousands",
+      "sum_tieouts": "4/4",
+      "values": 58,
+      "line_exact": 58,
+      "exceptions": [
+        "XBRL company facts not supplied; GAAP anchor not run"
+      ]
+    },
+    {
+      "ticker": "CYH",
+      "accession": "0001193125-26-167000",
+      "status": "exceptions",
+      "gold_table": 9,
+      "engine_table": 9,
+      "gold_scale": "millions",
+      "engine_scale": "millions",
+      "sum_tieouts": "2/2",
+      "values": 16,
+      "line_exact": 16,
+      "exceptions": [
+        "XBRL company facts not supplied; GAAP anchor not run"
+      ]
+    },
+    {
+      "ticker": "CYH",
+      "accession": "0001193125-26-312454",
+      "status": "exceptions",
+      "gold_table": 11,
+      "engine_table": 11,
+      "gold_scale": "millions",
+      "engine_scale": "millions",
+      "sum_tieouts": "4/4",
+      "values": 35,
+      "line_exact": 35,
+      "exceptions": [
+        "XBRL company facts not supplied; GAAP anchor not run"
+      ]
+    },
+    {
+      "ticker": "TDG",
+      "accession": "0001260221-26-000039",
+      "status": "exceptions",
+      "gold_table": 7,
+      "engine_table": 7,
+      "gold_scale": "millions",
+      "engine_scale": "millions",
+      "sum_tieouts": "4/4",
+      "values": 40,
+      "line_exact": 40,
+      "exceptions": [
+        "XBRL company facts not supplied; GAAP anchor not run"
+      ]
+    },
+    {
+      "ticker": "TDG",
+      "accession": "0001260221-26-000052",
+      "status": "exceptions",
+      "gold_table": 7,
+      "engine_table": 7,
+      "gold_scale": "millions",
+      "engine_scale": "millions",
+      "sum_tieouts": "4/4",
+      "values": 40,
+      "line_exact": 40,
+      "exceptions": [
+        "XBRL company facts not supplied; GAAP anchor not run"
+      ]
+    },
+    {
+      "ticker": "CZR",
+      "accession": "0001590895-26-000015",
+      "status": "exceptions",
+      "gold_table": 6,
+      "engine_table": 6,
+      "gold_scale": "millions",
+      "engine_scale": "millions",
+      "sum_tieouts": "2/2",
+      "values": 18,
+      "line_exact": 18,
+      "exceptions": [
+        "XBRL company facts not supplied; GAAP anchor not run"
+      ]
+    },
+    {
+      "ticker": "CZR",
+      "accession": "0001590895-26-000027",
+      "status": "exceptions",
+      "gold_table": 9,
+      "engine_table": 9,
+      "gold_scale": "millions",
+      "engine_scale": "millions",
+      "sum_tieouts": "4/4",
+      "values": 34,
+      "line_exact": 34,
+      "exceptions": [
+        "XBRL company facts not supplied; GAAP anchor not run"
+      ]
+    },
+    {
+      "ticker": "CC",
+      "accession": "0001627223-26-000010",
+      "status": "exceptions",
+      "gold_table": 11,
+      "engine_table": 11,
+      "gold_scale": "millions",
+      "engine_scale": "millions",
+      "sum_tieouts": "5/5",
+      "values": 80,
+      "line_exact": 80,
+      "exceptions": [
+        "XBRL company facts not supplied; GAAP anchor not run"
+      ]
+    },
+    {
+      "ticker": "CC",
+      "accession": "0001627223-26-000021",
+      "status": "exceptions",
+      "gold_table": 11,
+      "engine_table": 11,
+      "gold_scale": "millions",
+      "engine_scale": "millions",
+      "sum_tieouts": "7/7",
+      "values": 119,
+      "line_exact": 119,
+      "exceptions": [
+        "XBRL company facts not supplied; GAAP anchor not run"
+      ]
+    },
+    {
+      "ticker": "IHRT",
+      "accession": "0001628280-26-033471",
+      "status": "exceptions",
+      "gold_table": 9,
+      "engine_table": 9,
+      "gold_scale": "thousands",
+      "engine_scale": "thousands",
+      "sum_tieouts": "2/2",
+      "values": 25,
+      "line_exact": 25,
+      "exceptions": [
+        "XBRL company facts not supplied; GAAP anchor not run"
+      ]
+    },
+    {
+      "ticker": "IHRT",
+      "accession": "0001628280-26-055243",
+      "status": "exceptions",
+      "gold_table": 9,
+      "engine_table": 9,
+      "gold_scale": "thousands",
+      "engine_scale": "thousands",
+      "sum_tieouts": "2/2",
+      "values": 25,
+      "line_exact": 25,
+      "exceptions": [
+        "XBRL company facts not supplied; GAAP anchor not run"
+      ]
+    },
+    {
+      "ticker": "HTZ",
+      "accession": "0001657853-26-000021",
+      "status": "exceptions",
+      "gold_table": 7,
+      "engine_table": 7,
+      "gold_scale": "millions",
+      "engine_scale": "millions",
+      "sum_tieouts": "2/2",
+      "values": 23,
+      "line_exact": 23,
+      "exceptions": [
+        "XBRL company facts not supplied; GAAP anchor not run"
+      ]
+    },
+    {
+      "ticker": "HTZ",
+      "accession": "0001657853-26-000045",
+      "status": "exceptions",
+      "gold_table": 8,
+      "engine_table": 8,
+      "gold_scale": "millions",
+      "engine_scale": "millions",
+      "sum_tieouts": "4/4",
+      "values": 50,
+      "line_exact": 50,
+      "exceptions": [
+        "XBRL company facts not supplied; GAAP anchor not run"
+      ]
+    },
+    {
+      "ticker": "CVNA",
+      "accession": "0001690820-26-000034",
+      "status": "exceptions",
+      "gold_table": 13,
+      "engine_table": 13,
+      "gold_scale": "millions",
+      "engine_scale": "millions",
+      "sum_tieouts": "2/2",
+      "values": 23,
+      "line_exact": 23,
+      "exceptions": [
+        "XBRL company facts not supplied; GAAP anchor not run"
+      ]
+    },
+    {
+      "ticker": "CVNA",
+      "accession": "0001690820-26-000054",
+      "status": "exceptions",
+      "gold_table": 12,
+      "engine_table": 12,
+      "gold_scale": "millions",
+      "engine_scale": "millions",
+      "sum_tieouts": "2/2",
+      "values": 21,
+      "line_exact": 21,
+      "exceptions": [
+        "XBRL company facts not supplied; GAAP anchor not run"
+      ]
+    },
+    {
+      "ticker": "RXT",
+      "accession": "0001810019-26-000041",
+      "status": "exceptions",
+      "gold_table": 19,
+      "engine_table": 19,
+      "gold_scale": "millions",
+      "engine_scale": "millions",
+      "sum_tieouts": "2/2",
+      "values": 21,
+      "line_exact": 21,
+      "exceptions": [
+        "XBRL company facts not supplied; GAAP anchor not run"
+      ]
+    },
+    {
+      "ticker": "RXT",
+      "accession": "0001810019-26-000092",
+      "status": "exceptions",
+      "gold_table": 20,
+      "engine_table": 20,
+      "gold_scale": "millions",
+      "engine_scale": "millions",
+      "sum_tieouts": "4/4",
+      "values": 41,
+      "line_exact": 41,
+      "exceptions": [
+        "XBRL company facts not supplied; GAAP anchor not run"
+      ]
+    },
+    {
+      "ticker": "FUN",
+      "accession": "0001999001-26-000053",
+      "status": "exceptions",
+      "gold_table": 4,
+      "engine_table": 4,
+      "gold_scale": "thousands",
+      "engine_scale": "thousands",
+      "sum_tieouts": "2/2",
+      "values": 28,
+      "line_exact": 28,
+      "exceptions": [
+        "XBRL company facts not supplied; GAAP anchor not run"
+      ]
+    },
+    {
+      "ticker": "FUN",
+      "accession": "0001999001-26-000094",
+      "status": "exceptions",
+      "gold_table": 5,
+      "engine_table": 5,
+      "gold_scale": "thousands",
+      "engine_scale": "thousands",
+      "sum_tieouts": "6/6",
+      "values": 94,
+      "line_exact": 94,
+      "exceptions": [
+        "XBRL company facts not supplied; GAAP anchor not run"
+      ]
+    }
+  ]
+}

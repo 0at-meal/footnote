@@ -1,5 +1,5 @@
 """
-Row-label patterns shared by the gold-set tools (P0-01 shortlist, P0-05 drafts).
+Row-label patterns for non-GAAP bridges (bridge engine, P0-01 shortlist, P0-05 drafts).
 """
 
 import re
@@ -7,7 +7,8 @@ import re
 # The GAAP measure a non-GAAP bridge starts from.
 GAAP_START = re.compile(
     r"\bnet (?:\(loss\) income|income \(loss\)|income|loss)\b"
-    r"|\boperating (?:income|loss)\b|\bincome (?:\(loss\) )?before\b",
+    r"|\boperating (?:income|loss)\b|\bincome (?:\(loss\) )?before\b"
+    r"|\b(?:income|loss|income \(loss\)) from continuing operations\b",
     re.IGNORECASE,
 )
 

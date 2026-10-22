@@ -21,7 +21,6 @@ Usage (from ``backend/``)::
 from __future__ import annotations
 
 import json
-import re
 import sys
 from dataclasses import dataclass, field
 from decimal import Decimal
@@ -29,25 +28,17 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+from app.extraction.bridge.keys import line_key
 from app.extraction.scale_and_sign import parse_raw_numeric
 
 GOLD_DIR = Path(__file__).resolve().parents[3] / "eval" / "gold"
 DECISIONS_FILE = GOLD_DIR / "review_decisions.yaml"
 DASHES = {"—", "–", "-", "--"}
-_FOOTNOTE = re.compile(
-    r"\s*\((?:[a-z]|\d{1,2})\)(?:,\s*\((?:[a-z]|\d{1,2})\))*\s*$", re.IGNORECASE
-)
 
 
 def norm_label(label: str) -> str:
     """Case, whitespace, dash and trailing-footnote insensitive label key."""
-    text = label.replace("—", "-").replace("–", "-").replace("’", "'")
-    text = re.sub(r"^\s*plus:\s*", "", text, flags=re.IGNORECASE)
-    previous = None
-    while previous != text:
-        previous = text
-        text = _FOOTNOTE.sub("", text)
-    return re.sub(r"\s+", " ", text).strip().lower()
+    return line_key(label)
 
 
 def value_of(raw: str | None) -> Decimal | None:

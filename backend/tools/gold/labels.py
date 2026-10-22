@@ -37,6 +37,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 import yaml
+from app.extraction.bridge.models import LineRole
 from app.extraction.locator import is_sec_archives_url
 from app.extraction.scale_and_sign import parse_raw_numeric
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
@@ -64,14 +65,6 @@ class Scale(str, Enum):
     thousands = "thousands"
     millions = "millions"
     billions = "billions"
-
-
-class LineRole(str, Enum):
-    gaap_start = "gaap_start"  # the GAAP measure the bridge starts from
-    adjustment = "adjustment"  # an add-back or deduction
-    subtotal = "subtotal"  # e.g. EBITDA before further adjustments
-    total = "total"  # the headline non-GAAP metric
-    memo = "memo"  # shown in the table but not part of the bridge
 
 
 class _Strict(BaseModel):

@@ -7,6 +7,7 @@ from datetime import date
 from decimal import Decimal
 from typing import Any
 
+from app.extraction.bridge.models import LineRole
 from app.extraction.html.models import HtmlCell
 from app.extraction.html.table_parser import extract_html_tables
 from bs4 import BeautifulSoup
@@ -20,7 +21,6 @@ from tools.gold.draft import (
     parse_period,
     tolerance,
 )
-from tools.gold.labels import LineRole
 
 
 def _table(html: str) -> Any:

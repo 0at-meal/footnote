@@ -426,3 +426,46 @@ def test_get_company_facts(tmp_path: Path) -> None:
     assert facts["facts"] == {"us-gaap": {}}
     with pytest.raises(EdgarCompanyNotFoundError):
         client.get_company_facts("320193")
+
+
+def test_get_filings_filters_8k_items(tmp_path: Path) -> None:
+    """P1-05: only 8-Ks reporting a wanted item are kept; items are recorded."""
+    transport = MockTransport()
+    client = EdgarClient(
+        user_agent=TEST_USER_AGENT,
+        cache_dir=tmp_path / "edgar_cache",
+        http_client=httpx.Client(transport=transport),
+    )
+    submissions = {
+        "filings": {
+            "recent": {
+                "accessionNumber": ["0000000001-26-000003", "0000000001-26-000002"],
+                "filingDate": ["2026-07-30", "2026-06-01"],
+                "reportDate": ["2026-07-30", "2026-06-01"],
+                "form": ["8-K", "8-K"],
+                "primaryDocument": ["a.htm", "b.htm"],
+                "items": ["2.02,9.01", "5.07"],
+            }
+        }
+    }
+    got = client.get_filings(
+        "1", forms=["8-K"], items=["2.02"], submissions=submissions
+    )
+    assert [f.accession for f in got] == ["0000000001-26-000003"]
+    assert got[0].items == ["2.02", "9.01"]
+    assert transport.request_count == 0  # the given payload is used as-is
+
+
+def test_directory_index_is_cached(tmp_path: Path) -> None:
+    transport = MockTransport()
+    client = EdgarClient(
+        user_agent=TEST_USER_AGENT,
+        cache_dir=tmp_path / "edgar_cache",
+        http_client=httpx.Client(transport=transport),
+    )
+    filing = client.get_filings("GOOGL", forms=["8-K"])[0]
+    first = client.get_filing_directory_index(filing)
+    count = transport.request_count
+    second = client.get_filing_directory_index(filing)
+    assert transport.request_count == count
+    assert first == second

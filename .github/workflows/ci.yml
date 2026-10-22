@@ -35,3 +35,6 @@ jobs:
       - name: Extractor scorer must not regress below the baseline (P0-10)
         working-directory: backend
         run: python -m tools.eval.score --check ../eval/thresholds.yaml
+      - name: Bridge engine must not regress on the gold set (P2-14)
+        working-directory: backend
+        run: python -m tools.eval.score_bridge --check ../eval/thresholds-bridge.yaml

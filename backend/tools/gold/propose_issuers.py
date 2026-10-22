@@ -28,6 +28,12 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+from app.extraction.bridge.patterns import (
+    BRIDGE_TERMS,
+    GAAP_START,
+    NOT_A_TOTAL,
+    RECON_TITLE,
+)
 from app.extraction.html.table_parser import extract_html_tables
 from app.ingestion.edgar.client import EdgarClient
 from app.ingestion.edgar.models import (
@@ -36,8 +42,6 @@ from app.ingestion.edgar.models import (
     ForeignFilerUnsupportedError,
 )
 from bs4 import BeautifulSoup
-
-from tools.gold.patterns import BRIDGE_TERMS, GAAP_START, NOT_A_TOTAL, RECON_TITLE
 
 logger = logging.getLogger(__name__)
 

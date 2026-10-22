@@ -1,0 +1,406 @@
+<title>Footnote</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: left rail of views, working area as a credit worksheet; figures in mono with auditor tick marks. */
+:root {
+  --bg: #f5f6f8;
+  --panel: #ffffff;
+  --ink: #111a2b;
+  --muted: #5b6577;
+  --rule: #dfe3ea;
+  --accent: #1f4fd1;
+  --accent-soft: #e6ecfb;
+  --ok: #157347;
+  --ok-soft: #e3f3ea;
+  --warn: #9a5b00;
+  --warn-soft: #fbf0dc;
+  --bad: #b42318;
+  --bad-soft: #fbe6e4;
+  --chart-a: #111a2b;
+  --chart-b: #1f4fd1;
+  --font-display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1320; --panel: #141c2c; --ink: #e7ebf3; --muted: #97a1b3; --rule: #263147;
+    --accent: #7ea2ff; --accent-soft: #1c2a4d; --ok: #5fd39a; --ok-soft: #12301f;
+    --warn: #f0b456; --warn-soft: #33270f; --bad: #ff8a80; --bad-soft: #3a1714;
+    --chart-a: #e7ebf3; --chart-b: #7ea2ff; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1320; --panel: #141c2c; --ink: #e7ebf3; --muted: #97a1b3; --rule: #263147;
+  --accent: #7ea2ff; --accent-soft: #1c2a4d; --ok: #5fd39a; --ok-soft: #12301f;
+  --warn: #f0b456; --warn-soft: #33270f; --bad: #ff8a80; --bad-soft: #3a1714;
+  --chart-a: #e7ebf3; --chart-b: #7ea2ff; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 14px; line-height: 1.5; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.shell { display: grid; grid-template-columns: 220px minmax(0, 1fr); min-height: 100%; }
+.rail { border-right: 1px solid var(--rule); padding-block: 20px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: 16px; display: flex; flex-direction: column; gap: 20px; position: sticky; top: env(safe-area-inset-top, 0px); height: 100vh; overflow-y: auto; }
+.brand { font-family: var(--font-display); font-weight: 600; font-size: 22px; letter-spacing: 0.01em; display: flex; align-items: baseline; gap: 6px; }
+.brand sup { font-family: var(--font-data); font-size: 11px; color: var(--accent); }
+.tag { color: var(--muted); font-size: 12px; line-height: 1.4; }
+.nav { display: flex; flex-direction: column; gap: 2px; }
+.nav a { color: var(--ink); padding: 6px 10px; border-radius: 6px; font-weight: 500; display: flex; justify-content: space-between; }
+.nav a.on { background: var(--accent-soft); color: var(--accent); }
+.nav a:hover { text-decoration: none; background: var(--accent-soft); }
+.nav .count { font-family: var(--font-data); font-size: 12px; color: var(--muted); }
+.search { width: 100%; padding: 8px 10px; border: 1px solid var(--rule); border-radius: 6px; background: var(--panel); color: var(--ink); font: inherit; }
+.rail-foot { margin-top: auto; font-size: 11px; color: var(--muted); line-height: 1.45; }
+main { padding-block: 28px 48px; padding-left: 32px; padding-right: max(16px, env(safe-area-inset-right, 0px)); min-width: 0; display: flex; flex-direction: column; gap: 24px; max-width: 1240px; }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 30px; line-height: 1.15; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 19px; margin: 0; text-wrap: balance; }
+h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0; font-weight: 600; }
+.sub { color: var(--muted); max-width: 70ch; margin: 0; }
+.panel { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.row { display: flex; gap: 16px; flex-wrap: wrap; align-items: baseline; }
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.kpi { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+.kpi .v { font-family: var(--font-data); font-size: 22px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.kpi .l { font-size: 12px; color: var(--muted); }
+.mono, td.n { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; padding: 8px 10px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+td { padding: 7px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+td.n, th.n { text-align: right; white-space: nowrap; }
+tr.sub-row td { color: var(--muted); }
+tr.total td { font-weight: 600; border-top: 2px solid var(--ink); }
+tr.start td { font-weight: 500; }
+tr.click { cursor: pointer; }
+tr.click:hover td { background: var(--accent-soft); }
+.chip { display: inline-block; font-family: var(--font-data); font-size: 11px; padding: 1px 6px; border-radius: 4px; background: var(--accent-soft); color: var(--accent); white-space: nowrap; }
+.chip.ok { background: var(--ok-soft); color: var(--ok); }
+.chip.warn { background: var(--warn-soft); color: var(--warn); }
+.chip.bad { background: var(--bad-soft); color: var(--bad); }
+.chip.muted { background: transparent; border: 1px solid var(--rule); color: var(--muted); }
+.tick { font-family: var(--font-data); font-size: 12px; }
+.tick.ok { color: var(--ok); }
+.tick.warn { color: var(--warn); }
+.tick.bad { color: var(--bad); }
+.qtabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.qtabs button { font: inherit; font-family: var(--font-data); font-size: 12px; padding: 4px 9px; border: 1px solid var(--rule); background: var(--panel); color: var(--ink); border-radius: 6px; cursor: pointer; }
+.qtabs button.on { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+.btn { font: inherit; font-weight: 500; padding: 7px 12px; border-radius: 6px; border: 1px solid var(--accent); color: var(--accent); background: var(--panel); cursor: pointer; }
+.btn:hover { background: var(--accent-soft); text-decoration: none; }
+.note { font-size: 12px; color: var(--muted); border-left: 3px solid var(--rule); padding-left: 10px; max-width: 80ch; }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+.feed { display: flex; flex-direction: column; }
+.feed .item { display: grid; grid-template-columns: 92px 64px 130px minmax(0, 1fr); gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--rule); align-items: baseline; }
+.feed .item .what { min-width: 0; }
+.bar { height: 8px; background: var(--accent-soft); border-radius: 4px; overflow: hidden; min-width: 80px; }
+.bar > span { display: block; height: 100%; background: var(--accent); }
+.legend { display: flex; gap: 16px; font-size: 12px; color: var(--muted); }
+.legend i { display: inline-block; width: 18px; height: 0; border-top: 2px solid var(--chart-a); vertical-align: middle; margin-right: 6px; }
+.legend i.b { border-top: 2px dashed var(--chart-b); }
+svg text { fill: var(--muted); font-family: var(--font-data); font-size: 11px; }
+.empty { color: var(--muted); padding: 20px 0; }
+.filters { display: flex; gap: 8px; flex-wrap: wrap; }
+.filters select { font: inherit; padding: 6px 8px; border: 1px solid var(--rule); border-radius: 6px; background: var(--panel); color: var(--ink); }
+@media (max-width: 860px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .rail { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--rule); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .nav { flex-direction: row; flex-wrap: wrap; }
+  .rail-foot { display: none; }
+  main { padding-left: max(16px, env(safe-area-inset-left, 0px)); }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid2 { grid-template-columns: minmax(0, 1fr); }
+  .feed .item { grid-template-columns: 80px 56px minmax(0, 1fr); }
+  .feed .item .kind { display: none; }
+}
+@media (prefers-reduced-motion: no-preference) { .fade { animation: fade 180ms ease-out; } @keyframes fade { from { opacity: 0.4; } to { opacity: 1; } } }
+</style>
+
+<div class="shell">
+  <aside class="rail">
+    <div>
+      <div class="brand">Footnote<sup>beta</sup></div>
+      <div class="tag">Verified EBITDA bridges for credit analysts, from SEC filings.</div>
+    </div>
+    <input id="q" class="search" type="search" placeholder="Search ticker or name" aria-label="Search issuers">
+    <nav class="nav" id="nav"></nav>
+    <div class="rail-foot" id="foot"></div>
+  </aside>
+  <main id="main"><div class="empty">Loading the record…</div></main>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var S = null; // snapshot
+  var state = { view: "universe", ticker: null, q: null, sector: "", feedType: "" };
+  var CODES = {};
+  var main = document.getElementById("main");
+
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function m(v) { // USD millions, accounting negatives
+    if (v == null || isNaN(v)) return "—";
+    var x = v / 1e6, a = Math.abs(x);
+    var s = a.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    return x < 0 ? "(" + s + ")" : s;
+  }
+  function pct(v) { return v == null ? "—" : (v * 100).toFixed(1) + "%"; }
+  function qlabel(pid) {
+    var d = pid.slice(3); var p = d.split("-");
+    var mon = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][+p[1] - 1];
+    return mon + " " + p[2] + ", " + p[0];
+  }
+  function short(pid) { var p = pid.slice(3).split("-"); return ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][+p[1] - 1] + " '" + p[0].slice(2); }
+  function src(url, text) { return url ? '<a href="' + esc(url) + '" target="_blank" rel="noopener" title="Open the exact line on sec.gov">' + (text || "sec.gov ↗") + "</a>" : '<span class="tag">no link</span>'; }
+  function issuer(t) { return S.issuers.find(function (d) { return d.ticker === t; }); }
+  function latest(d) { return d.quarters.length ? d.quarters[d.quarters.length - 1] : null; }
+  var TREAT = { accept: ["Kept", "muted"], exclude: ["Reversed", "bad"], flag: ["Flagged", "warn"], review: ["Needs review", "bad"] };
+
+  function nav() {
+    var c = S.coverage;
+    var items = [["universe", "Universe", S.issuers.length], ["changes", "Changes", S.feed.length], ["peers", "Peers", Object.keys(S.peers).length], ["method", "Method & accuracy", ""]];
+    document.getElementById("nav").innerHTML = items.map(function (it) {
+      var on = state.view === it[0] ? " on" : "";
+      return '<a href="#' + it[0] + '" class="' + on + '" data-view="' + it[0] + '"><span>' + it[1] + '</span><span class="count">' + it[2] + "</span></a>";
+    }).join("");
+    document.getElementById("foot").innerHTML =
+      c.issuers + " issuers · " + c.bridges_found + " bridges<br>" +
+      (c.sum_checks.pass) + " period tie-outs passed<br>Built " + esc(S.generated_at.slice(0, 10)) + " from EDGAR";
+  }
+
+  function go(view, ticker) {
+    state.view = view; state.ticker = ticker || null; state.q = null;
+    render();
+    try { history.replaceState(null, "", "#" + (ticker || view)); } catch (e) {}
+    window.scrollTo(0, 0);
+  }
+
+  // ---------------------------------------------------------------- universe
+  function universe() {
+    var rows = S.issuers.filter(function (d) {
+      var q = (document.getElementById("q").value || "").trim().toLowerCase();
+      return !q || d.ticker.toLowerCase().indexOf(q) >= 0 || d.name.toLowerCase().indexOf(q) >= 0;
+    });
+    var c = S.coverage;
+    var tieRate = c.bridges_found ? c.bridges_all_periods_tie / c.bridges_found : null;
+    var anc = c.anchor_checks, ancN = anc.pass + anc.mismatch;
+    var html = '<div class="fade" style="display:flex;flex-direction:column;gap:24px">' +
+      '<div><h1>Every leveraged issuer\'s EBITDA bridge, tied out to the filing</h1>' +
+      '<p class="sub">Footnote reads each earnings release on EDGAR, finds the headline Adjusted EBITDA reconciliation, checks that it adds up and that its GAAP starting line matches XBRL, then tracks what changes quarter to quarter. Every number links to the exact line on sec.gov.</p></div>' +
+      '<div class="kpis">' +
+      kpi(c.issuers, "issuers covered") +
+      kpi(c.bridges_found, "earnings releases with a bridge") +
+      kpi(pct(tieRate), "bridges that tie out in every period") +
+      kpi(pct(ancN ? anc.pass / ancN : null), "GAAP anchors matching XBRL (where XBRL has the period)") +
+      "</div>" +
+      '<div class="panel"><div class="row" style="justify-content:space-between"><h2>Coverage universe</h2><span class="tag">Latest quarter per issuer · USD millions · normalized is a draft-policy preview</span></div>' +
+      '<div class="scroll"><table><thead><tr><th>Issuer</th><th>Sector</th><th>Latest quarter</th><th class="n">Reported</th><th class="n">Footnote normalized</th><th class="n">Add-backs / EBITDA</th><th class="n">Recasts</th><th class="n">Definition changes</th></tr></thead><tbody>' +
+      rows.map(function (d) {
+        var q = latest(d);
+        return '<tr class="click" data-t="' + d.ticker + '"><td><strong>' + d.ticker + '</strong> <span class="tag">' + esc(d.name) + "</span></td><td>" + esc(d.sector) + "</td>" +
+          "<td class=\"mono\">" + (q ? short(q.period_id) : "—") + "</td>" +
+          '<td class="n">' + (q ? m(q.reported_usd) : "—") + "</td>" +
+          '<td class="n">' + (q ? (q.normalized_usd == null ? '<span class="chip warn">' + esc(q.normalization.reason || "n/a") + "</span>" : m(q.normalized_usd)) : "—") + "</td>" +
+          '<td class="n">' + (q ? pct(q.addback_intensity) : "—") + "</td>" +
+          '<td class="n">' + d.recasts.length + '</td><td class="n">' + d.changes.length + "</td></tr>";
+      }).join("") + "</tbody></table></div></div></div>";
+    main.innerHTML = html;
+  }
+  function kpi(v, l) { return '<div class="kpi"><span class="v">' + v + '</span><span class="l">' + l + "</span></div>"; }
+
+  // ---------------------------------------------------------------- issuer
+  function chart(d) {
+    var qs = d.quarters.filter(function (q) { return q.reported_usd != null; });
+    if (qs.length < 2) return '<div class="empty">Fewer than two verified quarters so far.</div>';
+    var W = 720, H = 220, L = 64, R = 16, T = 14, B = 30;
+    var vals = [];
+    qs.forEach(function (q) { vals.push(q.reported_usd); if (q.normalized_usd != null) vals.push(q.normalized_usd); });
+    var lo = Math.min(0, Math.min.apply(null, vals)), hi = Math.max.apply(null, vals);
+    var step = nice((hi - lo) / 4); lo = Math.floor(lo / step) * step; hi = Math.ceil(hi / step) * step;
+    function x(i) { return L + (W - L - R) * (qs.length === 1 ? 0.5 : i / (qs.length - 1)); }
+    function y(v) { return T + (H - T - B) * (1 - (v - lo) / (hi - lo || 1)); }
+    var g = "";
+    for (var t = lo; t <= hi + step / 2; t += step) {
+      g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(t) + '" y2="' + y(t) + '" stroke="var(--rule)" stroke-width="1"/>' +
+        '<text x="' + (L - 8) + '" y="' + (y(t) + 4) + '" text-anchor="end">' + m(t) + "</text>";
+    }
+    qs.forEach(function (q, i) { g += '<text x="' + x(i) + '" y="' + (H - 8) + '" text-anchor="middle">' + short(q.period_id) + "</text>"; });
+    var pa = qs.map(function (q, i) { return (i ? "L" : "M") + x(i) + " " + y(q.reported_usd); }).join(" ");
+    var nb = qs.filter(function (q) { return q.normalized_usd != null; });
+    var pb = qs.map(function (q, i) { return q.normalized_usd == null ? "" : ((i && qs[i - 1].normalized_usd != null) ? "L" : "M") + x(i) + " " + y(q.normalized_usd); }).join(" ");
+    var area = pa + " L" + x(qs.length - 1) + " " + y(Math.max(lo, 0)) + " L" + x(0) + " " + y(Math.max(lo, 0)) + " Z";
+    g += '<path d="' + area + '" fill="var(--accent-soft)" opacity="0.6"/>';
+    g += '<path d="' + pa + '" fill="none" stroke="var(--chart-a)" stroke-width="2"/>';
+    if (nb.length) g += '<path d="' + pb + '" fill="none" stroke="var(--chart-b)" stroke-width="2" stroke-dasharray="5 4"/>';
+    qs.forEach(function (q, i) {
+      g += '<circle cx="' + x(i) + '" cy="' + y(q.reported_usd) + '" r="' + (i === qs.length - 1 ? 4.5 : 3) + '" fill="var(--chart-a)"><title>' + short(q.period_id) + " reported " + m(q.reported_usd) + "</title></circle>";
+      if (q.normalized_usd != null) g += '<circle cx="' + x(i) + '" cy="' + y(q.normalized_usd) + '" r="3" fill="var(--chart-b)"><title>' + short(q.period_id) + " normalized " + m(q.normalized_usd) + "</title></circle>";
+    });
+    return '<div class="scroll"><svg viewBox="0 0 ' + W + " " + H + '" width="100%" style="min-width:520px;max-width:100%" role="img" aria-label="Reported versus normalized EBITDA by quarter">' + g + "</svg></div>";
+  }
+  function nice(r) { var e = Math.pow(10, Math.floor(Math.log10(r || 1))); var f = r / e; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * e; }
+
+  function issuerView(d) {
+    var q = state.q ? d.quarters.find(function (x) { return x.period_id === state.q; }) : latest(d);
+    if (!q) { main.innerHTML = '<div class="panel"><h1>' + d.ticker + '</h1><p class="sub">No verified quarterly bridge yet. Releases and the reason for each are listed under Method.</p></div>' + releases(d); return; }
+    var n = q.normalization;
+    var cats = {};
+    n.lines.forEach(function (l) { cats[l.label + "|" + l.value_raw] = l; });
+    var sumOk = q.sum_check && Math.abs(Number(q.sum_check.expected) - Number(q.sum_check.computed)) <= Number(q.sum_check.tolerance);
+    var anchor = q.anchor_status;
+    var ticks = '<span class="tick ' + (sumOk ? "ok" : "bad") + '">' + (sumOk ? "✓ adds up" : "✗ does not add up") + "</span> · " +
+      '<span class="tick ' + (anchor === "pass" ? "ok" : anchor === "mismatch" ? "bad" : "warn") + '">' + (anchor === "pass" ? "✓ GAAP start matches XBRL" : anchor === "mismatch" ? "✗ GAAP start differs from XBRL" : "○ no XBRL fact for this period") + "</span>";
+    var body = q.lines.map(function (l) {
+      var c = l.role === "adjustment" ? cats[l.label + "|" + l.value_raw] : null;
+      var cls = l.role === "total" ? "total" : l.role === "gaap_start" ? "start" : l.role === "subtotal" ? "sub-row" : "";
+      var t = c ? TREAT[c.treatment] || [c.treatment, "muted"] : null;
+      var codeName = c ? (CODES[c.code] ? CODES[c.code].name : c.code) : "";
+      return '<tr class="' + cls + '"><td>' + esc(l.label) + (l.role === "subtotal" ? ' <span class="tag">subtotal</span>' : "") + "</td>" +
+        "<td>" + (c ? '<span class="chip" title="' + esc(codeName) + (c.category_source === "rule" ? " (suggested by rule, pending review)" : " (confirmed)") + '">' + esc(c.code) + (c.category_source === "rule" ? "*" : "") + "</span>" : "") + "</td>" +
+        '<td class="n">' + esc(l.value_raw) + '</td><td class="n">' + m(l.value_usd == null ? null : l.sign * l.value_usd) + "</td>" +
+        "<td>" + (t ? '<span class="chip ' + t[1] + '">' + t[0] + "</span>" + (c.flags.length ? ' <span class="tag">' + esc(c.flags.join(", ")) + "</span>" : "") : "") + "</td>" +
+        "<td>" + src(l.url, "line ↗") + "</td></tr>";
+    }).join("");
+    var tabs = d.quarters.map(function (x) { return '<button type="button" data-q="' + x.period_id + '" class="' + (x.period_id === q.period_id ? "on" : "") + '">' + short(x.period_id) + "</button>"; }).join("");
+    var reversals = n.lines.filter(function (l) { return l.treatment === "exclude"; });
+    var html = '<div class="fade" style="display:flex;flex-direction:column;gap:20px">' +
+      '<div class="row" style="justify-content:space-between;align-items:flex-end"><div><h3>' + esc(d.sector) + " · CIK " + esc(d.cik) + '</h3><h1>' + d.ticker + " · " + esc(d.name) + "</h1></div>" +
+      (S.static ? "" : '<a class="btn" href="api/issuers/' + d.ticker + '/export.xlsx">Export to Excel</a>') + "</div>" +
+      '<div class="kpis">' +
+      kpi(m(q.reported_usd), esc(q.metric_label || "Reported") + " · " + short(q.period_id)) +
+      kpi(n.normalized == null ? "—" : m(q.normalized_usd), "Footnote normalized (draft policy preview)") +
+      kpi(pct(q.addback_intensity), "Discretionary add-backs / reported") +
+      kpi(d.recasts.length + " / " + d.changes.length, "Recasts / definition changes found") +
+      "</div>" +
+      '<div class="panel"><div class="row" style="justify-content:space-between"><h2>Reported vs normalized, by quarter</h2><div class="legend"><span><i></i>Reported headline</span><span><i class="b"></i>Footnote normalized</span></div></div>' + chart(d) + "</div>" +
+      '<div class="panel"><div class="row" style="justify-content:space-between"><h2>Bridge · quarter ended ' + qlabel(q.period_id) + "</h2>" + '<div class="qtabs">' + tabs + "</div></div>" +
+      '<div class="row tag">' + ticks + ' · from ' + src(q.exhibit_url, esc(q.accession) + " ↗") + " filed " + esc(q.filed) + " · reported in " + esc(q.scale) + "</div>" +
+      '<div class="scroll"><table><thead><tr><th>Line as reported</th><th>Category</th><th class="n">As shown</th><th class="n">Contribution, $m</th><th>Footnote policy</th><th>Source</th></tr></thead><tbody>' + body + "</tbody></table></div>" +
+      '<div class="note">Normalized = reported ' + m(q.reported_usd) + (reversals.length ? " − " + reversals.map(function (r) { return esc(r.label) + " " + esc(r.value_raw); }).join(" − ") : " (nothing reversed)") + " = <strong>" + (n.normalized == null ? "not computed: " + esc(n.reason) : m(q.normalized_usd)) + "</strong>. Policy " + esc(n.policy_version) + " is a draft under analyst review. * Category suggested by a deterministic rule and pending human review.</div></div>" +
+      '<div class="grid2">' + recastPanel(d) + changePanel(d) + "</div>" + releases(d) + "</div>";
+    main.innerHTML = html;
+  }
+  function recastPanel(d) {
+    var r = d.recasts;
+    return '<div class="panel"><h2>Recasts</h2><p class="sub" style="font-size:13px">A value the issuer reported for a period, then reported differently in a later release.</p>' +
+      (r.length ? '<div class="scroll"><table><thead><tr><th>Period</th><th>Line</th><th class="n">First</th><th class="n">Latest</th><th class="n">Δ</th></tr></thead><tbody>' +
+        r.slice(-12).reverse().map(function (x) { return "<tr><td class=\"mono\">" + short(x.period_id) + "</td><td>" + esc(x.label) + '</td><td class="n">' + src(x.first_url, m(x.first_usd)) + '</td><td class="n">' + src(x.latest_url, m(x.latest_usd)) + '</td><td class="n">' + m(x.delta_usd) + "</td></tr>"; }).join("") + "</tbody></table></div>" : '<div class="empty">None found across the releases ingested.</div>') + "</div>";
+  }
+  function changePanel(d) {
+    var c = d.changes;
+    var K = { added: ["Added", "warn"], removed: ["Dropped", "muted"], metric_renamed: ["Renamed metric", "bad"] };
+    return '<div class="panel"><h2>Definition changes</h2><p class="sub" style="font-size:13px">Add-backs that appear or disappear between consecutive quarters, and renamed headline metrics.</p>' +
+      (c.length ? '<div class="scroll"><table><thead><tr><th>Quarter</th><th>Change</th><th>Line</th><th class="n">As shown</th></tr></thead><tbody>' +
+        c.slice(-14).reverse().map(function (x) { var k = K[x.kind]; return '<tr><td class="mono">' + short(x.period_id) + '</td><td><span class="chip ' + k[1] + '">' + k[0] + "</span></td><td>" + (x.kind === "metric_renamed" ? esc(x.prior_label) + " → " : "") + src(x.url, esc(x.label)) + '</td><td class="n">' + esc(x.value_raw || "") + "</td></tr>"; }).join("") + "</tbody></table></div>" : '<div class="empty">No changes between the quarters ingested.</div>') + "</div>";
+  }
+  function releases(d) {
+    return '<div class="panel"><h2>Every release read</h2><p class="sub" style="font-size:13px">Nothing is dropped silently: each Item 2.02 release appears here with what was found and every check that did not pass.</p><div class="scroll"><table><thead><tr><th>Filed</th><th>Release</th><th>Headline</th><th>Status</th><th>Exceptions</th></tr></thead><tbody>' +
+      d.releases.map(function (r) {
+        var st = r.status === "ok" ? ["clean", "ok"] : r.status === "exceptions" ? ["exceptions", "warn"] : ["no bridge", "bad"];
+        return '<tr><td class="mono">' + esc(r.filed) + "</td><td>" + src(r.url, esc(r.accession)) + "</td><td>" + esc(r.metric_label || "—") + '</td><td><span class="chip ' + st[1] + '">' + st[0] + '</span></td><td class="tag">' + esc(r.reason || r.exceptions.slice(0, 3).join("; ")) + (r.exceptions.length > 3 ? " (+" + (r.exceptions.length - 3) + " more)" : "") + "</td></tr>";
+      }).join("") + "</tbody></table></div></div>";
+  }
+
+  // ---------------------------------------------------------------- feed
+  function changes() {
+    var K = { recast: ["Recast", "bad"], added: ["Add-back added", "warn"], removed: ["Add-back dropped", "muted"], metric_renamed: ["Metric renamed", "bad"], recurring_addback: ["Recurring “one-off”", "warn"] };
+    var items = S.feed.filter(function (i) { return !state.feedType || i.type === state.feedType; });
+    var opts = '<option value="">All changes (' + S.feed.length + ")</option>" + Object.keys(K).map(function (k) { var n = S.feed.filter(function (i) { return i.type === k; }).length; return '<option value="' + k + '"' + (state.feedType === k ? " selected" : "") + ">" + K[k][0] + " (" + n + ")</option>"; }).join("");
+    main.innerHTML = '<div class="fade" style="display:flex;flex-direction:column;gap:20px"><div><h1>What changed in the bridges</h1><p class="sub">Restated prior-period numbers, add-backs that appear or vanish, renamed metrics, and “non-recurring” items that recur in 3 of the last 4 quarters. These are the changes aggregators merge away.</p></div>' +
+      '<div class="filters"><select id="ft" aria-label="Filter changes">' + opts + "</select></div>" +
+      '<div class="panel"><div class="feed">' + (items.length ? items.slice(0, 400).map(function (i) {
+        var k = K[i.type] || [i.type, "muted"];
+        var what = i.type === "recast" ? esc(i.label) + " for " + short(i.period_id) + ": " + src(i.first_url, m(i.first_usd)) + " → " + src(i.latest_url, m(i.latest_usd)) + ' <span class="tag">(' + (i.delta_usd >= 0 ? "+" : "") + m(i.delta_usd) + "m)</span>"
+          : i.type === "metric_renamed" ? esc(i.prior_label) + " → " + src(i.url, esc(i.label))
+          : i.type === "recurring_addback" ? src(i.url, esc(i.label)) + ' <span class="chip">' + esc(i.code) + "</span> " + esc(i.value_raw) + " in " + short(i.period_id)
+          : src(i.url, esc(i.label)) + " " + esc(i.value_raw || "") + " in " + short(i.period_id);
+        return '<div class="item"><span class="mono tag">' + esc(i.filed || "") + '</span><a href="#' + i.ticker + '" data-t="' + i.ticker + '"><strong>' + i.ticker + '</strong></a><span class="kind"><span class="chip ' + k[1] + '">' + k[0] + '</span></span><span class="what">' + what + "</span></div>";
+      }).join("") : '<div class="empty">No changes of this type.</div>') + "</div></div></div>";
+    document.getElementById("ft").addEventListener("change", function (e) { state.feedType = e.target.value; changes(); });
+  }
+
+  // ---------------------------------------------------------------- peers
+  function peers() {
+    var sectors = Object.keys(S.peers);
+    if (!state.sector || !S.peers[state.sector]) state.sector = sectors.sort(function (a, b) { return S.peers[b].issuers.length - S.peers[a].issuers.length; })[0];
+    var p = S.peers[state.sector];
+    var rows = p.issuers.slice().sort(function (a, b) { return (b.addback_intensity || 0) - (a.addback_intensity || 0); });
+    var maxI = Math.max.apply(null, rows.map(function (r) { return Math.abs(r.addback_intensity || 0); }).concat([0.01]));
+    var codes = {};
+    rows.forEach(function (r) { Object.keys(r.mix_usd).forEach(function (c) { codes[c] = (codes[c] || 0) + Math.abs(r.mix_usd[c]); }); });
+    var top = Object.keys(codes).sort(function (a, b) { return codes[b] - codes[a]; }).slice(0, 6);
+    main.innerHTML = '<div class="fade" style="display:flex;flex-direction:column;gap:20px"><div><h1>How peers adjust their EBITDA</h1><p class="sub">Discretionary add-backs (everything except D&amp;A, interest, taxes and minority interest) as a share of each issuer’s reported headline, latest quarter. Median for the sector: <strong class="mono">' + pct(p.median_addback_intensity) + "</strong>.</p></div>" +
+      '<div class="filters"><select id="sec" aria-label="Sector">' + sectors.sort().map(function (s) { return '<option' + (s === state.sector ? " selected" : "") + ">" + esc(s) + "</option>"; }).join("") + "</select></div>" +
+      '<div class="panel"><div class="scroll"><table><thead><tr><th>Issuer</th><th>Quarter</th><th class="n">Reported, $m</th><th class="n">Normalized, $m</th><th>Add-backs / reported</th>' + top.map(function (c) { return '<th class="n">' + c + "</th>"; }).join("") + "</tr></thead><tbody>" +
+      rows.map(function (r) {
+        return '<tr class="click" data-t="' + r.ticker + '"><td><strong>' + r.ticker + '</strong></td><td class="mono">' + short(r.period_id) + '</td><td class="n">' + m(r.reported_usd) + '</td><td class="n">' + m(r.normalized_usd) + '</td><td><div class="row" style="gap:8px;flex-wrap:nowrap"><div class="bar" style="flex:1"><span style="width:' + Math.min(100, Math.abs(r.addback_intensity || 0) / maxI * 100) + '%"></span></div><span class="mono">' + pct(r.addback_intensity) + "</span></div></td>" +
+          top.map(function (c) { return '<td class="n">' + (r.mix_usd[c] ? m(r.mix_usd[c]) : "—") + "</td>"; }).join("") + "</tr>";
+      }).join("") + "</tbody></table></div><div class=\"note\">Category codes follow the draft taxonomy in the method notes. Columns show the six categories with the largest totals in this sector.</div></div></div>";
+    document.getElementById("sec").addEventListener("change", function (e) { state.sector = e.target.value; peers(); });
+  }
+
+  // ---------------------------------------------------------------- method
+  function method() {
+    var c = S.coverage, a = c.anchor_checks;
+    var lm = c.label_memory || {};
+    var stages = {};
+    c.failures.forEach(function (f) { stages[f.stage] = (stages[f.stage] || 0) + 1; });
+    main.innerHTML = '<div class="fade" style="display:flex;flex-direction:column;gap:20px"><div><h1>Method and accuracy</h1><p class="sub">What is checked, what is not yet, and how each number is produced.</p></div>' +
+      '<div class="kpis">' + kpi(c.sum_checks.pass + " / " + (c.sum_checks.pass + c.sum_checks.fail), "period tie-outs passed") + kpi(a.pass + " / " + (a.pass + a.mismatch), "GAAP anchors matching XBRL") + kpi(a.unavailable, "periods with no XBRL fact to compare") + kpi(c.observations.toLocaleString(), "as-reported values stored") + "</div>" +
+      '<div class="grid2"><div class="panel"><h2>How a bridge is verified</h2><ol style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:8px">' +
+      "<li><strong>Find the release.</strong> Every 8-K reporting Item 2.02 (results of operations) and its EX-99.1 press release, fetched from EDGAR and stored with a sha256.</li>" +
+      "<li><strong>Pick the headline table.</strong> Among all tables with an EBITDA total and a GAAP starting line, the one that ties out in every period, covers the quarter just reported and starts from net income.</li>" +
+      "<li><strong>Tie it out.</strong> Starting line plus every adjustment must equal the reported total in each period, within max(1, ⌈n/2⌉) rounding units.</li>" +
+      "<li><strong>Anchor it.</strong> The GAAP starting line must equal the same company’s XBRL fact for the same period, from SEC companyfacts.</li>" +
+      "<li><strong>Keep every observation.</strong> Values are append-only, so a later release that restates a period shows up as a recast instead of overwriting history.</li></ol></div>" +
+      '<div class="panel"><h2>What is not finished</h2><ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:8px">' +
+      "<li>The normalization policy (v0.1) is a draft. Credit analysts have not reviewed it yet, so normalized figures are previews.</li>" +
+      "<li>Add-back categories come from deterministic label rules: " + (lm.rule || 0) + " suggested, " + (lm.human || 0) + " confirmed by a person. No language model assigns categories or touches numbers.</li>" +
+      "<li>The 30-release gold set is labelled by an extractor and an independent model reading, plus 7 human decisions. A second human labeller has not checked it, so accuracy figures are internal.</li>" +
+      "<li>Fiscal fourth quarters often have no three-month XBRL fact, so their anchor shows as “no XBRL fact” instead of a pass.</li></ul></div></div>" +
+      '<div class="panel"><h2>Releases not turned into a bridge in the last run</h2><p class="sub" style="font-size:13px">' + Object.keys(stages).map(function (s) { return esc(s) + ": " + stages[s]; }).join(" · ") + '</p><div class="scroll"><table><thead><tr><th>Issuer</th><th>Accession</th><th>Stage</th><th>Reason</th></tr></thead><tbody>' +
+      c.failures.slice(0, 60).map(function (f) { return "<tr><td>" + esc(f.ticker || "") + '</td><td class="mono">' + esc(f.accession || "") + "</td><td>" + esc(f.stage) + '</td><td class="tag">' + esc(f.reason) + "</td></tr>"; }).join("") + "</tbody></table></div></div>" +
+      '<div class="panel"><h2>Default policy, draft v0.1</h2><div class="scroll"><table><thead><tr><th>Code</th><th>Category</th><th>Group</th><th>Treatment</th></tr></thead><tbody>' +
+      Object.keys(CODES).map(function (k) { var c2 = CODES[k]; return '<tr><td class="mono">' + k + "</td><td>" + esc(c2.name) + "</td><td>" + esc(c2.group) + "</td><td>" + esc(c2.treatment) + "</td></tr>"; }).join("") + "</tbody></table></div></div></div>";
+  }
+
+  function render() {
+    nav();
+    if (state.view === "issuer") { var d = issuer(state.ticker); if (d) return issuerView(d); state.view = "universe"; }
+    if (state.view === "changes") return changes();
+    if (state.view === "peers") return peers();
+    if (state.view === "method") return method();
+    return universe();
+  }
+
+  document.addEventListener("click", function (e) {
+    var t = e.target.closest("[data-t]");
+    if (t && !e.target.closest("a[href^='http']")) { e.preventDefault(); return go("issuer", t.getAttribute("data-t")); }
+    var v = e.target.closest("[data-view]");
+    if (v) { e.preventDefault(); return go(v.getAttribute("data-view")); }
+    var q = e.target.closest("[data-q]");
+    if (q) { state.q = q.getAttribute("data-q"); var d = issuer(state.ticker); if (d) issuerView(d); }
+  });
+  document.getElementById("q").addEventListener("input", function (e) {
+    var v = e.target.value.trim().toUpperCase();
+    if (S && issuer(v)) return go("issuer", v);
+    if (state.view !== "universe") { state.view = "universe"; nav(); }
+    if (S) universe();
+  });
+
+  function boot(data) {
+    S = data; CODES = (S.policy && S.policy.codes) || {};
+    var h = (location.hash || "").replace("#", "");
+    if (h && issuer(h.toUpperCase())) { state.view = "issuer"; state.ticker = h.toUpperCase(); }
+    else if (["changes", "peers", "method", "universe"].indexOf(h) >= 0) state.view = h;
+    render();
+  }
+  fetch("snapshot.json").then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+    .then(boot)
+    .catch(function (e) { main.innerHTML = '<div class="panel"><h2>The data did not load</h2><p class="sub">snapshot.json could not be read (' + esc(e.message) + "). Run the API with <span class=\"mono\">uvicorn app.api.main:app</span> from backend/, or rebuild the static export.</p></div>"; });
+})();
+</script>
