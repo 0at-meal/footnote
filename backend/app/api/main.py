@@ -10,7 +10,6 @@ serves the snapshot built by deterministic analytics.
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Query
@@ -20,9 +19,8 @@ from app.analytics.snapshot import build_snapshot
 from app.analytics.source import source_table
 from app.config import default_cache_dir, default_db
 from app.export.excel import issuer_workbook
+from app.export.web import web_page
 from app.store.db import Store
-
-WEB_DIR = Path(__file__).resolve().parents[3] / "web"
 
 app = FastAPI(title="Footnote API", version="0.1.0")
 _state: dict[str, Any] = {}
@@ -148,16 +146,6 @@ def snapshot_file() -> dict[str, Any]:
     return snapshot()
 
 
-_SKELETON = (
-    '<!doctype html><html lang="en"><head><meta charset="utf-8">'
-    '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">'
-    "<style>:root{padding-top:env(safe-area-inset-top,0px);"
-    "padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}"
-    "[hidden]{display:none!important}</style></head><body>{page}</body></html>"
-)
-
-
 @app.get("/")
 def index() -> HTMLResponse:
-    page = (WEB_DIR / "index.html").read_text(encoding="utf-8")
-    return HTMLResponse(_SKELETON.replace("{page}", page))
+    return HTMLResponse(web_page())

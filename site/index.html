@@ -1,4 +1,4 @@
-<title>Footnote</title>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style></head><body><title>Footnote</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <!-- No external resources: the app is vanilla JS with no libraries, and Libre Franklin and IBM Plex Mono
      (SIL Open Font License, latin subset) is embedded below so the page loads nothing from any other host. -->
@@ -52,6 +52,7 @@
   --shadow: 0 12px 40px rgba(0, 0, 0, 0.5); color-scheme: dark;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body { background: var(--bg); color: var(--ink); font-family: var(--font-ui); font-size: 13.5px; line-height: 1.45; }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--panel); }
 a { color: var(--accent); text-decoration: none; }
@@ -1114,3 +1115,4 @@ svg text.ink { fill: var(--ink); }
     .catch((e) => { main.innerHTML = '<div class="panel"><div class="panel-h"><h2>The data did not load</h2></div><p class="prose">snapshot.json could not be read (' + esc(e.message) + '). Run the API with <span class="mono">uvicorn app.api.main:app</span> from backend/, or rebuild the static export with <span class="mono">python -m app.pipeline.cli export</span>.</p></div>'; });
 })();
 </script>
+</body></html>

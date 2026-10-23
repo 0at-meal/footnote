@@ -15,7 +15,6 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-import shutil
 import sys
 from datetime import UTC, date, datetime
 from pathlib import Path
@@ -25,6 +24,7 @@ from app.analytics.digest import build_digest
 from app.analytics.snapshot import build_snapshot
 from app.analytics.source import source_table
 from app.config import REPO_ROOT, default_cache_dir, default_db
+from app.export.web import web_page
 from app.ingestion.edgar.client import EdgarClient
 from app.pipeline.ingest import run_ingest
 from app.pipeline.review import apply_queue, export_queue
@@ -103,7 +103,7 @@ def main(argv: list[str] | None = None) -> int:
         (args.out / "snapshot.json").write_text(
             json.dumps(snap, separators=(",", ":")), encoding="utf-8"
         )
-        shutil.copy(REPO_ROOT / "web" / "index.html", args.out / "index.html")
+        (args.out / "index.html").write_text(web_page(), encoding="utf-8")
         print(f"wrote {args.out} ({len(snap['issuers'])} issuers)")
     store.close()
     return 0
