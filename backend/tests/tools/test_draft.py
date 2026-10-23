@@ -279,3 +279,20 @@ def test_anchor_derives_fiscal_fourth_quarter() -> None:
     result = anchor_check(facts, "Net income", col, Decimal(90), 1_000_000, Decimal(1))
     assert result["status"] == "pass"
     assert result["derived"] == "fiscal year - nine-month YTD"
+
+
+def test_scale_ignores_non_money_captions() -> None:
+    """A KPI caption near the table ("hours (in billions)") is not the money scale."""
+    from app.extraction.bridge.core import Draft, detect_scale
+    from app.extraction.scale_and_sign import UnitScale
+
+    table = _table(
+        "<table><tr><td></td><td>Q2</td></tr><tr><td>Net income</td><td>5</td></tr></table>"
+    )
+    draft = Draft(accession="x")
+    detect_scale(table, 1, "Ad supported listener hours (in billions) 3.1", draft)
+    assert draft.scale is UnitScale.UNKNOWN
+    assert any("scale not found" in e for e in draft.exceptions)
+    draft = Draft(accession="x")
+    detect_scale(table, 1, "Reconciliation (in millions)", draft)
+    assert draft.scale is UnitScale.MILLIONS

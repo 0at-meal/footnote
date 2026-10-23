@@ -7,7 +7,7 @@ agreement is reported (P4-13).
 
 ---
 
-## 2026-10-23: bridge engine (bridge-5) on the gold set and on 388 held-out releases
+## 2026-10-23: bridge engine (bridge-6) on the gold set and on 388 held-out releases
 
 Agent run under the owner directive of 2026-10-23 (ADR-010). **The Phase 0 gate is still
 open**: rows 4 and 5 of the gate table below are unchanged. These numbers are internal (P4-13).
@@ -29,7 +29,7 @@ open**: rows 4 and 5 of the gate table below are unchanged. These numbers are in
 
 ### B. Held-out releases (independent, arithmetic verification)
 
-`python -m app.pipeline.cli ingest --quarters 8` (run 9, engine `bridge-5`, 2026-10-23).
+`python -m app.pipeline.cli ingest --quarters 8` (run 10, engine `bridge-6`, 2026-10-23).
 
 - Universe: `config/universe.yaml`, 50 issuers with CIKs resolved from EDGAR. Every Item 2.02
   8-K from 2024-09-30 to 2026-10-22: 421 releases, 418 with an HTML EX-99.1. **388 of them
@@ -44,11 +44,10 @@ open**: rows 4 and 5 of the gate table below are unchanged. These numbers are in
 | Releases with a headline bridge found | 344 (88.7%) | 30 | 374 (89.5%) |
 | …that tie out in **every** period | **338 / 344 (98.3%)** | 30 / 30 | 368 / 374 (98.4%) |
 | Period-level sum tie-outs passed | 1,191 / 1,209 (98.5%) | 100 / 100 | 1,291 / 1,309 |
-| GAAP anchor: match / mismatch / no XBRL fact | 1,009 / 83 / 71 | 95 / 1 / 4 | 1,104 / 84 / 75 |
+| GAAP anchor: match / mismatch / no XBRL fact | 1,033 / 79 / 71 | 95 / 1 / 4 | 1,128 / 80 / 75 |
 
-Anchor matches where XBRL has a comparable fact: **1,104 / 1,188 (92.9%)**. The 84
-mismatches are concentrated: SPB 28, CNK 16, CC 8, MAT 6, and 4 or fewer elsewhere. By
-column: 54 are 3M, 15 are 12M, 9 are 9M and 6 are 6M. CC's line up with its recasts: CC
+Anchor matches where XBRL has a comparable fact: **1,128 / 1,208 (93.4%)**. The 80
+mismatches are concentrated: SPB 28, CNK 16, CC 8, MAT 6, and 4 or fewer elsewhere. CC's line up with its recasts: CC
 re-reported earlier periods with different values (for example, Q2 2024 net income was 70
 in its Nov 2024 release and 60 in its Aug 2025 release), and the XBRL facts carry the
 later values. The
@@ -85,6 +84,7 @@ their own arithmetic only.
 | Zero-width characters and `[2]` footnotes splitting line keys (AMC, NWL) | ignored in keys | bridge-4 |
 | Fiscal Q4 has no 3-month XBRL fact | FY − 9M YTD | bridge-3 |
 | "(Millions of U.S. dollars)" caption (TROX) | recognized | bridge-5 |
+| **Negative result, found and fixed:** SIRI's scale was read from a nearby KPI caption ("listener hours (in billions)"), so two SIRI bridges stored values 1,000× too large (in bridge-5 and the first published demo) | a caption next to a non-money unit is never a table's scale; SIRI is now `scale unknown` (not computed) rather than wrong; regression test added | bridge-6 |
 
 ### D. Normalization preview (draft policy v0.1, rule-suggested categories)
 

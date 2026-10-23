@@ -66,5 +66,20 @@ honestly are listed under "Owner must do next". They were not simulated.
 
 **Sources.** See `docs/research/market.md`.
 
-**Stop reason.** The engineering is built and measured. The open items need the owner.
+**Run 2, continued (after the stop hook).** Built to shrink the owner's remaining work:
+- `review export/apply` (P3-02): 512 labels, ordered by impact, confirmed in a spreadsheet.
+  The current queue is `review/category-queue.csv`.
+- `digest` (P4-06): a watchlist change email as HTML. Sending it needs an email provider account.
+- `.github/workflows/ingest.yml` (P1-11): weekday ingest. It needs the `SEC_USER_AGENT`
+  repository secret.
+- `docs/discovery/design-partner-offer.md`: the offer, pilot terms and a weekly plan to a
+  first paid pilot.
+- Found and fixed a served-number bug (SIRI scale read from a KPI caption, values 1,000×
+  too large). The demo was republished.
+- A public signup page was **not** built. Artifact storage is organization-internal, so
+  external prospects could not submit. A public form needs hosting or a form-service
+  account (owner).
+
+**Stop reason.** The engineering is built and measured. Paying users, interviews, accounts
+and human checks need real people and the owner, and were not simulated.
 

@@ -42,7 +42,7 @@ from app.store.db import (
 
 logger = logging.getLogger(__name__)
 
-ENGINE_VERSION = "bridge-5"
+ENGINE_VERSION = "bridge-6"
 _SCALE_NAMES = {
     UnitScale.UNITS: "units",
     UnitScale.THOUSANDS: "thousands",

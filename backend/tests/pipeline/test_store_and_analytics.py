@@ -216,3 +216,55 @@ def test_coverage_counts_only_the_current_extraction(store: Store) -> None:
     row.engine_version = "test-next"
     assert store.add_bridge(row, CIK, "2026-04-30", 1)
     assert build_snapshot(store)["coverage"]["sum_checks"] == before
+
+
+def test_review_export_and_apply(store: Store, tmp_path: Path) -> None:
+    import csv
+
+    from app.analytics.normalize import category_for
+    from app.pipeline.review import apply_queue, export_queue
+
+    quarter_series(store, CIK)
+    normalize_issuer(store, CIK, quarter_series(store, CIK))  # records rule labels
+    queue = tmp_path / "queue.csv"
+    assert export_queue(store, queue) >= 2
+    rows = list(csv.DictReader(queue.open(encoding="utf-8-sig")))
+    for row in rows:
+        if row["line_key"] == "restructuring":
+            row["decision"] = "ok"
+        if row["line_key"] == "litigation costs":
+            row["decision"] = "OTHER_NR"
+    with queue.open("w", newline="", encoding="utf-8-sig") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(rows[0]))
+        w.writeheader()
+        w.writerows(rows)
+    with pytest.raises(ValueError):
+        apply_queue(store, queue, reviewer="")
+    res = apply_queue(store, queue, reviewer="Test Reviewer")
+    assert res.applied == 2 and res.errors == []
+    assert category_for(store, CIK, "litigation costs").source == "human"
+    assert category_for(store, CIK, "litigation costs").code == "OTHER_NR"
+    assert category_for(store, CIK, "interest expense").source == "rule"
+
+
+def test_review_rejects_unknown_codes(store: Store, tmp_path: Path) -> None:
+    from app.pipeline.review import apply_queue
+
+    normalize_issuer(store, CIK, quarter_series(store, CIK))
+    bad = tmp_path / "bad.csv"
+    bad.write_text(
+        "line_key,suggested,components,decision\nrestructuring,RESTR,,NOPE\n",
+        encoding="utf-8",
+    )
+    res = apply_queue(store, bad, reviewer="R")
+    assert res.applied == 0 and res.errors
+
+
+def test_digest_lists_watchlist_changes(store: Store) -> None:
+    from app.analytics.digest import build_digest
+
+    snap = build_snapshot(store)
+    html, n = build_digest(snap, ["test"], date(2026, 1, 1), date(2026, 12, 31))
+    assert n >= 2 and "Recast" in html and "Litigation costs" in html
+    html, n = build_digest(snap, ["OTHER"], date(2026, 1, 1), date(2026, 12, 31))
+    assert n == 0 and "No changes" in html

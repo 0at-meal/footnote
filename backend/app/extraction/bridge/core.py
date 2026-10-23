@@ -695,6 +695,11 @@ def detect_scale(
 ) -> None:
     header_text = " ".join(c.text for c in table.cells if c.row_idx < start_idx)
     for text in (header_text, preceding_text):
+        if text is preceding_text:
+            # A caption that scales a non-money unit ("listener hours (in
+            # billions)") must never set the table's money scale: drop those
+            # captions from the text before reading it.
+            text = _NON_MONEY_CAPTION.sub(" ", text)
         res = detect_scale_from_caption(text)
         if res.scale is not UnitScale.UNKNOWN and not res.is_ambiguous:
             draft.scale = res.scale
@@ -714,6 +719,15 @@ def detect_scale(
     draft.exceptions.append("scale not found in table header or preceding text")
 
 
+_NON_MONEY_CAPTION = re.compile(
+    r"(?:hours|subscribers|users|listeners|customers|members|units|shares|accounts"
+    r"|tons|tonnes|barrels|ounces|passengers|guests|days|visits|streams|households"
+    r"|employees|locations|stores|square feet|miles|gallons)"
+    r"[^()]{0,30}\(\s*in (?:thousands|millions|billions)[^)]*\)"
+    r"|\(\s*in (?:thousands|millions|billions)[^)]*\)[^()]{0,3}"
+    r"(?:hours|subscribers|users|listeners|customers|units|shares)",
+    re.IGNORECASE,
+)
 _UNIT_OF_DOLLARS = re.compile(
     r"\(?\s*(thousands|millions|billions) of (?:u\.?s\.? )?dollars\s*\)?", re.IGNORECASE
 )
