@@ -15,15 +15,16 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-import os
 import shutil
 import sys
 from datetime import UTC, date, datetime
 from pathlib import Path
+from typing import Any
 
 from app.analytics.digest import build_digest
 from app.analytics.snapshot import build_snapshot
-from app.config import REPO_ROOT, default_db
+from app.analytics.source import source_table
+from app.config import REPO_ROOT, default_cache_dir, default_db
 from app.ingestion.edgar.client import EdgarClient
 from app.pipeline.ingest import run_ingest
 from app.pipeline.review import apply_queue, export_queue
@@ -58,11 +59,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.only:
             wanted = {t.upper() for t in args.only}
             universe = [u for u in universe if u.ticker in wanted]
-        cache = os.environ.get("EDGAR_CACHE_DIR") or str(
-            REPO_ROOT / "backend" / "data" / "edgar_cache"
-        )
         stats = run_ingest(
-            EdgarClient(cache_dir=cache),
+            EdgarClient(cache_dir=default_cache_dir()),
             store,
             universe,
             quarters=args.quarters,
@@ -89,6 +87,18 @@ def main(argv: list[str] | None = None) -> int:
     elif args.cmd == "export":
         snap = build_snapshot(store)
         snap["static"] = True
+        # The static app has no API: embed each issuer's latest-quarter table.
+        sources: dict[str, Any] = {}
+        for doc in snap["issuers"]:
+            if doc["quarters"]:
+                acc = doc["quarters"][-1]["accession"]
+                src = source_table(store, acc, default_cache_dir())
+                if src is not None:
+                    sources[acc] = src
+        snap["sources"] = sources
+        bad = [a for a, s in sources.items() if s["status"] != "ok"]
+        if bad:
+            print(f"{len(bad)} source table(s) not embedded: {', '.join(bad)}")
         args.out.mkdir(parents=True, exist_ok=True)
         (args.out / "snapshot.json").write_text(
             json.dumps(snap, separators=(",", ":")), encoding="utf-8"

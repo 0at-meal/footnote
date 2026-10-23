@@ -17,7 +17,8 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import HTMLResponse, Response
 
 from app.analytics.snapshot import build_snapshot
-from app.config import default_db
+from app.analytics.source import source_table
+from app.config import default_cache_dir, default_db
 from app.export.excel import issuer_workbook
 from app.store.db import Store
 
@@ -115,6 +116,25 @@ def feed(limit: int = 200) -> list[dict[str, Any]]:
 def peers() -> dict[str, Any]:
     result: dict[str, Any] = snapshot()["peers"]
     return result
+
+
+@app.get("/api/source/{accession}")
+def source(accession: str) -> dict[str, Any]:
+    """
+    The stored bridge table of one release, rendered from the cached exhibit,
+    with every source cell marked by ``data-fn-xp``. A table that cannot be
+    served comes back with an explicit ``status`` and ``reason``.
+    """
+    store = Store(default_db())
+    try:
+        doc = source_table(store, accession, default_cache_dir())
+    finally:
+        store.close()
+    if doc is None:
+        raise HTTPException(
+            status_code=404, detail=f"release {accession!r} not on record"
+        )
+    return doc
 
 
 @app.get("/api/snapshot")

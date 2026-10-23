@@ -2,407 +2,1110 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: left rail of views, working area as a credit worksheet; figures in mono with auditor tick marks. */
+/* Layout: a credit terminal. Sticky top bar; the working area is a dense worksheet of 32px rows,
+   figures in mono with auditor tick marks; filings open in a source panel from the right. */
 :root {
-  --bg: #f5f6f8;
+  --bg: #f4f5f7;
   --panel: #ffffff;
-  --ink: #111a2b;
-  --muted: #5b6577;
-  --rule: #dfe3ea;
+  --sunk: #eceef2;
+  --ink: #14213d;
+  --muted: #5a6478;
+  --rule: #dde1e8;
+  --rule-strong: #c3c9d4;
   --accent: #1f4fd1;
+  --accent-ink: #ffffff;
   --accent-soft: #e6ecfb;
-  --ok: #157347;
-  --ok-soft: #e3f3ea;
-  --warn: #9a5b00;
-  --warn-soft: #fbf0dc;
-  --bad: #b42318;
+  --ok: #12734a;
+  --ok-soft: #e1f1e9;
+  --warn: #9a5a00;
+  --warn-soft: #fbefd8;
+  --bad: #b3261e;
   --bad-soft: #fbe6e4;
-  --chart-a: #111a2b;
-  --chart-b: #1f4fd1;
-  --font-display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
-  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+  --kept: #9aa3b2;
+  --mix1: #14213d; --mix2: #1f4fd1; --mix3: #7d9be6; --mix4: #5a6478; --mix5: #b9c7ec; --mix6: #c3c9d4;
+  --shadow: 0 12px 40px rgba(20, 33, 61, 0.18);
+  --font-ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-num: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+  --row: 32px;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0d1320; --panel: #141c2c; --ink: #e7ebf3; --muted: #97a1b3; --rule: #263147;
-    --accent: #7ea2ff; --accent-soft: #1c2a4d; --ok: #5fd39a; --ok-soft: #12301f;
-    --warn: #f0b456; --warn-soft: #33270f; --bad: #ff8a80; --bad-soft: #3a1714;
-    --chart-a: #e7ebf3; --chart-b: #7ea2ff; color-scheme: dark;
+    --bg: #0d1320; --panel: #141c2d; --sunk: #10182a; --ink: #e3e8f1; --muted: #93a0b5; --rule: #243049; --rule-strong: #34425f;
+    --accent: #7ea2ff; --accent-ink: #0d1320; --accent-soft: #1b2a4d; --ok: #5fd39a; --ok-soft: #10301f; --warn: #f0b456; --warn-soft: #33270f;
+    --bad: #ff8a80; --bad-soft: #3a1714; --kept: #5d6880;
+    --mix1: #e3e8f1; --mix2: #7ea2ff; --mix3: #4a69b8; --mix4: #a9b4c8; --mix5: #33456e; --mix6: #66728a;
+    --shadow: 0 12px 40px rgba(0, 0, 0, 0.5); color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #0d1320; --panel: #141c2c; --ink: #e7ebf3; --muted: #97a1b3; --rule: #263147;
-  --accent: #7ea2ff; --accent-soft: #1c2a4d; --ok: #5fd39a; --ok-soft: #12301f;
-  --warn: #f0b456; --warn-soft: #33270f; --bad: #ff8a80; --bad-soft: #3a1714;
-  --chart-a: #e7ebf3; --chart-b: #7ea2ff; color-scheme: dark;
+  --bg: #0d1320; --panel: #141c2d; --sunk: #10182a; --ink: #e3e8f1; --muted: #93a0b5; --rule: #243049; --rule-strong: #34425f;
+  --accent: #7ea2ff; --accent-ink: #0d1320; --accent-soft: #1b2a4d; --ok: #5fd39a; --ok-soft: #10301f; --warn: #f0b456; --warn-soft: #33270f;
+  --bad: #ff8a80; --bad-soft: #3a1714; --kept: #5d6880;
+  --mix1: #e3e8f1; --mix2: #7ea2ff; --mix3: #4a69b8; --mix4: #a9b4c8; --mix5: #33456e; --mix6: #66728a;
+  --shadow: 0 12px 40px rgba(0, 0, 0, 0.5); color-scheme: dark;
 }
 * { box-sizing: border-box; }
-body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 14px; line-height: 1.5; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-ui); font-size: 13.5px; line-height: 1.45; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--panel); }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
-a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.shell { display: grid; grid-template-columns: 220px minmax(0, 1fr); min-height: 100%; }
-.rail { border-right: 1px solid var(--rule); padding-block: 20px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: 16px; display: flex; flex-direction: column; gap: 20px; position: sticky; top: env(safe-area-inset-top, 0px); height: 100vh; overflow-y: auto; }
-.brand { font-family: var(--font-display); font-weight: 600; font-size: 22px; letter-spacing: 0.01em; display: flex; align-items: baseline; gap: 6px; }
-.brand sup { font-family: var(--font-data); font-size: 11px; color: var(--accent); }
-.tag { color: var(--muted); font-size: 12px; line-height: 1.4; }
-.nav { display: flex; flex-direction: column; gap: 2px; }
-.nav a { color: var(--ink); padding: 6px 10px; border-radius: 6px; font-weight: 500; display: flex; justify-content: space-between; }
-.nav a.on { background: var(--accent-soft); color: var(--accent); }
-.nav a:hover { text-decoration: none; background: var(--accent-soft); }
-.nav .count { font-family: var(--font-data); font-size: 12px; color: var(--muted); }
-.search { width: 100%; padding: 8px 10px; border: 1px solid var(--rule); border-radius: 6px; background: var(--panel); color: var(--ink); font: inherit; }
-.rail-foot { margin-top: auto; font-size: 11px; color: var(--muted); line-height: 1.45; }
-main { padding-block: 28px 48px; padding-left: 32px; padding-right: max(16px, env(safe-area-inset-right, 0px)); min-width: 0; display: flex; flex-direction: column; gap: 24px; max-width: 1240px; }
-h1 { font-family: var(--font-display); font-weight: 600; font-size: 30px; line-height: 1.15; margin: 0; text-wrap: balance; }
-h2 { font-family: var(--font-display); font-weight: 600; font-size: 19px; margin: 0; text-wrap: balance; }
-h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0; font-weight: 600; }
-.sub { color: var(--muted); max-width: 70ch; margin: 0; }
-.panel { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
-.row { display: flex; gap: 16px; flex-wrap: wrap; align-items: baseline; }
-.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
-.kpi { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
-.kpi .v { font-family: var(--font-data); font-size: 22px; font-weight: 500; font-variant-numeric: tabular-nums; }
-.kpi .l { font-size: 12px; color: var(--muted); }
-.mono, td.n { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
-.scroll { overflow-x: auto; }
-table { border-collapse: collapse; width: 100%; font-size: 13px; }
-th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; padding: 8px 10px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
-td { padding: 7px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
-td.n, th.n { text-align: right; white-space: nowrap; }
-tr.sub-row td { color: var(--muted); }
-tr.total td { font-weight: 600; border-top: 2px solid var(--ink); }
-tr.start td { font-weight: 500; }
-tr.click { cursor: pointer; }
-tr.click:hover td { background: var(--accent-soft); }
-.chip { display: inline-block; font-family: var(--font-data); font-size: 11px; padding: 1px 6px; border-radius: 4px; background: var(--accent-soft); color: var(--accent); white-space: nowrap; }
-.chip.ok { background: var(--ok-soft); color: var(--ok); }
-.chip.warn { background: var(--warn-soft); color: var(--warn); }
-.chip.bad { background: var(--bad-soft); color: var(--bad); }
-.chip.muted { background: transparent; border: 1px solid var(--rule); color: var(--muted); }
-.tick { font-family: var(--font-data); font-size: 12px; }
-.tick.ok { color: var(--ok); }
-.tick.warn { color: var(--warn); }
-.tick.bad { color: var(--bad); }
-.qtabs { display: flex; gap: 6px; flex-wrap: wrap; }
-.qtabs button { font: inherit; font-family: var(--font-data); font-size: 12px; padding: 4px 9px; border: 1px solid var(--rule); background: var(--panel); color: var(--ink); border-radius: 6px; cursor: pointer; }
-.qtabs button.on { background: var(--ink); color: var(--panel); border-color: var(--ink); }
-.btn { font: inherit; font-weight: 500; padding: 7px 12px; border-radius: 6px; border: 1px solid var(--accent); color: var(--accent); background: var(--panel); cursor: pointer; }
-.btn:hover { background: var(--accent-soft); text-decoration: none; }
-.note { font-size: 12px; color: var(--muted); border-left: 3px solid var(--rule); padding-left: 10px; max-width: 80ch; }
-.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
-.feed { display: flex; flex-direction: column; }
-.feed .item { display: grid; grid-template-columns: 92px 64px 130px minmax(0, 1fr); gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--rule); align-items: baseline; }
-.feed .item .what { min-width: 0; }
-.bar { height: 8px; background: var(--accent-soft); border-radius: 4px; overflow: hidden; min-width: 80px; }
-.bar > span { display: block; height: 100%; background: var(--accent); }
-.legend { display: flex; gap: 16px; font-size: 12px; color: var(--muted); }
-.legend i { display: inline-block; width: 18px; height: 0; border-top: 2px solid var(--chart-a); vertical-align: middle; margin-right: 6px; }
-.legend i.b { border-top: 2px dashed var(--chart-b); }
-svg text { fill: var(--muted); font-family: var(--font-data); font-size: 11px; }
-.empty { color: var(--muted); padding: 20px 0; }
-.filters { display: flex; gap: 8px; flex-wrap: wrap; }
-.filters select { font: inherit; padding: 6px 8px; border: 1px solid var(--rule); border-radius: 6px; background: var(--panel); color: var(--ink); }
-@media (max-width: 860px) {
-  .shell { grid-template-columns: minmax(0, 1fr); }
-  .rail { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--rule); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
-  .nav { flex-direction: row; flex-wrap: wrap; }
-  .rail-foot { display: none; }
-  main { padding-left: max(16px, env(safe-area-inset-left, 0px)); }
-  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .grid2 { grid-template-columns: minmax(0, 1fr); }
-  .feed .item { grid-template-columns: 80px 56px minmax(0, 1fr); }
-  .feed .item .kind { display: none; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mono, .n, .num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+
+/* ---------- top bar */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--panel); border-bottom: 1px solid var(--rule); }
+.top-in { display: flex; align-items: center; gap: 20px; min-height: 52px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); max-width: 1480px; margin: 0 auto; }
+.logo { display: inline-flex; align-items: flex-start; color: var(--ink); font-weight: 600; font-size: 19px; letter-spacing: -0.01em; }
+.logo:hover { text-decoration: none; }
+.logo .fn { font-family: var(--font-num); font-size: 12px; color: var(--accent); margin-left: 1px; line-height: 1; padding-top: 2px; }
+.tabs { display: flex; gap: 2px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.tabs a { color: var(--muted); font-weight: 500; padding: 15px 12px 13px; border-bottom: 2px solid transparent; white-space: nowrap; }
+.tabs a:hover { color: var(--ink); text-decoration: none; }
+.tabs a.on { color: var(--ink); border-bottom-color: var(--accent); }
+.top-tools { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.kbtn { display: inline-flex; align-items: center; gap: 10px; height: 32px; padding: 0 8px 0 10px; border: 1px solid var(--rule); background: var(--sunk); color: var(--muted); border-radius: 6px; cursor: pointer; min-width: 240px; }
+.kbtn:hover { border-color: var(--rule-strong); }
+.kbtn span { flex: 1; text-align: left; }
+kbd { font-family: var(--font-num); font-size: 11px; border: 1px solid var(--rule-strong); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; color: var(--muted); background: var(--panel); }
+.btn { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border: 1px solid var(--rule-strong); background: var(--panel); color: var(--ink); border-radius: 6px; cursor: pointer; font-weight: 500; white-space: nowrap; }
+.btn:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { color: var(--accent-ink); opacity: 0.92; }
+.icon-btn { width: 32px; padding: 0; justify-content: center; }
+
+/* ---------- page */
+main { max-width: 1480px; margin: 0 auto; padding-block: 20px 96px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+h1 { font-size: 22px; font-weight: 600; line-height: 1.2; margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+h2 { font-size: 14px; font-weight: 600; margin: 0; text-wrap: balance; }
+.eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+.lede { color: var(--muted); max-width: 72ch; margin: 4px 0 0; }
+.panel { background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; min-width: 0; }
+.panel-h { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 10px 14px; border-bottom: 1px solid var(--rule); }
+.panel-b { padding: 12px 14px; }
+.empty { color: var(--muted); padding: 16px 14px; }
+.crumbs { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; color: var(--muted); }
+.crumbs a { color: var(--muted); }
+.crumbs a:hover { color: var(--accent); }
+.crumbs .sep { color: var(--rule-strong); }
+
+/* ---------- tables */
+.tbl-wrap { overflow: auto; max-height: min(72vh, 760px); }
+.tbl-wrap.free { max-height: none; }
+table.grid { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 13px; }
+table.grid th { position: sticky; top: 0; z-index: 1; background: var(--panel); text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; height: var(--row); padding: 0 10px; border-bottom: 1px solid var(--rule-strong); white-space: nowrap; }
+table.grid td { height: var(--row); padding: 3px 10px; border-bottom: 1px solid var(--rule); vertical-align: middle; }
+table.grid .n { text-align: right; white-space: nowrap; }
+table.grid tbody tr:hover td { background: var(--sunk); }
+table.grid tr.hl td, table.grid tbody tr.hl:hover td { background: var(--accent-soft); }
+table.grid tr.sub td { color: var(--muted); }
+table.grid tr.start td { font-weight: 500; }
+table.grid tr.total td { font-weight: 600; border-top: 1.5px solid var(--ink); }
+table.grid tfoot td { font-weight: 600; background: var(--sunk); }
+table.grid tr.click { cursor: pointer; }
+th button.sort { all: unset; cursor: pointer; display: inline-flex; gap: 4px; }
+th button.sort:focus-visible { outline: 2px solid var(--accent); }
+th.n button.sort { justify-content: flex-end; }
+.num { background: none; border: 0; padding: 2px 4px; margin: -2px -4px; border-radius: 3px; cursor: pointer; color: var(--ink); }
+.num:hover { background: var(--accent-soft); color: var(--accent); }
+.lbl { min-width: 220px; }
+
+/* ---------- chips and ticks */
+.chip { display: inline-block; font-family: var(--font-num); font-size: 11px; line-height: 18px; padding: 0 6px; border-radius: 3px; background: var(--sunk); color: var(--muted); white-space: nowrap; border: 1px solid var(--rule); }
+.chip.ok { background: var(--ok-soft); color: var(--ok); border-color: transparent; }
+.chip.warn { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+.chip.bad { background: var(--bad-soft); color: var(--bad); border-color: transparent; }
+.chip.code { background: transparent; color: var(--ink); border-color: var(--rule-strong); }
+.ticks { display: inline-flex; gap: 12px; flex-wrap: wrap; }
+.tick { font-size: 12px; white-space: nowrap; }
+.tick b { font-family: var(--font-num); font-weight: 600; }
+.tick.ok b { color: var(--ok); } .tick.bad b { color: var(--bad); } .tick.warn b { color: var(--warn); }
+
+/* ---------- changes inbox */
+.inbox { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 18px; align-items: start; }
+.inbox-main { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; }
+.stat { padding: 12px 16px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.stat + .stat { border-left: 1px solid var(--rule); }
+.stat .v { font-family: var(--font-num); font-size: 24px; font-weight: 500; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.stat .l { font-weight: 500; }
+.stat .d { font-size: 12px; color: var(--muted); }
+.filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.filters label { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+select, input[type="text"], input[type="search"] { font: inherit; height: 32px; padding: 0 8px; border: 1px solid var(--rule-strong); border-radius: 6px; background: var(--panel); color: var(--ink); }
+.filters .count { margin-left: auto; font-size: 12px; color: var(--muted); }
+.hint { font-size: 12px; color: var(--muted); }
+.day { display: flex; flex-direction: column; gap: 6px; }
+.day-h { display: flex; gap: 8px; align-items: baseline; font-size: 12px; font-weight: 600; color: var(--muted); padding: 6px 0 2px; border-bottom: 1px solid var(--rule); }
+.day-h .mono { color: var(--ink); }
+.card { display: grid; grid-template-columns: 4px 72px minmax(0, 1fr) auto 64px; align-items: stretch; background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; cursor: pointer; min-height: 52px; }
+.card:hover { border-color: var(--rule-strong); }
+.card.sel { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.card .strip-c { background: var(--kept); }
+.card.t-red .strip-c { background: var(--bad); }
+.card.t-amber .strip-c { background: var(--warn); }
+.card.t-blue .strip-c { background: var(--accent); }
+.card .tk { align-self: center; padding: 0 10px 0 12px; font-family: var(--font-num); font-weight: 600; color: var(--ink); }
+.card .body { padding: 8px 8px; min-width: 0; display: flex; flex-direction: column; gap: 2px; justify-content: center; }
+.card .type { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; color: var(--muted); }
+.card.t-red .type { color: var(--bad); } .card.t-amber .type { color: var(--warn); } .card.t-blue .type { color: var(--accent); }
+.card .desc { overflow-wrap: anywhere; }
+.card .nums { align-self: center; padding: 0 12px; font-family: var(--font-num); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; font-size: 13px; }
+.card .nums .arrow { color: var(--muted); padding: 0 4px; }
+.card .nums .dl { display: block; font-size: 11.5px; color: var(--muted); }
+.card .src { align-self: center; justify-self: end; padding-right: 12px; font-size: 12px; white-space: nowrap; }
+.fold { all: unset; cursor: pointer; font-size: 12px; color: var(--muted); padding: 6px 10px; border: 1px dashed var(--rule-strong); border-radius: 6px; }
+.fold:hover { color: var(--ink); border-color: var(--muted); }
+.fold:focus-visible { outline: 2px solid var(--accent); }
+.more { align-self: center; }
+.rail { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 72px); display: flex; flex-direction: column; gap: 14px; }
+.watch li { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto 20px; gap: 8px; align-items: center; height: var(--row); padding: 0 10px 0 14px; border-bottom: 1px solid var(--rule); }
+.watch ul { list-style: none; margin: 0; padding: 0; }
+.watch .t { font-family: var(--font-num); font-weight: 600; color: var(--ink); cursor: pointer; }
+.watch .nm { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.watch .x { all: unset; cursor: pointer; color: var(--muted); text-align: center; border-radius: 3px; }
+.watch .x:hover { color: var(--bad); }
+.watch .x:focus-visible { outline: 2px solid var(--accent); }
+.watch form { display: flex; gap: 6px; padding: 10px 14px; }
+.watch form input { flex: 1; min-width: 0; text-transform: uppercase; }
+
+/* ---------- issuer */
+.ihead { display: flex; flex-wrap: wrap; gap: 16px 28px; align-items: flex-end; justify-content: space-between; }
+.ihead .ctl { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.figs { display: grid; grid-template-columns: repeat(3, minmax(0, auto)) minmax(0, 1fr); gap: 0; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; }
+.fig { padding: 10px 18px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.fig + .fig { border-left: 1px solid var(--rule); }
+.fig .v { font-family: var(--font-num); font-size: 22px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.fig .v.btn-v { cursor: pointer; }
+.fig .l { font-size: 12px; color: var(--muted); }
+.fig.checks { justify-content: center; }
+.split { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 18px; align-items: start; }
+.stack { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.seg { display: inline-flex; border: 1px solid var(--rule-strong); border-radius: 6px; overflow: hidden; }
+.seg button { border: 0; background: var(--panel); padding: 0 10px; height: 28px; cursor: pointer; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.seg button + button { border-left: 1px solid var(--rule-strong); }
+.seg button.on { background: var(--ink); color: var(--panel); }
+svg { display: block; max-width: 100%; height: auto; }
+svg text { fill: var(--muted); font-family: var(--font-num); font-size: 10.5px; }
+svg text.ink { fill: var(--ink); }
+.wf-row { cursor: pointer; }
+.wf-row:hover .hit, .wf-row.hl .hit { fill: var(--accent-soft); }
+.wf-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--muted); padding: 0 14px 12px; }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px; margin-right: 5px; }
+.lg-line { display: inline-block; width: 16px; border-top: 2px solid var(--ink); vertical-align: middle; margin-right: 5px; }
+.lg-line.b { border-top: 2px dashed var(--accent); }
+.subtabs { display: flex; gap: 2px; border-bottom: 1px solid var(--rule); padding: 0 8px; overflow-x: auto; }
+.subtabs button { border: 0; background: none; padding: 10px 10px 8px; border-bottom: 2px solid transparent; color: var(--muted); font-weight: 500; cursor: pointer; white-space: nowrap; }
+.subtabs button.on { color: var(--ink); border-bottom-color: var(--accent); }
+.note { font-size: 12px; color: var(--muted); padding: 10px 14px; border-top: 1px solid var(--rule); max-width: 110ch; }
+
+/* ---------- source viewer */
+.viewer { position: fixed; top: 0; right: 0; bottom: 0; width: 45vw; min-width: 420px; z-index: 40; background: var(--panel); border-left: 1px solid var(--rule-strong); box-shadow: var(--shadow); display: flex; flex-direction: column; transform: translateX(104%); visibility: hidden; transition: transform 220ms ease, visibility 0s linear 220ms; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); padding-right: env(safe-area-inset-right, 0px); }
+.viewer.open { transform: none; visibility: visible; transition: transform 220ms ease; }
+.v-head { display: flex; gap: 12px; align-items: flex-start; padding: 12px 16px; border-bottom: 1px solid var(--rule); }
+.v-head .meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.v-head .ttl { font-weight: 600; overflow-wrap: anywhere; }
+.v-head dl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 1px 10px; margin: 0; font-size: 12px; }
+.v-head dt { color: var(--muted); }
+.v-head dd { margin: 0; font-family: var(--font-num); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.v-line { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; padding: 8px 16px; font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--rule); background: var(--sunk); }
+.v-line strong { color: var(--ink); font-family: var(--font-num); font-weight: 600; }
+.v-body { flex: 1; overflow: auto; padding: 12px 16px 24px; }
+.v-table table { border-collapse: collapse; font-size: 12px; font-family: var(--font-ui); }
+.v-table td, .v-table th { padding: 2px 4px; border-bottom: 1px solid var(--rule); white-space: nowrap; text-align: left; font-weight: 400; }
+.v-table tr > td:first-child { position: sticky; left: 0; background: var(--panel); max-width: min(280px, 42vw); overflow: hidden; text-overflow: ellipsis; box-shadow: 1px 0 0 var(--rule); }
+.v-table td.r { text-align: right; font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+.v-table td[data-fn-xp] { cursor: pointer; }
+.v-table td[data-fn-xp]:hover { background: var(--sunk); }
+.v-table tr.src-row td { background: var(--accent-soft); }
+.v-table td.src-hit { background: var(--accent) !important; color: var(--accent-ink); font-weight: 600; outline: 2px solid var(--accent); }
+.v-msg { color: var(--muted); max-width: 60ch; }
+
+/* ---------- compare */
+.cmp-ctl { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.pick { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.pick .chip { font-size: 12px; line-height: 26px; padding: 0 4px 0 8px; color: var(--ink); background: var(--panel); border-color: var(--rule-strong); display: inline-flex; gap: 4px; align-items: center; }
+.pick .chip button { all: unset; cursor: pointer; color: var(--muted); padding: 0 4px; }
+.pick .chip button:hover { color: var(--bad); }
+.mixbar { display: flex; height: 12px; width: 160px; border-radius: 2px; overflow: hidden; background: var(--sunk); }
+.mixbar span { display: block; height: 100%; }
+.sm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.sm { margin: 0; padding: 10px 12px 6px; }
+.sm figcaption { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--muted); }
+.sm figcaption b { font-family: var(--font-num); color: var(--ink); }
+
+/* ---------- method */
+.cols2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; }
+.prose { padding: 12px 14px; }
+.prose ol, .prose ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; max-width: 72ch; }
+.callout { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+
+/* ---------- palette and demo */
+.pal-back { position: fixed; inset: 0; z-index: 60; background: rgba(13, 19, 32, 0.38); display: flex; justify-content: center; align-items: flex-start; padding: calc(env(safe-area-inset-top, 0px) + 12vh) max(16px, env(safe-area-inset-right, 0px)) 16px max(16px, env(safe-area-inset-left, 0px)); }
+.pal { width: 560px; max-width: 100%; background: var(--panel); border: 1px solid var(--rule-strong); border-radius: 10px; box-shadow: var(--shadow); overflow: hidden; }
+.pal input { width: 100%; height: 48px; border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; padding: 0 16px; font-size: 15px; }
+.pal input:focus-visible { outline: none; }
+.pal ul { list-style: none; margin: 0; padding: 6px; max-height: 50vh; overflow: auto; }
+.pal li { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 10px; align-items: center; height: 34px; padding: 0 10px; border-radius: 6px; cursor: pointer; }
+.pal li b { font-family: var(--font-num); }
+.pal li .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pal li.on { background: var(--accent-soft); }
+.pal .foot { font-size: 12px; color: var(--muted); padding: 8px 16px; border-top: 1px solid var(--rule); }
+.demo { position: fixed; z-index: 50; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); width: 420px; max-width: calc(100vw - 32px); background: var(--ink); color: var(--panel); border-radius: 10px; box-shadow: var(--shadow); padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+.demo .k { font-family: var(--font-num); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.75; }
+.demo p { margin: 0; line-height: 1.5; }
+.demo .ctl { display: flex; gap: 8px; justify-content: flex-end; }
+.demo .ctl button { height: 30px; padding: 0 12px; border-radius: 6px; border: 1px solid currentColor; background: transparent; color: var(--panel); cursor: pointer; }
+.demo .ctl button.go { background: var(--panel); color: var(--ink); border-color: var(--panel); font-weight: 600; }
+.demo .ctl button:disabled { opacity: 0.4; cursor: default; }
+.toast { position: fixed; z-index: 70; left: 50%; transform: translateX(-50%); bottom: calc(24px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--panel); padding: 8px 14px; border-radius: 6px; font-size: 12.5px; }
+
+@media (max-width: 1100px) {
+  .inbox { grid-template-columns: minmax(0, 1fr); }
+  .rail { position: static; }
+  .split { grid-template-columns: minmax(0, 1fr); }
 }
-@media (prefers-reduced-motion: no-preference) { .fade { animation: fade 180ms ease-out; } @keyframes fade { from { opacity: 0.4; } to { opacity: 1; } } }
+@media (max-width: 860px) {
+  .top-in { flex-wrap: wrap; gap: 0 12px; }
+  .tabs { order: 3; width: 100%; margin: 0 -4px; }
+  .tabs a { padding: 9px 8px 8px; }
+  .kbtn { min-width: 0; }
+  .kbtn span, .kbtn kbd { display: none; }
+  .strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stat:nth-child(3) { border-left: 0; }
+  .stat .v { font-size: 19px; }
+  .stat:nth-child(n + 3) { border-top: 1px solid var(--rule); }
+  .figs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .fig.checks { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--rule); }
+  .fig { padding: 8px 12px; }
+  .fig .v { font-size: 17px; }
+  .cols2 { grid-template-columns: minmax(0, 1fr); }
+  .viewer { width: 100vw; min-width: 0; padding-left: env(safe-area-inset-left, 0px); }
+  .v-head { flex-wrap: wrap; }
+  .v-head .meta { flex: 1 1 calc(100% - 48px); }
+  #vSec { order: 3; }
+  .card { grid-template-columns: 4px 60px minmax(0, 1fr); grid-template-rows: auto auto; }
+  .card .strip-c { grid-row: 1 / 3; }
+  .card .tk { grid-row: 1 / 3; padding: 0 8px 0 10px; }
+  .card .nums { grid-column: 3; text-align: left; padding: 0 8px 8px; }
+  .card .nums .dl { display: inline; margin-left: 8px; }
+  .card .src { display: none; }
+  .lbl { min-width: 160px; }
+  .kb { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .viewer, .viewer.open { transition: none; } }
 </style>
 
-<div class="shell">
-  <aside class="rail">
-    <div>
-      <div class="brand">Footnote<sup>beta</sup></div>
-      <div class="tag">Verified EBITDA bridges for credit analysts, from SEC filings.</div>
+<header class="top">
+  <div class="top-in">
+    <a class="logo" href="#changes" aria-label="Footnote, changes inbox">Footnote<span class="fn">¹</span></a>
+    <nav class="tabs" id="tabs" aria-label="Sections">
+      <a href="#changes" data-v="changes">Changes</a>
+      <a href="#issuers" data-v="issuers">Issuers</a>
+      <a href="#compare" data-v="compare">Compare</a>
+      <a href="#method" data-v="method">Method</a>
+    </nav>
+    <div class="top-tools">
+      <button type="button" class="kbtn" id="openK" aria-label="Search issuers"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 11l4 4" stroke="currentColor" stroke-width="1.6" fill="none"/></svg><span>Search ticker or name</span><kbd>Ctrl K</kbd></button>
+      <button type="button" class="btn" id="demoBtn">Demo</button>
+      <button type="button" class="btn icon-btn" id="themeBtn" aria-label="Switch light or dark theme" title="Switch light or dark theme"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 2a6 6 0 0 1 0 12z" fill="currentColor"/></svg></button>
     </div>
-    <input id="q" class="search" type="search" placeholder="Search ticker or name" aria-label="Search issuers">
-    <nav class="nav" id="nav"></nav>
-    <div class="rail-foot" id="foot"></div>
-  </aside>
-  <main id="main"><div class="empty">Loading the record…</div></main>
+  </div>
+</header>
+<main id="main"><div class="empty">Loading the record…</div></main>
+
+<aside class="viewer" id="viewer" aria-label="Source filing" aria-hidden="true">
+  <div class="v-head">
+    <div class="meta">
+      <div class="eyebrow">Source table, as filed</div>
+      <div class="ttl" id="vTitle"></div>
+      <dl id="vMeta"></dl>
+    </div>
+    <a class="btn" id="vSec" href="#" target="_blank" rel="noopener">Open on sec.gov ↗</a>
+    <button type="button" class="btn icon-btn" id="vClose" aria-label="Close source viewer">✕</button>
+  </div>
+  <div class="v-line" id="vLine"></div>
+  <div class="v-body" id="vBody"></div>
+</aside>
+
+<div class="pal-back" id="palette" hidden>
+  <div class="pal" role="dialog" aria-label="Search issuers">
+    <input id="palq" type="text" placeholder="Search by ticker or name" autocomplete="off" spellcheck="false" aria-label="Search by ticker or name">
+    <ul id="pall" role="listbox"></ul>
+    <div class="foot">↑ ↓ to move · Enter to open · Esc to close</div>
+  </div>
+</div>
+
+<div class="demo" id="demo" hidden role="region" aria-label="Guided demo">
+  <div class="k" id="demoK"></div>
+  <p id="demoP"></p>
+  <div class="ctl"><button type="button" id="demoExit">Exit</button><button type="button" id="demoPrev">Back</button><button type="button" class="go" id="demoNext">Next</button></div>
 </div>
 
 <script>
-(function () {
+(() => {
   "use strict";
-  var S = null; // snapshot
-  var state = { view: "universe", ticker: null, q: null, sector: "", feedType: "" };
-  var CODES = {};
-  var main = document.getElementById("main");
+  let S = null, CODES = {}, BY = {};
+  const MULT = { units: 1, thousands: 1e3, millions: 1e6, billions: 1e9 };
+  const WATCH_DEFAULT = ["CC", "CZR", "MGM", "PENN", "WYNN", "CHTR", "LUMN", "CCL", "HTZ", "BHC"];
+  const st = {
+    view: "changes", ticker: null, period: null, tab: "recasts", policy: "v01", hl: null,
+    f: { type: "", sector: "", watch: false, min: 0 }, sel: -1, open: {}, days: 30,
+    cmp: { mode: "sector", sector: "Gaming & leisure", tickers: ["CZR", "MGM", "PENN"] },
+    sort: { key: "gap", dir: -1 }, usector: "", uq: "",
+  };
+  let VIS = [];
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+  const main = $("#main");
 
-  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
-  function m(v) { // USD millions, accounting negatives
+  function lsGet(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* storage unavailable: keep in memory only */ } }
+  let WATCH = lsGet("fn-watch", WATCH_DEFAULT);
+
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+  // USD millions, one decimal, negatives in parentheses.
+  function m(v, dp) {
     if (v == null || isNaN(v)) return "—";
-    var x = v / 1e6, a = Math.abs(x);
-    var s = a.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    const x = v / 1e6, a = Math.abs(x), d = dp == null ? 1 : dp;
+    const s = a.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
     return x < 0 ? "(" + s + ")" : s;
   }
-  function pct(v) { return v == null ? "—" : (v * 100).toFixed(1) + "%"; }
-  var MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  function parts(pid) { var i = pid.indexOf("-"); var d = pid.slice(i + 1).split("-"); return { months: +pid.slice(0, i - 1), y: d[0], m: +d[1], day: +d[2] }; }
-  function qlabel(pid) { var p = parts(pid); return MON[p.m - 1] + " " + p.day + ", " + p.y; }
-  function short(pid) {
-    var p = parts(pid); var base = MON[p.m - 1] + " '" + p.y.slice(2);
-    return p.months === 3 ? base : (p.months === 12 ? "12M to " : p.months + "M to ") + base;
+  function capM(v) {
+    if (v == null) return "—";
+    const a = Math.abs(v) / 1e6;
+    const s = "$" + (a >= 10 ? Math.round(a).toLocaleString("en-US") : a.toFixed(1)) + "m";
+    return v < 0 ? "(" + s + ")" : s;
   }
-  function src(url, text) { return url ? '<a href="' + esc(url) + '" target="_blank" rel="noopener" title="Open the exact line on sec.gov">' + (text || "sec.gov ↗") + "</a>" : '<span class="tag">no link</span>'; }
-  function issuer(t) { return S.issuers.find(function (d) { return d.ticker === t; }); }
+  function pct(v) { if (v == null || isNaN(v)) return "—"; const s = Math.abs(v * 100).toFixed(1) + "%"; return v < 0 ? "(" + s + ")" : s; }
+  const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  function pp(pid) { const i = pid.indexOf("-"); const d = pid.slice(i + 1).split("-"); return { months: +pid.slice(0, i - 1), y: d[0], m: +d[1], day: +d[2] }; }
+  function qlabel(pid) { const p = pp(pid); return (p.months === 3 ? "" : p.months + " months to ") + MON[p.m - 1] + " " + p.day + ", " + p.y; }
+  function short(pid) { const p = pp(pid); const b = MON[p.m - 1] + " ’" + p.y.slice(2); return p.months === 3 ? b : p.months + "M " + b; }
+  function dlabel(iso) { const d = new Date(iso + "T00:00:00Z"); return DOW[d.getUTCDay()] + " " + MON[d.getUTCMonth()] + " " + d.getUTCDate() + ", " + d.getUTCFullYear(); }
+  function ext(url, text, title) { return url ? '<a href="' + esc(url) + '" target="_blank" rel="noopener"' + (title ? ' title="' + esc(title) + '"' : "") + ">" + (text || "sec.gov ↗") + "</a>" : '<span class="muted">no link</span>'; }
   function latest(d) { return d.quarters.length ? d.quarters[d.quarters.length - 1] : null; }
-  var TREAT = { accept: ["Kept", "muted"], exclude: ["Reversed", "bad"], flag: ["Flagged", "warn"], review: ["Needs review", "bad"] };
-
-  function nav() {
-    var c = S.coverage;
-    var items = [["universe", "Universe", S.issuers.length], ["changes", "Changes", S.feed.length], ["peers", "Peers", Object.keys(S.peers).length], ["method", "Method & accuracy", ""]];
-    document.getElementById("nav").innerHTML = items.map(function (it) {
-      var on = state.view === it[0] ? " on" : "";
-      return '<a href="#' + it[0] + '" class="' + on + '" data-view="' + it[0] + '"><span>' + it[1] + '</span><span class="count">' + it[2] + "</span></a>";
-    }).join("");
-    document.getElementById("foot").innerHTML =
-      c.issuers + " issuers · " + c.bridges_found + " bridges<br>" +
-      (c.sum_checks.pass) + " period tie-outs passed<br>Built " + esc(S.generated_at.slice(0, 10)) + " from EDGAR";
+  function quarter(d, pid) { return (pid && d.quarters.find((q) => q.period_id === pid)) || latest(d); }
+  function threeM(d) { return d.quarters.filter((q) => pp(q.period_id).months === 3 && q.reported_usd != null); }
+  function sumOk(q) { const c = q.sum_check; return !!c && Math.abs(Number(c.expected) - Number(c.computed)) <= Number(c.tolerance); }
+  function checks(q) {
+    const s = !q.sum_check ? ["warn", "○", "no sum check", "No sum check was run for this period"]
+      : sumOk(q) ? ["ok", "✓", "adds up", "Start plus every adjustment equals the stated total (" + q.sum_check.computed + " vs " + q.sum_check.expected + ", tolerance " + q.sum_check.tolerance + ")"]
+      : ["bad", "✗", "does not add up", "Start plus adjustments is " + q.sum_check.computed + ", the filing states " + q.sum_check.expected];
+    const a = q.anchor_status === "pass" ? ["ok", "✓", "matches XBRL", "The GAAP starting line equals the company's XBRL fact for this period"]
+      : q.anchor_status === "mismatch" ? ["bad", "✗", "differs from XBRL", "The GAAP starting line differs from the company's XBRL fact"]
+      : ["warn", "○", "no XBRL fact", "XBRL has no comparable fact for this period"];
+    return { s, a };
   }
+  function tickHtml(q, compact) {
+    const c = checks(q);
+    return [c.s, c.a].map((t) => '<span class="tick ' + t[0] + '" title="' + esc(t[3]) + '"><b>' + t[1] + "</b>" + (compact ? "" : " " + t[2]) + "</span>").join("");
+  }
+  function codeName(c) { return CODES[c] ? CODES[c].name : c; }
+  function nice(r) { const e = Math.pow(10, Math.floor(Math.log10(r || 1))); const f = r / e; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * e; }
+  function toast(t) { const el = document.createElement("div"); el.className = "toast"; el.textContent = t; document.body.appendChild(el); setTimeout(() => el.remove(), 1800); }
 
-  function go(view, ticker) {
-    state.view = view; state.ticker = ticker || null; state.q = null;
+  // Bridge lines joined to their normalization (category, treatment) by label + as-shown value.
+  function enrich(q) {
+    if (q._en) return q._en;
+    const pool = {};
+    q.normalization.lines.forEach((n) => { const k = n.label + "|" + n.value_raw; (pool[k] = pool[k] || []).push(n); });
+    q._en = q.lines.map((l, i) => Object.assign({}, l, { li: i, n: l.role === "adjustment" ? ((pool[l.label + "|" + l.value_raw] || []).shift() || null) : null }));
+    return q._en;
+  }
+  function lineUsd(l) { return l.value_usd == null ? null : l.sign * l.value_usd; }
+
+  // ------------------------------------------------------------------ routing
+  const VIEWS = ["changes", "issuers", "compare", "method"];
+  function tok() { return st.view === "issuer" ? st.ticker + (st.period ? "_" + st.period : "") : st.view; }
+  function go(view, o) {
+    o = o || {};
+    st.view = view;
+    if (view === "issuer") { st.ticker = o.ticker; st.period = o.period || null; st.hl = o.hl || null; st.tab = o.tab || st.tab; }
+    if (!o.keepViewer) closeViewer();
+    const t = tok();
+    if (decodeURIComponent(location.hash.slice(1)) !== t) location.hash = t;
+    else { render(); if (!keepPlace()) window.scrollTo(0, 0); }
+  }
+  function keepPlace() { return st.view === "issuer" && !!st.hl; }
+  function fromHash() {
+    const h = decodeURIComponent(location.hash.slice(1));
+    if (VIEWS.indexOf(h) >= 0) st.view = h;
+    else if (h) {
+      const i = h.indexOf("_"), t = (i < 0 ? h : h.slice(0, i)).toUpperCase(), p = i < 0 ? null : h.slice(i + 1);
+      if (BY[t]) { if (st.ticker !== t) { st.hl = null; } st.view = "issuer"; st.ticker = t; st.period = p && BY[t].quarters.some((q) => q.period_id === p) ? p : null; }
+      else st.view = "changes";
+    } else st.view = "changes";
     render();
-    try { history.replaceState(null, "", "#" + (ticker || view)); } catch (e) {}
-    window.scrollTo(0, 0);
   }
-
-  // ---------------------------------------------------------------- universe
-  function universe() {
-    var rows = S.issuers.filter(function (d) {
-      var q = (document.getElementById("q").value || "").trim().toLowerCase();
-      return !q || d.ticker.toLowerCase().indexOf(q) >= 0 || d.name.toLowerCase().indexOf(q) >= 0;
-    });
-    var c = S.coverage;
-    var tieRate = c.bridges_found ? c.bridges_all_periods_tie / c.bridges_found : null;
-    var anc = c.anchor_checks, ancN = anc.pass + anc.mismatch;
-    var html = '<div class="fade" style="display:flex;flex-direction:column;gap:24px">' +
-      '<div><h1>Every leveraged issuer\'s EBITDA bridge, tied out to the filing</h1>' +
-      '<p class="sub">Footnote reads each earnings release on EDGAR, finds the headline Adjusted EBITDA reconciliation, checks that it adds up and that its GAAP starting line matches XBRL, then tracks what changes quarter to quarter. Every number links to the exact line on sec.gov.</p></div>' +
-      '<div class="kpis">' +
-      kpi(c.issuers, "issuers covered") +
-      kpi(c.bridges_found, "earnings releases with a bridge") +
-      kpi(pct(tieRate), "bridges that tie out in every period") +
-      kpi(pct(ancN ? anc.pass / ancN : null), "GAAP anchors matching XBRL (where XBRL has the period)") +
-      "</div>" +
-      '<div class="panel"><div class="row" style="justify-content:space-between"><h2>Coverage universe</h2><span class="tag">Latest quarter per issuer · USD millions · normalized is a draft-policy preview</span></div>' +
-      '<div class="scroll"><table><thead><tr><th>Issuer</th><th>Sector</th><th>Latest quarter</th><th class="n">Reported</th><th class="n">Footnote normalized</th><th class="n">Add-backs / EBITDA</th><th class="n">Recasts</th><th class="n">Definition changes</th></tr></thead><tbody>' +
-      rows.map(function (d) {
-        var q = latest(d);
-        return '<tr class="click" data-t="' + d.ticker + '"><td><strong>' + d.ticker + '</strong> <span class="tag">' + esc(d.name) + "</span></td><td>" + esc(d.sector) + "</td>" +
-          "<td class=\"mono\">" + (q ? short(q.period_id) : "—") + "</td>" +
-          '<td class="n">' + (q ? m(q.reported_usd) : "—") + "</td>" +
-          '<td class="n">' + (q ? (q.normalized_usd == null ? '<span class="chip warn">' + esc(q.normalization.reason || "n/a") + "</span>" : m(q.normalized_usd)) : "—") + "</td>" +
-          '<td class="n">' + (q ? pct(q.addback_intensity) : "—") + "</td>" +
-          '<td class="n">' + d.recasts.length + '</td><td class="n">' + d.changes.length + "</td></tr>";
-      }).join("") + "</tbody></table></div></div></div>";
-    main.innerHTML = html;
-  }
-  function kpi(v, l) { return '<div class="kpi"><span class="v">' + v + '</span><span class="l">' + l + "</span></div>"; }
-
-  // ---------------------------------------------------------------- issuer
-  function chart(d) {
-    var qs = d.quarters.filter(function (q) { return q.reported_usd != null; });
-    if (qs.length < 2) return '<div class="empty">Fewer than two verified quarters so far.</div>';
-    var W = 720, H = 220, L = 64, R = 34, T = 14, B = 30;
-    var vals = [];
-    qs.forEach(function (q) { vals.push(q.reported_usd); if (q.normalized_usd != null) vals.push(q.normalized_usd); });
-    var lo = Math.min(0, Math.min.apply(null, vals)), hi = Math.max.apply(null, vals);
-    var step = nice((hi - lo) / 4); lo = Math.floor(lo / step) * step; hi = Math.ceil(hi / step) * step;
-    function x(i) { return L + (W - L - R) * (qs.length === 1 ? 0.5 : i / (qs.length - 1)); }
-    function y(v) { return T + (H - T - B) * (1 - (v - lo) / (hi - lo || 1)); }
-    var g = "";
-    for (var t = lo; t <= hi + step / 2; t += step) {
-      g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(t) + '" y2="' + y(t) + '" stroke="var(--rule)" stroke-width="1"/>' +
-        '<text x="' + (L - 8) + '" y="' + (y(t) + 4) + '" text-anchor="end">' + m(t) + "</text>";
-    }
-    qs.forEach(function (q, i) { g += '<text x="' + x(i) + '" y="' + (H - 8) + '" text-anchor="middle">' + short(q.period_id) + "</text>"; });
-    var pa = qs.map(function (q, i) { return (i ? "L" : "M") + x(i) + " " + y(q.reported_usd); }).join(" ");
-    var nb = qs.filter(function (q) { return q.normalized_usd != null; });
-    var pb = qs.map(function (q, i) { return q.normalized_usd == null ? "" : ((i && qs[i - 1].normalized_usd != null) ? "L" : "M") + x(i) + " " + y(q.normalized_usd); }).join(" ");
-    var area = pa + " L" + x(qs.length - 1) + " " + y(Math.max(lo, 0)) + " L" + x(0) + " " + y(Math.max(lo, 0)) + " Z";
-    g += '<path d="' + area + '" fill="var(--accent-soft)" opacity="0.6"/>';
-    g += '<path d="' + pa + '" fill="none" stroke="var(--chart-a)" stroke-width="2"/>';
-    if (nb.length) g += '<path d="' + pb + '" fill="none" stroke="var(--chart-b)" stroke-width="2" stroke-dasharray="5 4"/>';
-    qs.forEach(function (q, i) {
-      g += '<circle cx="' + x(i) + '" cy="' + y(q.reported_usd) + '" r="' + (i === qs.length - 1 ? 4.5 : 3) + '" fill="var(--chart-a)"><title>' + short(q.period_id) + " reported " + m(q.reported_usd) + "</title></circle>";
-      if (q.normalized_usd != null) g += '<circle cx="' + x(i) + '" cy="' + y(q.normalized_usd) + '" r="3" fill="var(--chart-b)"><title>' + short(q.period_id) + " normalized " + m(q.normalized_usd) + "</title></circle>";
-    });
-    return '<div class="scroll"><svg viewBox="0 0 ' + W + " " + H + '" width="100%" style="min-width:520px;max-width:100%" role="img" aria-label="Reported versus normalized EBITDA by quarter">' + g + "</svg></div>";
-  }
-  function nice(r) { var e = Math.pow(10, Math.floor(Math.log10(r || 1))); var f = r / e; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * e; }
-
-  function issuerView(d) {
-    var q = state.q ? d.quarters.find(function (x) { return x.period_id === state.q; }) : latest(d);
-    if (!q) { main.innerHTML = '<div class="panel"><h1>' + d.ticker + '</h1><p class="sub">No verified quarterly bridge yet. Releases and the reason for each are listed under Method.</p></div>' + releases(d); return; }
-    var n = q.normalization;
-    var cats = {};
-    n.lines.forEach(function (l) { cats[l.label + "|" + l.value_raw] = l; });
-    var sumOk = q.sum_check && Math.abs(Number(q.sum_check.expected) - Number(q.sum_check.computed)) <= Number(q.sum_check.tolerance);
-    var anchor = q.anchor_status;
-    var ticks = '<span class="tick ' + (sumOk ? "ok" : "bad") + '">' + (sumOk ? "✓ adds up" : "✗ does not add up") + "</span> · " +
-      '<span class="tick ' + (anchor === "pass" ? "ok" : anchor === "mismatch" ? "bad" : "warn") + '">' + (anchor === "pass" ? "✓ GAAP start matches XBRL" : anchor === "mismatch" ? "✗ GAAP start differs from XBRL" : "○ no XBRL fact for this period") + "</span>";
-    var body = q.lines.map(function (l) {
-      var c = l.role === "adjustment" ? cats[l.label + "|" + l.value_raw] : null;
-      var cls = l.role === "total" ? "total" : l.role === "gaap_start" ? "start" : l.role === "subtotal" ? "sub-row" : "";
-      var t = c ? TREAT[c.treatment] || [c.treatment, "muted"] : null;
-      var codeName = c ? (CODES[c.code] ? CODES[c.code].name : c.code) : "";
-      return '<tr class="' + cls + '"><td>' + esc(l.label) + (l.role === "subtotal" ? ' <span class="tag">subtotal</span>' : "") + "</td>" +
-        "<td>" + (c ? '<span class="chip" title="' + esc(codeName) + (c.category_source === "rule" ? " (suggested by rule, pending review)" : " (confirmed)") + '">' + esc(c.code) + (c.category_source === "rule" ? "*" : "") + "</span>" : "") + "</td>" +
-        '<td class="n">' + esc(l.value_raw) + '</td><td class="n">' + m(l.value_usd == null ? null : l.sign * l.value_usd) + "</td>" +
-        "<td>" + (t ? '<span class="chip ' + t[1] + '">' + t[0] + "</span>" + (c.flags.length ? ' <span class="tag">' + esc(c.flags.join(", ")) + "</span>" : "") : "") + "</td>" +
-        "<td>" + src(l.url, "line ↗") + "</td></tr>";
-    }).join("");
-    var tabs = d.quarters.map(function (x) { return '<button type="button" data-q="' + x.period_id + '" class="' + (x.period_id === q.period_id ? "on" : "") + '">' + short(x.period_id) + "</button>"; }).join("");
-    var reversals = n.lines.filter(function (l) { return l.treatment === "exclude"; });
-    var html = '<div class="fade" style="display:flex;flex-direction:column;gap:20px">' +
-      '<div class="row" style="justify-content:space-between;align-items:flex-end"><div><h3>' + esc(d.sector) + " · CIK " + esc(d.cik) + '</h3><h1>' + d.ticker + " · " + esc(d.name) + "</h1></div>" +
-      (S.static ? "" : '<a class="btn" href="api/issuers/' + d.ticker + '/export.xlsx">Export to Excel</a>') + "</div>" +
-      '<div class="kpis">' +
-      kpi(m(q.reported_usd), esc(q.metric_label || "Reported") + " · " + short(q.period_id)) +
-      kpi(n.normalized == null ? "—" : m(q.normalized_usd), "Footnote normalized (draft policy preview)") +
-      kpi(pct(q.addback_intensity), "Discretionary add-backs / reported") +
-      kpi(d.recasts.length + " / " + d.changes.length, "Recasts / definition changes found") +
-      "</div>" +
-      '<div class="panel"><div class="row" style="justify-content:space-between"><h2>Reported vs normalized, by quarter</h2><div class="legend"><span><i></i>Reported headline</span><span><i class="b"></i>Footnote normalized</span></div></div>' + chart(d) + "</div>" +
-      '<div class="panel"><div class="row" style="justify-content:space-between"><h2>Bridge · quarter ended ' + qlabel(q.period_id) + "</h2>" + '<div class="qtabs">' + tabs + "</div></div>" +
-      '<div class="row tag">' + ticks + ' · from ' + src(q.exhibit_url, esc(q.accession) + " ↗") + " filed " + esc(q.filed) + " · reported in " + esc(q.scale) + "</div>" +
-      '<div class="scroll"><table><thead><tr><th>Line as reported</th><th>Category</th><th class="n">As shown</th><th class="n">Contribution, $m</th><th>Footnote policy</th><th>Source</th></tr></thead><tbody>' + body + "</tbody></table></div>" +
-      '<div class="note">Normalized = reported ' + m(q.reported_usd) + (reversals.length ? " − " + reversals.map(function (r) { return esc(r.label) + " " + esc(r.value_raw); }).join(" − ") : " (nothing reversed)") + " = <strong>" + (n.normalized == null ? "not computed: " + esc(n.reason) : m(q.normalized_usd)) + "</strong>. Policy " + esc(n.policy_version) + " is a draft under analyst review. * Category suggested by a deterministic rule and pending human review.</div></div>" +
-      '<div class="grid2">' + recastPanel(d) + changePanel(d) + "</div>" + releases(d) + "</div>";
-    main.innerHTML = html;
-  }
-  function recastPanel(d) {
-    var r = d.recasts;
-    return '<div class="panel"><h2>Recasts</h2><p class="sub" style="font-size:13px">A value the issuer reported for a period, then reported differently in a later release.</p>' +
-      (r.length ? '<div class="scroll"><table><thead><tr><th>Period</th><th>Line</th><th class="n">First</th><th class="n">Latest</th><th class="n">Δ</th></tr></thead><tbody>' +
-        r.slice(-12).reverse().map(function (x) { return "<tr><td class=\"mono\">" + short(x.period_id) + "</td><td>" + esc(x.label) + '</td><td class="n">' + src(x.first_url, m(x.first_usd)) + '</td><td class="n">' + src(x.latest_url, m(x.latest_usd)) + '</td><td class="n">' + m(x.delta_usd) + "</td></tr>"; }).join("") + "</tbody></table></div>" : '<div class="empty">None found across the releases ingested.</div>') + "</div>";
-  }
-  function changePanel(d) {
-    var c = d.changes;
-    var K = { added: ["Added", "warn"], removed: ["Dropped", "muted"], renamed: ["Renamed", "muted"], metric_renamed: ["Renamed metric", "bad"], layout_changed: ["New layout", "muted"] };
-    return '<div class="panel"><h2>Definition changes</h2><p class="sub" style="font-size:13px">Add-backs that appear or disappear between consecutive quarters, and renamed headline metrics.</p>' +
-      (c.length ? '<div class="scroll"><table><thead><tr><th>Quarter</th><th>Change</th><th>Line</th><th class="n">As shown</th></tr></thead><tbody>' +
-        c.slice(-14).reverse().map(function (x) { var k = K[x.kind] || [x.kind, "muted"]; return '<tr><td class="mono">' + (x.period_id ? short(x.period_id) : esc(x.filed)) + '</td><td><span class="chip ' + k[1] + '">' + k[0] + "</span></td><td>" + (x.prior_label && x.kind !== "layout_changed" ? esc(x.prior_label) + " → " : "") + src(x.url, esc(x.label)) + '</td><td class="n">' + esc(x.value_raw || "") + "</td></tr>"; }).join("") + "</tbody></table></div>" : '<div class="empty">No changes between the quarters ingested.</div>') + "</div>";
-  }
-  function releases(d) {
-    return '<div class="panel"><h2>Every release read</h2><p class="sub" style="font-size:13px">Nothing is dropped silently: each Item 2.02 release appears here with what was found and every check that did not pass.</p><div class="scroll"><table><thead><tr><th>Filed</th><th>Release</th><th>Headline</th><th>Status</th><th>Exceptions</th></tr></thead><tbody>' +
-      d.releases.map(function (r) {
-        var st = r.status === "ok" ? ["clean", "ok"] : r.status === "exceptions" ? ["exceptions", "warn"] : ["no bridge", "bad"];
-        return '<tr><td class="mono">' + esc(r.filed) + "</td><td>" + src(r.url, esc(r.accession)) + "</td><td>" + esc(r.metric_label || "—") + '</td><td><span class="chip ' + st[1] + '">' + st[0] + '</span></td><td class="tag">' + esc(r.reason || r.exceptions.slice(0, 3).join("; ")) + (r.exceptions.length > 3 ? " (+" + (r.exceptions.length - 3) + " more)" : "") + "</td></tr>";
-      }).join("") + "</tbody></table></div></div>";
-  }
-
-  // ---------------------------------------------------------------- feed
-  function changes() {
-    var K = { recast: ["Recast", "bad"], recurring_addback: ["Recurring “one-off”", "warn"], added: ["Add-back added", "warn"], removed: ["Add-back dropped", "muted"], metric_renamed: ["Metric renamed", "bad"], renamed: ["Line renamed", "muted"], layout_changed: ["New layout", "muted"] };
-    var items = S.feed.filter(function (i) { return !state.feedType || i.type === state.feedType; });
-    var opts = '<option value="">All changes (' + S.feed.length + ")</option>" + Object.keys(K).map(function (k) { var n = S.feed.filter(function (i) { return i.type === k; }).length; return '<option value="' + k + '"' + (state.feedType === k ? " selected" : "") + ">" + K[k][0] + " (" + n + ")</option>"; }).join("");
-    main.innerHTML = '<div class="fade" style="display:flex;flex-direction:column;gap:20px"><div><h1>What changed in the bridges</h1><p class="sub">Restated prior-period numbers, add-backs that appear or vanish, renamed metrics, and “non-recurring” items that recur in 3 of the last 4 quarters. These are the changes aggregators merge away.</p></div>' +
-      '<div class="filters"><select id="ft" aria-label="Filter changes">' + opts + "</select></div>" +
-      '<div class="panel"><div class="feed">' + (items.length ? items.slice(0, 400).map(function (i) {
-        var k = K[i.type] || [i.type, "muted"];
-        var what = i.type === "recast" ? esc(i.label) + " for " + short(i.period_id) + ": " + src(i.first_url, m(i.first_usd)) + " → " + src(i.latest_url, m(i.latest_usd)) + ' <span class="tag">(' + (i.delta_usd >= 0 ? "+" : "") + m(i.delta_usd) + "m)</span>"
-          : (i.type === "metric_renamed" || i.type === "renamed") ? esc(i.prior_label) + " → " + src(i.url, esc(i.label)) + (i.value_raw ? " " + esc(i.value_raw) : "")
-          : i.type === "layout_changed" ? "Bridge layout changed (" + esc(i.value_raw) + "): " + src(i.url, esc(i.label))
-          : i.type === "recurring_addback" ? src(i.url, esc(i.label)) + ' <span class="chip">' + esc(i.code) + "</span> " + esc(i.value_raw) + " in " + short(i.period_id)
-          : src(i.url, esc(i.label)) + " " + esc(i.value_raw || "") + (i.period_id ? " in " + short(i.period_id) : "");
-        return '<div class="item"><span class="mono tag">' + esc(i.filed || "") + '</span><a href="#' + i.ticker + '" data-t="' + i.ticker + '"><strong>' + i.ticker + '</strong></a><span class="kind"><span class="chip ' + k[1] + '">' + k[0] + '</span></span><span class="what">' + what + "</span></div>";
-      }).join("") : '<div class="empty">No changes of this type.</div>') + "</div></div></div>";
-    document.getElementById("ft").addEventListener("change", function (e) { state.feedType = e.target.value; changes(); });
-  }
-
-  // ---------------------------------------------------------------- peers
-  function peers() {
-    var sectors = Object.keys(S.peers);
-    if (!state.sector || !S.peers[state.sector]) state.sector = sectors.sort(function (a, b) { return S.peers[b].issuers.length - S.peers[a].issuers.length; })[0];
-    var p = S.peers[state.sector];
-    var rows = p.issuers.slice().sort(function (a, b) { return (b.addback_intensity || 0) - (a.addback_intensity || 0); });
-    var maxI = Math.max.apply(null, rows.map(function (r) { return Math.abs(r.addback_intensity || 0); }).concat([0.01]));
-    var codes = {};
-    rows.forEach(function (r) { Object.keys(r.mix_usd).forEach(function (c) { codes[c] = (codes[c] || 0) + Math.abs(r.mix_usd[c]); }); });
-    var top = Object.keys(codes).sort(function (a, b) { return codes[b] - codes[a]; }).slice(0, 6);
-    main.innerHTML = '<div class="fade" style="display:flex;flex-direction:column;gap:20px"><div><h1>How peers adjust their EBITDA</h1><p class="sub">Discretionary add-backs (everything except D&amp;A, interest, taxes and minority interest) as a share of each issuer’s reported headline, latest quarter. Median for the sector: <strong class="mono">' + pct(p.median_addback_intensity) + "</strong>.</p></div>" +
-      '<div class="filters"><select id="sec" aria-label="Sector">' + sectors.sort().map(function (s) { return '<option' + (s === state.sector ? " selected" : "") + ">" + esc(s) + "</option>"; }).join("") + "</select></div>" +
-      '<div class="panel"><div class="scroll"><table><thead><tr><th>Issuer</th><th>Quarter</th><th class="n">Reported, $m</th><th class="n">Normalized, $m</th><th>Add-backs / reported</th>' + top.map(function (c) { return '<th class="n">' + c + "</th>"; }).join("") + "</tr></thead><tbody>" +
-      rows.map(function (r) {
-        return '<tr class="click" data-t="' + r.ticker + '"><td><strong>' + r.ticker + '</strong></td><td class="mono">' + short(r.period_id) + '</td><td class="n">' + m(r.reported_usd) + '</td><td class="n">' + m(r.normalized_usd) + '</td><td><div class="row" style="gap:8px;flex-wrap:nowrap"><div class="bar" style="flex:1"><span style="width:' + Math.min(100, Math.abs(r.addback_intensity || 0) / maxI * 100) + '%"></span></div><span class="mono">' + pct(r.addback_intensity) + "</span></div></td>" +
-          top.map(function (c) { return '<td class="n">' + (r.mix_usd[c] ? m(r.mix_usd[c]) : "—") + "</td>"; }).join("") + "</tr>";
-      }).join("") + "</tbody></table></div><div class=\"note\">Category codes follow the draft taxonomy in the method notes. Columns show the six categories with the largest totals in this sector.</div></div></div>";
-    document.getElementById("sec").addEventListener("change", function (e) { state.sector = e.target.value; peers(); });
-  }
-
-  // ---------------------------------------------------------------- method
-  function method() {
-    var c = S.coverage, a = c.anchor_checks;
-    var lm = c.label_memory || {};
-    var stages = {};
-    c.failures.forEach(function (f) { stages[f.stage] = (stages[f.stage] || 0) + 1; });
-    main.innerHTML = '<div class="fade" style="display:flex;flex-direction:column;gap:20px"><div><h1>Method and accuracy</h1><p class="sub">What is checked, what is not yet, and how each number is produced.</p></div>' +
-      '<div class="kpis">' + kpi(c.sum_checks.pass + " / " + (c.sum_checks.pass + c.sum_checks.fail), "period tie-outs passed") + kpi(a.pass + " / " + (a.pass + a.mismatch), "GAAP anchors matching XBRL") + kpi(a.unavailable, "periods with no XBRL fact to compare") + kpi(c.observations.toLocaleString(), "as-reported values stored") + "</div>" +
-      '<div class="grid2"><div class="panel"><h2>How a bridge is verified</h2><ol style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:8px">' +
-      "<li><strong>Find the release.</strong> Every 8-K reporting Item 2.02 (results of operations) and its EX-99.1 press release, fetched from EDGAR and stored with a sha256.</li>" +
-      "<li><strong>Pick the headline table.</strong> Among all tables with an EBITDA total and a GAAP starting line, the one that ties out in every period, covers the quarter just reported and starts from net income.</li>" +
-      "<li><strong>Tie it out.</strong> Starting line plus every adjustment must equal the reported total in each period, within max(1, ⌈n/2⌉) rounding units.</li>" +
-      "<li><strong>Anchor it.</strong> The GAAP starting line must equal the same company’s XBRL fact for the same period, from SEC companyfacts.</li>" +
-      "<li><strong>Keep every observation.</strong> Values are append-only, so a later release that restates a period shows up as a recast instead of overwriting history.</li></ol></div>" +
-      '<div class="panel"><h2>What is not finished</h2><ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:8px">' +
-      "<li>The normalization policy (v0.1) is a draft. Credit analysts have not reviewed it yet, so normalized figures are previews.</li>" +
-      "<li>Add-back categories come from deterministic label rules: " + (lm.rule || 0) + " suggested, " + (lm.human || 0) + " confirmed by a person. No language model assigns categories or touches numbers.</li>" +
-      "<li>The 30-release gold set is labelled by an extractor and an independent model reading, plus 7 human decisions. A second human labeller has not checked it, so accuracy figures are internal.</li>" +
-      "<li>Fiscal fourth quarters often have no three-month XBRL fact, so their anchor shows as “no XBRL fact” instead of a pass.</li></ul></div></div>" +
-      '<div class="panel"><h2>Releases not turned into a bridge in the last run</h2><p class="sub" style="font-size:13px">' + Object.keys(stages).map(function (s) { return esc(s) + ": " + stages[s]; }).join(" · ") + '</p><div class="scroll"><table><thead><tr><th>Issuer</th><th>Accession</th><th>Stage</th><th>Reason</th></tr></thead><tbody>' +
-      c.failures.slice(0, 60).map(function (f) { return "<tr><td>" + esc(f.ticker || "") + '</td><td class="mono">' + esc(f.accession || "") + "</td><td>" + esc(f.stage) + '</td><td class="tag">' + esc(f.reason) + "</td></tr>"; }).join("") + "</tbody></table></div></div>" +
-      '<div class="panel"><h2>Default policy, draft v0.1</h2><div class="scroll"><table><thead><tr><th>Code</th><th>Category</th><th>Group</th><th>Treatment</th></tr></thead><tbody>' +
-      Object.keys(CODES).map(function (k) { var c2 = CODES[k]; return '<tr><td class="mono">' + k + "</td><td>" + esc(c2.name) + "</td><td>" + esc(c2.group) + "</td><td>" + esc(c2.treatment) + "</td></tr>"; }).join("") + "</tbody></table></div></div></div>";
-  }
+  window.addEventListener("hashchange", () => { fromHash(); if (!keepPlace()) window.scrollTo(0, 0); });
 
   function render() {
-    nav();
-    if (state.view === "issuer") { var d = issuer(state.ticker); if (d) return issuerView(d); state.view = "universe"; }
-    if (state.view === "changes") return changes();
-    if (state.view === "peers") return peers();
-    if (state.view === "method") return method();
-    return universe();
+    const tabv = st.view === "issuer" ? "issuers" : st.view;
+    $$("#tabs a").forEach((a) => a.classList.toggle("on", a.getAttribute("data-v") === tabv));
+    if (st.view === "issuer" && BY[st.ticker]) return viewIssuer(BY[st.ticker]);
+    if (st.view === "issuers") return viewIssuers();
+    if (st.view === "compare") return viewCompare();
+    if (st.view === "method") return viewMethod();
+    st.view = "changes";
+    return viewChanges();
   }
 
-  document.addEventListener("click", function (e) {
-    var t = e.target.closest("[data-t]");
-    if (t && !e.target.closest("a[href^='http']")) { e.preventDefault(); return go("issuer", t.getAttribute("data-t")); }
-    var v = e.target.closest("[data-view]");
-    if (v) { e.preventDefault(); return go(v.getAttribute("data-view")); }
-    var q = e.target.closest("[data-q]");
-    if (q) { state.q = q.getAttribute("data-q"); var d = issuer(state.ticker); if (d) issuerView(d); }
+  // ------------------------------------------------------------------ changes inbox
+  const TYPES = {
+    recast: { name: "Recast", cls: "t-red" },
+    recurring_addback: { name: "Recurring “one-off”", cls: "t-amber" },
+    added: { name: "Add-back added", cls: "t-blue" },
+    removed: { name: "Add-back dropped", cls: "t-blue" },
+    metric_renamed: { name: "Metric renamed", cls: "t-grey" },
+    renamed: { name: "Line renamed", cls: "t-grey", fold: true },
+    layout_changed: { name: "New layout", cls: "t-grey", fold: true },
+  };
+  const FT = { "": null, recast: ["recast"], recurring: ["recurring_addback"], addrop: ["added", "removed"], renamed: ["renamed", "metric_renamed", "layout_changed"] };
+  const FT_NAMES = { "": "All change types", recast: "Recasts", recurring: "Recurring “one-offs”", addrop: "Added or dropped", renamed: "Renamed" };
+  const MINS = [0, 1e6, 5e6, 10e6, 25e6, 100e6];
+
+  function changeDesc(i) {
+    const per = i.period_id ? qlabel(i.period_id) : "";
+    if (i.type === "recast") return esc(i.label) + " for the " + (pp(i.period_id).months === 3 ? "quarter ended " : "") + esc(per) + ", first reported " + esc(i.first_filed);
+    if (i.type === "recurring_addback") return esc(i.label) + ' <span class="chip code" title="' + esc(codeName(i.code)) + '">' + esc(i.code) + "</span> called non-recurring, seen in 3 of the last 4 quarters";
+    if (i.type === "added") return "New add-back: " + esc(i.label);
+    if (i.type === "removed") return "Add-back no longer shown: " + esc(i.label);
+    if (i.type === "metric_renamed") return "Headline metric renamed: " + esc(i.prior_label) + " → " + esc(i.label);
+    if (i.type === "layout_changed") return "Bridge layout changed: " + esc(i.value_raw);
+    return esc(i.prior_label) + " → " + esc(i.label);
+  }
+  function changeNums(i) {
+    if (i.before_usd == null && i.after_usd == null) return i.value_raw && i.type === "renamed" ? '<span class="muted">' + esc(i.value_raw) + "</span>" : "";
+    const d = i.delta_usd;
+    if (i.type === "recurring_addback") return m(i.after_usd) + '<span class="dl">$m this quarter</span>';
+    return m(i.before_usd) + '<span class="arrow">→</span>' + m(i.after_usd) + '<span class="dl">Δ ' + (d != null && d > 0 ? "+" : "") + m(d) + " $m</span>";
+  }
+  function changeUrl(i) { return i.type === "recast" ? i.latest_url : i.url; }
+
+  function filteredFeed() {
+    const types = FT[st.f.type];
+    const sectorOf = (t) => (BY[t] ? BY[t].sector : "");
+    return S.feed.filter((i) =>
+      (!types || types.indexOf(i.type) >= 0) &&
+      (!st.f.sector || sectorOf(i.ticker) === st.f.sector) &&
+      (!st.f.watch || WATCH.indexOf(i.ticker) >= 0) &&
+      (!st.f.min || (i.impact_usd != null && i.impact_usd >= st.f.min)));
+  }
+  function headline() {
+    const asOf = S.generated_at.slice(0, 10);
+    const from = new Date(Date.parse(asOf + "T00:00:00Z") - 6 * 864e5).toISOString().slice(0, 10);
+    let rel = 0, relOk = 0;
+    S.issuers.forEach((d) => d.releases.forEach((r) => { if (r.filed >= from && r.filed <= asOf) { rel++; if (r.status !== "not_found") relOk++; } }));
+    const nRec = S.feed.filter((i) => i.type === "recast").length;
+    const recIss = new Set(S.feed.filter((i) => i.type === "recast").map((i) => i.ticker)).size;
+    const nRecur = S.feed.filter((i) => i.type === "recurring_addback").length;
+    const recurIss = new Set(S.feed.filter((i) => i.type === "recurring_addback").map((i) => i.ticker)).size;
+    const c = S.coverage;
+    const stat = (v, l, d) => '<div class="stat"><span class="v">' + v + '</span><span class="l">' + l + '</span><span class="d">' + d + "</span></div>";
+    return '<div class="strip">' +
+      stat(rel, "Releases this week", relOk + " with a bridge · " + MON[+from.slice(5, 7) - 1] + " " + +from.slice(8) + "–" + MON[+asOf.slice(5, 7) - 1] + " " + +asOf.slice(8)) +
+      stat(nRec, "Recasts", "restated prior-period values at " + recIss + " issuers") +
+      stat(nRecur, "Recurring “one-offs”", "non-recurring add-backs in 3 of 4 quarters, " + recurIss + " issuers") +
+      stat(pct(c.bridges_found ? c.bridges_all_periods_tie / c.bridges_found : null), "Tie-out rate", c.bridges_all_periods_tie + " of " + c.bridges_found + " bridges add up in every period") +
+      "</div>";
+  }
+  function card(i, k) {
+    const T = TYPES[i.type] || { name: i.type, cls: "t-grey" };
+    return '<article class="card ' + T.cls + (k === st.sel ? " sel" : "") + '" data-k="' + k + '" tabindex="-1">' +
+      '<span class="strip-c"></span><span class="tk">' + esc(i.ticker) + "</span>" +
+      '<div class="body"><span class="type">' + T.name + (i.period_id ? ' <span class="muted mono" style="text-transform:none;letter-spacing:0;font-weight:400">· ' + short(i.period_id) + "</span>" : "") + '</span><span class="desc">' + changeDesc(i) + "</span></div>" +
+      '<div class="nums">' + changeNums(i) + "</div>" +
+      '<span class="src">' + ext(changeUrl(i), "source ↗", "Open the line on sec.gov") + "</span></article>";
+  }
+  function viewChanges() {
+    const items = filteredFeed();
+    const byDay = {};
+    items.forEach((i) => { const k = i.filed || "unknown"; (byDay[k] = byDay[k] || []).push(i); });
+    const days = Object.keys(byDay).sort().reverse();
+    VIS = [];
+    const imp = (i) => (i.impact_usd == null ? -1 : i.impact_usd);
+    const groups = days.slice(0, st.days).map((day) => {
+      const list = byDay[day].slice().sort((a, b) => imp(b) - imp(a));
+      const shown = list.filter((i) => !(TYPES[i.type] || {}).fold);
+      const folded = list.filter((i) => (TYPES[i.type] || {}).fold);
+      let h = '<section class="day"><div class="day-h"><span class="mono">' + (day === "unknown" ? "Filing date unknown" : dlabel(day)) + "</span><span>" + list.length + " change" + (list.length === 1 ? "" : "s") + "</span></div>";
+      shown.forEach((i) => { h += card(i, VIS.length); VIS.push(i); });
+      if (folded.length) {
+        const open = !!st.open[day];
+        h += '<button type="button" class="fold" data-fold="' + day + '" aria-expanded="' + open + '">' + (open ? "▾ Hide " : "▸ Show ") + folded.length + " renamed line" + (folded.length === 1 ? "" : "s") + "</button>";
+        if (open) folded.forEach((i) => { h += card(i, VIS.length); VIS.push(i); });
+      }
+      return h + "</section>";
+    }).join("");
+    if (st.sel >= VIS.length) st.sel = VIS.length - 1;
+    const sectors = Array.from(new Set(S.issuers.map((d) => d.sector).filter(Boolean))).sort();
+    main.innerHTML =
+      '<div><h1>What changed in the bridges</h1><p class="lede">Restated prior periods, add-backs that appear or vanish, renamed metrics, and “non-recurring” items that keep recurring, read from every earnings release and ranked by dollar impact.</p></div>' +
+      '<div class="inbox"><div class="inbox-main">' + headline() +
+      '<div class="filters">' +
+      '<select id="fType" aria-label="Change type">' + Object.keys(FT).map((k) => '<option value="' + k + '"' + (st.f.type === k ? " selected" : "") + ">" + FT_NAMES[k] + "</option>").join("") + "</select>" +
+      '<select id="fSector" aria-label="Sector"><option value="">All sectors</option>' + sectors.map((s) => "<option" + (st.f.sector === s ? " selected" : "") + ">" + esc(s) + "</option>").join("") + "</select>" +
+      '<select id="fMin" aria-label="Minimum dollar impact">' + MINS.map((v) => '<option value="' + v + '"' + (st.f.min === v ? " selected" : "") + ">" + (v ? "Impact ≥ " + capM(v) : "Any impact") + "</option>").join("") + "</select>" +
+      '<label><input type="checkbox" id="fWatch"' + (st.f.watch ? " checked" : "") + "> Watchlist only</label>" +
+      '<span class="count">' + items.length + " changes<span class=\"kb\"> · <kbd>J</kbd> <kbd>K</kbd> to move, <kbd>Enter</kbd> to open</span></span></div>" +
+      (groups || '<div class="panel empty">No changes match these filters.</div>') +
+      (days.length > st.days ? '<button type="button" class="btn more" data-more="1">Show earlier filing dates (' + (days.length - st.days) + " more)</button>" : "") +
+      "</div>" + '<aside class="rail" id="rail">' + watchRail() + "</aside></div>";
+    $("#fType").onchange = (e) => { st.f.type = e.target.value; st.sel = -1; viewChanges(); };
+    $("#fSector").onchange = (e) => { st.f.sector = e.target.value; st.sel = -1; viewChanges(); };
+    $("#fMin").onchange = (e) => { st.f.min = +e.target.value; st.sel = -1; viewChanges(); };
+    $("#fWatch").onchange = (e) => { st.f.watch = e.target.checked; st.sel = -1; viewChanges(); };
+    bindWatch();
+  }
+  function watchRail() {
+    const rows = WATCH.filter((t) => BY[t]).map((t) => {
+      const d = BY[t], q = latest(d);
+      const n = S.feed.filter((i) => i.ticker === t && !(TYPES[i.type] || {}).fold).length;
+      return '<li><span class="t" data-t="' + t + '" role="link" tabindex="0">' + t + '</span><span class="nm" title="' + esc(d.name) + '">' + (q ? n + " changes · " + short(q.period_id) : "no bridge yet") + "</span>" +
+        '<span class="ticks">' + (q ? tickHtml(q, true) : "") + "</span>" +
+        '<button type="button" class="x" data-unwatch="' + t + '" aria-label="Remove ' + t + ' from watchlist">×</button></li>';
+    }).join("");
+    return '<div class="panel watch"><div class="panel-h"><h2>Watchlist</h2><span class="hint">✓ adds up · ✓ matches XBRL</span></div><ul>' + (rows || '<li class="muted" style="grid-template-columns:1fr">Add tickers below.</li>') + "</ul>" +
+      '<form id="wAdd"><input type="text" id="wIn" list="tickerList" placeholder="Add ticker" aria-label="Add ticker to watchlist" maxlength="6"><button class="btn" type="submit">Add</button></form>' +
+      '<datalist id="tickerList">' + S.issuers.map((d) => '<option value="' + d.ticker + '">' + esc(d.name) + "</option>").join("") + "</datalist></div>" +
+      '<p class="hint" style="margin:0">Kept in this browser only. ' + WATCH.length + " of 10 slots used.</p>";
+  }
+  function bindWatch() {
+    const f = $("#wAdd");
+    if (!f) return;
+    f.onsubmit = (e) => {
+      e.preventDefault();
+      const t = $("#wIn").value.trim().toUpperCase();
+      if (!BY[t]) { toast(t ? t + " is not in the coverage universe" : "Type a ticker"); return; }
+      if (WATCH.indexOf(t) >= 0) { toast(t + " is already on the watchlist"); return; }
+      if (WATCH.length >= 10) { toast("The watchlist holds 10 tickers. Remove one first."); return; }
+      WATCH.push(t); lsSet("fn-watch", WATCH); refreshRail();
+    };
+  }
+  function refreshRail() { if (st.view === "changes") { if (st.f.watch) viewChanges(); else { $("#rail").innerHTML = watchRail(); bindWatch(); } } }
+  function moveSel(d) {
+    if (!VIS.length) return;
+    st.sel = Math.max(0, Math.min(VIS.length - 1, st.sel + d));
+    $$(".card.sel").forEach((c) => c.classList.remove("sel"));
+    const el = $('.card[data-k="' + st.sel + '"]');
+    if (el) { el.classList.add("sel"); el.scrollIntoView({ block: "nearest" }); }
+  }
+  function openChange(i) {
+    const d = BY[i.ticker];
+    if (!d) return;
+    const has = i.period_id && d.quarters.some((q) => q.period_id === i.period_id);
+    const tab = i.type === "recast" ? "recasts" : i.type === "recurring_addback" ? st.tab : "changes";
+    const hl = { type: i.type, period: i.period_id, label: i.label, accession: i.accession || i.latest_accession };
+    go("issuer", { ticker: i.ticker, period: i.type === "recast" ? null : has ? i.period_id : null, hl, tab });
+  }
+
+  // ------------------------------------------------------------------ issuer
+  function viewIssuer(d) {
+    const q = quarter(d, st.period);
+    const crumbs = '<nav class="crumbs" aria-label="Breadcrumb"><a href="#issuers">Issuers</a><span class="sep">/</span><span>' + esc(d.sector || "Other") + '</span><span class="sep">/</span><a href="#' + d.ticker + '">' + d.ticker + "</a>" + (q ? '<span class="sep">/</span><span class="mono">Quarter ended ' + esc(qlabel(q.period_id)) + "</span>" : "") + "</nav>";
+    const title = '<div><div class="eyebrow">' + esc(d.sector) + " · CIK " + esc(d.cik) + "</div><h1>" + d.ticker + ' <span style="font-weight:400">' + esc(d.name) + "</span></h1></div>";
+    if (!q) {
+      main.innerHTML = crumbs + '<div class="ihead">' + title + '</div><div class="panel"><div class="empty">No verified quarterly bridge yet. Each release read and the reason it did not yield a bridge are listed below.</div></div><div class="panel">' + releasesTable(d) + "</div>";
+      return;
+    }
+    const n = q.normalization;
+    const diff = q.normalized_usd == null || q.reported_usd == null ? null : q.normalized_usd - q.reported_usd;
+    const qsel = '<select id="qSel" aria-label="Quarter">' + d.quarters.slice().reverse().map((x) => '<option value="' + x.period_id + '"' + (x.period_id === q.period_id ? " selected" : "") + ">" + esc(qlabel(x.period_id)) + "</option>").join("") + "</select>";
+    main.innerHTML = crumbs +
+      '<div class="ihead">' + title + '<div class="ctl">' + qsel +
+      '<div class="seg" role="group" aria-label="Normalization policy"><button type="button" data-policy="v01" class="' + (st.policy === "v01" ? "on" : "") + '">Footnote v0.1</button><button type="button" data-policy="asrep" class="' + (st.policy === "asrep" ? "on" : "") + '">As reported</button></div>' +
+      '<button type="button" class="btn" id="copyLink" title="Copy a link to this issuer and quarter">Copy link</button>' +
+      (S.static ? "" : '<a class="btn" href="api/issuers/' + d.ticker + '/export.xlsx">Excel</a>') + "</div></div>" +
+      '<div class="figs">' +
+      '<div class="fig"><span class="l">Reported · ' + esc(q.metric_label || "headline") + '</span><span class="v">' + m(q.reported_usd) + "</span></div>" +
+      '<div class="fig"><span class="l">Normalized · Footnote v0.1</span><span class="v">' + (q.normalized_usd == null ? '<span class="chip warn">' + esc(n.reason || "not computed") + "</span>" : m(q.normalized_usd)) + "</span></div>" +
+      '<div class="fig"><span class="l">Difference, $m</span><span class="v">' + m(diff) + "</span></div>" +
+      '<div class="fig checks"><span class="ticks">' + tickHtml(q) + '</span><span class="l">' + ext(q.exhibit_url, esc(q.accession) + " ↗") + " · filed " + esc(q.filed) + " · reported in " + esc(q.scale) + "</span></div></div>" +
+      '<div class="split"><div class="panel"><div class="panel-h"><h2>Bridge as filed</h2><span class="hint">Click any figure to see it in the filing · $m</span></div>' + bridgeTable(q) + bridgeNote(q) + "</div>" +
+      '<div class="stack"><div class="panel"><div class="panel-h"><h2>Reported to normalized</h2><span class="hint">' + (st.policy === "v01" ? "Policy " + esc(n.policy_version) + " (draft)" : "As reported, nothing reversed") + "</span></div>" + waterfall(q) + "</div>" +
+      '<div class="panel"><div class="panel-h"><h2>Last 8 quarters</h2><span class="wf-legend" style="padding:0"><span><i class="lg-line"></i>Reported</span><span><i class="lg-line b"></i>Normalized</span></span></div><div class="panel-b">' + trend(d, q) + "</div></div></div></div>" +
+      '<div class="panel" id="lower">' + lowerTabs(d) + "</div>";
+    $("#qSel").onchange = (e) => go("issuer", { ticker: d.ticker, period: e.target.value, tab: st.tab });
+    $("#copyLink").onclick = () => copyLink();
+    afterIssuer();
+  }
+  function afterIssuer() {
+    const hit = $(".hl-target");
+    if (hit) setTimeout(() => hit.scrollIntoView({ block: "center" }), 60);
+  }
+  function copyLink() {
+    const url = location.href.split("#")[0] + "#" + tok();
+    const done = () => toast("Link copied: #" + tok());
+    try {
+      navigator.clipboard.writeText(url).then(done, () => prompt2(url));
+    } catch (e) { prompt2(url); }
+  }
+  function prompt2(url) {
+    const b = $("#copyLink");
+    const inp = document.createElement("input");
+    inp.type = "text"; inp.value = url; inp.readOnly = true; inp.setAttribute("aria-label", "Link to this view"); inp.style.width = "260px";
+    b.replaceWith(inp); inp.focus(); inp.select();
+  }
+  function treat(n) { if (!n) return null; return st.policy === "asrep" ? "accept" : n.treatment; }
+  const TREAT = { accept: ["Kept", ""], exclude: ["Reversed", "bad"], flag: ["Flagged", "warn"], review: ["Needs review", "warn"] };
+  function bridgeTable(q) {
+    const L = enrich(q);
+    const hlLabel = st.hl && st.hl.period === q.period_id ? st.hl.label : null;
+    const body = L.map((l) => {
+      const cls = l.role === "total" ? "total" : l.role === "gaap_start" ? "start" : l.role === "subtotal" ? "sub" : "";
+      const t = treat(l.n), T = t ? TREAT[t] || [t, ""] : null;
+      const hit = hlLabel && l.label === hlLabel;
+      const pend = l.n && l.n.category_source === "rule";
+      return '<tr data-li="' + l.li + '" class="' + cls + (hit ? " hl hl-target" : "") + '"><td class="lbl">' + esc(l.label) + (l.role === "subtotal" ? ' <span class="muted small">subtotal</span>' : "") + "</td>" +
+        "<td>" + (l.n ? '<span class="chip code" title="' + esc(codeName(l.n.code)) + (pend ? ", suggested by rule, pending review" : ", confirmed") + '">' + esc(l.n.code) + (pend ? "*" : "") + "</span>" : "") + "</td>" +
+        '<td class="n"><button type="button" class="num" data-src="' + l.li + '" title="Show in filing">' + esc(l.value_raw) + "</button></td>" +
+        '<td class="n"><button type="button" class="num" data-src="' + l.li + '" title="Show in filing">' + m(lineUsd(l)) + "</button></td>" +
+        "<td>" + (T ? '<span class="chip ' + T[1] + '">' + T[0] + "</span>" : "") + "</td></tr>";
+    }).join("");
+    const norm = st.policy === "asrep" ? q.reported_usd : q.normalized_usd;
+    return '<div class="tbl-wrap"><table class="grid bridge"><thead><tr><th>Line as reported</th><th>Cat.</th><th class="n">As shown</th><th class="n">$m</th><th>Policy</th></tr></thead><tbody>' + body + "</tbody>" +
+      '<tfoot><tr><td colspan="3">' + (st.policy === "asrep" ? "As reported" : "Footnote normalized") + '</td><td class="n">' + m(norm) + "</td><td></td></tr></tfoot></table></div>";
+  }
+  function bridgeNote(q) {
+    const rev = enrich(q).filter((l) => l.n && l.n.treatment === "exclude");
+    return '<div class="note">Normalized = reported ' + m(q.reported_usd) + (rev.length ? " less " + rev.map((r) => esc(r.n.code) + " " + m(lineUsd(r))).join(", ") : ", nothing reversed") + " = <strong>" + (q.normalized_usd == null ? "not computed" : m(q.normalized_usd)) + "</strong>. Policy v0.1 is a draft under analyst review. * Category suggested by a deterministic label rule, pending human review.</div>";
+  }
+  function waterfall(q) {
+    if (q.start_usd == null || q.reported_usd == null) return '<div class="empty">This quarter has no GAAP starting value to build from.</div>';
+    const L = enrich(q), asrep = st.policy === "asrep";
+    const rows = [];
+    const startL = L.find((l) => l.role === "gaap_start"), totL = L.find((l) => l.role === "total");
+    let cum = q.start_usd;
+    rows.push({ tot: true, code: "Start", name: q.start_label, a: 0, b: cum, li: startL ? startL.li : null, fill: "var(--ink)" });
+    const rev = [];
+    L.forEach((l) => {
+      if (l.role !== "adjustment") return;
+      const v = lineUsd(l);
+      if (v == null || v === 0) return;
+      const t = l.n ? l.n.treatment : "review";
+      const fill = t === "exclude" && !asrep ? "var(--bad)" : t === "flag" || t === "review" ? "var(--warn)" : "var(--kept)";
+      rows.push({ code: l.n ? l.n.code : "?", name: l.label, a: cum, b: cum + v, v, li: l.li, fill });
+      cum += v;
+      if (t === "exclude" && !asrep) rev.push({ l, v });
+    });
+    rows.push({ tot: true, code: "Reported", name: q.metric_label || "Reported", a: 0, b: q.reported_usd, li: totL ? totL.li : null, fill: "var(--ink)" });
+    if (!asrep && q.normalized_usd != null) {
+      let c = q.reported_usd;
+      if (rev.length) rows.push({ sep: true });
+      rev.forEach((r) => { rows.push({ code: "−" + r.l.n.code, name: "Reversed: " + r.l.label, a: c, b: c - r.v, v: -r.v, li: r.l.li, fill: "var(--bad)" }); c -= r.v; });
+      rows.push({ tot: true, code: "Normalized", name: "Footnote normalized", a: 0, b: q.normalized_usd, li: null, fill: "var(--accent)" });
+    }
+    const vals = [0];
+    rows.forEach((r) => { if (!r.sep) vals.push(r.a, r.b); });
+    let lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
+    const step = nice((hi - lo) / 4); lo = Math.floor(lo / step) * step; hi = Math.ceil(hi / step) * step;
+    const W = 460, LW = 78, RW = 64, X0 = LW + 6, X1 = W - RW - 6, RH = 22, T = 6;
+    const x = (v) => X0 + (X1 - X0) * (v - lo) / (hi - lo || 1);
+    let y = T, g = "";
+    const H = T + rows.reduce((s, r) => s + (r.sep ? 14 : RH + 3), 0) + 24;
+    for (let t = lo; t <= hi + step / 2; t += step) {
+      g += '<line x1="' + x(t) + '" x2="' + x(t) + '" y1="' + T + '" y2="' + (H - 20) + '" stroke="var(--rule)" stroke-width="1"' + (Math.abs(t) < step / 1e6 ? "" : ' stroke-dasharray="2 3"') + "/>";
+      g += '<text x="' + x(t) + '" y="' + (H - 6) + '" text-anchor="middle">' + m(t, Math.abs(step) >= 10e6 ? 0 : 1) + "</text>";
+    }
+    g += '<line x1="' + x(0) + '" x2="' + x(0) + '" y1="' + T + '" y2="' + (H - 20) + '" stroke="var(--rule-strong)" stroke-width="1"/>';
+    let prev = null;
+    rows.forEach((r) => {
+      if (r.sep) { g += '<line x1="0" x2="' + W + '" y1="' + (y + 7) + '" y2="' + (y + 7) + '" stroke="var(--rule-strong)" stroke-dasharray="3 3"/>'; y += 14; prev = null; return; }
+      const x1 = Math.min(x(r.a), x(r.b)), w = Math.max(1.5, Math.abs(x(r.b) - x(r.a)));
+      if (prev != null && !r.tot) g += '<line x1="' + x(prev) + '" x2="' + x(prev) + '" y1="' + (y - 3) + '" y2="' + (y + 3) + '" stroke="var(--muted)" stroke-width="1"/>';
+      const val = r.tot ? r.b : r.v;
+      g += '<g class="wf-row" data-li="' + (r.li == null ? "" : r.li) + '"><title>' + esc(r.name) + ": " + m(val) + " $m</title>" +
+        '<rect class="hit" x="0" y="' + (y - 1) + '" width="' + W + '" height="' + (RH + 2) + '" fill="transparent"/>' +
+        '<text x="2" y="' + (y + RH / 2 + 4) + '" class="' + (r.tot ? "ink" : "") + '"' + (r.tot ? ' font-weight="600"' : "") + ">" + esc(r.code) + "</text>" +
+        '<rect x="' + x1 + '" y="' + (y + 3) + '" width="' + w + '" height="' + (RH - 6) + '" rx="1.5" fill="' + r.fill + '"/>' +
+        '<text x="' + (W - 2) + '" y="' + (y + RH / 2 + 4) + '" text-anchor="end" class="ink"' + (r.tot ? ' font-weight="600"' : "") + ">" + m(val) + "</text></g>";
+      prev = r.b; y += RH + 3;
+    });
+    const legend = '<div class="wf-legend"><span><i class="sw" style="background:var(--kept)"></i>Kept add-back</span>' + (asrep ? "" : '<span><i class="sw" style="background:var(--bad)"></i>Reversed by policy</span>') + '<span><i class="sw" style="background:var(--warn)"></i>Flagged for review</span><span>$m</span></div>';
+    return '<div class="panel-b" style="padding-bottom:4px"><svg id="wf" viewBox="0 0 ' + W + " " + H + '" width="' + W + '" role="img" aria-label="Waterfall from the GAAP start to reported and normalized EBITDA">' + g + "</svg></div>" + legend;
+  }
+  function lineChart(qs, o) {
+    if (qs.length < 2) return '<div class="empty" style="padding:8px 0">Fewer than two verified quarters.</div>';
+    const W = o.W, H = o.H, L = o.L || 54, R = 22, T = 10, B = 22;
+    const vals = [];
+    qs.forEach((q) => { vals.push(q.reported_usd); if (q.normalized_usd != null) vals.push(q.normalized_usd); });
+    let lo = Math.min(0, Math.min.apply(null, vals)), hi = Math.max(0, Math.max.apply(null, vals));
+    const step = nice((hi - lo) / (o.ticks || 3)); lo = Math.floor(lo / step) * step; hi = Math.ceil(hi / step) * step; if (hi === lo) hi = lo + step;
+    const x = (i) => L + (W - L - R) * (i / (qs.length - 1));
+    const y = (v) => T + (H - T - B) * (1 - (v - lo) / (hi - lo));
+    let g = "";
+    qs.forEach((q, i) => { if (q.period_id === o.sel) g += '<rect x="' + (x(i) - 12) + '" y="' + T + '" width="24" height="' + (H - T - B) + '" fill="var(--accent-soft)"/>'; });
+    for (let t = lo; t <= hi + step / 2; t += step) {
+      g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(t) + '" y2="' + y(t) + '" stroke="' + (Math.abs(t) < step / 1e6 ? "var(--rule-strong)" : "var(--rule)") + '" stroke-width="1"/>';
+      g += '<text x="' + (L - 6) + '" y="' + (y(t) + 3.5) + '" text-anchor="end">' + m(t, step >= 10e6 ? 0 : 1) + "</text>";
+    }
+    const every = qs.length > 6 && W < 360 ? 2 : 1;
+    qs.forEach((q, i) => { if ((qs.length - 1 - i) % every === 0) g += '<text x="' + x(i) + '" y="' + (H - 6) + '" text-anchor="middle">' + short(q.period_id) + "</text>"; });
+    const path = (key) => qs.map((q, i) => (q[key] == null ? "" : (i && qs[i - 1][key] != null ? "L" : "M") + x(i).toFixed(1) + " " + y(q[key]).toFixed(1))).join(" ");
+    const area = path("reported_usd") + " L" + x(qs.length - 1) + " " + y(Math.max(lo, 0)) + " L" + x(0) + " " + y(Math.max(lo, 0)) + " Z";
+    g += '<path d="' + area + '" fill="var(--accent-soft)" opacity="0.55"/>';
+    g += '<path d="' + path("reported_usd") + '" fill="none" stroke="var(--ink)" stroke-width="1.75"/>';
+    g += '<path d="' + path("normalized_usd") + '" fill="none" stroke="var(--accent)" stroke-width="1.75" stroke-dasharray="5 3"/>';
+    qs.forEach((q, i) => {
+      const last = i === qs.length - 1, attr = o.click ? ' data-qp="' + q.period_id + '" style="cursor:pointer"' : "";
+      g += '<circle cx="' + x(i) + '" cy="' + y(q.reported_usd) + '" r="' + (last ? 4 : 2.75) + '" fill="var(--ink)"' + attr + "><title>" + short(q.period_id) + " reported " + m(q.reported_usd) + "</title></circle>";
+      if (q.normalized_usd != null) g += '<circle cx="' + x(i) + '" cy="' + y(q.normalized_usd) + '" r="' + (last ? 4 : 2.75) + '" fill="var(--accent)"' + attr + "><title>" + short(q.period_id) + " normalized " + m(q.normalized_usd) + "</title></circle>";
+    });
+    return '<svg viewBox="0 0 ' + W + " " + H + '" width="' + W + '" role="img" aria-label="' + esc(o.label) + '">' + g + "</svg>";
+  }
+  function trend(d, q) { return lineChart(threeM(d).slice(-8), { W: 460, H: 170, sel: q.period_id, click: true, label: "Reported and normalized EBITDA, last 8 quarters" }); }
+
+  function lowerTabs(d) {
+    const tabs = [["recasts", "Recasts", d.recasts.length], ["changes", "Definition changes", d.changes.length], ["releases", "Releases", d.releases.length]];
+    const head = '<div class="subtabs" role="tablist">' + tabs.map((t) => '<button type="button" role="tab" data-tab="' + t[0] + '" aria-selected="' + (st.tab === t[0]) + '" class="' + (st.tab === t[0] ? "on" : "") + '">' + t[1] + ' <span class="mono muted">' + t[2] + "</span></button>").join("") + "</div>";
+    const body = st.tab === "changes" ? changesTable(d) : st.tab === "releases" ? releasesTable(d) : recastsTable(d);
+    return head + body;
+  }
+  function hlMatch(x) { return st.hl && st.hl.period === x.period_id && st.hl.label === x.label; }
+  function recastsTable(d) {
+    if (!d.recasts.length) return '<div class="empty">No value has been restated across the releases read.</div>';
+    const rows = d.recasts.slice().sort((a, b) => (b.period_id.slice(3) + b.period_id).localeCompare(a.period_id.slice(3) + a.period_id));
+    return '<div class="tbl-wrap"><table class="grid"><thead><tr><th>Period</th><th>Line</th><th class="n">First reported</th><th>Filed</th><th class="n">Latest</th><th>Filed</th><th class="n">Δ $m</th></tr></thead><tbody>' +
+      rows.map((x) => '<tr class="' + (hlMatch(x) ? "hl hl-target" : "") + '"><td class="mono">' + short(x.period_id) + '</td><td class="lbl">' + esc(x.label) + '</td><td class="n">' + ext(x.first_url, m(x.first_usd), "First release, on sec.gov") + '</td><td class="mono muted">' + esc(x.first_filed) + '</td><td class="n">' + ext(x.latest_url, m(x.latest_usd), "Latest release, on sec.gov") + '</td><td class="mono muted">' + esc(x.latest_filed) + '</td><td class="n">' + m(x.delta_usd) + "</td></tr>").join("") +
+      "</tbody></table></div>";
+  }
+  function changesTable(d) {
+    if (!d.changes.length) return '<div class="empty">No definition changes between the quarters read.</div>';
+    const K = { added: ["Added", "t-blue"], removed: ["Dropped", "t-blue"], renamed: ["Renamed", ""], metric_renamed: ["Metric renamed", ""], layout_changed: ["New layout", ""] };
+    return '<div class="tbl-wrap"><table class="grid"><thead><tr><th>Quarter</th><th>Filed</th><th>Change</th><th>Line</th><th class="n">As shown</th></tr></thead><tbody>' +
+      d.changes.slice().reverse().map((x) => { const k = K[x.kind] || [x.kind, ""]; return '<tr class="' + (hlMatch(x) ? "hl hl-target" : "") + '"><td class="mono">' + (x.period_id ? short(x.period_id) : "") + '</td><td class="mono muted">' + esc(x.filed) + '</td><td><span class="chip">' + k[0] + '</span></td><td class="lbl">' + (x.prior_label && x.kind !== "layout_changed" && x.kind !== "added" && x.kind !== "removed" ? esc(x.prior_label) + " → " : "") + ext(x.url, esc(x.label)) + '</td><td class="n">' + esc(x.value_raw || "") + "</td></tr>"; }).join("") +
+      "</tbody></table></div>";
+  }
+  function releasesTable(d) {
+    return '<div class="tbl-wrap"><table class="grid"><thead><tr><th>Filed</th><th>Release</th><th>Headline</th><th>Status</th><th>Exceptions</th></tr></thead><tbody>' +
+      d.releases.map((r) => {
+        const s = r.status === "ok" ? ["clean", "ok"] : r.status === "exceptions" ? ["exceptions", "warn"] : ["no bridge", "bad"];
+        return '<tr><td class="mono">' + esc(r.filed) + "</td><td>" + ext(r.url, '<span class="mono">' + esc(r.accession) + "</span>") + "</td><td>" + esc(r.metric_label || "—") + '</td><td><span class="chip ' + s[1] + '">' + s[0] + '</span></td><td class="muted small">' + esc(r.reason || r.exceptions.slice(0, 2).join("; ")) + (r.exceptions.length > 2 ? " (+" + (r.exceptions.length - 2) + " more)" : "") + "</td></tr>";
+      }).join("") + "</tbody></table></div>";
+  }
+  function hlRow(li, on) {
+    $$('#main tr[data-li="' + li + '"]').forEach((r) => r.classList.toggle("hl", on));
+    $$('#wf .wf-row[data-li="' + li + '"]').forEach((r) => r.classList.toggle("hl", on));
+  }
+
+  // ------------------------------------------------------------------ source viewer
+  const SRC = {};
+  const V = { open: false, ticker: null, period: null, li: null };
+  function getSource(acc) {
+    if (SRC[acc]) return Promise.resolve(SRC[acc]);
+    if (S.sources && S.sources[acc]) return Promise.resolve(SRC[acc] = S.sources[acc]);
+    if (S.static) return Promise.resolve({ status: "not_embedded", reason: "This static copy embeds the filing table for each issuer's latest quarter only. Open the release on sec.gov for earlier quarters." });
+    return fetch("api/source/" + encodeURIComponent(acc)).then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+      .then((j) => (SRC[acc] = j))
+      .catch((e) => ({ status: "error", reason: "The table could not be loaded (" + e.message + ")." }));
+  }
+  function srcLines(q) { return enrich(q).filter((l) => l.xpath); }
+  function openViewer(ticker, period, li) {
+    const d = BY[ticker], q = quarter(d, period);
+    const lines = srcLines(q);
+    if (!lines.length) { toast("No source cells are stored for this quarter"); return; }
+    if (!lines.some((l) => l.li === li)) li = lines[0].li;
+    Object.assign(V, { open: true, ticker, period: q.period_id, li });
+    const el = $("#viewer");
+    el.classList.add("open"); el.setAttribute("aria-hidden", "false");
+    showViewer();
+  }
+  function showViewer() {
+    const d = BY[V.ticker], q = quarter(d, V.period), l = enrich(q)[V.li];
+    $$("#main tr.hl:not(.hl-target)").forEach((r) => r.classList.remove("hl"));
+    hlRow(V.li, true);
+    const rel = d.releases.find((r) => r.accession === q.accession) || {};
+    const lines = srcLines(q), pos = lines.findIndex((x) => x.li === V.li);
+    $("#vTitle").textContent = d.ticker + " · " + l.label;
+    $("#vLine").innerHTML = "As shown <strong>" + esc(l.value_raw) + "</strong> · $m <strong>" + m(lineUsd(l)) + "</strong> · " + esc(short(q.period_id)) + " column · line " + (pos + 1) + " of " + lines.length + ' · <kbd>↑</kbd> <kbd>↓</kbd> step · <kbd>Esc</kbd> close';
+    $("#vSec").href = l.url || q.exhibit_url || "#";
+    const meta = (src) => {
+      const sha = (src && src.sha256) || "";
+      $("#vMeta").innerHTML = "<dt>Accession</dt><dd>" + esc(q.accession) + "</dd><dt>Filed</dt><dd>" + esc(q.filed) + '</dd><dt>sha256</dt><dd title="' + esc(sha) + '">' + (sha ? esc(sha.slice(0, 16)) + "…" + esc(sha.slice(-8)) : '<span class="muted">not in this copy</span>') + "</dd>";
+    };
+    meta(null);
+    const body = $("#vBody"), acc = q.accession;
+    if (body.getAttribute("data-acc") !== acc) { body.innerHTML = '<div class="v-msg">Loading the filing table…</div>'; body.removeAttribute("data-acc"); }
+    getSource(acc).then((src) => {
+      if (!V.open || quarter(BY[V.ticker], V.period).accession !== acc) return;
+      meta(src);
+      if (src.status !== "ok") { body.removeAttribute("data-acc"); body.innerHTML = '<p class="v-msg"><strong>Table not shown.</strong> ' + esc(src.reason || src.status) + "</p>"; return; }
+      if (body.getAttribute("data-acc") !== acc) {
+        body.innerHTML = '<div class="v-table">' + src.table_html + "</div>";
+        body.setAttribute("data-acc", acc);
+        $$(".v-table td", body).forEach((td) => { if (/^[\s$€£()\d,.%−–—-]+$/.test(td.textContent) && /\d|—/.test(td.textContent)) td.classList.add("r"); });
+      }
+      $$(".src-hit, .src-row", body).forEach((e) => e.classList.remove("src-hit", "src-row"));
+      const cell = Array.from(body.querySelectorAll("[data-fn-xp]")).find((c) => c.getAttribute("data-fn-xp") === l.xpath);
+      if (!cell) { toast("This cell was not found in the stored table"); return; }
+      cell.classList.add("src-hit"); cell.parentElement.classList.add("src-row");
+      const cr = cell.getBoundingClientRect(), br = body.getBoundingClientRect();
+      body.scrollTop += cr.top - br.top - body.clientHeight / 2 + cr.height / 2;
+      const label = cell.parentElement.firstElementChild;
+      const lw = label ? Math.min(label.getBoundingClientRect().width, body.clientWidth / 2) : 0;
+      if (cr.right > br.right - 12 || cr.left < br.left + lw) body.scrollLeft += cr.left - br.left - lw - 40;
+    });
+  }
+  function stepViewer(dir) {
+    const q = quarter(BY[V.ticker], V.period), lines = srcLines(q);
+    const i = lines.findIndex((x) => x.li === V.li);
+    const nx = lines[Math.max(0, Math.min(lines.length - 1, i + dir))];
+    if (!nx || nx.li === V.li) return;
+    hlRow(V.li, false); V.li = nx.li; showViewer();
+    const row = $('#main tr[data-li="' + V.li + '"]'); if (row) row.scrollIntoView({ block: "nearest" });
+  }
+  function closeViewer() {
+    if (!V.open) return;
+    V.open = false;
+    const el = $("#viewer"); el.classList.remove("open"); el.setAttribute("aria-hidden", "true");
+    if (V.li != null) hlRow(V.li, false);
+  }
+
+  // ------------------------------------------------------------------ issuers
+  function viewIssuers() {
+    const sectors = Array.from(new Set(S.issuers.map((d) => d.sector).filter(Boolean))).sort();
+    const q0 = st.uq.trim().toLowerCase();
+    const rows = S.issuers.filter((d) => (!st.usector || d.sector === st.usector) && (!q0 || d.ticker.toLowerCase().indexOf(q0) >= 0 || d.name.toLowerCase().indexOf(q0) >= 0));
+    main.innerHTML = '<div><h1>Coverage universe</h1><p class="lede">' + S.issuers.length + " leveraged issuers. Latest verified quarter for each, in $m. Normalized figures apply the draft Footnote v0.1 policy.</p></div>" +
+      '<div class="filters"><input type="search" id="uq" placeholder="Filter by ticker or name" aria-label="Filter issuers" value="' + esc(st.uq) + '"><select id="us" aria-label="Sector"><option value="">All sectors</option>' + sectors.map((s) => "<option" + (s === st.usector ? " selected" : "") + ">" + esc(s) + "</option>").join("") + '</select><span class="count">' + rows.length + " issuers</span></div>" +
+      '<div class="panel"><div class="tbl-wrap"><table class="grid"><thead><tr><th>Issuer</th><th>Sector</th><th>Latest</th><th class="n">Reported</th><th class="n">Normalized</th><th class="n">Gap</th><th class="n">Add-backs / EBITDA</th><th>Checks</th><th class="n">Recasts</th><th class="n">Changes</th></tr></thead><tbody>' +
+      rows.map((d) => {
+        const q = latest(d);
+        const gap = q && q.normalized_usd != null && q.reported_usd ? (q.reported_usd - q.normalized_usd) / Math.abs(q.reported_usd) : null;
+        return '<tr class="click" data-t="' + d.ticker + '"><td><b class="mono">' + d.ticker + '</b> <span class="muted">' + esc(d.name) + "</span></td><td>" + esc(d.sector) + '</td><td class="mono">' + (q ? short(q.period_id) : '<span class="muted">no bridge</span>') + '</td><td class="n">' + (q ? m(q.reported_usd) : "—") + '</td><td class="n">' + (q ? m(q.normalized_usd) : "—") + '</td><td class="n">' + pct(gap) + '</td><td class="n">' + (q ? pct(q.addback_intensity) : "—") + '</td><td><span class="ticks">' + (q ? tickHtml(q, true) : "") + '</span></td><td class="n">' + d.recasts.length + '</td><td class="n">' + d.changes.length + "</td></tr>";
+      }).join("") + "</tbody></table></div></div>";
+    const uq = $("#uq");
+    uq.oninput = (e) => { st.uq = e.target.value; const pos = e.target.selectionStart; viewIssuers(); const n = $("#uq"); n.focus(); n.setSelectionRange(pos, pos); };
+    $("#us").onchange = (e) => { st.usector = e.target.value; viewIssuers(); };
+  }
+
+  // ------------------------------------------------------------------ compare
+  function peerRow(t) {
+    for (const s in S.peers) { const r = S.peers[s].issuers.find((x) => x.ticker === t); if (r) return r; }
+    return null;
+  }
+  function viewCompare() {
+    const sectors = Object.keys(S.peers).sort();
+    const tickers = st.cmp.mode === "sector" ? (S.peers[st.cmp.sector] ? S.peers[st.cmp.sector].issuers.map((r) => r.ticker) : []) : st.cmp.tickers.filter((t) => BY[t]);
+    const rows = tickers.map((t) => {
+      const d = BY[t], q = latest(d), p = peerRow(t) || { mix_usd: {} };
+      const rep = q ? q.reported_usd : null, norm = q ? q.normalized_usd : null;
+      return { t, d, q, rep, norm, gap: rep && norm != null ? (rep - norm) / Math.abs(rep) : null, disc: q ? q.addback_intensity : null, mix: p.mix_usd };
+    });
+    const key = st.sort.key, dir = st.sort.dir;
+    rows.sort((a, b) => { const va = key === "t" ? a.t : a[key], vb = key === "t" ? b.t : b[key]; if (va == null) return 1; if (vb == null) return -1; return (va < vb ? -1 : va > vb ? 1 : 0) * dir; });
+    const tot = {};
+    rows.forEach((r) => Object.keys(r.mix).forEach((c) => { tot[c] = (tot[c] || 0) + Math.abs(r.mix[c]); }));
+    const order = Object.keys(tot).sort((a, b) => tot[b] - tot[a]);
+    const top = order.slice(0, 5);
+    const color = (c) => "var(--mix" + (top.indexOf(c) >= 0 ? top.indexOf(c) + 1 : 6) + ")";
+    const mixbar = (mix) => {
+      const parts = {}; let sum = 0;
+      Object.keys(mix).forEach((c) => { const k = top.indexOf(c) >= 0 ? c : "Other"; parts[k] = (parts[k] || 0) + Math.abs(mix[c]); sum += Math.abs(mix[c]); });
+      if (!sum) return '<span class="muted small">no discretionary add-backs</span>';
+      return '<div class="mixbar">' + top.concat(["Other"]).filter((k) => parts[k]).map((k) => '<span style="width:' + (parts[k] / sum * 100).toFixed(2) + "%;background:" + (k === "Other" ? "var(--mix6)" : color(k)) + '" title="' + esc(k === "Other" ? "Other categories" : k + " " + codeName(k)) + ": " + m(parts[k]) + ' $m"></span>').join("") + "</div>";
+    };
+    const th = (k, label, n) => '<th class="' + (n ? "n" : "") + '" aria-sort="' + (st.sort.key === k ? (dir > 0 ? "ascending" : "descending") : "none") + '"><button type="button" class="sort" data-sort="' + k + '">' + label + (st.sort.key === k ? (dir > 0 ? " ▲" : " ▼") : "") + "</button></th>";
+    const ctl = '<div class="cmp-ctl"><div class="seg" role="group" aria-label="Compare by"><button type="button" data-cmode="sector" class="' + (st.cmp.mode === "sector" ? "on" : "") + '">Whole sector</button><button type="button" data-cmode="pick" class="' + (st.cmp.mode === "pick" ? "on" : "") + '">Pick 2–6 issuers</button></div>' +
+      (st.cmp.mode === "sector"
+        ? '<select id="cSec" aria-label="Sector">' + sectors.map((s) => "<option" + (s === st.cmp.sector ? " selected" : "") + ">" + esc(s) + " (" + S.peers[s].issuers.length + ")</option>").join("") + "</select>" + (S.peers[st.cmp.sector] ? '<span class="hint">Sector median add-backs / EBITDA <b class="mono">' + pct(S.peers[st.cmp.sector].median_addback_intensity) + "</b></span>" : "")
+        : '<div class="pick">' + st.cmp.tickers.map((t) => '<span class="chip">' + t + '<button type="button" data-cdel="' + t + '" aria-label="Remove ' + t + '">×</button></span>').join("") +
+          (st.cmp.tickers.length < 6 ? '<form id="cAdd" style="display:flex;gap:6px"><input type="text" id="cIn" list="cList" placeholder="Add ticker" aria-label="Add ticker to compare" maxlength="6" style="width:120px;text-transform:uppercase"><button class="btn" type="submit">Add</button></form><datalist id="cList">' + S.issuers.filter((d) => d.quarters.length).map((d) => '<option value="' + d.ticker + '">' + esc(d.name) + "</option>").join("") + "</datalist>" : '<span class="hint">Six is the most this view compares.</span>') + "</div>") + "</div>";
+    main.innerHTML = '<div><h1>Compare issuers</h1><p class="lede">Latest quarter for each issuer, in $m. Gap is how far Footnote’s normalized figure sits below what the company reports. Discretionary add-backs exclude D&amp;A, interest, taxes and minority interest.</p></div>' + ctl +
+      (rows.length < 2 && st.cmp.mode === "pick" ? '<div class="panel empty">Add at least two issuers to compare.</div>' :
+      '<div class="panel"><div class="tbl-wrap"><table class="grid"><thead><tr>' + th("t", "Issuer") + "<th>Quarter</th>" + th("rep", "Reported", 1) + th("norm", "Normalized", 1) + th("gap", "Gap %", 1) + th("disc", "Discretionary / EBITDA", 1) + "<th>Category mix</th><th>Checks</th></tr></thead><tbody>" +
+      rows.map((r) => '<tr class="click" data-t="' + r.t + '"><td><b class="mono">' + r.t + '</b> <span class="muted small">' + esc(r.d.name) + '</span></td><td class="mono">' + (r.q ? short(r.q.period_id) : "—") + '</td><td class="n">' + m(r.rep) + '</td><td class="n">' + m(r.norm) + '</td><td class="n">' + pct(r.gap) + '</td><td class="n">' + pct(r.disc) + "</td><td>" + mixbar(r.mix) + '</td><td><span class="ticks">' + (r.q ? tickHtml(r.q, true) : "") + "</span></td></tr>").join("") +
+      '</tbody></table></div><div class="wf-legend" style="padding-top:10px">' + top.map((c) => '<span><i class="sw" style="background:' + color(c) + '"></i>' + esc(c) + " " + esc(codeName(c)) + "</span>").join("") + (order.length > 5 ? '<span><i class="sw" style="background:var(--mix6)"></i>Other</span>' : "") + "</div></div>" +
+      '<div><h2 style="margin-bottom:8px">Last 8 quarters, reported and normalized ($m)</h2><div class="sm-grid">' +
+      rows.map((r) => '<figure class="panel sm"><figcaption><b data-t="' + r.t + '" style="cursor:pointer">' + r.t + "</b><span>" + (r.q ? "gap " + pct(r.gap) : "") + "</span></figcaption>" + lineChart(threeM(r.d).slice(-8), { W: 300, H: 130, L: 46, ticks: 2, label: r.t + " reported and normalized, last 8 quarters" }) + "</figure>").join("") + "</div></div>");
+    const cs = $("#cSec"); if (cs) cs.onchange = (e) => { st.cmp.sector = sectors[e.target.selectedIndex]; viewCompare(); };
+    const ca = $("#cAdd");
+    if (ca) ca.onsubmit = (e) => {
+      e.preventDefault();
+      const t = $("#cIn").value.trim().toUpperCase();
+      if (!BY[t] || !BY[t].quarters.length) { toast(t ? t + " has no verified bridge to compare" : "Type a ticker"); return; }
+      if (st.cmp.tickers.indexOf(t) < 0) st.cmp.tickers.push(t);
+      viewCompare(); const n = $("#cIn"); if (n) n.focus();
+    };
+  }
+
+  // ------------------------------------------------------------------ method
+  function viewMethod() {
+    const c = S.coverage, a = c.anchor_checks, h = c.held_out || null, lm = c.label_memory || {};
+    const stages = {};
+    c.failures.forEach((f) => { stages[f.stage] = (stages[f.stage] || 0) + 1; });
+    const stat = (v, l, d) => '<div class="stat"><span class="v">' + v + '</span><span class="l">' + l + '</span><span class="d">' + d + "</span></div>";
+    main.innerHTML = '<div><h1>Method and accuracy</h1><p class="lede">What is checked, what is not yet, and how each number is produced. Every figure on this site comes from deterministic code reading the filing; no language model produces or alters a number.</p></div>' +
+      '<div class="strip panel" id="heldout">' +
+      (h ? stat(h.bridges_all_periods_tie + " / " + h.bridges_found, "Held-out bridges that tie out", "every period adds up, on " + h.releases + " releases outside the " + h.gold_releases + "-release gold set") : stat("—", "Held-out bridges", "gold set not available to this build")) +
+      stat(c.sum_checks.pass.toLocaleString() + " / " + (c.sum_checks.pass + c.sum_checks.fail).toLocaleString(), "Period tie-outs passed", "start plus adjustments equals the stated total") +
+      stat(a.pass.toLocaleString() + " / " + (a.pass + a.mismatch).toLocaleString(), "GAAP anchors match XBRL", a.unavailable + " periods have no XBRL fact to compare") +
+      stat(c.observations.toLocaleString(), "As-reported values stored", "append-only, each with its sec.gov location") + "</div>" +
+      '<div class="cols2"><div class="panel"><div class="panel-h"><h2>How a bridge is verified</h2></div><div class="prose"><ol>' +
+      "<li><b>Find the release.</b> Every 8-K reporting Item 2.02 and its EX-99.1 press release, fetched from EDGAR and stored with a sha256.</li>" +
+      "<li><b>Pick the headline table.</b> Among tables with an EBITDA total and a GAAP starting line, the one that ties out in every period, covers the quarter just reported and starts from net income.</li>" +
+      "<li><b>Tie it out.</b> The starting line plus every adjustment must equal the reported total in each period, within max(1, ⌈n/2⌉) rounding units.</li>" +
+      "<li><b>Anchor it.</b> The GAAP starting line must equal the company’s XBRL fact for the same period, from SEC companyfacts.</li>" +
+      "<li><b>Keep every observation.</b> Values are append-only, so a later release that restates a period shows up as a recast instead of overwriting history.</li></ol></div></div>" +
+      '<div class="panel"><div class="panel-h"><h2>What is not finished</h2></div><div class="prose"><ul>' +
+      "<li>The normalization policy (v0.1) is a draft. Credit analysts have not reviewed it yet, so normalized figures are previews.</li>" +
+      "<li>Add-back categories come from deterministic label rules: " + (lm.rule || 0) + " suggested, " + (lm.human || 0) + " confirmed by a person.</li>" +
+      "<li>The gold set was labelled by the extractor plus an independent model reading and 7 human decisions. A second human labeller has not checked it, so accuracy figures are internal.</li>" +
+      "<li>Fiscal fourth quarters often have no three-month XBRL fact, so their anchor shows “no XBRL fact” instead of a pass.</li></ul></div></div></div>" +
+      '<div class="panel"><div class="panel-h"><h2>Releases not turned into a bridge in the last run</h2><span class="hint">' + Object.keys(stages).map((s) => esc(s) + " " + stages[s]).join(" · ") + "</span></div>" +
+      '<div class="tbl-wrap"><table class="grid"><thead><tr><th>Issuer</th><th>Accession</th><th>Stage</th><th>Reason</th></tr></thead><tbody>' +
+      c.failures.map((f) => '<tr><td class="mono">' + esc(f.ticker || "") + '</td><td class="mono">' + esc(f.accession || "") + "</td><td>" + esc(f.stage) + '</td><td class="muted">' + esc(f.reason) + "</td></tr>").join("") + "</tbody></table></div></div>" +
+      '<div class="panel"><div class="panel-h"><h2>Default policy, draft v0.1</h2></div><div class="tbl-wrap"><table class="grid"><thead><tr><th>Code</th><th>Category</th><th>Group</th><th>Treatment</th></tr></thead><tbody>' +
+      Object.keys(CODES).map((k) => '<tr><td class="mono">' + k + "</td><td>" + esc(CODES[k].name) + "</td><td>" + esc(CODES[k].group) + "</td><td>" + esc(CODES[k].treatment) + "</td></tr>").join("") + "</tbody></table></div></div>" +
+      '<p class="hint">Snapshot built ' + esc(S.generated_at) + " from EDGAR · " + c.issuers + " issuers · " + c.releases_seen + " releases read.</p>";
+  }
+
+  // ------------------------------------------------------------------ search palette
+  const P = { items: [], i: 0 };
+  function openPalette() { $("#palette").hidden = false; const q = $("#palq"); q.value = ""; palFill(""); q.focus(); }
+  function closePalette() { $("#palette").hidden = true; }
+  function palFill(v) {
+    const s = v.trim().toLowerCase();
+    const score = (d) => (d.ticker.toLowerCase() === s ? 0 : d.ticker.toLowerCase().startsWith(s) ? 1 : d.name.toLowerCase().startsWith(s) ? 2 : 3);
+    P.items = S.issuers.filter((d) => !s || d.ticker.toLowerCase().indexOf(s) >= 0 || d.name.toLowerCase().indexOf(s) >= 0).sort((a, b) => score(a) - score(b) || a.ticker.localeCompare(b.ticker)).slice(0, 12);
+    P.i = 0; palDraw();
+  }
+  function palDraw() {
+    $("#pall").innerHTML = P.items.length ? P.items.map((d, i) => '<li role="option" aria-selected="' + (i === P.i) + '" class="' + (i === P.i ? "on" : "") + '" data-pi="' + i + '"><b>' + d.ticker + '</b><span class="nm">' + esc(d.name) + '</span><span class="muted small">' + esc(d.sector) + "</span></li>").join("") : '<li class="muted">No issuer matches.</li>';
+  }
+  function palGo(i) { const d = P.items[i]; if (!d) return; closePalette(); go("issuer", { ticker: d.ticker }); }
+  $("#palq").addEventListener("input", (e) => palFill(e.target.value));
+  $("#palq").addEventListener("keydown", (e) => {
+    if (e.key === "ArrowDown") { e.preventDefault(); P.i = Math.min(P.items.length - 1, P.i + 1); palDraw(); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); P.i = Math.max(0, P.i - 1); palDraw(); }
+    else if (e.key === "Enter") { e.preventDefault(); palGo(P.i); }
+    else if (e.key === "Escape") { e.preventDefault(); closePalette(); }
   });
-  document.getElementById("q").addEventListener("input", function (e) {
-    var v = e.target.value.trim().toUpperCase();
-    if (S && issuer(v)) return go("issuer", v);
-    if (state.view !== "universe") { state.view = "universe"; nav(); }
-    if (S) universe();
+  $("#palette").addEventListener("click", (e) => { const li = e.target.closest("[data-pi]"); if (li) palGo(+li.getAttribute("data-pi")); else if (e.target.id === "palette") closePalette(); });
+
+  // ------------------------------------------------------------------ demo
+  const D = { on: false, i: 0, timer: 0 };
+  function andList(a) { return a.length < 2 ? a.join("") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1]; }
+  function demoSteps() {
+    const cc = BY.CC, q = cc ? latest(cc) : null;
+    const rev = q ? enrich(q).filter((l) => l.n && l.n.treatment === "exclude") : [];
+    const lit = q ? enrich(q).find((l) => /litigation/i.test(l.label) && l.xpath) : null;
+    const rc = cc ? cc.recasts.find((r) => r.period_id === "3M-2024-06-30" && /^net .*income/i.test(r.label)) : null;
+    const gaming = S.peers["Gaming & leisure"];
+    const h = S.coverage.held_out;
+    return [
+      { k: "Changes inbox", t: "Every restatement, recurring “one-off” and definition change across " + S.issuers.length + " issuers, grouped by filing date and ranked by dollar impact. J and K move through the list.", run: () => { st.f = { type: "", sector: "", watch: false, min: 0 }; go("changes"); } },
+      { k: "Chemours waterfall", t: q ? "Chemours reports " + esc(q.metric_label) + " of " + capM(q.reported_usd) + " for the quarter ended " + esc(qlabel(q.period_id)) + ". Under Footnote v0.1, reversing " + andList(rev.map((r) => esc(codeName(r.n.code)).toLowerCase())) + " takes it to " + capM(q.normalized_usd) + "." : "Chemours is not in this snapshot.", run: () => { st.policy = "v01"; if (cc) go("issuer", { ticker: "CC", tab: "recasts" }); } },
+      { k: "Source viewer", t: lit ? "Each number opens the table it came from. " + esc(lit.label) + " (" + esc(lit.value_raw) + ") is highlighted in the stored EX-99.1, accession " + esc(q.accession) + "." : "Each number opens the filing table it came from.", run: () => { if (!cc) return; go("issuer", { ticker: "CC", tab: "recasts" }); if (lit) D.timer = setTimeout(() => openViewer("CC", q.period_id, lit.li), 80); } },
+      { k: "Recasts", t: rc ? "Chemours restated net income for the quarter ended Jun 30, 2024: " + capM(rc.first_usd) + " in its " + esc(rc.first_filed) + " release, " + capM(rc.latest_usd) + " in its " + esc(rc.latest_filed) + " release. Both observations are kept." : "Restated values are kept as separate observations.", run: () => { if (cc) go("issuer", { ticker: "CC", tab: "recasts", hl: rc ? { period: rc.period_id, label: rc.label } : null }); } },
+      { k: "Gaming peers", t: gaming ? gaming.issuers.length + " gaming and leisure issuers side by side. The sector’s median discretionary add-backs are " + pct(gaming.median_addback_intensity) + " of reported EBITDA." : "Peers side by side.", run: () => { st.cmp.mode = "sector"; st.cmp.sector = "Gaming & leisure"; st.sort = { key: "gap", dir: -1 }; go("compare"); } },
+      { k: "Method", t: h ? h.bridges_all_periods_tie + " of " + h.bridges_found + " held-out bridges tie out in every period, checked by arithmetic against the filing and XBRL, not by labels." : "How each number is checked.", run: () => { go("method"); D.timer = setTimeout(() => { const el = $("#heldout"); if (el) el.classList.add("callout"); }, 30); } },
+    ];
+  }
+  function demoShow() {
+    const steps = demoSteps(), s = steps[D.i];
+    clearTimeout(D.timer); closeViewer();
+    $("#demoK").textContent = "Demo · " + (D.i + 1) + " of " + steps.length + " · " + s.k;
+    $("#demoP").innerHTML = s.t;
+    $("#demoPrev").disabled = D.i === 0;
+    $("#demoNext").textContent = D.i === steps.length - 1 ? "Finish" : "Next";
+    s.run();
+  }
+  function demoStart() { D.on = true; D.i = 0; $("#demo").hidden = false; demoShow(); $("#demoNext").focus(); }
+  function demoEnd() { D.on = false; $("#demo").hidden = true; closeViewer(); }
+  $("#demoBtn").onclick = () => (D.on ? demoEnd() : demoStart());
+  $("#demoNext").onclick = () => { if (D.i >= demoSteps().length - 1) return demoEnd(); D.i++; demoShow(); };
+  $("#demoPrev").onclick = () => { if (D.i > 0) { D.i--; demoShow(); } };
+  $("#demoExit").onclick = demoEnd;
+
+  // ------------------------------------------------------------------ theme
+  function effectiveDark() { const t = document.documentElement.getAttribute("data-theme"); return t ? t === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches; }
+  const savedTheme = lsGet("fn-theme", null);
+  if (savedTheme === "dark" || savedTheme === "light") document.documentElement.setAttribute("data-theme", savedTheme);
+  $("#themeBtn").onclick = () => { const t = effectiveDark() ? "light" : "dark"; document.documentElement.setAttribute("data-theme", t); lsSet("fn-theme", t); };
+
+  // ------------------------------------------------------------------ events
+  $("#openK").onclick = openPalette;
+  $("#vClose").onclick = closeViewer;
+  $("#vBody").addEventListener("click", (e) => {
+    const td = e.target.closest("[data-fn-xp]");
+    if (!td || !V.open) return;
+    const q = quarter(BY[V.ticker], V.period);
+    const l = srcLines(q).find((x) => x.xpath === td.getAttribute("data-fn-xp"));
+    if (l) { hlRow(V.li, false); V.li = l.li; showViewer(); }
+  });
+  document.addEventListener("click", (e) => {
+    const src = e.target.closest("[data-src]");
+    if (src) { openViewer(st.ticker, st.period, +src.getAttribute("data-src")); return; }
+    const wf = e.target.closest(".wf-row");
+    if (wf) { const li = wf.getAttribute("data-li"); if (li !== "") openViewer(st.ticker, st.period, +li); return; }
+    const qp = e.target.closest("[data-qp]");
+    if (qp) { go("issuer", { ticker: st.ticker, period: qp.getAttribute("data-qp"), tab: st.tab }); return; }
+    const pol = e.target.closest("[data-policy]");
+    if (pol) { st.policy = pol.getAttribute("data-policy"); render(); return; }
+    const tab = e.target.closest("[data-tab]");
+    if (tab) { st.tab = tab.getAttribute("data-tab"); $("#lower").innerHTML = lowerTabs(BY[st.ticker]); return; }
+    const fold = e.target.closest("[data-fold]");
+    if (fold) { const k = fold.getAttribute("data-fold"); st.open[k] = !st.open[k]; viewChanges(); return; }
+    const more = e.target.closest("[data-more]");
+    if (more) { st.days += 30; viewChanges(); return; }
+    const un = e.target.closest("[data-unwatch]");
+    if (un) { WATCH = WATCH.filter((t) => t !== un.getAttribute("data-unwatch")); lsSet("fn-watch", WATCH); refreshRail(); return; }
+    const so = e.target.closest("[data-sort]");
+    if (so) { const k = so.getAttribute("data-sort"); st.sort = { key: k, dir: st.sort.key === k ? -st.sort.dir : k === "t" ? 1 : -1 }; viewCompare(); return; }
+    const cm = e.target.closest("[data-cmode]");
+    if (cm) { st.cmp.mode = cm.getAttribute("data-cmode"); viewCompare(); return; }
+    const cd = e.target.closest("[data-cdel]");
+    if (cd) { st.cmp.tickers = st.cmp.tickers.filter((t) => t !== cd.getAttribute("data-cdel")); viewCompare(); return; }
+    if (e.target.closest("a[href^='http']")) return;
+    const c = e.target.closest(".card[data-k]");
+    if (c) { st.sel = +c.getAttribute("data-k"); openChange(VIS[st.sel]); return; }
+    const t = e.target.closest("[data-t]");
+    if (t) { go("issuer", { ticker: t.getAttribute("data-t") }); return; }
+  });
+  main.addEventListener("mouseover", (e) => {
+    const r = e.target.closest(".wf-row[data-li], tr[data-li]");
+    if (r && r.getAttribute("data-li") !== "") hlRow(r.getAttribute("data-li"), true);
+  });
+  main.addEventListener("mouseout", (e) => {
+    const r = e.target.closest(".wf-row[data-li], tr[data-li]");
+    if (r && r.getAttribute("data-li") !== "" && !(V.open && String(V.li) === r.getAttribute("data-li"))) hlRow(r.getAttribute("data-li"), false);
+  });
+  document.addEventListener("keydown", (e) => {
+    const k = e.key;
+    if ((e.ctrlKey || e.metaKey) && k.toLowerCase() === "k") { e.preventDefault(); openPalette(); return; }
+    if (!$("#palette").hidden) return;
+    if (V.open) {
+      if (k === "Escape") { e.preventDefault(); closeViewer(); return; }
+      if (k === "ArrowDown" || k === "ArrowRight") { e.preventDefault(); stepViewer(1); return; }
+      if (k === "ArrowUp" || k === "ArrowLeft") { e.preventDefault(); stepViewer(-1); return; }
+    }
+    const typing = /^(INPUT|SELECT|TEXTAREA)$/.test((document.activeElement || {}).tagName || "");
+    if (typing || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (k === "Escape" && D.on) { demoEnd(); return; }
+    if (k === "/") { e.preventDefault(); openPalette(); return; }
+    if (st.view === "changes") {
+      if (k === "j" || k === "J") { e.preventDefault(); moveSel(1); }
+      else if (k === "k" || k === "K") { e.preventDefault(); moveSel(-1); }
+      else if (k === "Enter" && st.sel >= 0 && VIS[st.sel] && !(document.activeElement && document.activeElement.closest && document.activeElement.closest("a,button"))) { e.preventDefault(); openChange(VIS[st.sel]); }
+    }
+    if (k === "Enter" && document.activeElement && document.activeElement.matches("[data-t][role=link]")) go("issuer", { ticker: document.activeElement.getAttribute("data-t") });
   });
 
   function boot(data) {
     S = data; CODES = (S.policy && S.policy.codes) || {};
-    var h = (location.hash || "").replace("#", "");
-    if (h && issuer(h.toUpperCase())) { state.view = "issuer"; state.ticker = h.toUpperCase(); }
-    else if (["changes", "peers", "method", "universe"].indexOf(h) >= 0) state.view = h;
-    render();
+    S.issuers.forEach((d) => { BY[d.ticker] = d; });
+    WATCH = WATCH.filter((t) => BY[t]).slice(0, 10);
+    fromHash();
   }
-  fetch("snapshot.json").then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+  fetch("snapshot.json").then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
     .then(boot)
-    .catch(function (e) { main.innerHTML = '<div class="panel"><h2>The data did not load</h2><p class="sub">snapshot.json could not be read (' + esc(e.message) + "). Run the API with <span class=\"mono\">uvicorn app.api.main:app</span> from backend/, or rebuild the static export.</p></div>"; });
+    .catch((e) => { main.innerHTML = '<div class="panel"><div class="panel-h"><h2>The data did not load</h2></div><p class="prose">snapshot.json could not be read (' + esc(e.message) + '). Run the API with <span class="mono">uvicorn app.api.main:app</span> from backend/, or rebuild the static export with <span class="mono">python -m app.pipeline.cli export</span>.</p></div>'; });
 })();
 </script>

@@ -25,3 +25,9 @@ REPO_ROOT: Path = Path(__file__).resolve().parents[2]
 def default_db() -> Path:
     raw = os.environ.get("FOOTNOTE_DB", "").strip()
     return Path(raw) if raw else REPO_ROOT / "var" / "footnote.db"
+
+
+def default_cache_dir() -> Path:
+    """The EDGAR document cache (``EDGAR_CACHE_DIR`` or backend/data/edgar_cache)."""
+    raw = os.environ.get("EDGAR_CACHE_DIR", "").strip()
+    return Path(raw) if raw else REPO_ROOT / "backend" / "data" / "edgar_cache"

@@ -12,9 +12,11 @@ line keeps its as-reported string and sec.gov link.
 from __future__ import annotations
 
 import json
+import re
 from collections import Counter, defaultdict
 from datetime import UTC, datetime
 from decimal import Decimal
+from pathlib import Path
 from statistics import median
 from typing import Any
 
@@ -26,7 +28,10 @@ from app.analytics.history import (
     recasts,
 )
 from app.analytics.normalize import load_policy, normalize_issuer
+from app.config import REPO_ROOT
 from app.store.db import Store
+
+GOLD_LABELS_DIR = REPO_ROOT / "eval" / "gold" / "labels"
 
 _MULT = {
     "units": 1,
@@ -148,13 +153,20 @@ def _issuer_doc(store: Store, issuer: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _coverage(store: Store) -> dict[str, Any]:
+def gold_accessions(labels_dir: Path = GOLD_LABELS_DIR) -> set[str]:
+    """Accessions of the gold set (one ``<accession>.json`` label file each)."""
+    if not labels_dir.is_dir():
+        return set()
+    return {p.stem for p in labels_dir.glob("*.json")}
+
+
+def _coverage(store: Store, gold: set[str]) -> dict[str, Any]:
     def one(sql: str) -> Any:
         return store.query(sql)[0][0]
 
     per_bridge = store.query(
         """
-        SELECT b.bridge_id, b.status,
+        SELECT b.bridge_id, b.accession, b.status,
                SUM(c.kind = 'sum') AS n_sum, SUM(c.kind = 'sum' AND c.status = 'pass') AS p_sum,
                SUM(c.kind = 'anchor') AS n_anchor,
                SUM(c.kind = 'anchor' AND c.status = 'pass') AS p_anchor
@@ -163,6 +175,8 @@ def _coverage(store: Store) -> dict[str, Any]:
         """
     )
     found = [r for r in per_bridge if r["status"] != "not_found"]
+    held = [r for r in per_bridge if r["accession"] not in gold]
+    held_found = [r for r in held if r["status"] != "not_found"]
     checks = Counter(
         (r["kind"], r["status"])
         for r in store.query(
@@ -185,6 +199,14 @@ def _coverage(store: Store) -> dict[str, Any]:
         "bridges_all_periods_tie": sum(
             1 for r in found if r["n_sum"] and r["p_sum"] == r["n_sum"]
         ),
+        "held_out": {
+            "gold_releases": len(per_bridge) - len(held),
+            "releases": len(held),
+            "bridges_found": len(held_found),
+            "bridges_all_periods_tie": sum(
+                1 for r in held_found if r["n_sum"] and r["p_sum"] == r["n_sum"]
+            ),
+        },
         "observations": one(
             "SELECT COUNT(*) FROM observations "
             "WHERE bridge_id IN (SELECT bridge_id FROM current_bridges)"
@@ -248,9 +270,44 @@ def _peers(issuers: list[dict[str, Any]]) -> dict[str, Any]:
     return out
 
 
+_RAW_NUMBER = re.compile(r"^\(?-?[0-9][0-9,]*(?:\.[0-9]+)?\)?$")
+
+
+def raw_usd(value_raw: str | None, scale: str | None) -> float | None:
+    """An as-reported cell ("(1,431)", "$ 12.5") in USD, or None if it is not a number."""
+    if not value_raw:
+        return None
+    s = value_raw.replace("$", "").replace("−", "-").replace(" ", "").strip()
+    if not _RAW_NUMBER.match(s):
+        return None
+    neg = s.startswith("(") and s.endswith(")")
+    num = Decimal(s.strip("()").replace(",", ""))
+    return _usd(-num if neg else num, scale)
+
+
+def _moves(
+    before: float | None, after: float | None, impact: float | None
+) -> dict[str, float | None]:
+    delta = None
+    if before is not None or after is not None:
+        delta = (after or 0.0) - (before or 0.0)
+    return {
+        "before_usd": before,
+        "after_usd": after,
+        "delta_usd": delta,
+        "impact_usd": impact,
+    }
+
+
 def _feed(issuers: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """
+    Every change across the universe. ``impact_usd`` (the size of the move, in
+    USD, used to rank the inbox) is plain arithmetic on as-reported values and
+    the release's stated scale; it is None where a change carries no amount.
+    """
     items: list[dict[str, Any]] = []
     for doc in issuers:
+        scale_of = {r["accession"]: r["scale"] for r in doc["releases"]}
         for r in doc["recasts"]:
             items.append(
                 {
@@ -258,30 +315,44 @@ def _feed(issuers: list[dict[str, Any]]) -> list[dict[str, Any]]:
                     "ticker": doc["ticker"],
                     "filed": r["latest_filed"],
                     **r,
+                    **_moves(r["first_usd"], r["latest_usd"], abs(r["delta_usd"])),
                 }
             )
         for c in doc["changes"]:
-            items.append({"type": c["kind"], "ticker": doc["ticker"], **c})
+            if c["kind"] == "added":
+                v = raw_usd(c["value_raw"], scale_of.get(c["accession"]))
+                mv = _moves(None, v, abs(v) if v is not None else None)
+            elif c["kind"] == "removed":
+                v = raw_usd(c["value_raw"], scale_of.get(c["prior_accession"]))
+                mv = _moves(v, None, abs(v) if v is not None else None)
+            else:
+                mv = _moves(None, None, None)
+            items.append({"type": c["kind"], "ticker": doc["ticker"], **c, **mv})
         if doc["quarters"]:
             q = doc["quarters"][-1]
             for ln in q["normalization"]["lines"]:
                 if any(f.endswith("recurring") for f in ln["flags"]):
+                    v = raw_usd(ln["value_raw"], q["scale"])
                     items.append(
                         {
                             "type": "recurring_addback",
                             "ticker": doc["ticker"],
                             "filed": q["filed"],
                             "period_id": q["period_id"],
+                            "accession": q["accession"],
                             "label": ln["label"],
                             "code": ln["code"],
                             "value_raw": ln["value_raw"],
+                            "treatment": ln["treatment"],
                             "url": ln["url"],
+                            **_moves(None, v, abs(v) if v is not None else None),
                         }
                     )
     return sorted(items, key=lambda i: i.get("filed") or "", reverse=True)
 
 
-def build_snapshot(store: Store) -> dict[str, Any]:
+def build_snapshot(store: Store, gold: set[str] | None = None) -> dict[str, Any]:
+    """``gold``: gold-set accessions, excluded from the held-out counts."""
     issuers = [
         dict(r)
         for r in store.query(
@@ -297,7 +368,7 @@ def build_snapshot(store: Store) -> dict[str, Any]:
             "status": policy.status,
             "codes": policy.codes,
         },
-        "coverage": _coverage(store),
+        "coverage": _coverage(store, gold_accessions() if gold is None else gold),
         "issuers": docs,
         "feed": _feed(docs),
         "peers": _peers(docs),
