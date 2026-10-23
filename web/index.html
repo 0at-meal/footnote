@@ -1,5 +1,7 @@
 <title>Footnote</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<!-- No script libraries: the app is vanilla JS. The IBM Plex fonts are a stylesheet, not a library,
+     and cdnjs does not host Plex; the artifact host only admits stylesheets from Google Fonts. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
@@ -277,7 +279,7 @@ svg text.ink { fill: var(--ink); }
   .kbtn span, .kbtn kbd { display: none; }
   .strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .stat:nth-child(3) { border-left: 0; }
-  .stat .v { font-size: 19px; }
+  .stat .v { font-size: 17px; white-space: nowrap; }
   .stat:nth-child(n + 3) { border-top: 1px solid var(--rule); }
   .figs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .fig.checks { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--rule); }
