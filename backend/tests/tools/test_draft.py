@@ -7,6 +7,7 @@ from datetime import date
 from decimal import Decimal
 from typing import Any
 
+from app.extraction.bridge.models import LineRole
 from app.extraction.html.models import HtmlCell
 from app.extraction.html.table_parser import extract_html_tables
 from bs4 import BeautifulSoup
@@ -20,7 +21,6 @@ from tools.gold.draft import (
     parse_period,
     tolerance,
 )
-from tools.gold.labels import LineRole
 
 
 def _table(html: str) -> Any:
@@ -245,3 +245,54 @@ def test_anchor_derived_ltm() -> None:
     assert ok["status"] == "pass" and "derived" in ok
     bad = anchor_check(FACTS, "Net income", col, Decimal(212), 1_000_000, Decimal(1))
     assert bad["status"] == "mismatch"
+
+
+def test_anchor_derives_fiscal_fourth_quarter() -> None:
+    """Q4 has no 3-month XBRL fact; it is FY minus the 9-month YTD (fixture facts)."""
+    facts: dict[str, Any] = {
+        "facts": {
+            "us-gaap": {
+                "NetIncomeLoss": {
+                    "units": {
+                        "USD": [
+                            {
+                                "start": "2025-01-01",
+                                "end": "2025-12-31",
+                                "val": 400_000_000,
+                                "accn": "a",
+                                "filed": "2026-02-20",
+                            },
+                            {
+                                "start": "2025-01-01",
+                                "end": "2025-09-30",
+                                "val": 310_000_000,
+                                "accn": "b",
+                                "filed": "2025-10-30",
+                            },
+                        ]
+                    }
+                }
+            }
+        }
+    }
+    col = PeriodColumn(span=(1, 2), header="", months=3, end_date=date(2025, 12, 31))
+    result = anchor_check(facts, "Net income", col, Decimal(90), 1_000_000, Decimal(1))
+    assert result["status"] == "pass"
+    assert result["derived"] == "fiscal year - nine-month YTD"
+
+
+def test_scale_ignores_non_money_captions() -> None:
+    """A KPI caption near the table ("hours (in billions)") is not the money scale."""
+    from app.extraction.bridge.core import Draft, detect_scale
+    from app.extraction.scale_and_sign import UnitScale
+
+    table = _table(
+        "<table><tr><td></td><td>Q2</td></tr><tr><td>Net income</td><td>5</td></tr></table>"
+    )
+    draft = Draft(accession="x")
+    detect_scale(table, 1, "Ad supported listener hours (in billions) 3.1", draft)
+    assert draft.scale is UnitScale.UNKNOWN
+    assert any("scale not found" in e for e in draft.exceptions)
+    draft = Draft(accession="x")
+    detect_scale(table, 1, "Reconciliation (in millions)", draft)
+    assert draft.scale is UnitScale.MILLIONS

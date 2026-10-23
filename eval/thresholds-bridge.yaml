@@ -1,0 +1,15 @@
+# P2-14 regression gate for tools.eval.score_bridge (CI and `make check`).
+#
+# Recorded from eval/results/bridge-2026-10-23.json (engine bridge-2).
+# Read the caveat in eval/RESULTS.md: these are in-sample numbers on labels the
+# same parser drafted. They guard against regressions; they are not an
+# independent accuracy estimate and must not be published (P4-13).
+# Never lower a floor to make CI green.
+scorer_version: 1
+labels_sha256: 5d0953b0cb034279eb3ae634b1925bcb274cb7cc2ef722f3c180cedbbf073d20
+metrics:
+  table_found: 1.0
+  line_exact_match: 1.0
+  role_accuracy: 1.0
+  sign_accuracy: 1.0
+  scale_accuracy: 1.0

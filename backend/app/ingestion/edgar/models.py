@@ -53,6 +53,10 @@ class FilingRef(BaseModel):
     filing_year: int | None = Field(
         default=None, description="Filing or report calendar year"
     )
+    items: list[str] = Field(
+        default_factory=list,
+        description="8-K items from the submissions feed (e.g. ['2.02', '9.01'])",
+    )
 
 
 class FilingDocument(BaseModel):

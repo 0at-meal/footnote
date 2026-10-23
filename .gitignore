@@ -17,3 +17,7 @@ data/
 # Local agent tooling
 .agents/
 skills-lock.json
+
+# Local observation store
+var/
+web-dist/

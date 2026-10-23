@@ -32,3 +32,9 @@ jobs:
       - name: Gold labels valid and complete (schema, manifest, P0-06 review)
         working-directory: backend
         run: python -m tools.gold.labels --validate --strict
+      - name: Extractor scorer must not regress below the baseline (P0-10)
+        working-directory: backend
+        run: python -m tools.eval.score --check ../eval/thresholds.yaml
+      - name: Bridge engine must not regress on the gold set (P2-14)
+        working-directory: backend
+        run: python -m tools.eval.score_bridge --check ../eval/thresholds-bridge.yaml

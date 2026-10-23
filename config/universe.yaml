@@ -1,0 +1,219 @@
+ticket: P1-08
+generated: '2026-10-22'
+generated_by: tools.universe.build
+rule: domestic filer, >= 4 Item 2.02 8-Ks in 2 years
+issuers:
+- ticker: TDG
+  cik: '0001260221'
+  name: TransDigm Group INC
+  sector: Aerospace & defense
+- ticker: CZR
+  cik: 0001590895
+  name: Caesars Entertainment, Inc.
+  sector: Gaming & leisure
+- ticker: WYNN
+  cik: 0001174922
+  name: WYNN RESORTS LTD
+  sector: Gaming & leisure
+- ticker: HTZ
+  cik: 0001657853
+  name: HERTZ GLOBAL HOLDINGS, INC
+  sector: Vehicle rental
+- ticker: CAR
+  cik: '0000723612'
+  name: AVIS BUDGET GROUP, INC.
+  sector: Vehicle rental
+- ticker: THC
+  cik: 0000070318
+  name: TENET HEALTHCARE CORP
+  sector: Healthcare services
+- ticker: CYH
+  cik: 0001108109
+  name: COMMUNITY HEALTH SYSTEMS INC
+  sector: Healthcare services
+- ticker: IHRT
+  cik: 0001400891
+  name: iHeartMedia, Inc.
+  sector: Media
+- ticker: LUMN
+  cik: 0000018926
+  name: Lumen Technologies, Inc.
+  sector: Telecom & cable
+- ticker: CHTR
+  cik: 0001091667
+  name: CHARTER COMMUNICATIONS, INC. /MO/
+  sector: Telecom & cable
+- ticker: CVNA
+  cik: 0001690820
+  name: CARVANA CO.
+  sector: Auto retail
+- ticker: BHC
+  cik: 0000885590
+  name: Bausch Health Companies Inc.
+  sector: Pharma
+- ticker: CC
+  cik: '0001627223'
+  name: Chemours Co
+  sector: Chemicals
+- ticker: RXT
+  cik: 0001810019
+  name: Rackspace Technology, Inc.
+  sector: IT services
+- ticker: FUN
+  cik: 0001999001
+  name: Six Flags Entertainment Corporation/NEW
+  sector: Gaming & leisure
+- ticker: MGM
+  cik: 0000789570
+  name: MGM Resorts International
+  sector: Gaming & leisure
+- ticker: PENN
+  cik: 0000921738
+  name: PENN Entertainment, Inc.
+  sector: Gaming & leisure
+- ticker: BYD
+  cik: 0000906553
+  name: BOYD GAMING CORP
+  sector: Gaming & leisure
+- ticker: RRR
+  cik: '0001653653'
+  name: Red Rock Resorts, Inc.
+  sector: Gaming & leisure
+- ticker: CHDN
+  cik: '0000020212'
+  name: Churchill Downs Inc
+  sector: Gaming & leisure
+- ticker: CCL
+  cik: 0000815097
+  name: Carnival Corp Ltd.
+  sector: Cruise
+- ticker: NCLH
+  cik: '0001513761'
+  name: Norwegian Cruise Line Holdings Ltd.
+  sector: Cruise
+- ticker: RCL
+  cik: 0000884887
+  name: ROYAL CARIBBEAN CRUISES LTD
+  sector: Cruise
+- ticker: CNK
+  cik: 0001385280
+  name: Cinemark Holdings, Inc.
+  sector: Gaming & leisure
+- ticker: AMC
+  cik: 0001411579
+  name: AMC ENTERTAINMENT HOLDINGS, INC.
+  sector: Gaming & leisure
+- ticker: SIRI
+  cik: 0000908937
+  name: SIRIUS XM HOLDINGS INC.
+  sector: Media
+- ticker: SBGI
+  cik: 0001971213
+  name: Sinclair, Inc.
+  sector: Media
+- ticker: GTN
+  cik: 0000043196
+  name: GRAY MEDIA, INC
+  sector: Media
+- ticker: NXST
+  cik: '0001142417'
+  name: NEXSTAR MEDIA GROUP, INC.
+  sector: Media
+- ticker: AMCX
+  cik: 0001514991
+  name: AMC Global Media Inc.
+  sector: Media
+- ticker: CCO
+  cik: 0001334978
+  name: Clear Channel Outdoor Holdings, Inc.
+  sector: Media
+- ticker: UNIT
+  cik: 0002020795
+  name: Uniti Group Inc.
+  sector: Telecom & cable
+- ticker: LAMR
+  cik: 0001090425
+  name: LAMAR ADVERTISING CO/NEW
+  sector: Media
+- ticker: OUT
+  cik: 0001579877
+  name: OUTFRONT Media Inc.
+  sector: Media
+- ticker: ACHC
+  cik: 0001520697
+  name: Acadia Healthcare Company, Inc.
+  sector: Healthcare services
+- ticker: AVTR
+  cik: 0001722482
+  name: Avantor, Inc.
+  sector: Life sciences tools
+- ticker: COTY
+  cik: '0001024305'
+  name: COTY INC.
+  sector: Consumer products
+- ticker: NWL
+  cik: 0000814453
+  name: NEWELL BRANDS INC.
+  sector: Consumer products
+- ticker: MAT
+  cik: '0000063276'
+  name: MATTEL INC /DE/
+  sector: Consumer products
+- ticker: WOOF
+  cik: 0001826470
+  name: Petco Health & Wellness Company, Inc.
+  sector: Retail
+- ticker: USFD
+  cik: 0001665918
+  name: US Foods Holding Corp.
+  sector: Food distribution
+- ticker: PFGC
+  cik: 0001618673
+  name: Performance Food Group Co
+  sector: Food distribution
+- ticker: ARMK
+  cik: 0001584509
+  name: Aramark
+  sector: Business services
+- ticker: SPB
+  cik: 0000109177
+  name: Spectrum Brands Holdings, Inc.
+  sector: Consumer products
+- ticker: POST
+  cik: 0001530950
+  name: Post Holdings, Inc.
+  sector: Food & beverage
+- ticker: CLVT
+  cik: '0001764046'
+  name: CLARIVATE PLC
+  sector: Information services
+- ticker: CLF
+  cik: '0000764065'
+  name: CLEVELAND-CLIFFS INC.
+  sector: Metals & mining
+- ticker: OLN
+  cik: '0000074303'
+  name: OLIN Corp
+  sector: Chemicals
+- ticker: TROX
+  cik: 0001530804
+  name: Tronox Holdings plc
+  sector: Chemicals
+- ticker: BLDR
+  cik: 0001316835
+  name: Builders FirstSource, Inc.
+  sector: Building products
+rejected:
+- ticker: TGNA
+  reason: Ticker or CIK 'TGNA' not found on EDGAR.
+- ticker: WBD
+  reason: Ticker or CIK 'WBD' not found on EDGAR.
+- ticker: SATS
+  cik: '0001415404'
+  reason: 0 Item 2.02 8-Ks since 2024-10-23 (< 4)
+- ticker: SEM
+  reason: Ticker or CIK 'SEM' not found on EDGAR.
+- ticker: OMI
+  reason: Ticker or CIK 'OMI' not found on EDGAR.
+- ticker: HBI
+  reason: Ticker or CIK 'HBI' not found on EDGAR.

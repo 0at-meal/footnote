@@ -5,6 +5,104 @@ Newest first. One entry per decision, with date and reason. Entries before
 those entries described features as deployed that were never wired into the
 running app (see the retraction below).
 
+- **2026-10-23: Phases 1–4 engineering built ahead of the open Phase 0 gate (ADR-010).**
+  The owner directed the agent to "go through all the phases" before an investor meeting.
+  The gates are unchanged, and nothing here marks Phase 0 complete or a later phase open.
+  Decisions taken in the run:
+  - The bridge engine is the P0-05 parser moved into `app/extraction/bridge/`, with
+    automatic headline-table selection. Ranking: ties out in every period, then distinct
+    periods, then a current-quarter column, then a net-income start, then more lines, then
+    the earlier table. `tools.gold.draft` now imports it, so gold drafting and the product
+    share one engine.
+  - The local SQLite edition of schema v1 is append-only. Each engine version re-extracts
+    into new rows; `current_bridges` serves the newest one.
+  - The second scorer `tools.eval.score_bridge` and its CI floor `eval/thresholds-bridge.yaml`
+    are in-sample. Its caveat (gold values drafted by the same parser) is printed in every
+    report.
+  - Categories are suggested by deterministic label rules (`app/analytics/classify.py`),
+    stored as `source='rule'` and refreshed when the rules change. A human decision always
+    wins. No LLM is used. This extends spec §4.5 (label memory or human) with rule
+    suggestions that are shown as pending review.
+  - Normalized EBITDA is computed under draft policy v0.1 and labelled a preview while the
+    spec is unfrozen.
+  - Line keys ignore zero-width characters, non-breaking spaces, `[n]` and `(n)` footnotes,
+    and hyphens between letters. Definition changes are compared release over release. A
+    dropped line and an added line with the same category are reported as *renamed*. When
+    fewer than half the lines carry over, one *layout changed* event is reported instead
+    of a line diff.
+  - When a period repeats in a table, only a column headed Total or Consolidated is kept;
+    otherwise none is. Estimate and ratio columns are never stored.
+  - The XBRL anchor derives a fiscal Q4 as FY − 9M YTD, as it already derived LTM.
+  - Market and competitor desk research is in `docs/research/market.md`. It is not customer
+    evidence and does not count toward P0-12.
+- **2026-10-17: ADRs written for the current direction (P0-15).** `docs/adr/`:
+  - ADR-005 ingest: scheduled batch, one EDGAR gateway, write-once R2 raw store;
+  - ADR-006 global append-only public data vs. tenant data under RLS;
+  - ADR-007 no pack abstraction before Phase 5, and declarative `PackSpec` then;
+  - ADR-008 all processing offline, with a read-only online path;
+  - ADR-009 $0 infrastructure with migration triggers.
+
+  They restate decisions already taken on 2026-10-14 and add none. ADR-001 to ADR-004
+  (removed product, tag `v0-extraction`) are retired, and their numbers are not reused.
+- **2026-10-17: Normalization spec v0.1 drafted (P0-13); not frozen.**
+  [docs/NORMALIZATION.md](docs/NORMALIZATION.md) now defines 24 codes in four groups:
+  components, adjustments, scope (`RENT`, `CORP`) and control (`MIXED`, `OTHER`). Main
+  choices beyond ROADMAP §3, each open for analyst review (P0-14):
+  - `NCI` and `NONOP` are components, accepted.
+  - `RESTR`, `TRANSFORM`, `MA`, `LITIG` and `ENV` are *accept-unless-recurring*.
+  - `RENT` and `CORP` are excluded, so normalized EBITDA is consolidated EBITDA.
+  - `MIXED` lines take the strictest treatment among their constituents.
+  - Any `OTHER` line blocks the computation.
+
+  The recurrence rule has three outcomes (recurring / not recurring / unknown). An unknown
+  result never flips a treatment, and quarters are not derived from LTM/YTD in v0.1. Worked
+  examples use real gold-set bridges cited by accession and line. Their category assignments
+  are the author's illustration, not label memory. The reviewer brief and feedback form are
+  in `docs/discovery/`.
+- **2026-10-17: P0-11 interview kit and pass-rule scoring.** The kit is in
+  `docs/discovery/`: recruiting, script, rubric, scoresheet, notes template and tracker. The
+  ICP pass rule (ROADMAP §2) is applied as follows:
+  - Each criterion is scored yes / no / unclear, and every yes needs a quote or fact.
+  - *Unclear* counts against passing: as no for A and B, as yes for C.
+  - "At least 3 name a price anchor or ask for a trial" is computed both over all 8 and
+    over those who meet A. If the two disagree, the stricter reading decides.
+  - The result may be declared early only when the remaining interviews cannot change it.
+    So Phase 1 can open after 5 interviews only on an early PASS (5 A, ≥3 B, 0 C).
+  - Interviewees are pseudonymous in the repository; identities stay outside git.
+- **2026-10-17: P0-10 extractor regression gate.** CI (and `make check`) runs
+  `python -m tools.eval.score --check eval/thresholds.yaml`. It fails if any headline metric's
+  overall rate (table_found, line_exact_match, scale_accuracy, sign_accuracy) drops below the
+  committed floor, or if the scorer version or gold-label sha256 differ from the ones the
+  floors were recorded on, since rates across different gold sets or scorers are not
+  comparable. Floors start at the P0-09 baseline and move only deliberately: in their own
+  commit, with a RESULTS entry and a DECISIONS entry, never lowered to make CI green. The
+  `verified_by` split is reported but not gated: the `human` group has 5 scored values.
+- **2026-10-17: P0-08 scorer lives at `backend/tools/eval/score.py`.** ROADMAP names
+  `eval/score.py`, but mypy strict and the import root cover only `backend/`, so the scorer
+  sits with the other gold tools and runs as `python -m tools.eval.score` (`make score`).
+  It is offline (reads only the saved `.gz` exhibits, sha256-checked; it never imports
+  `app.ingestion`) and deterministic. Metric definitions, fixed with the scorer:
+  - The unit is one gold *value* (line x period), so every metric splits by `verified_by`.
+    Dash placeholders (102 of 1,304) are not scored. Table-found and scale are also
+    reported per release.
+  - **Line exact match** needs the right table (the extractor's top-ranked candidate),
+    the label (normalized as in `tools.gold.compare`; k-th occurrence aligns to k-th), the
+    period (the extractor's period string must identify exactly one gold period) and the
+    value. A period-agnostic `line_label_value_match` is reported beside it as a diagnostic
+    so period binding (P2-03) can be measured on its own.
+  - **Scale** is what `detect_scale_from_caption` finds in the extractor's table title,
+    the only caption the extractor passes on today.
+  - **Sign** compares the direction `detect_sign` gives the located cell with the gold
+    contribution sign(sign x value). Unlocated values count as wrong, so the metric cannot
+    rise when coverage falls.
+  - The extractor is run with its default `target_metric`; gold metric labels are not
+    passed in, so the score is what a caller gets today.
+
+  Finding: `get_element_xpath` uses `list.index`, and BeautifulSoup compares tags by
+  content, so structurally identical siblings share an XPath. On the gold set, hundreds of
+  cell XPaths per release collide. The scorer therefore attributes records to tables by
+  replaying the extractor's public pipeline and checking it record by record against the
+  real output (any divergence raises). The XPath bug is logged for Phase 1/2, not fixed here.
 - **2026-10-17: P0-06 review done; gold set promoted.** The owner confirmed all 30 table
   selections on sec.gov and resolved the 7 queue items. Decisions are recorded in
   `eval/gold/review_decisions.yaml`, the single source for `tools.gold.promote` and for the

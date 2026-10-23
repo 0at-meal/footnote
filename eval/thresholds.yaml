@@ -1,0 +1,19 @@
+# P0-10 regression gate for tools.eval.score (run in CI and `make check`).
+#
+# CI fails if any headline metric's overall rate falls below the value here, or if
+# the scorer version or the gold labels differ from those the baseline was recorded on.
+#
+# Update this file only deliberately, in its own commit, with:
+#   - a new eval/RESULTS.md entry (date, commit, every metric, verified_by split);
+#   - a DECISIONS.md entry saying why the floor moved (an extractor improvement,
+#     a gold-set change, or a scorer change).
+# Never lower a floor to make CI green.
+#
+# Recorded from: eval/results/baseline-2026-10-17.json (P0-09; backend/app at main 1f41440).
+scorer_version: 1
+labels_sha256: 5d0953b0cb034279eb3ae634b1925bcb274cb7cc2ef722f3c180cedbbf073d20  # LF-normalized label files
+metrics:
+  table_found: 0.6065       # 729/1202 values; 20/30 releases
+  line_exact_match: 0.1547  # 186/1202
+  scale_accuracy: 0.0       # 0/1202
+  sign_accuracy: 0.4942     # 594/1202

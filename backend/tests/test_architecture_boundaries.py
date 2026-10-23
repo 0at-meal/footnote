@@ -5,6 +5,8 @@ Enforces:
 1. Only ``ingestion/edgar/`` may perform network I/O.
 2. No module imports an LLM SDK: numbers are extracted deterministically.
 3. Layering: ``extraction/`` and ``classification/`` never import ``ingestion/``;
+   ``store/`` imports neither; ``analytics/``, ``api/`` and ``export/`` never
+   import ``ingestion/`` or ``pipeline/``;
    ``classification/`` never imports ``extraction/``.
 """
 
@@ -62,3 +64,14 @@ def test_extraction_and_classification_do_not_import_ingestion() -> None:
 
 def test_classification_does_not_import_extraction() -> None:
     assert _violations("classification", ("app.extraction",)) == []
+
+
+def test_store_is_independent_of_ingestion_and_extraction() -> None:
+    assert _violations("store", ("app.ingestion", "app.extraction")) == []
+
+
+def test_analytics_and_api_never_fetch() -> None:
+    """Served numbers come from stored observations, never from a live fetch."""
+    assert _violations("analytics", ("app.ingestion", "app.pipeline")) == []
+    assert _violations("api", ("app.ingestion", "app.pipeline")) == []
+    assert _violations("export", ("app.ingestion", "app.pipeline")) == []
