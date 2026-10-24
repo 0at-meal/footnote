@@ -7,6 +7,23 @@ agreement is reported (P4-13).
 
 ---
 
+## 2026-10-24: earnings-night brief on the local store (A-19)
+
+`python -m app.analytics.brief <TICKER>` for all 50 issuers' latest releases. This is a
+smoke run, not a precision result.
+
+- 50 briefs built.
+- **Headline:** available for 45. Normalized EBITDA was not computed for 6 of them
+  (unclassified line or unknown scale, reason shown). For the other 5 the latest release
+  has no current verified quarter.
+- **Sections with content:** changes 38, recasts 11, recurring add-backs 29, tie-out
+  exceptions 14. Peer comparison is available for 46.
+- **Spot check (agent, not a human):** CC's headline reads reported 247, normalized −125,
+  the spec §9.1 worked example. TDG reads 1,447 / 1,412, as in the 2026-10-23 entry.
+- **Not human-checked.** Claim precision needs a labelled sample (PLAN.md A-19).
+
+---
+
 ## 2026-10-24: MCP server on the local store (A-18)
 
 `python -m app.agent.mcp_server --db ../var/footnote.db`, driven over stdio:

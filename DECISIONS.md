@@ -5,6 +5,31 @@ Newest first. One entry per decision, with date and reason. Entries before
 those entries described features as deployed that were never wired into the
 running app (see the retraction below).
 
+- **2026-10-24: Earnings-night brief, deterministic sections (A-19).**
+  `backend/app/analytics/brief.py`. Choices:
+  - Built from the snapshot read model that the web app and the digest already serve.
+    No new arithmetic: every figure is passed through from the snapshot with its
+    sec.gov link.
+  - **Sections:**
+    - headline: reported vs normalized under the current (draft) policy, and add-back
+      intensity;
+    - changes versus the previous release;
+    - recasts this release made;
+    - recurring "non-recurring" add-backs;
+    - peer add-back intensity: rank and sector median;
+    - tie-out exceptions.
+  - The default release is the latest by filing date. The snapshot's release list is
+    not date-ordered, and the first rendering on the local store picked a 2024 release
+    for TDG before this was fixed.
+  - The headline is the release's own quarter only: one ending within 120 days before
+    the filing, and still served from this release. An older release whose quarter a
+    later release restated says so, instead of showing a comparative column as its
+    headline.
+  - `narrative` and `questions_for_management` are empty slots with
+    `narrative_status = not_generated`. The agent will write them by reference. No model
+    is called here.
+  - The claim-precision eval of the brief (A-19 in PLAN.md) needs human labels, so it is
+    not built in this ticket.
 - **2026-10-24: Read-only MCP server (A-18).**
   `backend/app/agent/mcp_server.py`. Choices:
   - Hand-written JSON-RPC 2.0 over stdio (`initialize`, `ping`, `tools/list`,
