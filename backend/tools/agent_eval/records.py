@@ -12,9 +12,14 @@ from __future__ import annotations
 from decimal import Decimal
 from pathlib import Path
 
+from app.agent.answer import ReasonCode, Status
 from pydantic import BaseModel, ConfigDict, Field
 
-from tools.agent_eval.questions import LabelChange, ReasonCode, Scale, Status, Unit
+from tools.agent_eval.questions import (
+    LabelChange,
+    Scale,
+    Unit,
+)
 
 
 class _Strict(BaseModel):

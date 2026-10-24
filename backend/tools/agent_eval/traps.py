@@ -46,6 +46,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+from app.agent.answer import ReasonCode
 from app.store.db import Store
 from bs4 import BeautifulSoup
 
@@ -68,7 +69,6 @@ from tools.agent_eval.questions import (
     Category,
     KeyProvenance,
     Question,
-    ReasonCode,
     load_universe,
 )
 

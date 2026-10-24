@@ -44,6 +44,7 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
+from app.agent.answer import ReasonCode, Status
 from app.analytics.source import resolve_xpath
 from app.extraction.bridge.keys import line_key
 from bs4 import BeautifulSoup, Tag
@@ -52,8 +53,6 @@ from tools.agent_eval.questions import (
     QUESTIONS_DIR,
     ExpectedValue,
     Question,
-    ReasonCode,
-    Status,
     Unit,
     load_file,
 )

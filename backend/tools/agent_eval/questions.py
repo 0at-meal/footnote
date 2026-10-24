@@ -36,6 +36,7 @@ from pathlib import Path
 from typing import Final, Literal
 
 import yaml
+from app.agent.answer import ReasonCode, Status
 from app.extraction.locator import is_sec_archives_url
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
@@ -85,27 +86,6 @@ ANSWERABLE = frozenset(
         Category.cross_issuer,
     }
 )
-
-
-class Status(str, Enum):
-    answered = "answered"
-    partial = "partial"
-    refused = "refused"
-
-
-class ReasonCode(str, Enum):
-    """Why an answer is partial or refused. Shared with the agent's answer schema."""
-
-    not_covered = "not_covered"  # issuer outside the universe
-    metric_not_ebitda = "metric_not_ebitda"  # e.g. "Adjusted Operating Income"
-    no_bridge = "no_bridge"  # no headline bridge found (recorded failure)
-    scale_unknown = "scale_unknown"
-    period_not_reported = "period_not_reported"
-    unclassified_line = "unclassified_line"  # an OTHER line blocks normalization
-    out_of_scope = "out_of_scope"  # covenant EBITDA, guidance, segment bridges
-    false_premise = "false_premise"
-    ambiguous = "ambiguous"
-    unverifiable = "unverifiable"
 
 
 class KeyProvenance(str, Enum):

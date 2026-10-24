@@ -5,6 +5,33 @@ Newest first. One entry per decision, with date and reason. Entries before
 those entries described features as deployed that were never wired into the
 running app (see the retraction below).
 
+- **2026-10-24: Answer schema, provenance gate and renderer (A-11).**
+  `backend/app/agent/answer.py`, `gate.py`. Choices:
+  - The model submits `AgentAnswer`:
+    - status and reason codes;
+    - prose with `{{vid}}` placeholders;
+    - `values` (name + vid), `labels` (as-reported label + change) and `ranking`
+      (tickers).
+  - `Status` and `ReasonCode` move from the question schema to `app/agent/answer.py`.
+    Both sides share them.
+  - The gate rejects:
+    - a numeral typed in prose or in a value name;
+    - a number spelled next to a unit ("forty percent");
+    - a malformed vid (*unknown*);
+    - a well-formed vid the session's ledger does not hold (*unretrieved*);
+    - a broken placeholder;
+    - a partial or refused answer without a reason code.
+  - The allow-list for prose: dates, years 1900–2099, period IDs, ISO dates, quarter and
+    fiscal labels (Q2, FY2025, 2Q25, H1), accession numbers, SEC form names (8-K, 10-Q,
+    EX-99.1, Item 2.02), and anything inside quotation marks.
+  - Footnote markers such as "(1)" or "[6]" are *not* allowed outside quotes: "(5)" is
+    also an accounting negative. As-reported labels must be quoted. On the local store,
+    3 of 46 headline labels (AMC, FUN, NWL) carry such markers.
+  - Known limit: a number that looks like a year passes as prose. It is never a cited
+    value.
+  - The renderer writes each cited value from the ledger: `$1,431.5 million` with its
+    sec.gov link, or a computed value with its formula. A dash renders as "no amount
+    reported". An unknown scale renders as "(scale unknown)".
 - **2026-10-24: The compute tool's operations and refusals (A-10).**
   `backend/app/agent/compute.py`, exposed as the `compute` tool.
   - Eight operations: `contribution` (sign × value, so the agent never has to apply a

@@ -7,6 +7,19 @@ agreement is reported (P4-13).
 
 ---
 
+## 2026-10-24: provenance gate on the local store (A-11)
+
+Smoke run, not an accuracy result. For each issuer, the headline total from `get_bridge`
+was cited by vid in a test answer, then gated and rendered:
+
+- 43 of 46 passed with the label unquoted. The 3 rejections (AMC, FUN, NWL) are footnote
+  markers in the label.
+- 46 of 46 passed with the label quoted as required, and rendered with a sec.gov
+  source link.
+- The same answer with the number typed instead of cited was rejected 46 of 46 times.
+
+---
+
 ## 2026-10-24: compute tool on the local store (A-10)
 
 Each issuer's last four quarters from `get_quarters` were summed with `compute` (smoke run,
