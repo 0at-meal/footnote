@@ -25,7 +25,6 @@ Usage (from ``backend/``)::
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import sys
 import time
@@ -34,14 +33,18 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any
 
 import yaml
 from app.agent.model import ModelClient, ModelTurn, Usage
+from app.store.db import Store
 
+from tools.agent_eval.baselines import ClosedBook, Corpus, LongContext, Retrieval
+from tools.agent_eval.keys import DEFAULT_DB
 from tools.agent_eval.questions import QUESTIONS_DIR, Question
-from tools.agent_eval.records import SystemAnswer, Trial, append_trial, read_trials
+from tools.agent_eval.records import Trial, append_trial, read_trials
 from tools.agent_eval.score import CitationChecker, load_questions, score
+from tools.agent_eval.systems import System
 
 PRICING = Path(__file__).resolve().parents[3] / "eval" / "agent" / "pricing.yaml"
 _MTOK = Decimal(1_000_000)
@@ -130,25 +133,6 @@ class BudgetedClient:
         return turn
 
 
-@dataclass(frozen=True)
-class SystemResult:
-    answer: SystemAnswer | None
-    prompt_hash: str
-    error: str | None = None
-    tool_calls: int = 0
-
-
-class System(Protocol):
-    name: str
-
-    def answer(self, question: Question, client: ModelClient) -> SystemResult: ...
-
-
-def prompt_hash(*parts: Any) -> str:
-    blob = json.dumps(parts, sort_keys=True, default=str)
-    return hashlib.sha256(blob.encode("utf-8")).hexdigest()[:16]
-
-
 def run(
     questions: list[Question],
     systems: list[System],
@@ -204,9 +188,14 @@ def run(
     return summary
 
 
-def available_systems() -> dict[str, Callable[[], System]]:
-    """Systems registered so far; baselines (A-08) and the agent (A-12) add theirs."""
-    return {}
+def available_systems(store: Store) -> dict[str, Callable[[], System]]:
+    """Every runnable system; the agent (A-12) adds A1."""
+    corpus = Corpus(store)
+    return {
+        "B0": lambda: ClosedBook(),
+        "B1": lambda: Retrieval(corpus),
+        "B2": lambda: LongContext(corpus),
+    }
 
 
 def real_client_factory(model: str) -> Callable[[], ModelClient]:
@@ -237,7 +226,8 @@ def main() -> int:
         pricing = load_pricing()
         if args.model not in pricing:
             parser.error(f"{args.model} has no price in {PRICING}; refusing to run")
-        registry = available_systems()
+        store = Store(DEFAULT_DB)
+        registry = available_systems(store)
         names = [s for s in args.systems.split(",") if s]
         unknown = [s for s in names if s not in registry]
         if not names or unknown:

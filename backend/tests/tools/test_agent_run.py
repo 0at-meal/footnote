@@ -15,12 +15,12 @@ from tools.agent_eval.run import (
     BudgetedClient,
     BudgetExceeded,
     Price,
-    SystemResult,
     cost,
     load_pricing,
     run,
 )
 from tools.agent_eval.score import score
+from tools.agent_eval.systems import SystemResult
 
 from tests.agent.fakes import FakeClient, text_turn
 from tests.tools.test_agent_questions import question

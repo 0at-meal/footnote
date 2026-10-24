@@ -5,6 +5,22 @@ Newest first. One entry per decision, with date and reason. Entries before
 those entries described features as deployed that were never wired into the
 running app (see the retraction below).
 
+- **2026-10-24: Baselines B0–B2 (A-08).**
+  `backend/tools/agent_eval/baselines.py`, `systems.py`. Choices:
+  - All three baselines get the same system prompt. It describes the `SystemAnswer`
+    JSON, the reason codes and the false-premise rule, so the baselines are judged on
+    the format the agent uses.
+  - The corpus is the question's issuers' EX-99.1 exhibits filed on or before `as_of`,
+    read from the local EDGAR cache. Table rows become `cell | cell` lines.
+  - **B1**: BM25 (k1 = 1.5, b = 0.75), pure Python, over 1,500-character chunks with a
+    200-character overlap. The top 8 go in, each with its sec.gov URL.
+  - **B2**: whole exhibits, newest first, up to 160,000 characters (about 40K tokens).
+  - Output that is not valid JSON in the schema, or a stop reason other than end of turn
+    (e.g. `refusal`), is recorded as an error with its reason, never repaired.
+  - The baselines call no SDK. The model client is injected (A-07), so the boundary
+    exception for an LLM SDK still waits for A-12.
+  - System types moved to `tools/agent_eval/systems.py` to keep the harness and the
+    systems free of import cycles.
 - **2026-10-24: Harness, model-client interface and budget cap (A-07).**
   `backend/tools/agent_eval/run.py`, `backend/app/agent/model.py`,
   `eval/agent/pricing.yaml`. Choices:

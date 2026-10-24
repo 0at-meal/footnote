@@ -7,6 +7,26 @@ agreement is reported (P4-13).
 
 ---
 
+## 2026-10-24: baseline prompt sizes and cost estimate (A-08)
+
+The B0–B2 prompts were built for all 379 questions from the local cache (no model call).
+Tokens are estimated at 4 characters per token. Cost assumes Opus 5.5 prices and about 800
+output tokens per answer, so it is an estimate, not a measurement.
+
+| System | Mean input tokens | Max | Est. per question | Est. 379 × 3 trials |
+|---|---|---|---|---|
+| B0 closed book | ~350 | ~400 | $0.017 | ~$20 |
+| B1 BM25 top-8 | ~3,450 | ~3,670 | $0.030 | ~$34 |
+| B2 long context | ~30,600 | ~40,300 | $0.139 | ~$157 |
+
+- 18 questions have no filing available as of their date, all must-refuse: the 6
+  uncovered tickers, and unreported quarters before an issuer's first stored release.
+  B1 and B2 are told so.
+- Adaptive thinking on Opus 5.5 adds output tokens this estimate does not count. The
+  harness's budget cap bounds actual spend.
+
+---
+
 ## 2026-10-24: harness dry run with a fake client (A-07)
 
 The harness ran an oracle system (answers taken from the keys) over all **379**
