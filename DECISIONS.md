@@ -5,6 +5,24 @@ Newest first. One entry per decision, with date and reason. Entries before
 those entries described features as deployed that were never wired into the
 running app (see the retraction below).
 
+- **2026-10-24: Harness, model-client interface and budget cap (A-07).**
+  `backend/tools/agent_eval/run.py`, `backend/app/agent/model.py`,
+  `eval/agent/pricing.yaml`. Choices:
+  - Systems talk to a `ModelClient` protocol (Messages-API-shaped turns; raw blocks are
+    kept so they can be appended back unchanged). No SDK is imported outside
+    `app/agent/llm.py` (A-12). Tests use scripted fakes in `tests/agent/fakes.py`.
+  - Prices live in `eval/agent/pricing.yaml`, taken from the claude-api skill's model table
+    (cached 2026-10-06). Cache writes at 1.25× input and the Haiku 5.5 cache read at 0.1×
+    are derived, and the file says so. A model without a price cannot be run.
+  - **Hard cap.** Before every call, `BudgetedClient` reserves a worst case: `max_tokens`
+    of output, plus input estimated at 2 characters per token, an over-estimate. It
+    refuses the call if spend plus that reserve could exceed the cap, then charges the
+    actual cost. So spend never crosses the cap. The run stops with exit code 2, and
+    nothing is written for the unfinished attempt.
+  - Runs resume: a (question, trial) already in `<out>/<system>.jsonl` is skipped.
+    `--replay` re-scores transcripts with no client at all. A run writes
+    `manifest.json` (model, split, systems, trials, budget) and `report.json`.
+  - Until A-12 the CLI has no real client and says so.
 - **2026-10-24: Answer schema, provenance gate and renderer (A-11).**
   `backend/app/agent/answer.py`, `gate.py`. Choices:
   - The model submits `AgentAnswer`:

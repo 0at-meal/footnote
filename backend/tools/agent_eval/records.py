@@ -13,6 +13,7 @@ from decimal import Decimal
 from pathlib import Path
 
 from app.agent.answer import ReasonCode, Status
+from app.agent.model import Usage
 from pydantic import BaseModel, ConfigDict, Field
 
 from tools.agent_eval.questions import (
@@ -54,21 +55,6 @@ class SystemAnswer(_Strict):
     labels: list[AnswerLabel] = Field(default_factory=list)
     ranking: list[str] = Field(default_factory=list)
     text: str = ""
-
-
-class Usage(_Strict):
-    input_tokens: int = 0
-    output_tokens: int = 0
-    cache_read_tokens: int = 0
-    cache_write_tokens: int = 0
-
-    def __add__(self, other: Usage) -> Usage:
-        return Usage(
-            input_tokens=self.input_tokens + other.input_tokens,
-            output_tokens=self.output_tokens + other.output_tokens,
-            cache_read_tokens=self.cache_read_tokens + other.cache_read_tokens,
-            cache_write_tokens=self.cache_write_tokens + other.cache_write_tokens,
-        )
 
 
 class Trial(_Strict):

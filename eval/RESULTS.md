@@ -7,6 +7,18 @@ agreement is reported (P4-13).
 
 ---
 
+## 2026-10-24: harness dry run with a fake client (A-07)
+
+The harness ran an oracle system (answers taken from the keys) over all **379**
+questions, 1 trial, with a scripted fake client. No model was called and nothing was
+spent. `--replay` then re-scored the transcripts offline: 379 completed, accuracy 1.0,
+wrong-number rate 0.
+
+The recorded cost ($2.274 = 379 × $0.006) is the price table applied to the fake
+client's fixture token counts, not spend. This checks the plumbing, not a system.
+
+---
+
 ## 2026-10-24: provenance gate on the local store (A-11)
 
 Smoke run, not an accuracy result. For each issuer, the headline total from `get_bridge`
