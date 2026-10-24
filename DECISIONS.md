@@ -5,6 +5,32 @@ Newest first. One entry per decision, with date and reason. Entries before
 those entries described features as deployed that were never wired into the
 running app (see the retraction below).
 
+- **2026-10-24: Answer keys for C1–C7 are pure arithmetic on verified values (A-02).**
+  `backend/tools/agent_eval/keys.py`. Choices:
+  - A key value comes from a gold label, or from a store column that passes *both* the sum
+    tie-out and the XBRL anchor, with a known scale. "Latest reported" is the newest
+    release that reports the period. If that release is not verified for the period, there
+    is no key. The generator never falls back to an older release.
+  - A quarter is also skipped when a later filing of the issuer, within 400 days, has no
+    extracted bridge, since it may have recast the quarter unseen.
+  - The keys read the store with their own SQL, not through `app.analytics`. The agent will
+    use the analytics, so a bug there is not copied into the keys.
+  - Values are compared or summed only under the same headline metric (normalized label).
+    The first run found MAT reporting "EBITDA" of 0.1 in May 2025 and "Adjusted EBITDA" of
+    57.2 for the same quarter in April 2026: a different measure, not a recast.
+  - Judgement calls get no key:
+    - C5 skips any release pair with lines both added and dropped, since those may be
+      renames.
+    - C6 names the reconciling items to remove, instead of applying policy v0.1 to
+      rule-suggested categories. Policy-based C6 keys wait for human-confirmed
+      categories (`label_memory.source = 'human'`, 0 today).
+    - C7 ranks only when adjacent values differ by at least 2%.
+  - Selection is round-robin across issuers, in a fixed hash order. The split is by hash
+    (about 1 in 4 to dev). IDs derive from the candidate, so a re-run on an unchanged
+    store rewrites no file. Rows from other authors in the question files are kept.
+  - The question schema now allows a tolerance of 0.05 percentage points on percent and
+    ratio values, so an answer rounded to one decimal place passes. Reported and summed
+    dollar values must match exactly (tolerance 0).
 - **2026-10-24: Track A, an evaluated agent with numbers by reference (ADR-011, A-00).**
   The owner approved [docs/agent/PLAN.md](docs/agent/PLAN.md). Track A runs alongside the
   phases and changes no phase gate. The Phase 0 gate is still open.

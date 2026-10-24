@@ -7,6 +7,48 @@ agreement is reported (P4-13).
 
 ---
 
+## 2026-10-24: FootnoteBench-Credit v0, first generated questions (A-02)
+
+`cd backend && python -m tools.agent_eval.keys --write --written-on 2026-10-24`, on the local
+store from run 10 (engine `bridge-6`, 2026-10-23), at commit `43243c9` plus the A-02 change.
+These are questions with answer keys, not results: no system has been run on them yet.
+
+**289 questions** in `eval/agent/questions/` (dev 65, test 224). The test split is not frozen
+yet (A-05).
+
+| Category | Dev | Test | Key provenance |
+|---|---|---|---|
+| C1 point lookup | 13 | 27 | 20 `gold_model_agreement`, 20 `tieout` |
+| C2 multi-period (LTM, YoY) | 18 | 42 | `tieout` |
+| C3 point in time (16 recasts, 13 unchanged controls) | 3 | 26 | `tieout` |
+| C4 add-back composition | 8 | 32 | `tieout` |
+| C5 definition change | 10 | 30 | `tieout` |
+| C6 removal of named items | 4 | 36 | `tieout` |
+| C7 cross-issuer ranking | 9 | 31 | `tieout` |
+
+- C3 has 29 questions against a target of 40: only 16 restatements met every guard. The
+  split by hash leaves C3 and C6 with few dev questions. A-05 should balance them.
+- Skips, each counted by reason:
+  - 149 release pairs with lines both added and dropped (possible renames, C5);
+  - 89 quarters whose latest release is not verified for the period;
+  - 75 quarters with a later filing that has no extracted bridge;
+  - 61 restatement candidates where the metric or line changed (C3);
+  - 60 release pairs where one release has no bridge (C5);
+  - 30 restatement pairs not verified at both ends;
+  - 18 layout changes (C5);
+  - 12 YoY comparisons with a base that is not positive;
+  - 11 issuers whose latest quarter is not verified (C7);
+  - 6 YoY comparisons across different metrics;
+  - 5 release pairs with a failing sum tie-out (C5).
+- **Check against the source (agent, not a human).** Every C1 and C3 value (98) was searched
+  for in the text of its cached sec.gov exhibit. All 98 are present. One appears as
+  "(58.0)" where the key reads −58 (AMC), the same number.
+- **Caveat.** `tieout` keys come from the store the agent will read, so they test retrieval
+  and reasoning, not extraction (ADR-011). No key has been checked by a person yet. That is
+  A-04: the owner checks 60 sampled test keys against sec.gov.
+
+---
+
 ## 2026-10-23: bridge engine (bridge-6) on the gold set and on 388 held-out releases
 
 Agent run under the owner directive of 2026-10-23 (ADR-010). **The Phase 0 gate is still

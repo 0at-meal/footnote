@@ -52,6 +52,7 @@ _PERIOD = re.compile(r"^(3|6|9|12)M-(\d{4}-\d{2}-\d{2})$")
 _TICKER = re.compile(r"^[A-Z][A-Z0-9.\-]{0,9}$")
 _MAX_RELATIVE_TOLERANCE = Decimal("0.01")
 _ZERO_VALUE_TOLERANCE = Decimal("0.5")
+_ROUNDED_RATE_TOLERANCE = Decimal("0.05")
 
 
 class Split(str, Enum):
@@ -172,6 +173,9 @@ class ExpectedValue(_Strict):
             if self.value != 0
             else _ZERO_VALUE_TOLERANCE
         )
+        if self.unit in (Unit.percent, Unit.ratio):
+            # An answer rounded to one decimal place (12.3%, 4.1x) is acceptable.
+            limit = max(limit, _ROUNDED_RATE_TOLERANCE)
         if self.tolerance > limit:
             raise ValueError(
                 f"tolerance {self.tolerance} is looser than 1% of {self.value}"
