@@ -33,6 +33,7 @@ class Value(BaseModel):
     unit: Unit = "usd"
     scale: str | None = None  # units | thousands | millions | billions
     role: str | None = None
+    sign: int | None = None  # +1 adds toward the total, -1 subtracts
     line_key: str | None = None
     accession: str | None = None
     filed: str | None = None
@@ -53,7 +54,7 @@ class Value(BaseModel):
             "value": None if self.value is None else str(self.value),
             "unit": self.unit,
         }
-        for name in ("value_raw", "scale", "role", "filed", "formula"):
+        for name in ("value_raw", "scale", "role", "sign", "filed", "formula"):
             if getattr(self, name) is not None:
                 out[name] = getattr(self, name)
         if self.kind != "calc":

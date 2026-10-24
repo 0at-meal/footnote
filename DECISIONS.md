@@ -5,6 +5,22 @@ Newest first. One entry per decision, with date and reason. Entries before
 those entries described features as deployed that were never wired into the
 running app (see the retraction below).
 
+- **2026-10-24: The compute tool's operations and refusals (A-10).**
+  `backend/app/agent/compute.py`, exposed as the `compute` tool.
+  - Eight operations: `contribution` (sign × value, so the agent never has to apply a
+    bridge sign itself), `sum`, `difference`, `change`, `pct_change`, `share`, `ratio`,
+    `count`.
+  - A `sum` either stays within one period, or covers one line over 2–4 consecutive
+    quarters. The result period is then `6M`/`9M`/`12M` ending at the last quarter.
+  - `difference`, `share` and `ratio` need one period. `change` and `pct_change` need
+    the same line of the same issuer in two periods.
+  - Refused with a reason, never coerced: mixed units, scales, issuers or lines; an
+    unknown scale; a dash; a vid not retrieved this session; division by zero.
+  - Rates are quantized to 0.01. A result built from an unverified input is marked
+    `verified: false` and names that input.
+  - The calc vid is a hash of the operation and its inputs, so a repeated computation
+    gets the same vid.
+  - Values now carry the bridge `sign`.
 - **2026-10-24: Agent tools read the store directly, with an as-of date (A-09).**
   `backend/app/agent/tools.py`, `values.py`. Choices:
   - Seven read-only tools: `resolve_issuer`, `list_releases`, `get_bridge`,

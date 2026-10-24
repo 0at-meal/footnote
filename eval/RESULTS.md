@@ -7,6 +7,18 @@ agreement is reported (P4-13).
 
 ---
 
+## 2026-10-24: compute tool on the local store (A-10)
+
+Each issuer's last four quarters from `get_quarters` were summed with `compute` (smoke run,
+not an accuracy result):
+
+- **43 LTM sums computed.** 16 of them include at least one unverified input and are
+  flagged.
+- **3 refused:** quarters not consecutive (2), scale unknown (1).
+- **4 issuers** have fewer than four quarters in the store.
+
+---
+
 ## 2026-10-24: agent tools on the local store (A-09)
 
 Each tool was called once per issuer (50) with default arguments, on the run-10 store.

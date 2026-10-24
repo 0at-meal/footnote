@@ -152,3 +152,16 @@ def test_tool_specs_cover_every_tool(fx: Fixture) -> None:
     specs = tool_specs()
     assert [s["name"] for s in specs] == AgentTools(fx.store).names
     assert all(s["input_schema"]["type"] == "object" for s in specs)
+
+
+def test_compute_through_the_tool_interface(fx: Fixture) -> None:
+    tools = AgentTools(fx.store)
+    q = tools.call("get_quarters", {"ticker": "FIXT", "limit": 4})
+    r = tools.call("compute", {"op": "sum", "vids": [v.vid for v in q.values]})
+    assert (
+        r.status == "ok"
+        and r.values[0].value == 560
+        and r.values[0].vid in tools.ledger
+    )
+    bad = tools.call("compute", {"op": "sum", "vids": ["obs:0:0:3M-2025-03-31"]})
+    assert bad.status == "invalid"

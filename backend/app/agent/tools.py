@@ -22,6 +22,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+from app.agent.compute import ComputeError, Op, compute
 from app.agent.values import Ledger, Value
 from app.analytics.history import quarter_series
 from app.analytics.normalize import (
@@ -102,6 +103,11 @@ class GetNormalizedArgs(_Issuer):
     period_id: str | None = Field(None, description="default: the latest quarter")
 
 
+class ComputeArgs(_Args):
+    op: Op
+    vids: list[str] = Field(..., min_length=1, description="vids already retrieved")
+
+
 # ---- the tools ---------------------------------------------------------------------------
 
 
@@ -117,6 +123,7 @@ class AgentTools:
             "get_quarters": (GetQuartersArgs, self.get_quarters),
             "get_changes": (GetChangesArgs, self.get_changes),
             "get_normalized": (GetNormalizedArgs, self.get_normalized),
+            "compute": (ComputeArgs, self.compute),
         }
 
     @property
@@ -204,6 +211,7 @@ class AgentTools:
             unit="usd",
             scale=r["scale"],
             role=r["role"],
+            sign=r["sign"],
             line_key=r["line_key"],
             accession=r["accession"],
             filed=r["filed"],
@@ -582,6 +590,14 @@ class AgentTools:
         )
         return ToolResult(tool="get_normalized", status="ok", values=[value], data=data)
 
+    def compute(self, a: ComputeArgs) -> ToolResult:
+        """Deterministic arithmetic over retrieved vids (A-10)."""
+        try:
+            value = compute(a.op, a.vids, self.ledger)
+        except ComputeError as exc:
+            return ToolResult(tool="compute", status="invalid", reason=str(exc))
+        return ToolResult(tool="compute", status="ok", values=[value])
+
 
 def tool_specs() -> list[dict[str, Any]]:
     """Name, description and JSON input schema of every tool, for a model or MCP."""
@@ -598,6 +614,10 @@ def tool_specs() -> list[dict[str, Any]]:
         "get_changes": "Reconciling lines added or dropped versus the previous release.",
         "get_normalized": "Normalized EBITDA under Footnote's draft policy (current "
         "record only; preview).",
+        "compute": "Arithmetic over vids you retrieved: contribution, sum (one period, "
+        "or one line over 2-4 consecutive quarters), difference, change, pct_change, "
+        "share, ratio, count. Returns a calc vid with its formula. Never do "
+        "arithmetic yourself.",
     }
     models: dict[str, type[_Args]] = {
         "resolve_issuer": ResolveIssuerArgs,
@@ -607,6 +627,7 @@ def tool_specs() -> list[dict[str, Any]]:
         "get_quarters": GetQuartersArgs,
         "get_changes": GetChangesArgs,
         "get_normalized": GetNormalizedArgs,
+        "compute": ComputeArgs,
     }
     return [
         {
