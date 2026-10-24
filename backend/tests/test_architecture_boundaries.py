@@ -8,6 +8,8 @@ Enforces:
    ``store/`` imports neither; ``analytics/``, ``api/`` and ``export/`` never
    import ``ingestion/`` or ``pipeline/``;
    ``classification/`` never imports ``extraction/``.
+4. Track A (ADR-011): ``agent/`` never imports ``ingestion/`` or ``pipeline/``
+   and never calls a store write method.
 """
 
 import ast
@@ -75,3 +77,39 @@ def test_analytics_and_api_never_fetch() -> None:
     assert _violations("analytics", ("app.ingestion", "app.pipeline")) == []
     assert _violations("api", ("app.ingestion", "app.pipeline")) == []
     assert _violations("export", ("app.ingestion", "app.pipeline")) == []
+
+
+# Store methods that write; the agent's tools only read (ADR-011).
+STORE_WRITES = (
+    "add_failure",
+    "upsert_issuer",
+    "add_filing",
+    "add_bridge",
+    "set_label",
+    "start_run",
+    "finish_run",
+    "tx",
+    "execute",
+    "executescript",
+    "commit",
+)
+
+
+def test_agent_never_fetches_or_writes() -> None:
+    assert _violations("agent", ("app.ingestion", "app.pipeline")) == []
+    root = _get_app_root()
+    found: list[str] = []
+    for py_file in (root / "agent").rglob("*.py"):
+        tree = ast.parse(py_file.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Attribute) and node.attr in STORE_WRITES:
+                found.append(
+                    f"{py_file.relative_to(root).as_posix()} uses .{node.attr}"
+                )
+            if isinstance(node, ast.ImportFrom) and any(
+                a.name == "category_for" for a in node.names
+            ):
+                found.append(
+                    f"{py_file.name} imports category_for (writes label memory)"
+                )
+    assert found == []

@@ -5,6 +5,28 @@ Newest first. One entry per decision, with date and reason. Entries before
 those entries described features as deployed that were never wired into the
 running app (see the retraction below).
 
+- **2026-10-24: Agent tools read the store directly, with an as-of date (A-09).**
+  `backend/app/agent/tools.py`, `values.py`. Choices:
+  - Seven read-only tools: `resolve_issuer`, `list_releases`, `get_bridge`,
+    `get_line_history`, `get_quarters`, `get_changes`, `get_normalized`.
+  - Every tool takes `as_of` and sees only filings filed by then, so questions asked as
+    of a date get what was public then. `app.analytics.history` has no as-of, so the
+    tools query observations themselves.
+  - There is no `get_peers` tool. Cross-issuer questions call `get_quarters` per issuer,
+    then `compute`.
+  - Value IDs: `obs:<bridge_id>:<row_order>:<period_id>`, `norm:<cik>:<period>:<policy>`,
+    `calc:<hash>` (A-10). A session ledger refuses one vid with two different values.
+  - Values that fail a check are returned with `verified: false` and their check
+    statuses, never dropped. A line key that occurs twice in one release is left out of
+    line histories and quarter series (ambiguous).
+  - `get_normalized` must not write. `analytics.normalize.category_for` refreshes label
+    memory, so the tool reads recorded categories with a new read-only
+    `recorded_category`, and `normalize_issuer` is split so `normalize_quarters` takes
+    decided categories. An unrecorded category gives `unavailable` (unclassified_line).
+    Normalized figures are offered for the current record only: with an earlier `as_of`
+    the tool says so instead of computing a figure that was never public.
+  - The boundary test now forbids `app/agent` from importing `ingestion/` or
+    `pipeline/`, calling any store write method, or importing `category_for`.
 - **2026-10-24: Scoring rules for FootnoteBench-Credit (A-06).**
   `backend/tools/agent_eval/score.py`, `records.py`. Choices the plan left open:
   - Every system is scored from one `SystemAnswer` (status, reason codes, values,

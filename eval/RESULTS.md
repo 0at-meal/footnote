@@ -7,6 +7,22 @@ agreement is reported (P4-13).
 
 ---
 
+## 2026-10-24: agent tools on the local store (A-09)
+
+Each tool was called once per issuer (50) with default arguments, on the run-10 store.
+This is a smoke run, not an accuracy result.
+
+- **`get_bridge`:** 46 ok, 4 unavailable (no extracted bridge, reason given).
+- **`get_quarters`:** 46 ok, 4 not found.
+- **`get_changes`:** 45 ok, 5 unavailable.
+- **`get_normalized`:** 40 ok, 6 unavailable (unclassified line or unknown scale), 4 not
+  found. The 40 computed matches the 2026-10-23 normalization preview.
+- **Values:** 2,660 retrieved under stable vids. Of the bridge values, 1,901 are
+  verified and 386 are returned with `verified: false`.
+- **Store writes:** 0 (`total_changes` unchanged).
+
+---
+
 ## 2026-10-24: scorer self-check on the answer keys (A-06)
 
 `cd backend && python -m tools.agent_eval.score --oracle` scores the 379 keys as if they

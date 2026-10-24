@@ -104,6 +104,28 @@ def category_for(store: Store, cik: str, key: str) -> Category:
     )
 
 
+def recorded_category(store: Store, cik: str, key: str) -> Category | None:
+    """
+    The category label memory holds for (issuer, line), read-only: unlike
+    ``category_for`` it never refreshes label memory. ``None`` if nothing is
+    recorded (Track A agent tools, which must not write to the store).
+    """
+    rows = store.query(
+        "SELECT code, components, flags, source FROM label_memory "
+        "WHERE cik = ? AND line_key = ?",
+        (cik, key),
+    )
+    if not rows:
+        return None
+    r = rows[0]
+    return Category(
+        r["code"],
+        tuple(json.loads(r["components"])),
+        tuple(json.loads(r["flags"])),
+        r["source"],
+    )
+
+
 def _adds_back(q: QuarterBridge, code: str, cats: dict[str, Category]) -> bool:
     total = sum(
         (
@@ -261,10 +283,19 @@ def normalize_issuer(
         for ln in q.adjustments:
             if ln.line_key not in cats:
                 cats[ln.line_key] = category_for(store, cik, ln.line_key)
-    out: list[NormalizedResult] = []
-    for i, q in enumerate(quarters):
-        out.append(_normalize_quarter(q, i, quarters, cats, policy))
-    return out
+    return normalize_quarters(quarters, cats, policy)
+
+
+def normalize_quarters(
+    quarters: list[QuarterBridge],
+    cats: dict[str, Category],
+    policy: Policy | None = None,
+) -> list[NormalizedResult]:
+    """Normalize a quarter series with categories already decided (no store access)."""
+    policy = policy or load_policy()
+    return [
+        _normalize_quarter(q, i, quarters, cats, policy) for i, q in enumerate(quarters)
+    ]
 
 
 def _normalize_quarter(
