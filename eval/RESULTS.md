@@ -7,6 +7,20 @@ agreement is reported (P4-13).
 
 ---
 
+## 2026-10-24: scorer self-check on the answer keys (A-06)
+
+`cd backend && python -m tools.agent_eval.score --oracle` scores the 379 keys as if they
+were a system. This is a check of the scorer and the keys, not a result.
+
+- All 379 grade as correct: wrong-number rate 0, correct refusal 1.0.
+- Citation validity: **168 of 168** single-source key values appear as whole numbers in
+  their cached sec.gov exhibits. These are the C1, C3 and C9 values and the quarter
+  figure in C2 YoY.
+- Computed values (LTM sums, percentages, counts) are not citation-checked by design.
+- Not human-checked.
+
+---
+
 ## 2026-10-24: FootnoteBench-Credit v0, must-refuse and false-premise questions (A-03)
 
 `cd backend && python -m tools.agent_eval.traps --write --written-on 2026-10-24`, same local

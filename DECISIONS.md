@@ -5,6 +5,28 @@ Newest first. One entry per decision, with date and reason. Entries before
 those entries described features as deployed that were never wired into the
 running app (see the retraction below).
 
+- **2026-10-24: Scoring rules for FootnoteBench-Credit (A-06).**
+  `backend/tools/agent_eval/score.py`, `records.py`. Choices the plan left open:
+  - Every system is scored from one `SystemAnswer` (status, reason codes, values,
+    labels, ranking). Each trial is one JSONL `Trial`. A failed run keeps `answer: null`
+    and an `error`, and counts as neither answered nor correct.
+  - A value matches when the unit is the same, the period and ticker agree where given,
+    and it is within tolerance after scaling. A dollar amount without a scale never
+    matches.
+  - **Wrong number** means any answer value that matches no key value. Any number on a
+    question with no correct number counts as wrong.
+  - Answering a false premise while naming `false_premise` as a reason counts as a
+    correct refusal.
+  - Labels are compared on the normalized line key.
+  - Systems give no confidence score, so the risk–coverage "curve" is a single point:
+    coverage, and wrong numbers among answered trials.
+  - Citation validity counts only single-source values (`computed = false`). The number
+    must appear as a whole token ("1,200" is not "200") in the cited document from the
+    local cache, or in the cell its XPath points to (`analytics.source.resolve_xpath`). A
+    document missing from the cache is invalid.
+  - pass^k uses the smallest trial count any question has.
+  - `--oracle` scores the keys themselves as a self-check. It is never reported as a
+    system result.
 - **2026-10-24: Must-refuse questions only where no correct number exists (A-03).**
   `backend/tools/agent_eval/traps.py`. Choices:
   - A C8 question is built only when the public record as of `as_of` holds no correct
