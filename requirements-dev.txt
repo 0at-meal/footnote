@@ -1,8 +1,8 @@
 -r requirements.txt
 
 # Tooling
-PyYAML==6.0.3
 types-PyYAML==6.0.12.20260906
+types-openpyxl==3.1.5.20250919
 mypy==2.3.0
 pytest==9.1.1
 ruff==0.16.2

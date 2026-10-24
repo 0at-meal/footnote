@@ -1,0 +1,54 @@
+# P1-11: scheduled EDGAR ingest. Weekdays after the US close, plus manual runs.
+#
+# Needs the repository secret SEC_USER_AGENT ("Name email", ROADMAP §8). The
+# store (var/footnote.db) and the immutable EDGAR cache persist between runs
+# through the Actions cache; the static web export is uploaded as a workflow
+# artifact. Budget: a re-run on cached filings takes minutes (ROADMAP §6).
+name: ingest
+
+on:
+  schedule:
+    - cron: "30 22 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      quarters:
+        description: "Quarters of history per issuer"
+        default: "8"
+
+concurrency:
+  group: ingest
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install
+        run: python -m pip install -r requirements.txt
+      - name: Restore store and EDGAR cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            var/footnote.db
+            backend/data/edgar_cache
+          key: footnote-store-${{ github.run_id }}
+          restore-keys: footnote-store-
+      - name: Ingest
+        working-directory: backend
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+        run: python -m app.pipeline.cli ingest --quarters "${{ inputs.quarters || '8' }}"
+      - name: Export the web app
+        working-directory: backend
+        run: python -m app.pipeline.cli export
+      - uses: actions/upload-artifact@v4
+        with:
+          name: footnote-web
+          path: web-dist/
+          retention-days: 14

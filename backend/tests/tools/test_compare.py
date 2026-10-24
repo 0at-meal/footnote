@@ -83,7 +83,8 @@ READING: dict[str, Any] = {
 def test_norm_label_ignores_footnotes_case_and_plus() -> None:
     assert norm_label("Plus: Net income (a), (b)") == "net income"
     assert norm_label("Other, net (3)") == "other, net"
-    assert norm_label("Adjusted EBITDA (non-GAAP)") == "adjusted ebitda (non-gaap)"
+    # Hyphens between letters are spaces in a key ("stock-based" = "stock based").
+    assert norm_label("Adjusted EBITDA (non-GAAP)") == "adjusted ebitda (non gaap)"
 
 
 def test_full_agreement_upgrades_only_tieout_values() -> None:

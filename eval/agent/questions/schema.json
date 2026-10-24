@@ -1,0 +1,354 @@
+{
+  "$defs": {
+    "Category": {
+      "description": "PLAN.md categories C1\u2013C9.",
+      "enum": [
+        "point_lookup",
+        "multi_period",
+        "point_in_time",
+        "addback_composition",
+        "definition_change",
+        "normalization",
+        "cross_issuer",
+        "must_refuse",
+        "false_premise"
+      ],
+      "title": "Category",
+      "type": "string"
+    },
+    "Expected": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/Status"
+        },
+        "reason_codes": {
+          "items": {
+            "$ref": "#/$defs/ReasonCode"
+          },
+          "title": "Reason Codes",
+          "type": "array"
+        },
+        "values": {
+          "items": {
+            "$ref": "#/$defs/ExpectedValue"
+          },
+          "title": "Values",
+          "type": "array"
+        },
+        "labels": {
+          "items": {
+            "$ref": "#/$defs/ExpectedLabel"
+          },
+          "title": "Labels",
+          "type": "array"
+        },
+        "ranking": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Ranking",
+          "type": "array"
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "title": "Expected",
+      "type": "object"
+    },
+    "ExpectedLabel": {
+      "additionalProperties": false,
+      "properties": {
+        "ticker": {
+          "title": "Ticker",
+          "type": "string"
+        },
+        "label_raw": {
+          "minLength": 1,
+          "title": "Label Raw",
+          "type": "string"
+        },
+        "change": {
+          "$ref": "#/$defs/LabelChange"
+        },
+        "source_urls": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Source Urls",
+          "type": "array"
+        }
+      },
+      "required": [
+        "ticker",
+        "label_raw",
+        "change",
+        "source_urls"
+      ],
+      "title": "ExpectedLabel",
+      "type": "object"
+    },
+    "ExpectedValue": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "description": "what is measured, as asked",
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "ticker": {
+          "title": "Ticker",
+          "type": "string"
+        },
+        "period_id": {
+          "title": "Period Id",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "title": "Value"
+        },
+        "unit": {
+          "$ref": "#/$defs/Unit"
+        },
+        "scale": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Scale"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "tolerance": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "title": "Tolerance"
+        },
+        "source_urls": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Urls",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "ticker",
+        "period_id",
+        "value",
+        "unit",
+        "tolerance"
+      ],
+      "title": "ExpectedValue",
+      "type": "object"
+    },
+    "KeyProvenance": {
+      "description": "Where an answer key came from. Scores are reported split by this.",
+      "enum": [
+        "gold_human",
+        "gold_model_agreement",
+        "tieout",
+        "store_status",
+        "human_checked"
+      ],
+      "title": "KeyProvenance",
+      "type": "string"
+    },
+    "LabelChange": {
+      "enum": [
+        "added",
+        "dropped",
+        "renamed",
+        "recast",
+        "recurring"
+      ],
+      "title": "LabelChange",
+      "type": "string"
+    },
+    "ReasonCode": {
+      "description": "Why an answer is partial or refused. Shared with the agent's answer schema.",
+      "enum": [
+        "not_covered",
+        "metric_not_ebitda",
+        "no_bridge",
+        "scale_unknown",
+        "period_not_reported",
+        "unclassified_line",
+        "out_of_scope",
+        "false_premise",
+        "ambiguous",
+        "unverifiable"
+      ],
+      "title": "ReasonCode",
+      "type": "string"
+    },
+    "Scale": {
+      "enum": [
+        "units",
+        "thousands",
+        "millions",
+        "billions"
+      ],
+      "title": "Scale",
+      "type": "string"
+    },
+    "Split": {
+      "enum": [
+        "dev",
+        "test"
+      ],
+      "title": "Split",
+      "type": "string"
+    },
+    "Status": {
+      "enum": [
+        "answered",
+        "partial",
+        "refused"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "Unit": {
+      "enum": [
+        "usd",
+        "percent",
+        "ratio",
+        "items"
+      ],
+      "title": "Unit",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "benchmark": {
+      "const": "footnotebench-credit-v0",
+      "default": "footnotebench-credit-v0",
+      "title": "Benchmark",
+      "type": "string"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "split": {
+      "$ref": "#/$defs/Split"
+    },
+    "category": {
+      "$ref": "#/$defs/Category"
+    },
+    "question": {
+      "minLength": 10,
+      "title": "Question",
+      "type": "string"
+    },
+    "as_of": {
+      "format": "date",
+      "title": "As Of",
+      "type": "string"
+    },
+    "tickers": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Tickers",
+      "type": "array"
+    },
+    "expected": {
+      "$ref": "#/$defs/Expected"
+    },
+    "key_provenance": {
+      "$ref": "#/$defs/KeyProvenance"
+    },
+    "author": {
+      "minLength": 1,
+      "title": "Author",
+      "type": "string"
+    },
+    "written_on": {
+      "format": "date",
+      "title": "Written On",
+      "type": "string"
+    },
+    "checked_by": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Checked By"
+    },
+    "checked_on": {
+      "anyOf": [
+        {
+          "format": "date",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Checked On"
+    },
+    "notes": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Notes"
+    }
+  },
+  "required": [
+    "id",
+    "split",
+    "category",
+    "question",
+    "as_of",
+    "tickers",
+    "expected",
+    "key_provenance",
+    "author",
+    "written_on"
+  ],
+  "title": "Question",
+  "type": "object"
+}

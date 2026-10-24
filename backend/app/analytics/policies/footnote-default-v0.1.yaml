@@ -1,0 +1,34 @@
+# Default normalization policy (P2-08). Mirrors docs/NORMALIZATION.md v0.1 §4-§6.
+# STATUS: DRAFT. The spec is not frozen (P0-14 analyst review outstanding), so
+# every result computed from this file is labelled a preview.
+policy_version: footnote-default v0.1
+status: draft
+recurrence:
+  window_quarters: 4
+  threshold: 3
+strictness: [exclude, accept-unless-recurring, flag, accept]
+codes:
+  DA:        {group: component,  name: Depreciation and amortization, treatment: accept}
+  INT:       {group: component,  name: Interest, net, treatment: accept}
+  TAX:       {group: component,  name: Income taxes, treatment: accept}
+  NCI:       {group: component,  name: Non-controlling interests, treatment: accept}
+  NONOP:     {group: component,  name: Other non-operating items, treatment: accept}
+  SBC:       {group: adjustment, name: Stock-based compensation, treatment: flag}
+  RESTR:     {group: adjustment, name: Restructuring and severance, treatment: accept-unless-recurring}
+  TRANSFORM: {group: adjustment, name: Transformation and systems, treatment: accept-unless-recurring}
+  IMPAIR:    {group: adjustment, name: Impairments and write-downs, treatment: accept}
+  MA:        {group: adjustment, name: M&A, integration and separation, treatment: accept-unless-recurring}
+  LITIG:     {group: adjustment, name: Litigation and settlements, treatment: accept-unless-recurring}
+  ENV:       {group: adjustment, name: Environmental charges, treatment: accept-unless-recurring}
+  FX:        {group: adjustment, name: Foreign exchange, treatment: accept}
+  DERIV:     {group: adjustment, name: Fair-value changes, treatment: accept}
+  DIVEST:    {group: adjustment, name: Gains and losses on disposals, treatment: accept}
+  DEBT:      {group: adjustment, name: Debt extinguishment, treatment: accept}
+  PREOPEN:   {group: adjustment, name: Pre-opening and start-up, treatment: flag}
+  REV:       {group: adjustment, name: Revenue-side adjustments, treatment: flag}
+  SYNERGY:   {group: adjustment, name: Run-rate synergies, treatment: exclude}
+  OTHER_NR:  {group: adjustment, name: Other non-recurring, treatment: flag}
+  RENT:      {group: scope,      name: Rent and lease add-backs, treatment: exclude}
+  CORP:      {group: scope,      name: Corporate cost add-backs, treatment: exclude}
+  MIXED:     {group: control,    name: Mixed categories, treatment: strictest}
+  OTHER:     {group: control,    name: Unclassified, treatment: review}

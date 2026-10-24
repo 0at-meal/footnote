@@ -11,10 +11,12 @@ Implements:
 - Explicit ForeignFilerUnsupportedError on 20-F, 40-F, 6-K (no silent failure).
 """
 
+import json
 import logging
 import os
 import re
 import time
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -242,15 +244,23 @@ class EdgarClient:
         data: dict[str, Any] = res.json()
         return data
 
-    def get_company_facts(self, cik: str) -> dict[str, Any]:
+    def get_company_facts(
+        self, cik: str, same_day_cache: bool = True
+    ) -> dict[str, Any]:
         """
         Fetches the XBRL companyfacts payload (all reported facts) for a CIK.
 
-        Not cached on disk: unlike filing documents, companyfacts grows as new
-        filings are made. Callers that need reproducibility must record the
-        facts they use (concept, value, period, accession).
+        companyfacts grows as new filings are made, so it is cached for the
+        current UTC day only (``<cache_dir>/companyfacts/CIK<cik>-<date>.json``):
+        re-running an ingest on the same day reuses it, a later day refetches.
+        Callers that need reproducibility must record the facts they use.
         """
         cik10 = self.resolve_cik(cik)
+        day = datetime.now(UTC).date().isoformat()
+        cache_file = self.cache_dir / "companyfacts" / f"CIK{cik10}-{day}.json"
+        if same_day_cache and cache_file.exists():
+            cached: dict[str, Any] = json.loads(cache_file.read_text(encoding="utf-8"))
+            return cached
         url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik10}.json"
         res = self._request_with_retry(url, host="data.sec.gov")
         if res.status_code == 404:
@@ -260,6 +270,9 @@ class EdgarClient:
                 f"EDGAR companyfacts API returned status {res.status_code} for CIK {cik10}"
             )
         data: dict[str, Any] = res.json()
+        if same_day_cache:
+            cache_file.parent.mkdir(parents=True, exist_ok=True)
+            cache_file.write_text(json.dumps(data), encoding="utf-8")
         return data
 
     def get_filings(
@@ -267,6 +280,8 @@ class EdgarClient:
         ticker_or_cik: str,
         forms: list[str] | None = None,
         limit: int = 50,
+        items: list[str] | None = None,
+        submissions: dict[str, Any] | None = None,
     ) -> list[FilingRef]:
         """
         Retrieves filings for a given company, checking for foreign filer status and returning typed FilingRef.
@@ -275,6 +290,10 @@ class EdgarClient:
             ticker_or_cik: Company ticker (e.g. 'GOOGL', 'AAPL') or CIK.
             forms: Optional list of form types to filter (e.g. ['10-K', '10-Q', '8-K', '10-K/A', '10-Q/A']).
             limit: Maximum filings to return.
+            items: Optional 8-K items; a filing is kept only if it reports at
+                least one of them (e.g. ['2.02'] for results of operations).
+            submissions: An already fetched submissions payload for this CIK,
+                to avoid a second request.
 
         Returns:
             List of FilingRef objects.
@@ -283,7 +302,8 @@ class EdgarClient:
             ForeignFilerUnsupportedError: If the entity is a foreign filer.
         """
         cik10 = self.resolve_cik(ticker_or_cik)
-        submissions = self.get_submissions(cik10)
+        if submissions is None:
+            submissions = self.get_submissions(cik10)
 
         # Check foreign filer in entity metadata or recent filings
         filings_data = submissions.get("filings", {})
@@ -294,6 +314,7 @@ class EdgarClient:
         filing_dates: list[str] = recent.get("filingDate", [])
         report_dates: list[str] = recent.get("reportDate", [])
         primary_docs: list[str] = recent.get("primaryDocument", [])
+        items_list: list[str] = recent.get("items", [])
 
         # Check if the company primarily files 20-F or 6-K or 40-F
         foreign_count = sum(1 for f in forms_list if f in FOREIGN_FORMS)
@@ -321,6 +342,12 @@ class EdgarClient:
 
             if target_forms and form_type not in target_forms:
                 continue
+            raw_items = items_list[idx] if idx < len(items_list) else ""
+            filing_items = [
+                i.strip() for i in str(raw_items or "").split(",") if i.strip()
+            ]
+            if items and not set(items) & set(filing_items):
+                continue
 
             filed_at = filing_dates[idx] if idx < len(filing_dates) else ""
             period = report_dates[idx] if idx < len(report_dates) else None
@@ -347,6 +374,7 @@ class EdgarClient:
                 exhibits=[],
                 is_amendment=form_type.endswith("/A"),
                 filing_year=filing_year,
+                items=filing_items,
             )
             filing_refs.append(filing_ref)
             if len(filing_refs) >= limit:
@@ -362,16 +390,23 @@ class EdgarClient:
             EdgarClientError: If the index page cannot be fetched. A fetch failure
                 is never masked as an empty exhibit list.
         """
-        index_url = self._archive_url(
-            filing.cik, filing.accession, f"{filing.accession}-index.htm"
-        )
-        res = self._request_with_retry(index_url, host="www.sec.gov")
-        if res.status_code != 200:
-            raise EdgarClientError(
-                f"EDGAR returned status {res.status_code} fetching {index_url}"
-            )
+        index_name = f"{filing.accession}-index.htm"
+        index_url = self._archive_url(filing.cik, filing.accession, index_name)
+        # The index of an accession is immutable, like its documents.
+        cache_file = self.cache_dir / filing.accession / index_name
+        if cache_file.exists():
+            index_html = cache_file.read_text(encoding="utf-8")
+        else:
+            res = self._request_with_retry(index_url, host="www.sec.gov")
+            if res.status_code != 200:
+                raise EdgarClientError(
+                    f"EDGAR returned status {res.status_code} fetching {index_url}"
+                )
+            index_html = res.text
+            cache_file.parent.mkdir(parents=True, exist_ok=True)
+            cache_file.write_text(index_html, encoding="utf-8")
 
-        soup = BeautifulSoup(res.text, "html.parser")
+        soup = BeautifulSoup(index_html, "html.parser")
         exhibits: list[FilingExhibit] = []
         for tr in soup.find_all("tr"):
             cells = tr.find_all(["td", "th"])
