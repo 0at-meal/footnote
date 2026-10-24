@@ -13,9 +13,9 @@ Do these on the **old** setup first. Without them the new session starts behind.
 
 | What | Where | Status at hand-off | Action |
 |---|---|---|---|
-| 13 commits A-00 … A-19 (all of Track A so far) | local `build/full-platform` | **Not pushed.** `origin/build/full-platform` stops at `f7df997` | `git push origin build/full-platform` |
-| This file and `docs/EXPLAINER.md` | `docs/` | Untracked | Commit them, then push |
-| `.claude/launch.json` (preview config for the API) | `.claude/` | Untracked; points at `C:/footnote/.venv` | Commit it, or recreate it on the new machine |
+| 13 commits A-00 … A-19 (all of Track A so far) | `build/full-platform` | Pushed to `origin` on 2026-10-24 | Nothing; check `git status` shows the branch up to date |
+| This file and `docs/EXPLAINER.md` | `docs/` | Committed and pushed | Nothing |
+| `.claude/launch.json` (preview config for the API) | `.claude/` | Committed; points at `C:/footnote/.venv` | Edit the paths if the repo lives elsewhere |
 | Local observation store (~18 MB) | `var/footnote.db` | Git-ignored | Copy it over, or rebuild it (§6) |
 | EDGAR response cache (~108 MB) | `backend/data/edgar_cache/` | Git-ignored | Copy it over to skip a re-download. Rebuilding needs `SEC_USER_AGENT` and network |
 | Static demo snapshot | `site/` (tracked), `web-dist/` (ignored) | `site/` is in git | Nothing |
@@ -134,8 +134,8 @@ baselines, agent_system, run, score). Questions and pricing: `eval/agent/`.
 In priority order. Confirm with the owner before anything outward-facing (push, PR,
 spending API budget).
 
-1. **Push and open a PR** for `build/full-platform` → `main` (owner approval first). It
-   is 40 commits with no PR.
+1. **Open a PR** for `build/full-platform` → `main` (owner approval first). The branch is
+   pushed but has no PR.
 2. **A-05**: freeze the test split (after settling the A-04 question above).
 3. **A-13**: get a budget cap from the owner, confirm `ANTHROPIC_API_KEY` is set in the
    environment, re-check model IDs and prices (use the `claude-api` skill; `eval/agent/pricing.yaml`
