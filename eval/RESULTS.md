@@ -7,6 +7,33 @@ agreement is reported (P4-13).
 
 ---
 
+## 2026-10-24: FootnoteBench-Credit v0, must-refuse and false-premise questions (A-03)
+
+`cd backend && python -m tools.agent_eval.traps --write --written-on 2026-10-24`, same local
+store as A-02. These are questions with keys, not results.
+
+**90 questions** (dev 25, test 65). The benchmark now holds **379 questions** (dev 90,
+test 289).
+
+| Family | Reason code | Dev | Test | Key provenance |
+|---|---|---|---|---|
+| C8 quarter not yet reported | `period_not_reported` | 5 | 25 | `store_status` (filings table) |
+| C8 press release without EBITDA | `metric_not_ebitda` (or `no_bridge`) | 6 | 8 | `store_status` + exhibit text |
+| C8 issuer not covered | `not_covered` | 2 | 4 | `store_status` (universe rejections) |
+| C9 false premise (YoY flip, restatement, scale) | `false_premise` | 12 | 28 | `tieout` |
+
+- Press releases without EBITDA: 14 found against a target of 15:
+  - AMCX ×8 (reports Adjusted Operating Income);
+  - GTN ×2 and OLN ×1 (guidance updates);
+  - NCLH, CNK and SBGI ×1 each (a CEO appointment, box-office records, a preliminary
+    segment update).
+
+  ACHC's exhibit was excluded because it is page images.
+- **Not human-checked.** The C8 keys rest on recorded filing dates and exhibit text. The
+  C9 refutations rest on tie-out-verified values.
+
+---
+
 ## 2026-10-24: FootnoteBench-Credit v0, first generated questions (A-02)
 
 `cd backend && python -m tools.agent_eval.keys --write --written-on 2026-10-24`, on the local

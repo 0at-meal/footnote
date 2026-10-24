@@ -1039,10 +1039,12 @@ def _show(text: str) -> str:
     return " ".join(_INVISIBLE.sub("", text).split())
 
 
-def to_question(c: Candidate, written_on: date) -> Question:
+def to_question(c: Candidate, written_on: date, author: str = AUTHOR) -> Question:
     f = c.fields
     category: Category = f["category"]
-    expected: dict[str, Any] = {"status": "answered"}
+    expected: dict[str, Any] = {"status": f.get("status", "answered")}
+    if f.get("reason_codes"):
+        expected["reason_codes"] = f["reason_codes"]
     for name in ("values", "labels", "ranking"):
         if f.get(name):
             expected[name] = f[name]
@@ -1060,7 +1062,7 @@ def to_question(c: Candidate, written_on: date) -> Question:
             "tickers": list(c.tickers),
             "expected": expected,
             "key_provenance": f.get("provenance", KeyProvenance.tieout),
-            "author": AUTHOR,
+            "author": author,
             "written_on": written_on,
             "notes": f"generated from {c.key}",
         }
@@ -1101,7 +1103,9 @@ def generate(
 
 
 def write(
-    questions: list[Question], questions_dir: Path = QUESTIONS_DIR
+    questions: list[Question],
+    questions_dir: Path = QUESTIONS_DIR,
+    author: str = AUTHOR,
 ) -> dict[str, int]:
     """
     Replace this generator's rows in ``<split>.jsonl`` and keep everyone else's.
@@ -1115,8 +1119,8 @@ def write(
         existing, problems = load_file(path) if path.exists() else ([], [])
         if problems:
             raise ValueError(f"{path.name} has problems; fix them first: {problems}")
-        old = {q.id: q for q in existing if q.author == AUTHOR}
-        kept = [q for q in existing if q.author != AUTHOR]
+        old = {q.id: q for q in existing if q.author == author}
+        kept = [q for q in existing if q.author != author]
         new = []
         for q in (q for q in questions if q.split is split):
             prior = old.get(q.id)

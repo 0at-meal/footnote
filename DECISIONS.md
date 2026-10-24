@@ -5,6 +5,28 @@ Newest first. One entry per decision, with date and reason. Entries before
 those entries described features as deployed that were never wired into the
 running app (see the retraction below).
 
+- **2026-10-24: Must-refuse questions only where no correct number exists (A-03).**
+  `backend/tools/agent_eval/traps.py`. Choices:
+  - A C8 question is built only when the public record as of `as_of` holds no correct
+    answer:
+    - a quarter not yet reported (`as_of` is the day before the next Item 2.02 8-K);
+    - an EX-99.1 whose text never mentions EBITDA. Exhibits under 2,000 characters of
+      text are excluded: the ACHC exhibit is page images, so absence proves nothing;
+    - a ticker that `config/universe.yaml` records as rejected.
+  - A scale Footnote could not detect, or a bridge it failed to extract, is not a C8
+    question. The number exists in the filing, so a system that reads it correctly must
+    not be marked wrong. This drops the PLAN.md SIRI example.
+  - `expected.reason_codes` lists every acceptable reason, best first. A press release
+    with no EBITDA figure accepts `metric_not_ebitda` or `no_bridge`.
+  - C9 premises are refuted with verified values (provenance `tieout`):
+    - a YoY move flipped in direction, only when it is at least 5%;
+    - a "restatement" of a quarter reported with the same value in *every* release, not
+      just the first and last;
+    - a headline total stated one unit too large.
+  - Covenant-EBITDA and guidance questions need a key written by a person, so they are
+    left to A-04.
+  - `keys.write` and `keys.to_question` take an author, so each generator replaces only
+    its own rows.
 - **2026-10-24: Answer keys for C1–C7 are pure arithmetic on verified values (A-02).**
   `backend/tools/agent_eval/keys.py`. Choices:
   - A key value comes from a gold label, or from a store column that passes *both* the sum
