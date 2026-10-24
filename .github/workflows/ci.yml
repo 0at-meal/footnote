@@ -38,3 +38,6 @@ jobs:
       - name: Bridge engine must not regress on the gold set (P2-14)
         working-directory: backend
         run: python -m tools.eval.score_bridge --check ../eval/thresholds-bridge.yaml
+      - name: Agent eval questions valid (A-01)
+        working-directory: backend
+        run: python -m tools.agent_eval.questions --validate

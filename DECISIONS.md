@@ -20,6 +20,21 @@ running app (see the retraction below).
   - The Track A gate numbers in ADR-011 are proposals the owner may adjust here.
   - The model API is the project's first paid dependency. It is bounded by a per-run budget
     cap and an owner-set monthly limit.
+- **2026-10-24: FootnoteBench-Credit question schema (A-01).**
+  `backend/tools/agent_eval/questions.py`. Choices beyond PLAN.md:
+  - Key provenance adds `store_status` to the planned four values. It covers must-refuse
+    keys derived from a recorded store status (a failure reason, an unknown scale, a
+    coverage gap), which have no value to verify. It is allowed only on refusals without a
+    false premise.
+  - `human_checked` requires `checked_by` and `checked_on`.
+  - Expected answers have three shapes: values (number, unit, scale, period, tolerance,
+    sec.gov sources), labels (as-reported line labels with a change kind), and an ordered
+    ticker ranking.
+  - A value's tolerance may not exceed 1% of its magnitude, so a key cannot be made loose
+    enough to pass anything.
+  - Question files are `eval/agent/questions/<split>.jsonl`. A question's split must match
+    its file, IDs are unique across files, and covered tickers must match
+    `config/universe.yaml`.
 - **2026-10-23: Phases 1–4 engineering built ahead of the open Phase 0 gate (ADR-010).**
   The owner directed the agent to "go through all the phases" before an investor meeting.
   The gates are unchanged, and nothing here marks Phase 0 complete or a later phase open.
