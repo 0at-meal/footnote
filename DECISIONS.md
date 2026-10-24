@@ -5,6 +5,21 @@ Newest first. One entry per decision, with date and reason. Entries before
 those entries described features as deployed that were never wired into the
 running app (see the retraction below).
 
+- **2026-10-24: Track A, an evaluated agent with numbers by reference (ADR-011, A-00).**
+  The owner approved [docs/agent/PLAN.md](docs/agent/PLAN.md). Track A runs alongside the
+  phases and changes no phase gate. The Phase 0 gate is still open.
+  - The agent never writes a number. It cites stored or computed values by ID, and a
+    deterministic renderer and provenance gate produce the text the analyst reads. The
+    CLAUDE.md rule on served numbers is scoped to say so.
+  - The evaluation is built before the agent (A-01 to A-08). The headline metric is the
+    wrong-number rate on answered questions. Refusal is a scored answer status.
+  - The boundary exceptions (an LLM SDK and model-API network calls in `app/agent/llm.py` and
+    `tools/agent_eval/` only) are written in ADR-011. They enter
+    `test_architecture_boundaries.py` with the first ticket that needs them, so the
+    test stays strict until then.
+  - The Track A gate numbers in ADR-011 are proposals the owner may adjust here.
+  - The model API is the project's first paid dependency. It is bounded by a per-run budget
+    cap and an owner-set monthly limit.
 - **2026-10-23: Phases 1–4 engineering built ahead of the open Phase 0 gate (ADR-010).**
   The owner directed the agent to "go through all the phases" before an investor meeting.
   The gates are unchanged, and nothing here marks Phase 0 complete or a later phase open.

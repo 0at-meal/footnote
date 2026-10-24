@@ -11,6 +11,8 @@ Status values: Proposed, Accepted, Superseded.
 | [ADR-007](ADR-007-packs.md) | No "pack" abstraction before Phase 5; when it comes, it is declarative data | Accepted |
 | [ADR-008](ADR-008-offline-online.md) | All extraction and normalization runs offline; the online path only reads | Accepted |
 | [ADR-009](ADR-009-zero-cost-deploy.md) | $0 infrastructure until first revenue, with migration triggers written in advance | Accepted |
+| [ADR-010](ADR-010-local-store-and-accelerated-build.md) | Local SQLite observation store; Phases 1–4 engineering built ahead of the Phase 0 gate | Accepted |
+| [ADR-011](ADR-011-agent-numbers-by-reference.md) | Track A: an evaluated agent that cites stored numbers by reference and never writes them | Accepted |
 
 **Retired.** ADR-001 to ADR-004 described the removed PDF → workbook product: target-metric
 review triage, the xlsx output format, the 6-tab generator and multi-year company grouping.

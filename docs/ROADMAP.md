@@ -405,6 +405,48 @@ Split into ≤1-day tickets at phase start:
 - semantic search (pgvector);
 - non-US coverage.
 
+### Track A — Evaluated agent (ADR-011; runs alongside the phases)
+
+Added 2026-10-24 (DECISIONS). The full brief is [docs/agent/PLAN.md](agent/PLAN.md). Track A
+opens, closes or changes no phase gate. The agent cites stored or computed values by ID and
+never writes a number itself. The evaluation is built before the agent.
+
+**Exit gate (all required):**
+- wrong-number rate ≤ 1% on answered test questions, overall and on the gold-keyed slice;
+- correct refusal ≥ 90% on must-refuse and false-premise questions;
+- over-refusal ≤ 10% on answerable questions;
+- pass^3 reported for every system;
+- the agent beats the long-context baseline (B2) on wrong-number rate, with the gap and N
+  stated;
+- a human check of 30 agent answers against sec.gov (A-17).
+
+No Track A accuracy figure is shown to customers or published before this gate *and* P4-13
+are met.
+
+- **A-00** — DECISIONS entry, ADR-011, this section; plan saved to `docs/agent/PLAN.md`.
+- **A-01** — FootnoteBench-Credit question schema + validator → tests; CI step.
+- **A-02** — Deterministic answer-key generators for categories C1–C7 (gold labels, tie-out
+  data) → tests.
+- **A-03** — Must-refuse and false-premise builders (failures table, coverage gaps) + traps
+  written by hand → tests.
+- **A-04 [YOU]** — 20–30 analyst-phrased questions; verify 60 sampled test keys on sec.gov.
+- **A-05** — Freeze the test split; sha256 manifest checked in CI.
+- **A-06** — Scorer: wrong-number rate, accuracy, coverage, refusal matrix, citation
+  validity, pass^k, cost per correct answer → tests.
+- **A-07** — Harness: budget cap, transcripts, cost and latency, `--replay` with no API calls.
+- **A-08** — Baselines B0 (closed book), B1 (BM25 over the cache), B2 (full exhibit in
+  context).
+- **A-09** — Agent tool layer over `Store` → tests on the real local store.
+- **A-10** — `compute` tool (Decimal, formula trace, scale and period guards).
+- **A-11** — Answer schema, renderer, provenance gate → tests.
+- **A-12** — Agent loop (tool use, step cap, refusal policy, prompt caching).
+- **A-13** — First full run, all systems × 3 trials → RESULTS entry.
+- **A-14..16** — Fix the top 3 failure classes, one per ticket → delta logged.
+- **A-17 [YOU]** — Human check of 30 agent answers against sec.gov.
+- **A-18** — Read-only MCP server over the same tools → contract tests.
+- **A-19** — Earnings-night credit brief + claim-precision eval.
+- **A-20** — Ask-with-receipts API, minimal web view, Excel export.
+
 ---
 
 ## 8. Owner's part — before and during the build
