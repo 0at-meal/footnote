@@ -5,6 +5,37 @@ Newest first. One entry per decision, with date and reason. Entries before
 those entries described features as deployed that were never wired into the
 running app (see the retraction below).
 
+- **2026-10-24: Agent loop and Anthropic adapter (A-12).**
+  `backend/app/agent/loop.py`, `llm.py`, `backend/tools/agent_eval/agent_system.py`.
+  Choices:
+  - **Manual loop, not the SDK's beta tool runner.** The loop must apply the as-of cap
+    and the gate retry between turns, and must stay testable with the SDK-free
+    `ModelClient`.
+  - The final answer arrives through a `submit_answer` tool whose schema is
+    `AgentAnswer`. Forced `tool_choice` is rejected by Claude Opus 5.5, so the prompt
+    asks for it. One nudge if a turn ends without it, then a refusal.
+  - **The loop enforces, not the prompt:**
+    - the question's `as_of` is injected into every tool call, and a later date is
+      capped to it;
+    - one retry after a gate rejection, then `refused` / `unverifiable`;
+    - a model refusal, a turn cut off at `max_tokens`, or the step cap (16) becomes
+      an explicit refusal plus an `error` string.
+  - **Adapter defaults:**
+    - `claude-opus-5-5`, with `output_config.effort = "high"`. Opus 5.5 defaults to
+      `medium`; correctness matters more than cost here.
+    - Adaptive thinking (it cannot be disabled on Opus 5.5).
+    - Prompt caching on the last tool definition and the system prompt.
+    - The server-side refusal fallback (`fallbacks: "default"`, beta
+      `server-side-fallback-2026-07-01`) on Opus 5.5 / Sonnet 5.5 / Fable 5.1, as the
+      claude-api guidance recommends. Response blocks are kept and appended back
+      unchanged.
+  - `anthropic==2.3.0` is pinned in `requirements.txt`. The harness imports the adapter
+    only when a paid run starts.
+  - **Boundary exceptions from ADR-011, now in the test:** only `app/agent/llm.py`
+    imports an LLM SDK. No other app module imports `app.agent.llm`. Under `tools/`,
+    only `agent_eval/` may import an SDK.
+  - No real model call was made in building or testing this. Every test uses scripted
+    turns, and the adapter test uses SDK types offline.
 - **2026-10-24: Baselines B0–B2 (A-08).**
   `backend/tools/agent_eval/baselines.py`, `systems.py`. Choices:
   - All three baselines get the same system prompt. It describes the `SystemAnswer`

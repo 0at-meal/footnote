@@ -7,6 +7,21 @@ agreement is reported (P4-13).
 
 ---
 
+## 2026-10-24: agent pipeline, scripted end-to-end on real questions (A-12)
+
+The "model" here is a scripted fake client, not Claude. For each of the 30 LTM questions
+(C2) in the benchmark, it called `get_quarters` on the local store, then `compute` (sum of
+the four quarters), then submitted the calc vid. The loop gated and rendered the answer,
+and the A1 system and scorer graded it.
+
+- **30 of 30 correct.** The agent's tools, compute, gate and renderer reproduce the
+  independently generated keys (A-02) exactly, with zero wrong numbers.
+- This checks that the deterministic chain agrees with the keys. It says nothing about how
+  well a model chooses tools or values: that is A-13, which needs the API key and a
+  budget.
+
+---
+
 ## 2026-10-24: baseline prompt sizes and cost estimate (A-08)
 
 The B0–B2 prompts were built for all 379 questions from the local cache (no model call).

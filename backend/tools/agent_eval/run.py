@@ -39,6 +39,7 @@ import yaml
 from app.agent.model import ModelClient, ModelTurn, Usage
 from app.store.db import Store
 
+from tools.agent_eval.agent_system import AgentSystem
 from tools.agent_eval.baselines import ClosedBook, Corpus, LongContext, Retrieval
 from tools.agent_eval.keys import DEFAULT_DB
 from tools.agent_eval.questions import QUESTIONS_DIR, Question
@@ -189,19 +190,21 @@ def run(
 
 
 def available_systems(store: Store) -> dict[str, Callable[[], System]]:
-    """Every runnable system; the agent (A-12) adds A1."""
+    """Every runnable system: baselines B0-B2 and the agent A1."""
     corpus = Corpus(store)
     return {
         "B0": lambda: ClosedBook(),
         "B1": lambda: Retrieval(corpus),
         "B2": lambda: LongContext(corpus),
+        "A1": lambda: AgentSystem(store),
     }
 
 
 def real_client_factory(model: str) -> Callable[[], ModelClient]:
-    raise SystemExit(
-        f"no real model client is wired yet for {model} (A-12 adds app/agent/llm.py)"
-    )
+    """The Anthropic client. Only main() uses it, and only under a budget cap."""
+    from app.agent.llm import AnthropicClient  # the SDK loads only for a paid run
+
+    return lambda: AnthropicClient(model)
 
 
 def main() -> int:
