@@ -7,6 +7,19 @@ agreement is reported (P4-13).
 
 ---
 
+## 2026-10-24: MCP server on the local store (A-18)
+
+`python -m app.agent.mcp_server --db ../var/footnote.db`, driven over stdio:
+
+- `initialize` negotiated 2025-06-18.
+- `tools/list` returned the 8 tools.
+- `tools/call get_quarters` (TDG, 4 quarters) returned 1,320 / 1,197 / 1,337 / 1,447, all
+  `verified`. The latest matches the TDG figure in the 2026-10-23 entry.
+
+This is a smoke run, not an accuracy result.
+
+---
+
 ## 2026-10-24: agent pipeline, scripted end-to-end on real questions (A-12)
 
 The "model" here is a scripted fake client, not Claude. For each of the 30 LTM questions

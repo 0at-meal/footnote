@@ -5,6 +5,19 @@ Newest first. One entry per decision, with date and reason. Entries before
 those entries described features as deployed that were never wired into the
 running app (see the retraction below).
 
+- **2026-10-24: Read-only MCP server (A-18).**
+  `backend/app/agent/mcp_server.py`. Choices:
+  - Hand-written JSON-RPC 2.0 over stdio (`initialize`, `ping`, `tools/list`,
+    `tools/call`), not the `mcp` package. The surface is four methods, and the project
+    keeps dependencies minimal.
+  - Protocol versions 2025-06-18, 2025-03-26 and 2024-11-05. A client asking for another
+    version gets the newest.
+  - The tools are exactly the agent's (A-09, A-10), marked `readOnlyHint`. One server
+    process is one ledger, so `compute` works on vids from earlier calls. Results come
+    back as text and as `structuredContent`. An `invalid` tool status sets `isError`.
+  - The provenance gate covers Footnote's own agent only. An external client's model
+    sees each value's vid, as-reported string, checks and source, but what it writes is
+    outside the gate. The module docstring says so.
 - **2026-10-24: Agent loop and Anthropic adapter (A-12).**
   `backend/app/agent/loop.py`, `llm.py`, `backend/tools/agent_eval/agent_system.py`.
   Choices:
